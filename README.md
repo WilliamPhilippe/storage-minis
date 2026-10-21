@@ -1,5 +1,9 @@
 # storage-minis-be
 
+## Agent guidance
+
+See [AGENTS.md](AGENTS.md) for repository context, current requirements, validation guidance, and decisions still needed before implementation.
+
 ## Documentation
 
 - [Requirements specification v0.7 — current](docs/requirements-v0.7.md)
