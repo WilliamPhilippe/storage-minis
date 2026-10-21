@@ -1,6 +1,6 @@
 # Technical direction — documentation and backlog review
 
-**Review date:** 2026-10-21. **Pull request:** [#85](https://github.com/WilliamPhilippe/storage-minis/pull/85).
+**Review date:** 2026-10-21. **Decision record:** merged [#85](https://github.com/WilliamPhilippe/storage-minis/pull/85). **Documentation/backlog follow-up:** [#86](https://github.com/WilliamPhilippe/storage-minis/pull/86).
 
 The owner requested a PR, a review of affected documentation, and updates to technical-constraint issues after confirming the choices in [Technical direction](technical-direction.md). This review carries those approved decisions into the existing backlog. It does not introduce a new business baseline or provide application acceptance evidence.
 
