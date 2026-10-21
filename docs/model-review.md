@@ -1,6 +1,6 @@
 # Entity-model review
 
-This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements [the entity map](entity-map-v0.5.md). The original v0.5 requirements snapshot remains historical source material; explicit later user decisions take precedence.
+This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements [the entity map](entity-map-v0.5.md). The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material; explicit later user decisions take precedence.
 
 ## Confirmed structural decisions
 

@@ -4,7 +4,7 @@
 
 **Reviewed:** 2026-10-21.
 
-**Source:** [Full Requirements Specification v0.5](https://github.com/WilliamPhilippe/storage-minis-be/issues/2).
+**Source:** [Full Requirements Specification v0.5](requirements-v0.5.md), imported from [GitHub issue #2](https://github.com/WilliamPhilippe/storage-minis-be/issues/2).
 
 **Related task:** [T01 — core entities, state dimensions, and invariants](https://github.com/WilliamPhilippe/storage-minis-be/issues/21).
 
