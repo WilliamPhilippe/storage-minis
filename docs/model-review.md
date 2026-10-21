@@ -1,6 +1,6 @@
 # Entity-model review
 
-This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements the current [entity map v0.6](entity-map-v0.6.md), which supersedes the historical [entity map v0.5](entity-map-v0.5.md). The [consolidated requirements v0.6](requirements-v0.6.md) incorporates these decisions. The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material.
+This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements the current [entity map v0.7](entity-map-v0.7.md), which supersedes [v0.6](entity-map-v0.6.md); the [v0.5 map](entity-map-v0.5.md) also remains historical. The [consolidated requirements v0.7](requirements-v0.7.md) incorporates these decisions. The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material.
 
 ## Confirmed structural decisions
 
@@ -9,7 +9,7 @@ This records the user's structural corrections and the explanations requested af
 - **Product is global.** A Product registered through one Organization is available to every Organization to find, view, and use for its own InventoryItems. Product has no owning Organization or `organization_id`; InventoryItems and operational records remain organization-owned.
 - Store address information directly as field(s) on **Customer**. Remove the proposed CustomerAddress entity.
 - Remove **SupplierCredit** and **SupplierCreditApplication**. The user has no supplier-credit concept. Receipt funding comes from actual supplier payments allocated to the physical unit, plus settlement of applicable acquisition expenses.
-- Keep **PurchaseExpense** and **SaleExpense** as records owned by their parent operation, with **AcquisitionExpenseAllocation** for unit acquisition costs. A standalone expense-management module is not required.
+- Keep **PurchaseExpense** as an organization-owned entity linked to one or more Purchases, with **AcquisitionExpenseAllocation** directly to selected InventoryItems. **SaleExpense** remains owned by one Sale. This supersedes the earlier single-Purchase ownership decision; a standalone general expense-management module is not required.
 - Keep **CustomerPayment**, **CustomerPaymentAllocation**, and **CustomerRefund**. Remove **CustomerCredit** and **CustomerCreditApplication**: funds owed back after a Sale change must be refunded or allocated to another eligible existing Sale/SaleItem of the same Customer and Organization.
 - Keep **RetainedIncome** and **RetainedIncomeAllocation** for legitimately earned amounts and their model attribution.
 - Remove **LossRecovery**. Removing a Loss uses the Loss's dated void/reversal and shared audit history, rather than a separate recovery entity.
@@ -31,7 +31,7 @@ Collection uniqueness stays on the Organization/Product pair. Organization A and
 
 Registering a Product through an Organization and making it available to all Organizations are confirmed. Permissions for editing an existing shared Product and the audit scope for those global changes still need an explicit policy. Organization access to the shared Product catalog does not by itself determine which Product fields are exposed to public visitors; the public projection remains D04.
 
-The [global Product impact review](global-product-impact-v0.6.md) covers all 75 repository issues and all 302 active v0.5 requirements. It identifies the specific requirement and ticket amendments, shared Product lifecycle and historical-label questions, import matching, cache invalidation, and multi-Organization acceptance examples. Removing one's own eligible Item must preserve the shared Product and other Organizations' references. The publication record documents the corrected credit-policy drift and the updated live backlog. The [ownership index](requirements-coverage-v0.6.md) tracks all 304 active v0.6 requirements.
+The [global Product impact review](global-product-impact-v0.6.md) covers all 75 repository issues and all 302 active v0.5 requirements. It identifies the specific requirement and ticket amendments, shared Product lifecycle and historical-label questions, import matching, cache invalidation, and multi-Organization acceptance examples. Removing one's own eligible Item must preserve the shared Product and other Organizations' references. The publication record documents the corrected credit-policy drift and the updated live backlog. The [current ownership index](requirements-coverage-v0.7.md) tracks all 307 active v0.7 requirements, including the subsequent shared PurchaseExpense clarification.
 
 ## Supplier credit
 
@@ -39,22 +39,21 @@ Supplier credit would mean a Supplier keeps money or issues an allowance for use
 
 The user does not use this arrangement, so it is removed. An outstanding Supplier refund remains traceable until actually paid or resolved as an explicit unrecovered loss. The supplier-credit wording in SUP-009, SUP-012, PUR-026, PUR-029, and CALC-004 is superseded accordingly.
 
-## Expenses belong to their Purchase or Sale
+## Shared PurchaseExpenses and Sale-owned selling expenses
 
-An expense record can be a child of the Purchase or Sale and be entered in the same workflow. It does not require a separate expense-management module or an additional manual accounting step.
-
-Accepted ownership relationships:
+The user confirmed that shipping can cover I1 from P1 and I4 from P2, while I2/I3 arrive later. PurchaseExpense therefore has its own organization-owned identity and links to one or more Purchases. Monetary allocations target selected InventoryItems directly; a Purchase link is context, not a cost allocation.
 
 ```text
-Purchase → PurchaseExpense → AcquisitionExpenseAllocation → InventoryItem
-Sale     → SaleExpense
+Organization → PurchaseExpense ↔ Purchase (one or more, same Organization)
+PurchaseExpense → AcquisitionExpenseAllocation → InventoryItem
+Sale → SaleExpense
 ```
 
-For example, R$200 merchandise plus R$20 freight across two equally priced units gives R$110 per unit. Recording freight separately preserves the merchandise amount, explains the extra R$10 allocated to each unit, and supports different allocation methods. A R$10 business-paid selling expense belongs to its Sale and reduces Sale net profit once.
+For one R$30 shipping expense, assign R$10 to I1 and R$20 to I4. I2/I3 receive none. P1/P2 expense subtotals derive as R$10/R$20, while the source/settlement remains R$30 once. Value-proportional, equal-unit and manual allocation use only the selected applicable units across Purchases.
 
-The existing rules require exact unit-level acquisition-expense allocation and paid acquisition expenses before receipt. Payment date/method/settled amount can be expense fields when a single settlement suffices. A separate ExpensePayment table is conditional on a genuinely required payment workflow. General operating-expense entry is not assumed merely because the requirements mention other business expenses in whole-business reporting.
+Receipt uses each unit's own applicable settled expenses. Completion checks shared allocations before confirming zero and preserves the other Purchase's progress. Changes confined to eligible open-Purchase units must preserve completed-Purchase facts and approved/sold unit costs; removing/canceling one linked unit/Purchase cannot delete shared sources or silently transfer costs. Exceptional correction and unresolved allocation/settlement disposition remain D06.
 
-Shared versus separate SQL expense tables remains a physical-design choice; their ownership and business responsibilities are agreed.
+SaleExpense remains Sale-level and reduces Sale net profit once. Expense settlement fields may suffice; partial/batched expense-payment records remain conditional. General operating expenses and Shipment/package entities are not added. See [v0.7 impact](purchase-expense-impact-v0.7.md).
 
 ## Fully allocated customer Payments, transfers, and refunds
 
@@ -133,4 +132,4 @@ The global Product identity and availability to all Organizations, credit, expen
 
 ## Current backlog and open policies
 
-The current baseline is [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78). Shared Product maintenance is tracked by D07 [#79](https://github.com/WilliamPhilippe/storage-minis-be/issues/79); never-approved collection-cost finalization is D08 [#80](https://github.com/WilliamPhilippe/storage-minis-be/issues/80). D01–D06 remain open. Approved global Product registration/read/reuse and collection membership may proceed without inventing the unresolved policies. The [publication record](global-product-impact-v0.6.md#9-publication-record) identifies the issue updates and verification limits.
+The current baseline is [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82); [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78) remains historical v0.6. Shared Product maintenance is tracked by D07 [#79](https://github.com/WilliamPhilippe/storage-minis-be/issues/79); never-approved collection-cost finalization is D08 [#80](https://github.com/WilliamPhilippe/storage-minis-be/issues/80). D01–D06 remain open. Approved global Product registration/read/reuse and collection membership may proceed without inventing the unresolved policies. The [v0.7 impact record](purchase-expense-impact-v0.7.md) identifies the current updates and verification limits; the [v0.6 publication record](global-product-impact-v0.6.md#9-publication-record) remains historical.
