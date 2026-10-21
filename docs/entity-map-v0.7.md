@@ -22,14 +22,14 @@ This map identifies the business information the application must preserve and t
 
 The map distinguishes business concepts, required historical/financial information, and conditional storage structures. Discussion IDs remain stable; removed proposals E12, E17, E22, E23, E30, E31, and E38 are intentionally absent. E33–E35 identify derived/history responsibilities rather than separate baseline entities. Record boundaries and database table boundaries are separate decisions.
 
-No database engine, ORM, event-sourcing architecture, or double-entry accounting system is assumed. D01–D08 remain open; see the linked decision table below. This map records the agreed model, not implemented SQL or resolved policy outcomes.
+This map describes conceptual relationships rather than physical SQL tables. The owner subsequently selected PostgreSQL with Drizzle and UTC timestamp storage/reporting; see [Technical direction](technical-direction.md) for the accepted stack, authentication choices, and remaining design outputs. Event sourcing and double-entry accounting are not mandated. D01–D08 remain open; see the linked decision table below. This map records the agreed model, not implemented SQL or resolved policy outcomes.
 
 ## 1. Organizations and access
 
 | ID | Entity | Information and responsibility | Main relationships | Requirement basis |
 | --- | --- | --- | --- | --- |
 | E01 | **Organization** | Ownership and isolation boundary for InventoryItems and operational records, including its single implicit collection. Product catalog records are global. | Has memberships and organization-owned operational records. Every Organization can access the shared Product catalog. No Product ownership or separate Collection entity. | REQ-004; ORG-001–002, ORG-008–009, with Product scope clarified by the user |
-| E02 | **User** | Administrator identity and attribution for actions. Authentication details follow the technical design. | May have memberships in several Organizations; acts on business events and audit entries. | ORG-003–005; TECH-001 |
+| E02 | **User** | Administrator identity and attribution for actions. Google-only Firebase Authentication and ID tokens are accepted; remaining session/bootstrap design follows T02 and the technical direction record. | May have memberships in several Organizations; acts on business events and audit entries. | ORG-003–005; TECH-001 |
 | E03 | **Membership** | Connects a User with an Organization and authorized administrative access. | Exactly one User and one Organization per membership. | ORG-003–005, ORG-008; user-confirmed name |
 
 Membership is a recommended association to accommodate the stated future multiple-organization membership. It does not add invitations, a role-management interface, or a separate Permission/Role catalog to launch scope. Users can be global identities. Membership authorizes access to an Organization's operational data; every Organization has access to the global Product catalog.
@@ -327,7 +327,7 @@ Some constraints require transaction-level validation as well as foreign keys or
 | [D06 — exceptional corrections](https://github.com/WilliamPhilippe/storage-minis-be/issues/20) | Cost snapshots, allocations, BusinessEvent, original source records and financial projections | Permitted corrections, authority, version/reversal links, and dated consequences, including valid Loss removal when later activity exists, and shared-expense correction/settlement disposition on linked unit or Purchase removal/cancellation. |
 | [D08 — collection costs before any sale approval](https://github.com/WilliamPhilippe/storage-minis-be/issues/80) | InventoryItem cost information and collection membership history | Acquisition cost exists independently of eligibility. The remaining issue is when a never-for-sale collection unit's cost becomes complete/locked, not whether another unit's approval changes its collection cost. A separate completeness/finalization policy is proposed. |
 | Legacy acquisition representation and Product matching | OpeningAcquisition or marked opening Purchase structure, import records, global Product identity | Actual spreadsheet evidence, approved treatment of missing acquisition/payment history, matching to existing global Products despite non-unique SKUs, and handling of shared metadata conflicts. |
-| Money and business dates | All money, allocation, and dated-history records | Exact precision/remainder allocation, business timezone, and effective/recorded-date representation. All operational amounts remain BRL. |
+| Money and business dates | All money, allocation, and dated-history records | BRL, UTC timestamp storage/reporting, and visitor-local timestamp display are accepted. Exact precision/remainder allocation and business-date/recorded-time representation remain T03 work. |
 
 Entity discovery can proceed with these boundaries identified. A subsequent logical-schema pass should choose keys, column ownership, nullability, relationship enforcement, history representation, and indexes, followed by the engine/ORM-specific schema.
 
