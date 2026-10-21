@@ -10,21 +10,27 @@ Use this file as a navigation and implementation guide. Detailed business rules 
 
 ## Confirmed technical direction
 
-The owner confirmed these choices while creating this guide on 2026-10-21:
+The owner confirmed these choices on 2026-10-21. Read [Technical direction](docs/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling; it records approval scope, examples, and remaining decisions.
 
 | Area | Agreed choice |
 | --- | --- |
-| Application scope | Full application in this repository: backend/API and frontend. |
+| Application scope | Full application in one monorepo: backend/API and frontend, with independent deployments supported. |
 | Application language | TypeScript with strict checking for backend and frontend code. |
-| Backend runtime | Node.js. |
-| Frontend | React. |
-| Database | PostgreSQL. |
-| Authentication provider | Firebase Authentication. |
+| Backend | Node.js with Fastify and tRPC. |
+| Frontend | React with Vite, TanStack Router, and TanStack Query. |
+| Forms and validation | React Hook Form and Zod; runtime API validation with Zod. |
+| Database and persistence | PostgreSQL with Drizzle ORM; Docker Compose for development PostgreSQL. Production hosting remains open. |
+| Authentication | Firebase Authentication with Google sign-in only and Firebase ID tokens; refresh during active use, no refresh while inactive, and explicit logout. |
+| Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
 | Package manager | pnpm. |
+| Build tasks | Turborepo. |
+| Tests | Vitest for unit/integration tests; real PostgreSQL for persistence invariants; Playwright for core browser workflows. |
+| Money | BRL only; exact representation and rounding remain T03 work. |
+| Dates | Store timestamp instants in UTC; UI displays them in the visitor's timezone. Financial reporting uses UTC for every viewer. |
 
-Use pnpm when dependencies and scripts are introduced. Record supported versions and verified setup commands with the initial scaffold. Node.js API framework, React application/build framework, repository layout, ORM/query layer, and migration tooling remain design choices under T06.
+Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm when dependencies and scripts are introduced. Record supported versions and verified setup commands with the initial scaffold. Repository layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; framework selection is not evidence that the foundation is implemented.
 
-Hosting is undecided, including self-hosted versus managed PostgreSQL such as Supabase. Database hosting remains separate from the selected Firebase authentication provider. Detailed sign-in/session/recovery behavior is still T02 work; the application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
+Hosting, deployment, backups, and operational targets remain T04 work. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
 ## Read before making changes
 
@@ -81,7 +87,7 @@ These are reminders of the current requirements, not a replacement for reading t
 
 - A Sale belongs to exactly one Customer and commits specific eligible Item IDs. One unit can have only one active Sale commitment, but may have multiple historical SaleItems after Return/resale. Current asking-price changes must not alter agreed historical prices.
 - An active unshipped Sale with debt is Reserved; zero debt makes it In Garage automatically. Both states exclude its units from the catalog. Dispatch is explicit, at Sale level; tracking codes are optional and nonunique. Cancellation applies before dispatch; Return requires physical receipt of a shipped unit and a condition/availability decision.
-- All operational money is BRL. New Payments must be fully allocated without exceeding source funds or outstanding obligations. Exact representation, cent-remainder rules, business timezone, and period boundaries remain T03; do not infer them from the machine locale.
+- All operational money is BRL. New Payments must be fully allocated without exceeding source funds or outstanding obligations. Timestamp instants are stored in UTC and displayed in the visitor's timezone; financial reports use UTC. Exact monetary representation, cent-remainder rules, business-date representation, and period-filter semantics remain T03; do not infer them from the machine or visitor locale.
 - No supplier credit or reusable customer wallet exists. Released customer funding must be refunded or reassigned to eligible existing Sales/SaleItems of the same Customer/Organization. A pending refund is a source-linked obligation, not cash already sent or future spending credit. Reassignment creates no new cash. Legitimate RetainedIncome is distinct, with reconciled model attribution.
 - Book Sale profit at Sale creation, even while unpaid. Payment timing changes debt and cash, not booked profit or collection recovery. Refund settlement must not subtract a previously reversed profit twice.
 - Customer-paid shipping is outside recorded Payments, Sale charges, income, and related cost lines. Business-paid selling expenses belong to the Sale and reduce Sale net profit once; do not spread them arbitrarily across models.
@@ -130,11 +136,11 @@ Check the live issue before working on a dependent feature. These business polic
 Technical choices also remain open; their issues define the required outputs:
 
 - [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22): sign-in, sessions, recovery, administrator bootstrap, and authorization using the agreed Firebase Authentication provider.
-- [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24): exact BRL arithmetic, deterministic remainders, and business/reporting dates.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22): finish persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, recovery, administrator bootstrap, and authorization around Google-only Firebase sign-in, ID tokens, active-use refresh, and explicit logout. The owner has supplied the administrator email.
+- [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24): exact BRL arithmetic, deterministic remainders, business-date representation, and period-filter semantics; UTC timestamp storage and reporting with visitor-local display are agreed.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
-- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26): concrete frameworks, versions, layout, persistence access, migrations, API/interface, transaction/concurrency choices, and runnable local setup for Node.js, React, PostgreSQL, and pnpm; depends on T01/T02/T04.
+- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26): turn the selected frameworks into a runnable foundation, pin versions, choose layout/migration/API conventions, and demonstrate transaction/concurrency behavior; depends on T01/T02/T04. See the technical direction record for accepted choices and remaining outputs.
 
 ## Agreed conventions
 

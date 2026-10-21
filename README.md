@@ -11,6 +11,7 @@ See [AGENTS.md](AGENTS.md) for repository context, current requirements, validat
 - [Requirement ownership and backlog v0.7](docs/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
 - [Accepted entity-model decisions](docs/model-review.md)
+- [Technical direction — accepted stack, authentication, and date choices](docs/technical-direction.md)
 - [Requirements specification v0.6 — historical](docs/requirements-v0.6.md)
 - [Entity and relationship map v0.6 — historical](docs/entity-map-v0.6.md)
 - [Requirement ownership and backlog v0.6 — historical](docs/requirements-coverage-v0.6.md)
