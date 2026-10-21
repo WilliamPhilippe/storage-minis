@@ -351,4 +351,17 @@ D06 now explicitly covers shared-expense exceptional correction and unresolved a
 
 ## Dependency and implementation boundaries
 
-The 63 native parent links and 117 prerequisite links are unchanged. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. No database engine, ORM, payment batching, Shipment entity or event-sourcing architecture is prescribed.
+The 63 native parent links and 117 prerequisite links are unchanged. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. The owner subsequently selected PostgreSQL with Drizzle and the application stack in [Technical direction](technical-direction.md); physical schema design remains open. Payment batching, a Shipment entity, and event sourcing are not prescribed.
+
+## Technical decision follow-up
+
+The 2026-10-21 technical choices supplement the v0.7 business baseline without changing its 307 active requirements, nine retired IDs, or primary delivery owners. See the [technical documentation/backlog review](technical-direction-review.md) for propagation and verification.
+
+| Design task | Accepted inputs | Remaining outputs |
+| --- | --- | --- |
+| T01 / #21 | PostgreSQL with Drizzle; global Product/private operations; UTC timestamps/reporting | Final schema, state transitions, constraints, and transaction/concurrency design. |
+| T02 / #22 | Google-only Firebase, ID tokens, configured owner administrator, active-use refresh, no inactive refresh, logout | Bootstrap, persistence, activity threshold, return-after-inactivity, logout scope/revocation, and recovery. |
+| T03 / #24 | BRL; UTC timestamp storage and financial reporting; visitor-local timestamp display | Exact representation, precision/remainders, business-date semantics, and period-filter contracts. |
+| T04 / #23 | One monorepo, independent application deployments, local PostgreSQL via Compose, selected test tools | Production hosting, release/configuration process, backups/restore, and measurable support/performance/recovery targets. |
+| T05 / #25 | UTC target timestamps/reporting | Inspect the actual source, preview ambiguous dates/timezones, and approve legacy acquisition mapping. |
+| T06 / #26 | Node/Fastify/tRPC/Zod; React/Vite/TanStack Router/Query/React Hook Form; pnpm/Turborepo; Drizzle/PostgreSQL; Vitest/Playwright | Versions, layout, migrations, CI/setup commands, and persistence acceptance evidence after existing prerequisites. |

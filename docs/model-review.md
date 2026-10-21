@@ -133,3 +133,7 @@ The global Product identity and availability to all Organizations, credit, expen
 ## Current backlog and open policies
 
 The current baseline is [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82); [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78) remains historical v0.6. Shared Product maintenance is tracked by D07 [#79](https://github.com/WilliamPhilippe/storage-minis-be/issues/79); never-approved collection-cost finalization is D08 [#80](https://github.com/WilliamPhilippe/storage-minis-be/issues/80). D01–D06 remain open. Approved global Product registration/read/reuse and collection membership may proceed without inventing the unresolved policies. The [v0.7 impact record](purchase-expense-impact-v0.7.md) identifies the current updates and verification limits; the [v0.6 publication record](global-product-impact-v0.6.md#9-publication-record) remains historical.
+
+## Technical choices following the model review
+
+The owner confirmed the application stack, Google-only Firebase authentication, active-use refresh/logout policy, administrator identity, and UTC reporting on 2026-10-21; see [Technical direction](technical-direction.md). PostgreSQL with Drizzle is selected, while exact tables, constraints, monetary arithmetic, and business-date representation still need design. This technical follow-up does not change the structural decisions or close D01–D08. Timestamp display may use the visitor's timezone; financial reporting remains UTC for every viewer.

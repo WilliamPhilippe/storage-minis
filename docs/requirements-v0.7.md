@@ -53,7 +53,7 @@ Estoque164 manages a miniature business and its owner's personal collection in t
 - **ORG-008:** Each Organization’s operational and private records are isolated from other Organizations. All Organizations may find, view, and select global Products; this exception grants no access to another Organization’s units or operations.
 - **ORG-009:** Payments, purchase/sale allocations, refunds, and Item commitments stay within the correct Organization. Customer funding can only pay Sales/SaleItems of that same Customer and Organization; cross-customer account transfers are unsupported. Referencing a global Product is permitted across Organizations.
 
-Authentication, account recovery, and detailed permissions remain part of the technical phase.
+The [technical direction record](technical-direction.md) captures the subsequently approved Google-only Firebase sign-in, ID tokens, active-use refresh, explicit logout, and initial administrator identity. Remaining session, bootstrap, recovery, and detailed authorization design belongs to T02; Membership and Organization isolation still apply.
 
 ## 3. Products and models
 
@@ -559,6 +559,8 @@ Exact field mapping, import format, and validation mechanics will follow review 
 - **TECH-005:** Enforce isolation of organization-owned records and atomic integrity while allowing authorized access to global Products. Global Product references must not be rejected by blanket same-Organization filtering.
 - **TECH-006:** Concurrency prevents duplicate active commitments to one physical Item, payment overuse, inconsistent cross-record outcomes, and multiple collection units for one Organization/Product. Different Organizations may concurrently sell their own units of the same Product.
 
+**Technical follow-up approved on 2026-10-21:** [Technical direction](technical-direction.md) records the selected monorepo stack, PostgreSQL/Drizzle persistence, Google/Firebase authentication, UTC timestamp storage and financial reporting, and visitor-local timestamp display. Exact monetary arithmetic, business-date semantics, the final schema, remaining session behavior, hosting, and operational targets still need their existing technical-task outputs. This supplement preserves the requirement wording and IDs above and is not implementation acceptance evidence.
+
 ## 14. Remaining open decisions (not yet approved business rules)
 
 The core lifecycle decisions are agreed. The following **specific** matters remain unresolved and must not be silently treated as decided:
@@ -575,7 +577,7 @@ The core lifecycle decisions are agreed. The following **specific** matters rema
 
 **Already decided; not open:** Item IDs at Purchase time, order payment before receipt, expense finalization on approval, confirmed-zero additional expenses on completion when no expense applies to that Purchase's units, including shared sources, only unpaid/unreceived units eligible for ordinary soft deletion, no selling preorders, no in-app FX, no readiness confirmation, same tracking number on several Sales, cash-payment-independent profit, event-dated reporting reversals, separate cancellation and Return, model-attributed retained income, and Sale-level selling expenses.
 
-**Technical-phase rather than business-decision topics:** Authentication, detailed permissions, hosting, backups, browser support, performance, recovery targets, and actual Excel import procedure.
+**Technical-phase rather than business-decision topics:** Complete remaining authentication/authorization design around the accepted choices, hosting, backups, browser support, performance, recovery targets, exact BRL/date rules, and actual Excel import procedure. Accepted tools and UTC reporting are recorded in [Technical direction](technical-direction.md); these selections do not resolve D01–D08.
 
 ## 15. Readiness for implementation and acceptance scenarios
 
