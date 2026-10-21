@@ -1,11 +1,12 @@
 # Entity-model review
 
-This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements [the entity map](entity-map-v0.5.md). The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material; explicit later user decisions take precedence.
+This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements the current [entity map v0.6](entity-map-v0.6.md), which supersedes the historical [entity map v0.5](entity-map-v0.5.md). The [consolidated requirements v0.6](requirements-v0.6.md) incorporates these decisions. The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material.
 
 ## Confirmed structural decisions
 
 - Use **Membership** for the User ↔ Organization relationship.
 - Keep Organization, User, Product, InventoryItem, Supplier, Purchase, PurchaseItem, SupplierPayment, SupplierPaymentAllocation, SupplierRefund, Customer, Sale, SaleItem, Return, ReturnItem, and Loss.
+- **Product is global.** A Product registered through one Organization is available to every Organization to find, view, and use for its own InventoryItems. Product has no owning Organization or `organization_id`; InventoryItems and operational records remain organization-owned.
 - Store address information directly as field(s) on **Customer**. Remove the proposed CustomerAddress entity.
 - Remove **SupplierCredit** and **SupplierCreditApplication**. The user has no supplier-credit concept. Receipt funding comes from actual supplier payments allocated to the physical unit, plus settlement of applicable acquisition expenses.
 - Keep **PurchaseExpense** and **SaleExpense** as records owned by their parent operation, with **AcquisitionExpenseAllocation** for unit acquisition costs. A standalone expense-management module is not required.
@@ -17,6 +18,20 @@ This records the user's structural corrections and the explanations requested af
 - Use **one shared BusinessEvent/action/audit history structure**, with item timelines and financial reporting as derived views. Four standalone history tables are not required.
 
 These are accepted business/modeling directions. Exact SQL tables, keys, indexes, and typed history details remain for the schema-design pass.
+
+## Global Product catalog and organization-owned inventory
+
+Product represents a shared model identity. When Organization A registers Product P, Organization B can access that same Product P and reference it from B's own InventoryItems. Access does not require a separate Product copy, explicit sharing grant, or membership in the registering Organization. The registering Organization is action provenance, not the owner of Product P. Sharing does not imply SKU uniqueness or automatic merging of similar catalog entries.
+
+The conceptual keys are `Product.id`, with no owning `organization_id`, and `InventoryItem.organization_id` plus `InventoryItem.product_id`. The same global Product ID can appear on units owned by different Organizations. Operational access and same-Organization validation use InventoryItem and transaction ownership rather than attempting to match a Product organization field.
+
+Only the shared Product catalog data becomes available across Organizations. Each Organization retains its own stock, asking prices, acquisition costs, condition details, private notes, Customers, Suppliers, transactions, allocations, and collection membership. Organization-private notes belong to organization-owned records, such as InventoryItem; any need for unit-independent private model annotations remains a schema-design question. The broad ORG-002 ownership wording is qualified by this global Product exception, while ORG-008 continues to protect operational data.
+
+Collection uniqueness stays on the Organization/Product pair. Organization A and Organization B may each designate one of their own units of Product P. Quantities, acquisition costs, model profit, and collection recovery are calculated within the relevant Organization; A's Sales do not reduce B's collection cost.
+
+Registering a Product through an Organization and making it available to all Organizations are confirmed. Permissions for editing an existing shared Product and the audit scope for those global changes still need an explicit policy. Organization access to the shared Product catalog does not by itself determine which Product fields are exposed to public visitors; the public projection remains D04.
+
+The [global Product impact review](global-product-impact-v0.6.md) covers all 75 repository issues and all 302 active v0.5 requirements. It identifies the specific requirement and ticket amendments, shared Product lifecycle and historical-label questions, import matching, cache invalidation, and multi-Organization acceptance examples. Removing one's own eligible Item must preserve the shared Product and other Organizations' references. The publication record documents the corrected credit-policy drift and the updated live backlog. The [ownership index](requirements-coverage-v0.6.md) tracks all 304 active v0.6 requirements.
 
 ## Supplier credit
 
@@ -59,7 +74,7 @@ CustomerPaymentAllocation supports a Sale and, where specified, a SaleItem withi
 
 If a chosen refund is not disbursed instantly, its unpaid obligation must be explicit in the originating settlement, unavailable for future spending, and distinct from an actual CustomerRefund cash record. This preserves a refund liability without introducing a future-sale credit balance. Refund scheduling details still belong to workflow design.
 
-The reusable-credit rules in v0.5 are superseded by this decision; the historical specification is not rewritten.
+The reusable-credit rules in v0.5 are superseded by this decision and consolidated in v0.6; PAY-031 and CUS-016 are retired. The historical specification is not rewritten.
 
 ## Retained income and model attribution
 
@@ -114,4 +129,8 @@ The earlier question about unfinished costs concerned the **collection unit's ow
 
 ## Remaining design boundaries
 
-The credit, expense ownership, retained-income attribution, collection-per-Organization, one-collection-item-per-Product, LossRecovery removal, and shared-history choices above are settled. The next schema pass must still account for the original D01–D06 decisions and cost finalization for units never offered for sale. The existing decision tickets are not automatically resolved by these structural choices.
+The global Product identity and availability to all Organizations, credit, expense ownership, retained-income attribution, collection-per-Organization, one-collection-item-per-Product, LossRecovery removal, and shared-history choices above are settled. The next schema pass must still account for the original D01–D06 decisions, cost finalization for units never offered for sale, shared Product maintenance/audit and historical-label rules, global identity matching during import, and any private model annotation storage. The existing decision tickets are not automatically resolved by these structural choices.
+
+## Current backlog and open policies
+
+The current baseline is [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78). Shared Product maintenance is tracked by D07 [#79](https://github.com/WilliamPhilippe/storage-minis-be/issues/79); never-approved collection-cost finalization is D08 [#80](https://github.com/WilliamPhilippe/storage-minis-be/issues/80). D01–D06 remain open. Approved global Product registration/read/reuse and collection membership may proceed without inventing the unresolved policies. The [publication record](global-product-impact-v0.6.md#9-publication-record) identifies the issue updates and verification limits.
