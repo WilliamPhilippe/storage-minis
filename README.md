@@ -8,6 +8,8 @@ See [AGENTS.md](AGENTS.md) for repository context, current requirements, validat
 
 - [Requirements specification v0.7 — current](docs/requirements-v0.7.md)
 - [Entity and relationship map v0.7 — current](docs/entity-map-v0.7.md)
+- [Database schema — visual DBML draft 1](docs/database/schema.dbml)
+- [Database design — entity mapping, proposals, and open decisions](docs/database/design.md)
 - [Requirement ownership and backlog v0.7](docs/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
 - [Accepted entity-model decisions](docs/model-review.md)

@@ -1,0 +1,1045 @@
+// Estoque164 database design, draft 1 — 2026-10-22.
+// Source: docs/entity-map-v0.7.md. Review guide and full E-ID mapping: design.md.
+// This is a visual proposal, not an approved physical schema or a migration.
+// brl_amount and business_date are deliberate T03 placeholders, not PostgreSQL types.
+// UUIDs, column names, optionality beyond explicit requirements, and table boundaries
+// are proposals. The candidate namespace marks optional storage, not extra features.
+
+Project estoque164_draft_1 {
+  database_type: 'PostgreSQL'
+  Note: '''
+    First visual schema draft based on the v0.7 entity map and accepted model decisions.
+    E-IDs in notes preserve traceability; see design.md for all 38 mapped entries.
+    Product and User are global. Operational records belong to an Organization.
+    Monetary values are BRL. brl_amount and business_date await T03.
+    Timestamp instants use timestamptz; reporting uses UTC and display is visitor-local.
+    Candidate tables are review options. D01-D08 and T02/T03/T05 remain open.
+    Partial uniqueness, aggregate reconciliation, authorization, history validation,
+    and atomic/concurrent operations need enforcement beyond these diagram references.
+  '''
+}
+
+Enum supplier_type {
+  person
+  business
+}
+
+Enum seal_condition {
+  unknown
+  not_applicable
+  sealed
+  open
+}
+
+Enum damage_condition {
+  unknown
+  not_applicable
+  undamaged
+  damaged
+}
+
+Enum item_possession {
+  awaiting_arrival
+  on_hand
+  dispatched
+  lost_or_disposed
+}
+
+Enum purchase_lifecycle {
+  open
+  completed
+  canceled
+}
+
+Enum expense_completeness {
+  unknown
+  confirmed_zero
+  accounted_for
+}
+
+Enum acquisition_allocation_method {
+  proportional_to_value
+  equal_per_unit
+  manual
+}
+
+Enum business_event_scope {
+  organization
+  global_product
+}
+
+Enum settlement_outcome {
+  refund
+  reassignment
+  retained_income
+  loss
+}
+
+// Identity and access. Membership grants Organization access; no role catalog.
+
+Table organizations [headercolor: #4B6B9E] {
+  id uuid [pk, not null]
+  name text [not null, note: 'Proposed display field for the Organization.']
+  created_at timestamptz [not null]
+
+  Note: 'E01 | REQ-004; ORG-001-002, ORG-008-009. One implicit collection through InventoryItem membership. No Product ownership.'
+}
+
+Table users [headercolor: #4B6B9E] {
+  id uuid [pk, not null]
+  firebase_uid text [not null, unique, note: 'External Google-only Firebase identity. T02 owns bootstrap and recovery.']
+  email text [note: 'Identity profile; no email uniqueness or first-login administrator rule is implied.']
+  display_name text
+  created_at timestamptz [not null]
+
+  Note: 'E02 | ORG-003-005; TECH-001. Global application identity. Authentication tokens and session persistence are T02 implementation work.'
+}
+
+Table memberships [headercolor: #4B6B9E] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  user_id uuid [not null]
+  granted_at timestamptz [not null]
+  revoked_at timestamptz [note: 'Proposed access-history field. Exact authorization/revocation behavior remains T02.']
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, user_id) [unique]
+  }
+
+  Note: 'E03 | ORG-003-005, ORG-008. One User-Organization association; no invitation or role-management feature. Reinstatement must preserve prior access history.'
+}
+
+// Global catalog values and Organization-owned physical units.
+
+Table products [headercolor: #387D70] {
+  id uuid [pk, not null]
+  name text [not null]
+  sku text [not null, note: 'Required and deliberately NONUNIQUE. Not an automatic import/deduplication key.']
+  brand text [not null, note: 'E43: embedded required brand value; no Brand entity.']
+  description text
+  scale text
+  product_codes jsonb [note: 'Optional catalog values. Proposed encoding; no automatic identity matching.']
+  images jsonb [note: 'E42: optional embedded image values. Storage and public presentation remain D04/T04.']
+  registration_event_id uuid [not null, note: 'Global registration provenance; the event may retain Organization context without Product ownership.']
+
+  Note: '''
+    E04 | PRO-001-013. Global Product: no organization_id, unit condition, price,
+    cost, collection pointer, or private notes. Every Organization can reuse it.
+    Existing shared edits, historical labels and private model notes remain D07.
+    D04 defines the public field allowlist; internal sharing does not publish all fields.
+  '''
+}
+
+Table inventory_items [headercolor: #387D70] {
+  id uuid [pk, not null, note: 'Permanent Item ID assigned at Purchase registration, including preorders; never reused.']
+  organization_id uuid [not null]
+  product_id uuid [not null]
+  purchase_id uuid [note: 'Proposed relationship key, constrained to the originating PurchaseItem; not independently editable.']
+  purchase_item_id uuid [note: 'Required for ordinary ordered units. Null only for an approved equivalent opening acquisition.']
+  opening_acquisition_id uuid [note: 'Conditional E39/T05 alternative; exactly one acquisition path must exist.']
+  merchandise_cost_brl brl_amount [note: 'Exact unit share of PurchaseItem merchandise total. Required for ordinary purchases; legacy unknowns remain T05.']
+  seal_condition seal_condition [not null, default: 'unknown']
+  damage_condition damage_condition [not null, default: 'unknown']
+  private_description text
+  private_notes text
+  asking_price_brl brl_amount [note: 'Current asking price; never changes historical agreed SaleItem prices.']
+  possession item_possession [not null, default: 'awaiting_arrival']
+  is_sale_approved boolean [not null, default: false]
+  is_held_for_appreciation boolean [not null, default: false]
+  is_collection boolean [not null, default: false, note: 'At most one true member per Organization/Product; requires a partial unique constraint.']
+  first_received_event_id uuid [note: 'Preserved forever. Purchase cancellation checks ever-received history, not current possession.']
+  first_sale_approval_event_id uuid
+  removed_event_id uuid [note: 'Soft removal retains this row and identity. Ordinary removal requires Open Purchase, no receipt and zero allocated supplier payment.']
+  acquisition_expense_completeness expense_completeness [not null, default: 'unknown', note: 'Completeness of applicable additional expenses. Full cost completeness also needs a known merchandise amount. Never-approved collection finalization remains D08.']
+  finalized_acquisition_cost_brl brl_amount [note: 'E44: proposed embedded snapshot of authoritative acquisition sources, not a manually editable balance.']
+  cost_finalized_event_id uuid [note: 'Ordinary lock occurs at this unit\'s first sale approval. No alternative D08 policy is selected.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, purchase_id, id) [unique]
+    (organization_id, product_id) [note: 'Lookup index only. Collection uniqueness needs WHERE is_collection; a plain unique index would forbid ordinary duplicate units.']
+  }
+
+  checks {
+    `((purchase_id IS NOT NULL AND purchase_item_id IS NOT NULL AND opening_acquisition_id IS NULL) OR (purchase_id IS NULL AND purchase_item_id IS NULL AND opening_acquisition_id IS NOT NULL))` [name: 'one_acquisition_path']
+    `(purchase_item_id IS NULL OR merchandise_cost_brl IS NOT NULL)` [name: 'ordered_unit_has_merchandise_share']
+    `((finalized_acquisition_cost_brl IS NULL) = (cost_finalized_event_id IS NULL))` [name: 'cost_snapshot_has_event']
+  }
+
+  Note: '''
+    E05; embedded E44 | REQ-009, REQ-012; INV-001-031; COL-001-009; PUR-023.
+    Commitment/payment state is derived through SaleItems and allocations, not a
+    single editable stock status. Damage does not change eligibility automatically.
+    Collection membership and holds exclude sale; collection membership is optional.
+    All units of one PurchaseItem share one Product, including retained removed units.
+    Source allocations are preserved/locked with first approval. E44 may become a
+    versioned snapshot table only if the reviewed correction design requires it (D06).
+    Opening fields show the E39 candidate, not permission to fabricate legacy history.
+  '''
+}
+
+// Purchasing, item-level funding, and actual supplier refunds.
+
+Table suppliers [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  name text [not null]
+  phone text [not null]
+  type supplier_type [not null]
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E06 | SUP-001-012. Required name/phone/type. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
+}
+
+Table purchases [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  supplier_id uuid [not null]
+  ordered_on business_date [not null]
+  lifecycle purchase_lifecycle [not null, default: 'open']
+  expense_completeness expense_completeness [not null, default: 'unknown']
+  expenses_confirmed_event_id uuid [note: 'Explicit accounting/zero confirmation for this Purchase only, considering shared allocations.']
+  incoming_shipping_notes text [note: 'Proposed descriptive field for PUR-010 incoming information; no package/carrier hierarchy.']
+  completed_event_id uuid
+  canceled_event_id uuid
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, supplier_id, id) [unique]
+  }
+
+  Note: '''
+    E07 | PUR-001-015, PUR-028-041, PUR-045-049. Payment and receipt progress are
+    derived per active unit, separately from lifecycle. Completion requires all
+    remaining units received and applicable expenses accounted for. Completed
+    Purchases reject ordinary edits. Any historical receipt forbids cancellation.
+    Shared expenses have independent identities and settlement; never cascade-delete them.
+  '''
+}
+
+Table purchase_items [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  purchase_id uuid [not null]
+  ordered_quantity integer [not null, note: 'Registered quantity with dated amendments preserved. Active quantity derives from retained InventoryItems.']
+  merchandise_total_brl brl_amount [not null, note: 'Source line total. Deterministic unit shares and later dated amendments follow T03.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, purchase_id, id) [unique]
+  }
+  checks { `ordered_quantity > 0` [name: 'positive_ordered_quantity'] }
+
+  Note: 'E08 | PUR-002-007; INV-006. No product_id: reach one shared Product through all generated InventoryItems. Preserve removed identities and original line facts in shared history.'
+}
+
+Table supplier_payments [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  supplier_id uuid [not null]
+  amount_brl brl_amount [not null]
+  paid_on business_date [not null]
+  method text [not null]
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, supplier_id, id) [unique]
+  }
+  Note: 'E09 | SUP-010-011; PUR-042-044. Actual outgoing merchandise cash. Fully allocated at entry to individual units of this Supplier, possibly across Purchases. Corrections preserve original cash and dated changes.'
+}
+
+Table supplier_payment_allocations [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  supplier_id uuid [not null, note: 'Scope key matching both Payment and the originating Purchase.']
+  supplier_payment_id uuid [not null]
+  purchase_id uuid [not null, note: 'Scope key matching the InventoryItem acquisition path.']
+  inventory_item_id uuid [not null]
+  amount_brl brl_amount [not null, note: 'Preserved original allocation amount; dated release/reclassification consequences remain queryable.']
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E10 | PUR-034, PUR-042-044. Unit-level funding, not merely a PurchaseItem allocation. Effective funding derives from original allocations and dated resolutions/corrections; no cash is created by reassignment.'
+}
+
+Table supplier_refunds [headercolor: #97703C] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  supplier_id uuid [not null]
+  settlement_id uuid [not null, note: 'Proposed E36 relationship; source funding is traced by E37 rows, not one original Payment only.']
+  amount_brl brl_amount [not null]
+  received_on business_date [not null]
+  method text [not null]
+  related_loss_id uuid [note: 'Optional original Loss provenance for actual money received later; avoid duplicating its economic adjustment.']
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E11 | SUP-009, SUP-011-012; PUR-029-033. Actual cash received only. An expected refund is represented by the source-linked settlement obligation until received or explicitly resolved as Loss.'
+}
+
+// Expenses: one source/settlement and selected-unit acquisition allocations.
+
+Table purchase_expenses [headercolor: #A46D46] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  amount_brl brl_amount [not null]
+  incurred_on business_date [not null]
+  category text [not null]
+  context text
+  allocation_method acquisition_allocation_method [not null, default: 'proportional_to_value']
+  settled_amount_brl brl_amount [note: 'E15: single actual full settlement, equal to source amount when present. Partial/batched expense payments are unapproved.']
+  settled_on business_date
+  settlement_method text
+  settlement_event_id uuid
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  checks {
+    `(num_nonnulls(settled_amount_brl, settled_on, settlement_method, settlement_event_id) IN (0, 4))` [name: 'purchase_expense_settlement_complete']
+  }
+
+  Note: '''
+    E13; embedded E15 | PUR-016-024, PUR-035, PUR-047-049; FIN-001-002.
+    One Organization-owned expense can concern several Purchases. Amount and cash
+    are counted once. Allocate only to selected units; linked Purchases must match
+    those units. No Purchase owner, header allocation, estimate, or automatic redistribution.
+    Changes preserve completed-Purchase facts and finalized unit costs across all links.
+  '''
+}
+
+Table purchase_expense_purchases [headercolor: #A46D46] {
+  organization_id uuid [not null]
+  purchase_expense_id uuid [not null]
+  purchase_id uuid [not null]
+
+  indexes { (organization_id, purchase_expense_id, purchase_id) [pk] }
+  Note: 'Proposed E13/E14 relationship storage, not an additional business entity. Context only: no amount. For a saved fully allocated expense, linked Purchases equal the Purchases represented by unit allocations. Dated link changes belong to shared history.'
+}
+
+Table acquisition_expense_allocations [headercolor: #A46D46] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  purchase_expense_id uuid [not null]
+  purchase_id uuid [not null, note: 'Relationship key, constrained to both the linked Purchase and the target Item acquisition.']
+  inventory_item_id uuid [not null]
+  amount_brl brl_amount [not null]
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, purchase_expense_id, inventory_item_id) [unique]
+  }
+  Note: 'E14 | PUR-018-021, PUR-024, PUR-048-049; INV-011. One current cost allocation per expense/unit pair. Preserve prior amount/method/source versions in shared history. Sum selected unit allocations to the expense once, including deterministic T03 remainders.'
+}
+
+Table sale_expenses [headercolor: #A46D46] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  sale_id uuid [not null]
+  amount_brl brl_amount [not null]
+  incurred_on business_date [not null]
+  category text [not null]
+  context text
+  settled_amount_brl brl_amount [note: 'E15: proposed embedded single full settlement. No expense-payment batching.']
+  settled_on business_date
+  settlement_method text
+  settlement_event_id uuid
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  checks {
+    `(num_nonnulls(settled_amount_brl, settled_on, settlement_method, settlement_event_id) IN (0, 4))` [name: 'sale_expense_settlement_complete']
+  }
+  Note: 'E45; embedded E15 | FIN-002, FIN-004, FIN-009. One Sale owns the expense. Deduct once from Sale net profit; no allocation to models/units. Customer-paid shipping is excluded.'
+}
+
+// Customers, Sales, immutable physical identities, and Returns.
+
+Table customers [headercolor: #6A61A0] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  name text [note: 'Supported by CUS-002; mandatory name/phone rules are not specified as they are for Suppliers.']
+  phone text
+  address_line_1 text
+  address_line_2 text
+  address_neighborhood text
+  address_city text
+  address_region text
+  address_postal_code text
+  address_country text [note: 'Proposed embedded address fields; no fixed country/locale policy is selected.']
+  notes text
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E16 | CUS-001-015; SAL-004. Address stays on Customer. All fields are private to the Organization. Debt and pending refunds are derived separately; no editable balance or customer wallet.'
+}
+
+Table sales [headercolor: #6A61A0] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  customer_id uuid [not null]
+  sold_on business_date [not null, note: 'Original Sale recognition date; payment timing does not change it.']
+  dispatched_on business_date
+  dispatch_event_id uuid
+  tracking_code text [note: 'Optional and deliberately NONUNIQUE. Whole-Sale dispatch; no carrier/package fields.']
+  canceled_event_id uuid [note: 'Ordinary cancellation is allowed only before dispatch.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, customer_id, id) [unique]
+  }
+  checks {
+    `((dispatched_on IS NULL) = (dispatch_event_id IS NULL))` [name: 'dispatch_has_date_and_event']
+    `(canceled_event_id IS NULL OR dispatch_event_id IS NULL)` [name: 'ordinary_cancellation_before_dispatch']
+  }
+
+  Note: '''
+    E18 | SAL-001-028, SAL-036-050. Exactly one Customer. Reserved and In Garage
+    derive from debt and dispatch; returned state derives from original shipped lines
+    and ReturnItems. No separate readiness stage or automatic reservation expiry.
+    Item/price edits preserve original dated facts. Removing all lines cancels the
+    Sale without erasing it. Ordinary editing locks after explicit whole-Sale dispatch.
+  '''
+}
+
+Table sale_items [headercolor: #6A61A0] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  sale_id uuid [not null]
+  inventory_item_id uuid [not null]
+  agreed_price_brl brl_amount [not null, note: 'Current agreed merchandise amount; creation and later changes retain original amounts in dated source history.']
+  recognized_acquisition_cost_brl brl_amount [not null, note: 'Specific finalized unit cost used at recognition; never recomputed from later Purchase prices.']
+  released_event_id uuid [note: 'Null means the commitment remains active, including after dispatch until a valid Return/release. History explains cancellation, removal or physical Return.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, sale_id, id) [unique]
+    (organization_id, inventory_item_id) [note: 'History lookup. Active commitment needs a partial unique index WHERE released_event_id IS NULL, not lifetime uniqueness.']
+  }
+
+  Note: 'E19 | SAL-001-008, SAL-019, SAL-038-043; INV-007; RET-004, RET-013; CALC-015. One physical unit per line. Many historical SaleItems per Item, at most one active commitment. No product_id, quantity-based substitution, or hard deletion for exchanges.'
+}
+
+Table returns [headercolor: #6A61A0] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  sale_id uuid [not null]
+  received_on business_date [not null]
+  reason text
+  created_event_id uuid [not null, note: 'Event records the authorizing administrator and all atomic physical/financial consequences.']
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, sale_id, id) [unique]
+  }
+  Note: 'E25 | RET-001-003, RET-006-012. Physical receipt from exactly one originally shipped Sale. Partial Returns select specific original lines. An unshipped cancellation never creates a Return.'
+}
+
+Table return_items [headercolor: #6A61A0] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  return_id uuid [not null]
+  sale_id uuid [not null, note: 'Scope key matching both Return and original SaleItem.']
+  sale_item_id uuid [not null]
+  seal_condition seal_condition [not null]
+  damage_condition damage_condition [not null]
+  approved_for_sale boolean [not null, note: 'Explicit Return-time decision. Damage alone never selects this value.']
+  condition_notes text
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, sale_item_id) [unique, note: 'At most one physical Return per original SaleItem; a subsequent resale has a new SaleItem.']
+  }
+  Note: 'E26 | RET-004-005, RET-008-009, RET-012-013; INV-028. Reaches persistent Item/Product through the original SaleItem. Returned quantity is derived from lines. Condition/eligibility are preserved Return facts and update current inventory atomically.'
+}
+
+// Actual customer cash, Sale/line allocations, and legitimately earned retention.
+
+Table customer_payments [headercolor: #497A91] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  customer_id uuid [not null]
+  amount_brl brl_amount [not null, note: 'Merchandise portion only; customer-paid shipping is entirely outside application records.']
+  paid_on business_date [not null]
+  method text [not null]
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, customer_id, id) [unique]
+  }
+  Note: 'E20 | PAY-001-012, PAY-019, PAY-030; FIN-003. Actual incoming cash, fully allocated at entry to existing Sales/SaleItems of this Customer. No reusable unallocated balance.'
+}
+
+Table customer_payment_allocations [headercolor: #497A91] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  customer_id uuid [not null, note: 'Scope key matching both original Payment and target Sale.']
+  customer_payment_id uuid [not null]
+  sale_id uuid [not null]
+  sale_item_id uuid [note: 'Optional line attribution, constrained to this same Sale. Count once toward Sale funding.']
+  amount_brl brl_amount [not null, note: 'Preserved allocation amount; effective funding includes dated releases/reclassifications.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, customer_id, id) [unique]
+  }
+  Note: 'E21 | PAY-002-020, PAY-030, PAY-037. Source Payment identity survives reassignment. Allocation limits apply to source, Sale and identified line, including concurrency. D01 still determines partial-Return source selection; no FIFO/LIFO rule is encoded.'
+}
+
+Table customer_refunds [headercolor: #497A91] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  customer_id uuid [not null]
+  sale_id uuid [not null]
+  settlement_id uuid [not null, note: 'Proposed E36 relationship; E37 supports several original funding allocations for this actual refund.']
+  amount_brl brl_amount [not null]
+  refunded_on business_date [not null]
+  method text [not null]
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E24 | PAY-021-029, PAY-033, PAY-036, PAY-038; CUS-011-012. Actual outgoing cash only. Pending refund amounts live in source-linked settlement obligations. Refund cash never reverses the same Sale profit again.'
+}
+
+Table retained_income [headercolor: #497A91] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  sale_id uuid [not null]
+  settlement_id uuid [not null, note: 'Proposed E36 boundary; source paid funds are identified by E37.']
+  amount_brl brl_amount [not null]
+  recognized_on business_date [not null]
+  reason text [not null, note: 'Explain why an amount actually received is legitimately earned and retained.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, sale_id, id) [unique]
+  }
+  Note: 'E27 | PAY-024, PAY-033-035; RET-011. Separate earned income after applicable edit/cancellation/Return; not a new cash receipt or automatic substitute for a refund. Original Sale economics are reversed independently.'
+}
+
+Table retained_income_allocations [headercolor: #497A91] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  retained_income_id uuid [not null]
+  sale_id uuid [not null, note: 'Scope key matching retained income and the affected SaleItem.']
+  sale_item_id uuid [not null]
+  amount_brl brl_amount [not null]
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, retained_income_id, sale_item_id) [unique]
+  }
+  Note: 'E28 | PAY-034; COL-020; CALC-015-016. Exact model attribution through SaleItem -> InventoryItem -> Product. Reconcile to the retained total. Header plus allocations is a proposed physical boundary; income lines could represent the same facts.'
+}
+
+// Loss and shared domain history. No independent editable financial ledger.
+
+Table losses [headercolor: #96616D] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  inventory_item_id uuid
+  purchase_id uuid
+  sale_id uuid
+  amount_brl brl_amount [not null]
+  occurred_on business_date [not null]
+  reason text [not null]
+  reversed_event_id uuid [note: 'Dated full void/reversal provenance. Partial economic adjustments retain source-component links in shared history. D06 governs authority and stock consequences.']
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'E29 | LOS-001-008; PUR-031-033. Context references may coexist but must describe the same loss. Lost funding is traced by settlement-source rows. One economic write-off with its stock effect. Actual later refunds use SupplierRefund, never LossRecovery.'
+}
+
+Table business_events [headercolor: #96616D] {
+  id uuid [pk, not null]
+  scope business_event_scope [not null]
+  organization_id uuid [note: 'Required for private operational actions; null for global Product actions.']
+  context_organization_id uuid [note: 'Optional global-action provenance; never Product ownership or access to this Organization\'s private records.']
+  actor_user_id uuid [not null]
+  action_type text [not null, note: 'Proposed typed action discriminator. Action/payload contracts need review; existing Product maintenance remains D07.']
+  business_date business_date [not null, note: 'Action/adjustment date, separate from original source date and recording time; representation remains T03.']
+  recorded_at timestamptz [not null]
+  reason text
+  reverses_event_id uuid [note: 'Original action when applicable; component-level provenance is also preserved below.']
+
+  indexes { (organization_id, id) [unique] }
+  checks {
+    `((scope = 'organization' AND organization_id IS NOT NULL) OR (scope = 'global_product' AND organization_id IS NULL))` [name: 'business_event_scope_matches_owner']
+  }
+
+  Note: '''
+    E32 and E35 | REQ-002-003, REQ-006-007, REQ-010-012; INV-026; FIN-011.
+    One shared action/audit history with actor, business date, recording time,
+    reasons, changed business facts and reversal provenance. Global Product audit
+    governance remains D07; global registration is already approved.
+    A transaction must atomically commit sources, changes and consequences.
+    This header alone neither enforces atomicity nor prescribes event sourcing.
+  '''
+}
+
+Table business_event_changes [headercolor: #96616D] {
+  id uuid [pk, not null]
+  business_event_id uuid [not null]
+  organization_id uuid [note: 'Must match event and all operational subjects; null only for a global Product subject.']
+  sequence integer [not null]
+  change_kind text [not null, note: 'Validated domain fact kind, including source creation, allocation change, cost lock, membership change and dated economic adjustment.']
+  product_id uuid
+  inventory_item_id uuid
+  supplier_id uuid
+  purchase_id uuid
+  purchase_item_id uuid
+  supplier_payment_id uuid
+  supplier_payment_allocation_id uuid
+  supplier_refund_id uuid
+  purchase_expense_id uuid
+  acquisition_expense_allocation_id uuid
+  customer_id uuid
+  sale_id uuid
+  sale_item_id uuid
+  sale_expense_id uuid
+  customer_payment_id uuid
+  customer_payment_allocation_id uuid
+  customer_refund_id uuid
+  return_id uuid
+  return_item_id uuid
+  retained_income_id uuid
+  retained_income_allocation_id uuid
+  loss_id uuid
+  financial_settlement_id uuid
+  settlement_source_allocation_id uuid
+  before_facts jsonb [note: 'Proposed typed, versioned business snapshot, not arbitrary log text. Preserve original amounts, dates, allocations, state and collection membership as applicable.']
+  after_facts jsonb [note: 'Validated against change_kind and the referenced source. Historical projections must query these preserved facts reliably.']
+  reverses_change_id uuid [note: 'Original source component for a full/partial adjustment. Amounts and affected facts are explicit in the typed snapshots; D06 policy remains open.']
+
+  indexes {
+    (organization_id, id) [unique]
+    (business_event_id, sequence) [unique]
+  }
+  checks {
+    `num_nonnulls(product_id, inventory_item_id, supplier_id, purchase_id, purchase_item_id, supplier_payment_id, supplier_payment_allocation_id, supplier_refund_id, purchase_expense_id, acquisition_expense_allocation_id, customer_id, sale_id, sale_item_id, sale_expense_id, customer_payment_id, customer_payment_allocation_id, customer_refund_id, return_id, return_item_id, retained_income_id, retained_income_allocation_id, loss_id, financial_settlement_id, settlement_source_allocation_id) = 1` [name: 'one_typed_business_subject']
+    `((organization_id IS NULL AND product_id IS NOT NULL) OR (organization_id IS NOT NULL AND product_id IS NULL))` [name: 'change_subject_matches_scope']
+    `(before_facts IS NOT NULL OR after_facts IS NOT NULL)` [name: 'preserved_business_facts']
+    `sequence > 0` [name: 'positive_change_sequence']
+  }
+
+  Note: '''
+    Proposed typed detail storage for E32/E35, not a new standalone audit domain.
+    Exactly one FK-backed subject per change; an action may change many sources.
+    Related Item links derive through typed subjects; create explicit Item changes
+    for receipt, condition, approval, hold, membership, commitment and disposition.
+    E33 timeline and E34 financial reports derive from original source facts plus
+    these dated changes. Never count both a source and its creation snapshot twice.
+    JSON payload shapes, versioning and reporting queries remain T01/T06 design work;
+    unvalidated generic audit JSON would not satisfy the historical requirements.
+  '''
+}
+
+// Candidate storage boundaries. These are visible review options, not approvals.
+
+Table candidate.financial_settlements [headercolor: #A68A4A] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  customer_id uuid
+  supplier_id uuid
+  sale_id uuid [note: 'Required in Customer context.']
+  purchase_id uuid [note: 'Optional supplier-order context. Source allocations retain exact unit/Purchase provenance, including several Purchases of the same Supplier.']
+  return_id uuid [note: 'Optional physical Return context; must be from the same originating Sale.']
+  created_event_id uuid [not null]
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, customer_id, sale_id, id) [unique]
+    (organization_id, sale_id, id) [unique]
+    (organization_id, supplier_id, id) [unique]
+  }
+  checks {
+    `((customer_id IS NOT NULL AND sale_id IS NOT NULL AND supplier_id IS NULL AND purchase_id IS NULL) OR (supplier_id IS NOT NULL AND customer_id IS NULL AND sale_id IS NULL AND return_id IS NULL))` [name: 'settlement_has_one_party_context']
+  }
+
+  Note: '''
+    CANDIDATE E36. A separate header is one option; typed BusinessEvent details can
+    replace it. Groups funding resolution for an edit, cancellation or Return.
+    Completeness derives from source allocations and actual outcomes, independently
+    of refund percentage. Pending refunds are source-linked obligations, not cash
+    already paid or money available for a future Sale/Purchase. No wallet balance.
+  '''
+}
+
+Table candidate.settlement_source_allocations [headercolor: #A68A4A] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  settlement_id uuid [not null]
+  source_customer_payment_allocation_id uuid
+  source_supplier_payment_allocation_id uuid
+  amount_brl brl_amount [not null, note: 'The portion resolved from exactly one original funding allocation; never consume it twice.']
+  outcome settlement_outcome [not null]
+  customer_refund_id uuid [note: 'For refund outcome: null while pending, populated only for actual outgoing cash.']
+  supplier_refund_id uuid [note: 'For refund outcome: null while pending, populated only for actual incoming cash.']
+  target_customer_payment_allocation_id uuid [note: 'Existing eligible Sale/SaleItem; replacement allocation must use the SAME original Payment.']
+  target_supplier_payment_allocation_id uuid [note: 'Only an explicit valid allocation correction under PUR-044; no supplier credit.']
+  retained_income_id uuid
+  loss_id uuid
+  related_prior_loss_id uuid [note: 'Optional original write-off when actual supplier money is later received. Separate from selecting a new loss outcome.']
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  checks {
+    `num_nonnulls(source_customer_payment_allocation_id, source_supplier_payment_allocation_id) = 1` [name: 'one_original_funding_source']
+    `((outcome = 'refund' AND num_nonnulls(target_customer_payment_allocation_id, target_supplier_payment_allocation_id, retained_income_id, loss_id) = 0 AND num_nonnulls(customer_refund_id, supplier_refund_id) <= 1) OR (outcome = 'reassignment' AND num_nonnulls(target_customer_payment_allocation_id, target_supplier_payment_allocation_id) = 1 AND num_nonnulls(customer_refund_id, supplier_refund_id, retained_income_id, loss_id) = 0) OR (outcome = 'retained_income' AND retained_income_id IS NOT NULL AND num_nonnulls(customer_refund_id, supplier_refund_id, target_customer_payment_allocation_id, target_supplier_payment_allocation_id, loss_id) = 0) OR (outcome = 'loss' AND loss_id IS NOT NULL AND num_nonnulls(customer_refund_id, supplier_refund_id, target_customer_payment_allocation_id, target_supplier_payment_allocation_id, retained_income_id) = 0))` [name: 'one_resolution_outcome']
+    `((source_customer_payment_allocation_id IS NOT NULL AND num_nonnulls(supplier_refund_id, target_supplier_payment_allocation_id, loss_id, related_prior_loss_id) = 0) OR (source_supplier_payment_allocation_id IS NOT NULL AND num_nonnulls(customer_refund_id, target_customer_payment_allocation_id, retained_income_id) = 0))` [name: 'resolution_matches_funding_side']
+  }
+
+  Note: '''
+    CANDIDATE E37. Typed funding/provenance links can replace this generic boundary.
+    Several source rows can fund one actual Refund or RetainedIncome. For a partial
+    refund, preserve separate paid and pending portions with dated split history.
+    All source/target parties, original Payment identities, originating Sale/Purchase
+    and settlement links must agree. Scoped FKs alone do not enforce every condition.
+    Never add a refund, reassignment and retention for the same funding portion.
+    D01 source selection and D06 exceptional disposition are deliberately unresolved.
+  '''
+}
+
+Table candidate.opening_acquisitions [headercolor: #8D8D8D] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  source_description text [not null]
+  acquired_on business_date [note: 'Known historical date only. Unknown dates remain unknown; import time is not acquisition time.']
+  documented_total_cost_brl brl_amount [note: 'Only supported source evidence; allocation to units and missing-cost treatment require T05 review.']
+  evidence jsonb [note: 'Proposed reviewed acquisition evidence; not fabricated historical Payments or Purchases.']
+  created_event_id uuid [not null]
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'CANDIDATE E39 | DATA-003-007; T05. Equivalent acquisition source for legacy units without reliable Purchase history. A marked opening Purchase is another option. Neither structure nor source spreadsheet mapping is approved yet.'
+}
+
+Table candidate.import_batches [headercolor: #8D8D8D] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  source_name text [not null]
+  source_fingerprint text [note: 'Proposed rerun/reconciliation evidence; exact identity semantics remain T05.']
+  status text [not null, note: 'Inspection/validation/execution outcome; exact workflow vocabulary remains T05.']
+  actor_user_id uuid [not null]
+  recorded_at timestamptz [not null]
+  executed_at timestamptz
+  reconciliation_results jsonb [note: 'Target-Organization unit reconciliation separate from global Product growth.']
+
+  indexes { (organization_id, id) [unique] }
+  Note: 'CANDIDATE E40 | DATA-001-007; T05. Migration-operation record only. No ongoing import-management product. Actual spreadsheet evidence is still required.'
+}
+
+Table candidate.import_rows [headercolor: #8D8D8D] {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  import_batch_id uuid [not null]
+  source_sheet text [not null]
+  source_row_number integer [not null]
+  raw_values jsonb [not null]
+  proposed_mapping jsonb [note: 'Preview data only, including ambiguous Product matches; not authoritative foreign-key links.']
+  validation_errors jsonb
+  approved_assumptions jsonb
+
+  indexes {
+    (organization_id, id) [unique]
+    (organization_id, import_batch_id, source_sheet, source_row_number) [unique]
+  }
+  checks { `source_row_number > 0` [name: 'positive_spreadsheet_row'] }
+  Note: 'CANDIDATE E41 | DATA-003-007; T05. May remain a validation artifact instead of a permanent table. Committed unit/acquisition references use typed links; Product is reached through each created Item. No SKU-only automatic matching.'
+}
+
+Table candidate.import_row_inventory_items [headercolor: #8D8D8D] {
+  organization_id uuid [not null]
+  import_row_id uuid [not null]
+  inventory_item_id uuid [not null]
+
+  indexes { (organization_id, import_row_id, inventory_item_id) [pk] }
+  Note: 'CANDIDATE E41 relationship storage. One spreadsheet row may represent several physical units. Reconcile created Item IDs and their acquisition provenance without an unvalidated array of IDs; rerun semantics remain T05.'
+}
+
+
+// Explicit references. Composite ownership/context keys prevent ordinary cross-scope
+// references. All removals preserve sources; no cascade-delete policy is introduced.
+// Nullable composite paths and cross-row aggregates still need the checks in design.md.
+Ref owner_memberships: memberships.organization_id > organizations.id [delete: restrict]
+Ref owner_inventory_items: inventory_items.organization_id > organizations.id [delete: restrict]
+Ref owner_suppliers: suppliers.organization_id > organizations.id [delete: restrict]
+Ref owner_purchases: purchases.organization_id > organizations.id [delete: restrict]
+Ref owner_purchase_items: purchase_items.organization_id > organizations.id [delete: restrict]
+Ref owner_supplier_payments: supplier_payments.organization_id > organizations.id [delete: restrict]
+Ref owner_supplier_payment_allocations: supplier_payment_allocations.organization_id > organizations.id [delete: restrict]
+Ref owner_supplier_refunds: supplier_refunds.organization_id > organizations.id [delete: restrict]
+Ref owner_purchase_expenses: purchase_expenses.organization_id > organizations.id [delete: restrict]
+Ref owner_purchase_expense_purchases: purchase_expense_purchases.organization_id > organizations.id [delete: restrict]
+Ref owner_acquisition_expense_allocations: acquisition_expense_allocations.organization_id > organizations.id [delete: restrict]
+Ref owner_sale_expenses: sale_expenses.organization_id > organizations.id [delete: restrict]
+Ref owner_customers: customers.organization_id > organizations.id [delete: restrict]
+Ref owner_sales: sales.organization_id > organizations.id [delete: restrict]
+Ref owner_sale_items: sale_items.organization_id > organizations.id [delete: restrict]
+Ref owner_returns: returns.organization_id > organizations.id [delete: restrict]
+Ref owner_return_items: return_items.organization_id > organizations.id [delete: restrict]
+Ref owner_customer_payments: customer_payments.organization_id > organizations.id [delete: restrict]
+Ref owner_customer_payment_allocations: customer_payment_allocations.organization_id > organizations.id [delete: restrict]
+Ref owner_customer_refunds: customer_refunds.organization_id > organizations.id [delete: restrict]
+Ref owner_retained_income: retained_income.organization_id > organizations.id [delete: restrict]
+Ref owner_retained_income_allocations: retained_income_allocations.organization_id > organizations.id [delete: restrict]
+Ref owner_losses: losses.organization_id > organizations.id [delete: restrict]
+Ref owner_business_events: business_events.organization_id > organizations.id [delete: restrict]
+Ref owner_business_event_changes: business_event_changes.organization_id > organizations.id [delete: restrict]
+Ref owner_financial_settlements: candidate.financial_settlements.organization_id > organizations.id [delete: restrict]
+Ref owner_settlement_source_allocations: candidate.settlement_source_allocations.organization_id > organizations.id [delete: restrict]
+Ref owner_opening_acquisitions: candidate.opening_acquisitions.organization_id > organizations.id [delete: restrict]
+Ref owner_import_batches: candidate.import_batches.organization_id > organizations.id [delete: restrict]
+Ref owner_import_rows: candidate.import_rows.organization_id > organizations.id [delete: restrict]
+Ref owner_import_row_inventory_items: candidate.import_row_inventory_items.organization_id > organizations.id [delete: restrict]
+Ref membership_user: memberships.user_id > users.id [delete: restrict]
+Ref unit_global_product: inventory_items.product_id > products.id [delete: restrict]
+Ref product_registration: products.registration_event_id > business_events.id [delete: restrict]
+Ref unit_purchase: inventory_items.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
+Ref unit_purchase_line: inventory_items.(organization_id, purchase_id, purchase_item_id) > purchase_items.(organization_id, purchase_id, id) [delete: restrict]
+Ref unit_opening_candidate: inventory_items.(organization_id, opening_acquisition_id) > candidate.opening_acquisitions.(organization_id, id) [delete: restrict]
+Ref purchase_supplier: purchases.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
+Ref purchase_line_header: purchase_items.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
+Ref supplier_payment_party: supplier_payments.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
+Ref supplier_allocation_payment_party: supplier_payment_allocations.(organization_id, supplier_id, supplier_payment_id) > supplier_payments.(organization_id, supplier_id, id) [delete: restrict]
+Ref supplier_allocation_purchase_party: supplier_payment_allocations.(organization_id, supplier_id, purchase_id) > purchases.(organization_id, supplier_id, id) [delete: restrict]
+Ref supplier_allocation_unit_purchase: supplier_payment_allocations.(organization_id, purchase_id, inventory_item_id) > inventory_items.(organization_id, purchase_id, id) [delete: restrict]
+Ref supplier_refund_party: supplier_refunds.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
+Ref supplier_refund_settlement_party: supplier_refunds.(organization_id, supplier_id, settlement_id) > candidate.financial_settlements.(organization_id, supplier_id, id) [delete: restrict]
+Ref supplier_refund_original_loss: supplier_refunds.(organization_id, related_loss_id) > losses.(organization_id, id) [delete: restrict]
+Ref expense_link_source: purchase_expense_purchases.(organization_id, purchase_expense_id) > purchase_expenses.(organization_id, id) [delete: restrict]
+Ref expense_link_purchase: purchase_expense_purchases.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
+Ref expense_allocation_linked_purchase: acquisition_expense_allocations.(organization_id, purchase_expense_id, purchase_id) > purchase_expense_purchases.(organization_id, purchase_expense_id, purchase_id) [delete: restrict]
+Ref expense_allocation_unit_purchase: acquisition_expense_allocations.(organization_id, purchase_id, inventory_item_id) > inventory_items.(organization_id, purchase_id, id) [delete: restrict]
+Ref selling_expense_sale: sale_expenses.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref sale_customer: sales.(organization_id, customer_id) > customers.(organization_id, id) [delete: restrict]
+Ref sale_line_header: sale_items.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref sale_line_unit: sale_items.(organization_id, inventory_item_id) > inventory_items.(organization_id, id) [delete: restrict]
+Ref return_original_sale: returns.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref return_line_header_sale: return_items.(organization_id, sale_id, return_id) > returns.(organization_id, sale_id, id) [delete: restrict]
+Ref return_line_original_sale_line: sale_items.(organization_id, sale_id, id) - return_items.(organization_id, sale_id, sale_item_id) [delete: restrict]
+Ref customer_payment_party: customer_payments.(organization_id, customer_id) > customers.(organization_id, id) [delete: restrict]
+Ref customer_allocation_payment_party: customer_payment_allocations.(organization_id, customer_id, customer_payment_id) > customer_payments.(organization_id, customer_id, id) [delete: restrict]
+Ref customer_allocation_sale_party: customer_payment_allocations.(organization_id, customer_id, sale_id) > sales.(organization_id, customer_id, id) [delete: restrict]
+Ref customer_allocation_optional_sale_line: customer_payment_allocations.(organization_id, sale_id, sale_item_id) > sale_items.(organization_id, sale_id, id) [delete: restrict]
+Ref customer_refund_sale_party: customer_refunds.(organization_id, customer_id, sale_id) > sales.(organization_id, customer_id, id) [delete: restrict]
+Ref customer_refund_settlement_sale_party: customer_refunds.(organization_id, customer_id, sale_id, settlement_id) > candidate.financial_settlements.(organization_id, customer_id, sale_id, id) [delete: restrict]
+Ref retained_income_sale: retained_income.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref retained_income_settlement_sale: retained_income.(organization_id, sale_id, settlement_id) > candidate.financial_settlements.(organization_id, sale_id, id) [delete: restrict]
+Ref retained_allocation_income_sale: retained_income_allocations.(organization_id, sale_id, retained_income_id) > retained_income.(organization_id, sale_id, id) [delete: restrict]
+Ref retained_allocation_affected_sale_line: retained_income_allocations.(organization_id, sale_id, sale_item_id) > sale_items.(organization_id, sale_id, id) [delete: restrict]
+Ref loss_inventory_item: losses.(organization_id, inventory_item_id) > inventory_items.(organization_id, id) [delete: restrict]
+Ref loss_purchase: losses.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
+Ref loss_sale: losses.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref event_actor: business_events.actor_user_id > users.id [delete: restrict]
+Ref event_context: business_events.context_organization_id > organizations.id [delete: restrict]
+Ref event_reversal_identity: business_events.reverses_event_id > business_events.id [delete: restrict]
+Ref event_reversal_owner: business_events.(organization_id, reverses_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref change_event_identity: business_event_changes.business_event_id > business_events.id [delete: restrict]
+Ref change_event_owner: business_event_changes.(organization_id, business_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref change_global_product: business_event_changes.product_id > products.id [delete: restrict]
+Ref change_reversal_identity: business_event_changes.reverses_change_id > business_event_changes.id [delete: restrict]
+Ref change_reversal_owner: business_event_changes.(organization_id, reverses_change_id) > business_event_changes.(organization_id, id) [delete: restrict]
+Ref change_inventory_item: business_event_changes.(organization_id, inventory_item_id) > inventory_items.(organization_id, id) [delete: restrict]
+Ref change_supplier: business_event_changes.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
+Ref change_purchase: business_event_changes.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
+Ref change_purchase_item: business_event_changes.(organization_id, purchase_item_id) > purchase_items.(organization_id, id) [delete: restrict]
+Ref change_supplier_payment: business_event_changes.(organization_id, supplier_payment_id) > supplier_payments.(organization_id, id) [delete: restrict]
+Ref change_supplier_payment_allocation: business_event_changes.(organization_id, supplier_payment_allocation_id) > supplier_payment_allocations.(organization_id, id) [delete: restrict]
+Ref change_supplier_refund: business_event_changes.(organization_id, supplier_refund_id) > supplier_refunds.(organization_id, id) [delete: restrict]
+Ref change_purchase_expense: business_event_changes.(organization_id, purchase_expense_id) > purchase_expenses.(organization_id, id) [delete: restrict]
+Ref change_acquisition_expense_allocation: business_event_changes.(organization_id, acquisition_expense_allocation_id) > acquisition_expense_allocations.(organization_id, id) [delete: restrict]
+Ref change_customer: business_event_changes.(organization_id, customer_id) > customers.(organization_id, id) [delete: restrict]
+Ref change_sale: business_event_changes.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
+Ref change_sale_item: business_event_changes.(organization_id, sale_item_id) > sale_items.(organization_id, id) [delete: restrict]
+Ref change_sale_expense: business_event_changes.(organization_id, sale_expense_id) > sale_expenses.(organization_id, id) [delete: restrict]
+Ref change_customer_payment: business_event_changes.(organization_id, customer_payment_id) > customer_payments.(organization_id, id) [delete: restrict]
+Ref change_customer_payment_allocation: business_event_changes.(organization_id, customer_payment_allocation_id) > customer_payment_allocations.(organization_id, id) [delete: restrict]
+Ref change_customer_refund: business_event_changes.(organization_id, customer_refund_id) > customer_refunds.(organization_id, id) [delete: restrict]
+Ref change_return: business_event_changes.(organization_id, return_id) > returns.(organization_id, id) [delete: restrict]
+Ref change_return_item: business_event_changes.(organization_id, return_item_id) > return_items.(organization_id, id) [delete: restrict]
+Ref change_retained_income: business_event_changes.(organization_id, retained_income_id) > retained_income.(organization_id, id) [delete: restrict]
+Ref change_retained_income_allocation: business_event_changes.(organization_id, retained_income_allocation_id) > retained_income_allocations.(organization_id, id) [delete: restrict]
+Ref change_loss: business_event_changes.(organization_id, loss_id) > losses.(organization_id, id) [delete: restrict]
+Ref change_financial_settlement: business_event_changes.(organization_id, financial_settlement_id) > candidate.financial_settlements.(organization_id, id) [delete: restrict]
+Ref change_settlement_source_allocation: business_event_changes.(organization_id, settlement_source_allocation_id) > candidate.settlement_source_allocations.(organization_id, id) [delete: restrict]
+Ref settlement_customer: candidate.financial_settlements.(organization_id, customer_id) > customers.(organization_id, id) [delete: restrict]
+Ref settlement_supplier: candidate.financial_settlements.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
+Ref settlement_sale_customer: candidate.financial_settlements.(organization_id, customer_id, sale_id) > sales.(organization_id, customer_id, id) [delete: restrict]
+Ref settlement_purchase_supplier: candidate.financial_settlements.(organization_id, supplier_id, purchase_id) > purchases.(organization_id, supplier_id, id) [delete: restrict]
+Ref settlement_return_sale: candidate.financial_settlements.(organization_id, sale_id, return_id) > returns.(organization_id, sale_id, id) [delete: restrict]
+Ref resolution_settlement: candidate.settlement_source_allocations.(organization_id, settlement_id) > candidate.financial_settlements.(organization_id, id) [delete: restrict]
+Ref resolution_source_customer_payment_allocation: candidate.settlement_source_allocations.(organization_id, source_customer_payment_allocation_id) > customer_payment_allocations.(organization_id, id) [delete: restrict]
+Ref resolution_source_supplier_payment_allocation: candidate.settlement_source_allocations.(organization_id, source_supplier_payment_allocation_id) > supplier_payment_allocations.(organization_id, id) [delete: restrict]
+Ref resolution_customer_refund: candidate.settlement_source_allocations.(organization_id, customer_refund_id) > customer_refunds.(organization_id, id) [delete: restrict]
+Ref resolution_supplier_refund: candidate.settlement_source_allocations.(organization_id, supplier_refund_id) > supplier_refunds.(organization_id, id) [delete: restrict]
+Ref resolution_target_customer_payment_allocation: candidate.settlement_source_allocations.(organization_id, target_customer_payment_allocation_id) > customer_payment_allocations.(organization_id, id) [delete: restrict]
+Ref resolution_target_supplier_payment_allocation: candidate.settlement_source_allocations.(organization_id, target_supplier_payment_allocation_id) > supplier_payment_allocations.(organization_id, id) [delete: restrict]
+Ref resolution_retained_income: candidate.settlement_source_allocations.(organization_id, retained_income_id) > retained_income.(organization_id, id) [delete: restrict]
+Ref resolution_loss: candidate.settlement_source_allocations.(organization_id, loss_id) > losses.(organization_id, id) [delete: restrict]
+Ref resolution_related_prior_loss: candidate.settlement_source_allocations.(organization_id, related_prior_loss_id) > losses.(organization_id, id) [delete: restrict]
+Ref import_actor: candidate.import_batches.actor_user_id > users.id [delete: restrict]
+Ref import_row_batch: candidate.import_rows.(organization_id, import_batch_id) > candidate.import_batches.(organization_id, id) [delete: restrict]
+Ref import_result_row: candidate.import_row_inventory_items.(organization_id, import_row_id) > candidate.import_rows.(organization_id, id) [delete: restrict]
+Ref import_result_unit: candidate.import_row_inventory_items.(organization_id, inventory_item_id) > inventory_items.(organization_id, id) [delete: restrict]
+Ref created_inventory_items: inventory_items.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_suppliers: suppliers.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_purchases: purchases.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_purchase_items: purchase_items.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_supplier_payments: supplier_payments.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_supplier_payment_allocations: supplier_payment_allocations.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_supplier_refunds: supplier_refunds.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_purchase_expenses: purchase_expenses.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_acquisition_expense_allocations: acquisition_expense_allocations.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_sale_expenses: sale_expenses.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_customers: customers.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_sales: sales.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_sale_items: sale_items.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_returns: returns.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_customer_payments: customer_payments.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_customer_payment_allocations: customer_payment_allocations.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_customer_refunds: customer_refunds.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_retained_income: retained_income.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_retained_income_allocations: retained_income_allocations.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_losses: losses.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_financial_settlements: candidate.financial_settlements.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_settlement_source_allocations: candidate.settlement_source_allocations.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref created_opening_acquisitions: candidate.opening_acquisitions.(organization_id, created_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref inventory_items_first_received: inventory_items.(organization_id, first_received_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref inventory_items_first_sale_approval: inventory_items.(organization_id, first_sale_approval_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref inventory_items_removed: inventory_items.(organization_id, removed_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref inventory_items_cost_finalized: inventory_items.(organization_id, cost_finalized_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref purchases_expenses_confirmed: purchases.(organization_id, expenses_confirmed_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref purchases_completed: purchases.(organization_id, completed_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref purchases_canceled: purchases.(organization_id, canceled_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref purchase_expenses_settlement: purchase_expenses.(organization_id, settlement_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref sale_expenses_settlement: sale_expenses.(organization_id, settlement_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref sales_dispatch: sales.(organization_id, dispatch_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref sales_canceled: sales.(organization_id, canceled_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref sale_items_released: sale_items.(organization_id, released_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref losses_reversed: losses.(organization_id, reversed_event_id) > business_events.(organization_id, id) [delete: restrict]
+
+// Visual groups and notes; these are not PostgreSQL schema/module decisions.
+
+TableGroup identity_and_access [color: #4B6B9E] {
+  organizations
+  users
+  memberships
+}
+
+TableGroup catalog_and_inventory [color: #387D70] {
+  products
+  inventory_items
+}
+
+TableGroup purchasing_and_supplier_funding [color: #97703C] {
+  suppliers
+  purchases
+  purchase_items
+  supplier_payments
+  supplier_payment_allocations
+  supplier_refunds
+}
+
+TableGroup acquisition_and_selling_expenses [color: #A46D46] {
+  purchase_expenses
+  purchase_expense_purchases
+  acquisition_expense_allocations
+  sale_expenses
+}
+
+TableGroup sales_and_returns [color: #6A61A0] {
+  customers
+  sales
+  sale_items
+  returns
+  return_items
+}
+
+TableGroup customer_funding_and_retention [color: #497A91] {
+  customer_payments
+  customer_payment_allocations
+  customer_refunds
+  retained_income
+  retained_income_allocations
+}
+
+TableGroup losses_and_shared_history [color: #96616D] {
+  losses
+  business_events
+  business_event_changes
+}
+
+TableGroup candidate_settlement_storage [color: #A68A4A] {
+  candidate.financial_settlements
+  candidate.settlement_source_allocations
+  Note: 'E36/E37 are optional storage boundaries for required settlement/provenance facts. They may instead be typed shared-history details. Not a wallet or additional product scope.'
+}
+
+TableGroup candidate_legacy_import_storage [color: #8D8D8D] {
+  candidate.opening_acquisitions
+  candidate.import_batches
+  candidate.import_rows
+  candidate.import_row_inventory_items
+  Note: 'E39-E41 are conditional on T05 and actual spreadsheet evidence. These boxes do not approve an import mapping, assumed cost/date, or new ongoing import-management feature.'
+}
+
+Note review_status {
+  '''
+    DRAFT 1 — visual review before the first migration.
+    v0.7 requirements remain authoritative. Fields/table boundaries are proposals.
+    brl_amount + business_date are unresolved T03 types; SQL export is not runnable.
+    Partial indexes and transaction/concurrency enforcement are not fully represented.
+    Amber/gray candidate groups are optional storage; details are in design.md.
+  '''
+}
+
+Note embedded_and_derived_entries {
+  '''
+    Mapped without separate tables:
+    E15 expense payment information -> each expense's embedded settlement fields.
+    E33 ItemHistoryEntry -> timeline over Item-linked sources and shared history.
+    E34 FinancialEffect -> reporting projection over dated source facts/adjustments.
+    E35 AuditEntry -> BusinessEvent plus typed change details.
+    E42 Product image values -> products.images (encoding/storage still open).
+    E43 Brand value -> products.brand.
+    E44 ItemCostSnapshot -> InventoryItem snapshot fields plus preserved allocations;
+        a separate versioned record remains conditional on D06.
+    No Reservation, Garage, Collection, credit, balance, Profit or LossRecovery table.
+    Retired E12, E17, E22, E23, E30, E31 and E38 are not reused.
+  '''
+}
+
+Note shared_expense_example {
+  '''
+    P1 has I1/I2; P2 has I3/I4, all in the same Organization.
+    One BRL 30 PurchaseExpense links P1 and P2.
+    Allocate BRL 10 to I1 and BRL 20 to I4; I2/I3 receive none.
+    Purchase subtotals derive as 10/20; source and settlement remain 30 once.
+    Completing P1 preserves P2's independent progress and every protected unit cost.
+  '''
+}
+
+Note policy_boundaries {
+  '''
+    D01 partial-Return funding-source selection; D02 historical collection presentation;
+    D03 negative recovery profit; D04 public catalog fields/context/images;
+    D05 report/average-cost basis; D06 exceptional corrections and expense disposition;
+    D07 existing shared Product edits/global audit/private annotations/historical labels;
+    D08 finalization of never-approved collection-unit costs.
+    T02 remaining access/session/bootstrap; T03 exact money/business dates;
+    T05 reviewed opening acquisition and spreadsheet mapping.
+    No policy is selected merely by drawing a table or relationship here.
+  '''
+}
