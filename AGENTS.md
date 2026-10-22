@@ -152,3 +152,17 @@ The owner approved this baseline on 2026-10-21. Follow these conventions when im
 - Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
 
 Formatter settings, branch/review/merge policy, and concrete test/CI commands still need to be established with the implementation tooling.
+
+## Agent skills
+
+### Issue tracker
+
+Use GitHub Issues for this repository; read [issue-tracker conventions](docs/agents/issue-tracker.md) before fetching or publishing tickets through an engineering skill.
+
+### Triage labels
+
+Use the five default triage roles; read the [label mapping](docs/agents/triage-labels.md) before triaging or changing triage labels.
+
+### Domain docs
+
+Use a single-context layout: root `GLOSSARY.md` and `docs/adr/`. Read the [domain documentation rules](docs/agents/domain.md) before exploring domain concepts or decisions.
