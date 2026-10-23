@@ -2,9 +2,31 @@
   "name": "estoque164",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {
     "node": "24.22.1",
     "pnpm": "12.15.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit --project tsconfig.json && pnpm --recursive run typecheck",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --max-warnings 0 --fix",
+    "format:check": "prettier --check .prettierrc.json \"*.{json,mjs,mts,yaml,yml}\" \"{apps,packages}/**/*.{ts,tsx,js,mjs,cjs,mts,cts,json,yaml,yml,css,html}\"",
+    "format": "prettier --write .prettierrc.json \"*.{json,mjs,mts,yaml,yml}\" \"{apps,packages}/**/*.{ts,tsx,js,mjs,cjs,mts,cts,json,yaml,yml,css,html}\"",
+    "test": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
   }
 }
