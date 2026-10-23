@@ -6,23 +6,16 @@ See [AGENTS.md](AGENTS.md) for repository context, current requirements, validat
 
 ## Documentation
 
-- [Requirements specification v0.7 — current](docs/requirements-v0.7.md)
-- [Entity and relationship map v0.7 — current](docs/entity-map-v0.7.md)
+- [Requirements specification v0.7 — read with approved update logs](docs/requirements-v0.7.md)
+- [Entity and relationship map v0.8 — current](docs/entity-map-v0.8.md)
 - [Database schema — visual DBML draft 1](docs/database/schema.dbml)
 - [Database design — entity mapping, proposals, and open decisions](docs/database/design.md)
-- [Requirement update logs — approved decisions awaiting baseline propagation](docs/requirement-updates/README.md)
+- [Requirement update logs — approved decisions and propagation status](docs/requirement-updates/README.md)
 - [Requirement ownership and backlog v0.7](docs/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
-- [Accepted entity-model decisions](docs/model-review.md)
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical-direction.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical-direction-review.md)
-- [Requirements specification v0.6 — historical](docs/requirements-v0.6.md)
-- [Entity and relationship map v0.6 — historical](docs/entity-map-v0.6.md)
-- [Requirement ownership and backlog v0.6 — historical](docs/requirements-coverage-v0.6.md)
-- [Global Product impact and publication record v0.6 — historical](docs/global-product-impact-v0.6.md)
-- [Requirements specification v0.5 — historical](docs/requirements-v0.5.md)
-- [Entity and relationship map v0.5 — historical](docs/entity-map-v0.5.md)
 
-Requirements and entity maps include their baseline version in the filename. Publish a new versioned file when adopting a new baseline, record its changes and the version it supersedes, and preserve stable requirement and entity IDs. Retired IDs are not reused. Read the approved requirement update logs alongside the published baseline for decisions whose propagation is still pending.
+Keep this index linked only to the latest published version of each document. Versioned documents preserve change records and references to earlier versions. Read approved requirement update logs alongside published documents; explicit later decisions supersede conflicting wording.
 
-V0.7 supports one organization-owned PurchaseExpense across one or more Purchases, with cost allocated directly to selected InventoryItems. It carries forward v0.6 global Product access and organization-owned operational/private data. The linked decision tickets identify policies still to resolve before affected implementation work.
+The current entity map incorporates the owner-approved [2026-10-22 schema review](docs/requirement-updates/2026-10-22-schema-review.md). Its [change record](docs/entity-map-v0.8.md#16-v07--v08-comparison-and-publication-record) identifies the changed relationships and remaining work. The requirements specification, ownership index, DBML/design guide, and GitHub issue criteria still await reconciliation with those decisions.
