@@ -1,6 +1,6 @@
 # Entity-model review
 
-This records the user's structural corrections and the explanations requested after the first entity map, including the decisions confirmed on 2026-10-21. It supplements the current [entity map v0.7](entity-map-v0.7.md), which supersedes [v0.6](entity-map-v0.6.md); the [v0.5 map](entity-map-v0.5.md) also remains historical. The [consolidated requirements v0.7](requirements-v0.7.md) incorporates these decisions. The original [v0.5 requirements snapshot](requirements-v0.5.md) remains historical source material.
+This records the earlier structural review, including decisions confirmed on 2026-10-21 and consolidated in [requirements v0.7](requirements-v0.7.md) and [entity map v0.7](entity-map-v0.7.md). It is retained for rationale. For current relationships and policy, read [entity map v0.8](entity-map-v0.8.md) and the owner-approved [2026-10-22 schema-review log](requirement-updates/2026-10-22-schema-review.md), which supersede conflicting statements below about reporting, optional SaleItem funding, Product authority, collection metrics/finalization, and unresolved decisions. Earlier [v0.6](entity-map-v0.6.md) and [v0.5](entity-map-v0.5.md) maps remain historical.
 
 ## Confirmed structural decisions
 
