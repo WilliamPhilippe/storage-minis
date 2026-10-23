@@ -4,6 +4,36 @@
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](requirements-v0.7.md), [entity map](entity-map-v0.7.md), and [ownership index](requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](model-review.md) and [PurchaseExpense impact](purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
+## Workspace bootstrap progress (2026-10-23)
+
+The owner authorized the first setup step: a private pnpm workspace, lockfile,
+pinned Node.js/pnpm versions, and initial `apps/api` (Fastify/tRPC) and
+`packages/db` (Drizzle connection, schema, migrations) package directories. The
+toolchain pins are recorded in the root `package.json` and `.nvmrc`; verified
+installation commands and current scope are in [local setup](../README.md#local-setup).
+Node.js 24 LTS is the selected runtime line, with an exact patch pinned for
+repeatable setup. The workspace uses one shared lockfile and exact versions for
+future dependency additions.
+
+Node.js version management is a local tooling choice. fnm was used for the
+initial setup because Homebrew was available; both fnm and nvm can read the
+repository's `.nvmrc`. The pinned Node.js/pnpm versions are required, while fnm
+is optional. See [local setup](../README.md#local-setup) for both workflows and
+their validation status.
+
+This is partial T06 setup progress. Application code, framework dependencies,
+Turborepo configuration, Docker Compose, and frontend scaffolding remain later
+steps. T01/T02/T04 prerequisites and the remaining T06 acceptance evidence still
+apply; this step does not close any delivery or decision issue.
+
+## Approval workflow (2026-10-23)
+
+The owner requires agents to ask first, with a recommendation, before making any
+new or changed technical or implementation decision. Follow the
+[owner-approval workflow](../AGENTS.md#owner-approval-before-decisions), including
+for tooling, packages and versions, CLIs, architecture, configuration, and local
+environment changes. Existing approved choices retain their recorded scope.
+
 ## Accepted application stack
 
 | Area | Accepted choice | Scope |
@@ -71,4 +101,4 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
-Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no infrastructure has been provisioned, and no install/build/test commands have been verified.
+Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no infrastructure has been provisioned. Workspace installation is verified as described above; application build and test commands remain pending.
