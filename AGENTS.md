@@ -4,9 +4,20 @@
 
 Estoque164 manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
-This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, and a DBML draft only. There is no application source, dependency manifest, implemented database schema, test suite, CI workflow, or verified install/build/run command.
+This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and an initial private pnpm workspace with `apps/api` and `packages/db` package manifests and a shared lockfile. There is no application source, implemented database schema, test suite, or CI workflow. Workspace installation is verified; application build/run commands remain pending.
 
 Use this file as a navigation and implementation guide. Detailed business rules and acceptance scenarios live in the versioned documents below. Update this guide when approved decisions or actual tooling change.
+
+## Owner approval before decisions
+
+The owner requires prior approval for every new or changed technical or implementation decision, including tools, packages/dependencies and versions, CLIs, architecture, implementation approaches, configuration, infrastructure, and local developer-environment setup.
+
+- Before selecting an option, present a concrete recommendation, explain why it fits, summarize relevant alternatives and tradeoffs, and ask the owner to approve it.
+- Wait for explicit approval before installing, adopting, configuring, or implementing the proposed choice. This also applies to reversible changes and tools installed outside the repository, including shell-profile changes. A general request to start work does not approve unspecified choices.
+- Research, inspect existing state, and prepare comparisons while awaiting approval; continue independent work covered by existing approval. Execute previously approved choices within their recorded scope, and ask again when a new or changed decision is needed.
+- Record approved outcomes with their date and rationale in the relevant documentation. Keep proposals distinct from approved decisions and implemented behavior.
+
+For Node.js version management, fnm and nvm are both compatible with the repository's `.nvmrc`; the repository requires the pinned Node.js/pnpm versions. fnm is the current local setup, not a mandatory project tool. Read [local setup](README.md#local-setup) before changing or troubleshooting the version manager, and obtain approval before replacing it or changing shell initialization.
 
 ## Confirmed technical direction
 
@@ -28,7 +39,7 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Numeric widths and detailed contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
-Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm when dependencies and scripts are introduced. Record supported versions and verified setup commands with the initial scaffold. Repository layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; framework selection is not evidence that the foundation is implemented.
+Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories on 2026-10-23. The remaining layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; workspace setup is not evidence that the application foundation is implemented.
 
 Hosting, deployment, backups, and operational targets remain T04 work. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
@@ -39,7 +50,7 @@ Hosting, deployment, backups, and operational targets remain T04 work. Database 
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
 | [Requirements v0.7](docs/requirements-v0.7.md) | Published requirements and acceptance scenarios; apply the later approved update log to conflicting wording. |
 | [Entity map v0.8](docs/entity-map-v0.8.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.7. Entities do not automatically imply SQL tables. |
-| [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. The 2026-10-22 decisions supersede covered v0.7 wording; the index tracks propagation. |
+| [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. Apply dated decisions in order, including the 2026-10-23 DBML review; the index tracks propagation. |
 | [Issue propagation record](docs/requirement-updates/2026-10-22-issue-propagation.md) | Read for backlog/acceptance work. Maps all 82 project issues, completed live updates, preserved ownership/dependencies, and remaining consolidation. |
 | [Earlier model decisions](docs/model-review.md) | Prior structural rationale, qualified by the later approved log and current entity map. |
 | [Requirement ownership v0.7](docs/requirements-coverage-v0.7.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
@@ -67,7 +78,7 @@ These are reminders of the current requirements, not a replacement for reading t
 - `Product` is global, with no owning `organization_id`; every Organization can find/reuse it. Name, SKU, and brand are mandatory; SKU is nonunique and not an automatic import key. Existing edits require global User `can_edit_products`, default false and granted to the initial administrator. Authorized Organization administrators can register new Products without it. Historical screens use current Product metadata, with global metadata audit and protected transaction facts.
 - Database keys are integers. `InventoryItem` identifies one physical unit in one Organization referencing one global Product. Automatically assign its separate immutable readable identifier at Purchase registration, including preorders; it is unique within the Organization, never reused, and gaps are allowed. Retain it through receipt, soft removal, Sale, Return, and resale. Transactions reach Product through InventoryItem; PurchaseItem groups same-Product units.
 - Operational/private records, costs, unit prices, notes, accounts, reports, and caches stay within their Organization. Customer funding also stays within the same Customer; supplier funding stays with the applicable Supplier. Shared Product access grants no access to another Organization's operations.
-- Use `Membership` for User–Organization access. Store address fields on `Customer`. Each Organization has one implicit collection, with membership on InventoryItem and at most one current collection unit per Organization/Product, including under concurrent changes.
+- Use `Membership` for User–Organization access. Store address fields on `Customer`. Each Organization has one implicit collection through InventoryItem `sale_status = collection`, with at most one current collection unit per Organization/Product, including under concurrent changes. The 2026-10-23 review selects mutually exclusive `unapproved`, `available`, `held`, `collection` statuses.
 - Public visitors cannot write business records. Each catalog URL identifies one Organization; availability uses its physically present, approved, uncommitted Available units. Apply the approved allowlist/grouping rules in the current map, optional asking prices, and hidden stock quantities. Unit public descriptions/photos are separate from private notes; unit photo management needs no global Product-edit permission. Detailed filters and unknown-condition presentation remain D04.
 
 ### Atomic operations and history
@@ -101,7 +112,7 @@ These are reminders of the current requirements, not a replacement for reading t
 
 Do not add customer preorder sales, public reservations, automatic reservation expiry, a separate readiness-confirmation stage, FX conversion, insurance workflows, external sales-platform integrations, multiple stock locations, or package/carrier/partial-shipment management to the v1 baseline. “In Garage” is a status, not a location feature. General expense management, expense-payment batching, Product merge/archive/moderation, and conditional schema candidates are not approved features merely because they are discussed in the docs.
 
-Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Do not fabricate historical Purchases, payments, or dates to fill missing data; establish reviewed opening-acquisition treatment under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
+Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Apply the approved Supplier/year-month grouped opening Purchases and second-day date convention from the 2026-10-23 review, retaining source precision/provenance. Do not fabricate historical payments or receipt facts; finish actual source mapping under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
 
 ## Validation and commands
 
@@ -118,7 +129,7 @@ Use `gh issue view <number> --repo WilliamPhilippe/storage-minis-be --comments` 
 
 For documentation changes, check changed relative links, Markdown fences/tables, referenced IDs, and consistency with the current baseline and affected issues. For baseline changes, verify active/retired IDs and unique primary ownership. Report what was checked and any unresolved gaps.
 
-There are currently no install, dev, build, lint, typecheck, application-test, migration, or deployment commands to run. Do not invent commands or claim application tests passed. When tooling is introduced, replace this statement with verified commands, prerequisites, configuration, and relevant CI checks.
+With the pinned toolchain active, `pnpm install --frozen-lockfile` verifies installation and `pnpm list --recursive --depth -1` lists the root, API, and database workspace packages. See [local setup](README.md#local-setup) for prerequisites. There are currently no dev, build, lint, typecheck, application-test, migration, deployment, or CI checks. Do not invent commands or claim application tests passed. Record verified commands and relevant CI checks as tooling is introduced.
 
 For future implementation, use the affected issue's acceptance criteria and requirements Section 15 to select tests. Include rollback on failure, real concurrent persistence operations, cross-Organization/Customer rejection, shared Product reuse without private-data leakage, exact allocation reconciliation, dated reversals, and catalog eligibility where relevant. Record evidence before claiming a workflow is delivered.
 

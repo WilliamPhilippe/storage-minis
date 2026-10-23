@@ -8,6 +8,9 @@ Read these logs alongside the [published requirements v0.7](../requirements-v0.7
 
 | Approval date | Record | Publication status |
 | --- | --- | --- |
+| 2026-10-23 (payment clarification) | [Partial expense payments and settled amounts](2026-10-23-partial-expense-payments.md) | Retains cumulative `settled_amount`, permits partial payments and preserves each installment; supersedes the preceding simplification recommendation. Applied to DBML/design guide. |
+| 2026-10-23 (follow-up) | [Indexes, rejected candidates, and expense fields](2026-10-23-dbml-indexes-and-candidates.md) | Applied to DBML/design guide; retains the approved four dedicated settlement tables. Its expense amount recommendation is superseded by the subsequent payment clarification. |
+| 2026-10-23 | [DBML review — fields, access roles, and legacy purchases](2026-10-23-dbml-review.md) | Applied to DBML/design guide, including exclusive sale status, nullable conditions and the approved second-day import date; consolidated baseline/backlog propagation remains pending. |
 | 2026-10-22 | [Schema review — decisions from Q1–Q61](2026-10-22-schema-review.md) | Entity map v0.8 and live issue requirements/criteria reconciled; consolidated requirements/coverage and DBML/design guide remain pending. |
 
 Dated approval logs preserve the state when recorded. This index and each later publication's change record track subsequent propagation without rewriting the original approval record.
