@@ -26,6 +26,76 @@ Turborepo configuration, Docker Compose, and frontend scaffolding remain later
 steps. T01/T02/T04 prerequisites and the remaining T06 acceptance evidence still
 apply; this step does not close any delivery or decision issue.
 
+## Tooling setup decisions (2026-10-23)
+
+**Owner approval:** On 2026-10-23, the owner approved all recommendations P01–P11
+from the tooling setup proposal and explicitly authorized implementation. The
+accepted outcomes below preserve that proposal's scope and rationale. This is a
+second partial T06 bootstrap step for the existing API and DB packages.
+
+| Proposal | Accepted outcome and rationale |
+| --- | --- |
+| P01 — Scope | Configure strict TypeScript, ESLint, Prettier, and Vitest for existing packages. Keep frontend scaffolding, Turborepo configuration, application frameworks, PostgreSQL provisioning, builds, migrations, CI, editor setup, and hooks as later decisions. This keeps tooling independent of unresolved application contracts. |
+| P02 — Ownership | Root development-tool dependencies and shared configuration, with small per-package TypeScript/Vitest files. This avoids duplicate policy or premature configuration packages; checks assume a full workspace checkout. |
+| P03 — Versions | Exact pins below, with the existing shared-lockfile policy. Select TypeScript 6.0.3 because the approved typescript-eslint release supports TypeScript below 6.1; add Vite as Vitest's required peer. Node types follow the Node 24 runtime line. |
+| P04 — TypeScript | `strict` plus checked indexed access, exact optional properties, override/return/fallthrough checks, consistent file casing, explicit module syntax, isolated modules, no emit, and dependency declaration checking. Keep ambient types empty in the base. ESLint owns unused-variable checks. These safeguards apply to source, tests, and TS configuration. |
+| P05 — Modules | ESM in all three manifests; NodeNext module/resolution, ES2024 target/library, and Node types in the Node profile. Use `.js` relative imports in application `.ts` files, `.mjs` for ESLint, and `.mts` for Vitest configurations. This models Node resolution; the frontend will need its own browser profile. Build output, aliases, exports, project references, and runtime runners remain later work. |
+| P06 — ESLint | Root flat configuration with JavaScript recommended rules and TypeScript `recommendedTypeChecked`, using `projectService`. Allow `_`-prefixed intentionally unused parameters, retain unused-local errors, and fail on warnings. Apply type-aware rules to tests/configuration too; put the Prettier compatibility config last. The recommended preset avoids the broader opinionated strict preset. |
+| P07 — Formatting | Prettier independently handles formatting: two spaces, no tabs, semicolons, double quotes, all trailing commas, width 80, always-parenthesized arrow arguments, LF, and preserved prose wrapping. Check supported root tooling and application/package source/configuration; exclude generated files and historical specifications. This avoids unrelated baseline reformatting. |
+| P08 — Tests | Root `test.projects` discovery with `api-unit` and `db-unit` package configurations. Node environment, explicit Vitest imports, colocated `src/**/*.test.ts`, and integration-file exclusion. Clear/restore mocks, isolate test files, disable retries, and run TypeScript separately. Each project declares its settings explicitly. Future persistence evidence requires real PostgreSQL. |
+| P09 — Empty suites | Keep normal tests failing when no tests exist. An explicit `--passWithNoTests` is only a bootstrap runner check. Typecheck the configuration files while source is absent; avoid permanent dummy application tests. This makes missing test discovery visible. |
+| P10 — Coverage | Defer the coverage provider, source selection, and thresholds until meaningful application tests exist. A coverage percentage on scaffold files would not establish business correctness. |
+| P11 — Commands/evidence | Root typecheck, lint/fix, format/check, and test/watch scripts use pnpm directly pending Turborepo configuration. Verify both successful and erroneous temporary fixtures, remove them afterward, and document actual command results. T06 stays open pending its application and persistence acceptance evidence. |
+
+Approved root development dependencies:
+
+| Package | Exact version |
+| --- | --- |
+| `typescript` | `6.0.3` |
+| `@types/node` | `24.19.2` |
+| `eslint` | `10.13.0` |
+| `@eslint/js` | `10.0.1` |
+| `typescript-eslint` | `8.72.0` |
+| `globals` | `17.13.0` |
+| `eslint-config-prettier` | `10.1.8` |
+| `prettier` | `3.9.10` |
+| `vitest` | `5.0.5` |
+| `vite` | `8.3.5` |
+
+The exact configurations live in [the shared TypeScript base](../tsconfig.base.json),
+[the Node profile](../tsconfig.node.json), [ESLint](../eslint.config.mjs),
+[Prettier](../.prettierrc.json), and [Vitest project discovery](../vitest.config.mts).
+The [root manifest](../package.json) and shared lockfile record installed versions.
+See [development checks](../README.md#development-checks) for command usage and
+current empty-suite limitations.
+
+Examples: reading `items[index]` requires handling an absent value; an optional
+`name?: string` field may be omitted but cannot explicitly contain `undefined`
+unless its type allows that. A dropped Promise is a lint error. Unit tests import
+their assertions explicitly, and `*.integration.test.ts` files await dedicated
+real-database projects rather than joining the unit run.
+
+These compile/lint rules do not enforce monetary limits, authorization, or
+transaction atomicity. T01/T02/T04 prerequisites and the rest of T06 remain open.
+
+**Implementation verification (2026-10-23):** On macOS arm64 with Node 24.22.1
+and pnpm 12.15.0, the exact dependencies installed successfully;
+`pnpm install --frozen-lockfile`, workspace package discovery, `pnpm typecheck`,
+`pnpm lint`, `pnpm lint:fix`, `pnpm format:check`, and `pnpm format` were verified.
+Typecheck currently checks configuration files. Temporary fixtures confirmed
+valid inputs pass, both packages reject unchecked lookups and invalid optional
+fields, typed linting rejects unhandled promises, and formatting detects/repairs
+style differences. Both Vitest projects discovered passing unit tests, excluded
+integration fixtures, supported focused selection, and propagated deliberate
+assertion failures. All temporary fixtures were removed afterward.
+
+The final empty repository suite makes `pnpm test` exit 1 as approved.
+`pnpm test --passWithNoTests` loads both project configurations and exits 0;
+`pnpm test:watch --passWithNoTests` enters watch mode and accepts the quit command.
+These are tooling checks, not application/persistence acceptance evidence.
+Changed documentation links, anchors, Markdown fences/tables, and
+`git diff --check` were also checked.
+
 ## Approval workflow (2026-10-23)
 
 The owner requires agents to ask first, with a recommendation, before making any
@@ -53,7 +123,7 @@ environment changes. Existing approved choices retain their recorded scope.
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
 | Development infrastructure | Docker Compose for PostgreSQL | Production database hosting remains undecided. |
 | Tests | Vitest and Playwright | Vitest for unit/integration tests, including real PostgreSQL for rollback, constraints, and concurrency; Playwright for core administrator and public-catalog workflows. |
-| Lint and formatting | ESLint and Prettier | Previously accepted conventions; concrete settings and commands remain pending. |
+| Lint and formatting | ESLint and Prettier | Concrete settings and commands approved in the 2026-10-23 tooling setup above. |
 
 The choices provide shared TypeScript contracts within one repository while retaining independent frontend/backend deployment. They do not introduce additional domain features or settle unresolved business policies.
 
@@ -101,4 +171,4 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
-Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no infrastructure has been provisioned. Workspace installation is verified as described above; application build and test commands remain pending.
+Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no infrastructure has been provisioned. Workspace tooling checks and the unit-test runner are configured as described above; application builds and meaningful application/persistence tests remain pending.

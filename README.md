@@ -50,18 +50,77 @@ currently contains three private packages:
 package.json           # Workspace root and toolchain pins
 pnpm-workspace.yaml     # apps/* and packages/* membership and install settings
 pnpm-lock.yaml         # Shared lockfile
+tsconfig.base.json     # Shared strictness; no runtime globals
+tsconfig.node.json     # Node ESM profile for tooling/API/DB
+tsconfig.json          # Root tooling typecheck
+eslint.config.mjs      # Shared lint rules
+.prettierrc.json       # Shared formatting settings
+vitest.config.mts      # Package test project discovery
 apps/
   api/package.json     # @estoque164/api; future Fastify/tRPC server
+  api/tsconfig.json
+  api/vitest.config.mts
 packages/
   db/package.json      # @estoque164/db; future Drizzle connection/schema/migrations
+  db/tsconfig.json
+  db/vitest.config.mts
 ```
 
-Future dependencies are saved with exact versions, and installs enforce engine
-compatibility. There are no application dependencies or build, dev, lint,
-typecheck, test, or migration scripts yet. Turborepo, Docker Compose/PostgreSQL,
-application scaffolding, and the React frontend belong to subsequent setup steps.
+Dependencies are saved with exact versions, and installs enforce engine
+compatibility. Development tools are installed at the root for use from a full
+workspace checkout. Application dependencies, build/dev/migration commands,
+Turborepo configuration, Docker Compose/PostgreSQL, and the React frontend belong
+to subsequent setup steps.
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
+
+## Development checks
+
+Run these commands from the repository root with the pinned toolchain active:
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm typecheck` | Check root tooling, then both packages with strict TypeScript |
+| `pnpm lint` | Check JavaScript/TypeScript with ESLint; warnings fail |
+| `pnpm lint:fix` | Apply ESLint automatic fixes |
+| `pnpm format:check` | Check formatting of supported source/configuration files |
+| `pnpm format` | Rewrite those files with Prettier |
+| `pnpm test` | Run the API and DB unit-test projects once |
+| `pnpm test:watch` | Watch unit tests during development |
+
+The [approved tooling decisions](docs/technical-direction.md#tooling-setup-decisions-2026-10-23)
+record versions, settings, rationale, and scope. TypeScript's shared base carries
+correctness checks; the Node profile adds Node globals and NodeNext resolution.
+Use explicit type-only imports and `.js` extensions for relative imports in
+application `.ts` files. The future React application will need a browser profile.
+
+ESLint uses type information for TypeScript source, tests, and configuration.
+An intentionally unused parameter may start with `_`; unused locals remain
+errors. Prettier runs separately and checks root tooling plus supported files
+under `apps` and `packages`. Existing specifications, DBML, the generated lockfile,
+and workspace scratch files are outside the formatter command scope.
+
+Unit tests belong alongside source as `src/**/*.test.ts`. Import `test`, `expect`,
+and other APIs from `vitest`; test globals are disabled. The Node projects are
+named `api-unit` and `db-unit`. For a focused run:
+
+```sh
+pnpm test --project api-unit
+pnpm test --project db-unit
+```
+
+There are no application source files or permanent tests yet. Consequently,
+`pnpm typecheck` currently checks tooling configuration, and `pnpm test` exits
+with code 1 and "No test files found". The explicit bootstrap command
+`pnpm test --passWithNoTests` verifies runner configuration loading only; it is
+not application-test evidence. Keep the normal command strict when adding tests.
+
+Files named `*.integration.test.ts` are excluded from these unit projects.
+Real-PostgreSQL integration setup, isolation/reset mechanics, Playwright browser
+workflows, coverage reporting/thresholds, and CI remain future work. PostgreSQL
+tests must demonstrate rollback, constraints, and concurrent operations when the
+persistence foundation is implemented. Vitest execution does not replace
+`pnpm typecheck`.
 
 ## Agent guidance
 

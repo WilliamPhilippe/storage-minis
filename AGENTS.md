@@ -4,7 +4,7 @@
 
 Estoque164 manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
-This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and an initial private pnpm workspace with `apps/api` and `packages/db` package manifests and a shared lockfile. There is no application source, implemented database schema, test suite, or CI workflow. Workspace installation is verified; application build/run commands remain pending.
+This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and a private pnpm workspace with `apps/api`, `packages/db`, a shared lockfile, and strict TypeScript/ESLint/Prettier/Vitest configuration. There is no application source, implemented database schema, permanent test suite, or CI workflow. Application build/run commands remain pending.
 
 Use this file as a navigation and implementation guide. Detailed business rules and acceptance scenarios live in the versioned documents below. Update this guide when approved decisions or actual tooling change.
 
@@ -39,7 +39,7 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Numeric widths and detailed contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
-Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories on 2026-10-23. The remaining layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; workspace setup is not evidence that the application foundation is implemented.
+Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories and the [tooling setup decisions](docs/technical-direction.md#tooling-setup-decisions-2026-10-23) on 2026-10-23. Read that record before changing shared configuration or module conventions. The remaining layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; workspace tooling is not evidence that the application foundation is implemented.
 
 Hosting, deployment, backups, and operational targets remain T04 work. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
@@ -129,7 +129,7 @@ Use `gh issue view <number> --repo WilliamPhilippe/storage-minis-be --comments` 
 
 For documentation changes, check changed relative links, Markdown fences/tables, referenced IDs, and consistency with the current baseline and affected issues. For baseline changes, verify active/retired IDs and unique primary ownership. Report what was checked and any unresolved gaps.
 
-With the pinned toolchain active, `pnpm install --frozen-lockfile` verifies installation and `pnpm list --recursive --depth -1` lists the root, API, and database workspace packages. See [local setup](README.md#local-setup) for prerequisites. There are currently no dev, build, lint, typecheck, application-test, migration, deployment, or CI checks. Do not invent commands or claim application tests passed. Record verified commands and relevant CI checks as tooling is introduced.
+With the pinned toolchain active, `pnpm install --frozen-lockfile` verifies installation and `pnpm list --recursive --depth -1` lists the root, API, and database workspace packages. Use [development checks](README.md#development-checks) for typecheck, lint, format, and Vitest commands. Typecheck currently covers tooling configuration; normal `pnpm test` fails with no test files until meaningful tests exist. An explicit `--passWithNoTests` verifies runner loading only. There are no dev, build, migration, deployment, or CI checks. Report tooling validation separately from application acceptance evidence.
 
 For future implementation, use the affected issue's acceptance criteria and requirements Section 15 to select tests. Include rollback on failure, real concurrent persistence operations, cross-Organization/Customer rejection, shared Product reuse without private-data leakage, exact allocation reconciliation, dated reversals, and catalog eligibility where relevant. Record evidence before claiming a workflow is delivered.
 
@@ -159,14 +159,14 @@ Technical choices also remain open; their issues define the required outputs:
 
 ## Agreed conventions
 
-The owner approved this baseline on 2026-10-21. Follow these conventions when implementing the application; tooling configuration and runnable commands are still pending the initial scaffold.
+The owner approved this baseline on 2026-10-21 and the concrete tooling setup on 2026-10-23. Follow these conventions when implementing the application.
 
 - Use English for code identifiers, comments, and project documentation. This does not choose the application's user-facing language or locale.
 - Use TypeScript with strict checking for Node.js and React code, with ESLint and Prettier for linting and formatting.
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
 - Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
 
-Formatter settings, branch/review/merge policy, and concrete test/CI commands still need to be established with the implementation tooling.
+Formatter settings and unit-runner commands are recorded in the tooling setup. Branch/review/merge policy, integration/browser test setup, and CI remain open.
 
 ## Agent skills
 
