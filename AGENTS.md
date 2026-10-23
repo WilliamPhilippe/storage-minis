@@ -36,15 +36,16 @@ Hosting, deployment, backups, and operational targets remain T04 work. Database 
 
 | Source | Purpose |
 | --- | --- |
-| [README.md](README.md) | Entry point identifying the current and historical baselines. |
+| [README.md](README.md) | Entry point listing only the latest published version of each document. |
 | [Requirements v0.7](docs/requirements-v0.7.md) | Published requirements and acceptance scenarios; apply the later approved update log to conflicting wording. |
 | [Entity map v0.8](docs/entity-map-v0.8.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.7. Entities do not automatically imply SQL tables. |
 | [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. The 2026-10-22 decisions supersede covered v0.7 wording; the index tracks propagation. |
+| [Issue propagation record](docs/requirement-updates/2026-10-22-issue-propagation.md) | Read for backlog/acceptance work. Maps all 82 project issues, completed live updates, preserved ownership/dependencies, and remaining consolidation. |
 | [Earlier model decisions](docs/model-review.md) | Prior structural rationale, qualified by the later approved log and current entity map. |
 | [Requirement ownership v0.7](docs/requirements-coverage-v0.7.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
 | [PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md) | Shared expenses across Purchases, selected-unit allocation, affected workflows, and verification scope. |
 
-The published requirements baseline tracker remains [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82). Entity map v0.8 consolidates the approved schema review but does not publish a complete v0.8 requirements baseline. Requirements/coverage, DBML/design guide, and issue criteria still await reconciliation. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than stale issue wording.
+The published requirements baseline tracker remains [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82). Entity map v0.8 consolidates the approved schema review but does not publish a complete v0.8 requirements baseline. Live project issue requirements/criteria now apply the approved review; requirements/coverage and DBML/design-guide consolidation remain pending. The issue propagation record reports current status; older versioned publication records retain their original pending-state notes. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than superseded wording.
 
 For a task, read its live issue, relevant requirement IDs, acceptance criteria, and dependencies. If the approved sources conflict or a needed business rule is unresolved, identify the exact conflict and ask the owner; do not silently pick a policy. Continue independent work that does not depend on that answer.
 
