@@ -5,6 +5,12 @@ steps in the [planning checklist](technical-direction.md#next-foundation-steps--
 It authorizes no installation, application configuration, schema migration or
 business access. Approval date and implementation evidence are pending.
 
+For the current six-agent execution sequence, planning instructions and per-step
+completion criteria, read the [technical foundation implementation guide](technical-foundation-implementation-guide.md).
+This proposal remains the reference for candidate technical choices, versions,
+alternatives and detailed contracts; its original five-step grouping is mapped
+to the guide's assignments rather than treated as a second execution sequence.
+
 **Recommendation:** approve a local infrastructure bootstrap with a table-free
 API, then gate business migrations and protected operations on their existing
 design owners. The owner has installed Docker Desktop and its daemon/Compose

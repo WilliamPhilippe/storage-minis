@@ -48,6 +48,7 @@ Hosting, deployment, backups, and operational targets remain T04 work. Database 
 | Source | Purpose |
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
+| [Technical foundation implementation guide](docs/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
 | [Requirements v0.7](docs/requirements-v0.7.md) | Published requirements and acceptance scenarios; apply the later approved update log to conflicting wording. |
 | [Entity map v0.8](docs/entity-map-v0.8.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.7. Entities do not automatically imply SQL tables. |
 | [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. Apply dated decisions in order, including the 2026-10-23 DBML review; the index tracks propagation. |
