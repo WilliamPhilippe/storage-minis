@@ -1,0 +1,35 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "cacheDir": ".turbo/cache",
+  "remoteCache": {
+    "enabled": false
+  },
+  "envMode": "strict",
+  "globalDependencies": [
+    ".nvmrc",
+    "pnpm-workspace.yaml",
+    "tsconfig*.json",
+    "eslint.config.mjs",
+    ".prettierrc.json",
+    ".prettierignore",
+    "vitest.config.mts"
+  ],
+  "tasks": {
+    "typecheck": {
+      "outputs": []
+    },
+    "//#typecheck:root": {
+      "outputs": []
+    },
+    "//#lint": {
+      "outputs": []
+    },
+    "//#format:check": {
+      "outputs": []
+    },
+    "//#test": {
+      "outputs": [],
+      "env": ["NODE_ENV", "TZ"]
+    }
+  }
+}
