@@ -25,7 +25,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
-| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); PR pending. |
+| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), awaiting review/merge. |
 | 2 | Development and test PostgreSQL | Step 1 | Not started |
 | 3 | Drizzle connection and migration tooling | Steps 1–2 | Not started |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |

@@ -260,7 +260,8 @@ inventory live in [README](../../README.md#docker-tooling). The dedicated host c
 with scope set to this absolute checkout. The Homebrew CLI was exercised; the
 standalone checksum installer is documented but was not executed. Probe files
 and secondary resources were removed, and only the renamed primary tooling
-volumes/image remain. T06 stays open.
+volumes/image remain. [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103)
+contains the Step 1 handoff and awaits review/merge. T06 stays open.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
