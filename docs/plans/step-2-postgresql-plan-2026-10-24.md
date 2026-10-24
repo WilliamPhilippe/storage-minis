@@ -6,6 +6,10 @@ The owner approved this concrete plan and requested implementation. The proposal
 below records the approved scope; actual results are recorded in technical
 direction and remain distinct from the planned verification.
 
+**Handoff:** Implemented and verified in [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104),
+awaiting review/merge. See [technical direction](../technical/technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
+for actual outcomes and limitations. Steps 3–6 remain separate assignments.
+
 The owner requested PostgreSQL in separate containers, Compose definitions in this
 step, local development and testing access using the PostgreSQL user, and no
 application of [schema.dbml](../database/schema.dbml). The owner subsequently

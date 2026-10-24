@@ -30,7 +30,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
-| 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). PR handoff pending. |
+| 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), awaiting review/merge. |
 | 3 | Drizzle connection and migration tooling | Steps 1–2 | Not started |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |

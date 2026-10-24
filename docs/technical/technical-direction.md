@@ -349,6 +349,10 @@ commands documented in [README](../../README.md#local-postgresql). It must begin
 from this step's merged handoff and obtain separate approval for Drizzle work.
 T06 and its T01/T02/T04 prerequisites remain open.
 
+[PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104) contains the
+Step 2 implementation and handoff, awaiting review/merge. It does not authorize
+merging or starting Step 3.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or

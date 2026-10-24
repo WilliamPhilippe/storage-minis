@@ -479,7 +479,7 @@ tools, packages, versions, CLIs, architecture, and local environment changes; th
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical/technical-direction.md)
 - [Technical foundation implementation guide — agent steps, planning and expected results](docs/technical/technical-foundation-implementation-guide.md)
 - [Step 1 Docker tooling implementation plan — approved scope and handoff (2026-10-24)](docs/plans/step-1-tooling-plan-2026-10-24.md)
-- [Step 2 PostgreSQL implementation plan — approved scope (2026-10-24)](docs/plans/step-2-postgresql-plan-2026-10-24.md)
+- [Step 2 PostgreSQL implementation plan — approved scope and handoff (2026-10-24)](docs/plans/step-2-postgresql-plan-2026-10-24.md)
 - [T06 foundation proposal — pending owner approval (2026-10-24)](docs/technical/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical/technical-direction-review.md)
 
