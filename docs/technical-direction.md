@@ -197,10 +197,16 @@ they execute. A separate speculative Turbo expansion is not a prerequisite.
 Frontend scaffolding, remote caching, CI and production deployment remain later
 work; these five steps alone do not deliver the full frontend/backend foundation.
 
+For agent assignments, use the [technical foundation implementation guide](technical-foundation-implementation-guide.md).
+It organizes this scope into six sequential agent steps by separating the Node
+tooling container from PostgreSQL setup, and defines the research, plan,
+completion and handoff expected of each agent. It preserves the approval and
+prerequisite boundaries below.
+
 ### Before implementation: approve the foundation proposal
 
 The [2026-10-24 foundation proposal](t06-foundation-proposal-2026-10-24.md)
-records inspected local prerequisites, exact candidate versions, F01–F12 approval
+records inspected local prerequisites, exact candidate versions, F01–F13 approval
 items, the proposed commands/task graph, and deferred schema/security/acceptance
 gates. **It is pending owner approval; its choices are not adopted or implemented.**
 

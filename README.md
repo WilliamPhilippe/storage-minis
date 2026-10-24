@@ -195,6 +195,7 @@ tools, packages, versions, CLIs, architecture, and local environment changes; th
 - [Requirement ownership and backlog v0.7](docs/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical-direction.md)
+- [Technical foundation implementation guide — agent steps, planning and expected results](docs/technical-foundation-implementation-guide.md)
 - [T06 foundation proposal — pending owner approval (2026-10-24)](docs/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical-direction-review.md)
 
