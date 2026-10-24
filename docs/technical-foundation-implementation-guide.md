@@ -26,7 +26,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
-| 1 | Docker tooling environment | Existing workspace/tooling | Not started |
+| 1 | Docker tooling environment | Existing workspace/tooling | [Plan proposed; choices pending](step-1-tooling-plan-2026-10-24.md). Implementation not started. |
 | 2 | Development and test PostgreSQL | Step 1 | Not started |
 | 3 | Drizzle connection and migration tooling | Steps 1–2 | Not started |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
