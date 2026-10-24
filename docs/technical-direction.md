@@ -21,10 +21,11 @@ repository's `.nvmrc`. The pinned Node.js/pnpm versions are required, while fnm
 is optional. See [local setup](../README.md#local-setup) for both workflows and
 their validation status.
 
-This is partial T06 setup progress. Application code, framework dependencies,
-Turborepo configuration, Docker Compose, and frontend scaffolding remain later
-steps. T01/T02/T04 prerequisites and the remaining T06 acceptance evidence still
-apply; this step does not close any delivery or decision issue.
+This is partial T06 setup progress. The later tooling and Turborepo steps are
+recorded below. Application code, framework dependencies, Docker Compose, and
+frontend scaffolding remain later steps. T01/T02/T04 prerequisites and the
+remaining T06 acceptance evidence still apply; this step does not close any
+delivery or decision issue.
 
 ## Tooling setup decisions (2026-10-23)
 
@@ -95,6 +96,280 @@ The final empty repository suite makes `pnpm test` exit 1 as approved.
 These are tooling checks, not application/persistence acceptance evidence.
 Changed documentation links, anchors, Markdown fences/tables, and
 `git diff --check` were also checked.
+
+## Turborepo setup decisions (2026-10-23)
+
+**Owner approval:** On 2026-10-23, the owner approved the Turborepo boilerplate
+proposal with "Implement it" and requested adherence to Turborepo documentation
+and recommendations. This authorizes the exact dependency, scripts, task/cache
+configuration, validation, and documentation below. It extends the earlier
+tooling setup's command orchestration while preserving its checking rules,
+centralized tooling, and strict empty-suite behavior.
+
+| Area | Approved outcome and rationale |
+| --- | --- |
+| Dependency | Pin `turbo` 2.11.10 as a root development dependency through pnpm and commit its generated lockfile changes. Keep Node.js 24.22.1 and pnpm 12.15.0. Repository installation provides one reproducible Turbo version without a global CLI or additional tooling packages. |
+| Task ownership | Retain the package `typecheck` scripts. Extract the existing root TypeScript invocation into `typecheck:root`; `pnpm typecheck` schedules all three. Register the existing repository-wide lint, formatting check, and Vitest scripts as root tasks, preserving direct standalone commands and Vitest project selection. |
+| Aggregate command | `pnpm check` schedules all six executable checks. Register only their real leaf scripts; orchestration scripts are outside root-task registration to avoid recursion. Normal tests and the aggregate command continue failing while tests are absent. |
+| Dependencies | Omit `dependsOn` because the current package manifests declare no workspace dependencies and checks need no generated artifacts. Run independent checks concurrently. Revisit dependency hashes and ordering when real shared imports, package links, builds, or generated files are introduced. |
+| Cache inputs | Retain default package/root inputs and include the shared configuration listed in `turbo.json` in every task hash. This conservatively covers workspace files consumed by root tools and root TypeScript settings consumed by packages. Root documentation edits may rerun root checks; narrower globs would require maintaining another copy of each tool's scope. |
+| Cache outputs | Cache successful checks with `outputs: []`; current checks need only successful logs, with no build artifacts to restore. Failed tasks are never accepted as cached success. Coverage and build outputs await their real commands. |
+| Cache location | Explicit `.turbo/cache` keeps the local cache within each worktree. Disable remote cache operations. Automatic local sharing across worktrees is available upstream but is outside this setup; existing Git/lint/formatter exclusions already cover Turbo artifacts. |
+| Environment | Use strict filtering. Include `NODE_ENV` and `TZ` in unit-test hashes. Current checks need no application secrets or database variables. Declare additional result-affecting variables per task when introduced; pass-through values are unhashed, and tasks loading ignored `.env` files must declare those files as inputs. |
+| Mutating and persistent work | Retain direct `lint:fix`, `format`, and `test:watch` commands. Future persistent tasks should use `cache: false` and `persistent: true`, outside finite task prerequisites. Future database mutations and, initially, real-database integration tests should be uncached because source hashes do not capture live database state. Concrete future tasks remain separate implementation decisions. |
+
+The exact configuration is [turbo.json](../turbo.json); command usage and the
+cache demonstration live in [Turborepo checks](../README.md#turborepo-checks-and-cache).
+This adopts the documented [incremental installation](https://turborepo.dev/docs/getting-started/add-to-existing-repository),
+[root tasks](https://turborepo.dev/docs/crafting-your-repository/configuring-tasks#registering-root-tasks),
+[configuration](https://turborepo.dev/docs/reference/configuration),
+[environment handling](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables),
+and [worktree-cache behavior](https://turborepo.dev/docs/crafting-your-repository/caching#git-worktree-cache-sharing).
+The [support policy](https://turborepo.dev/docs/support-policy) lists pnpm 8+ as
+stable and describes core Turbo as independent of the active Node.js version.
+The [2.11.10 release](https://github.com/vercel/turborepo/releases/tag/v2.11.10)
+was the verified stable version at approval; its
+[lockfile parser](https://github.com/vercel/turborepo/blob/v2.11.10/crates/turborepo-lockfiles/src/pnpm/data.rs)
+supports this repository's multi-document pnpm lockfile format.
+
+**Implementation verification (2026-10-23):** On macOS arm64 with Node.js
+24.22.1 and pnpm 12.15.0, the frozen install and workspace discovery passed;
+`pnpm exec turbo --version` reported 2.11.10. `pnpm check --dry=json` discovered
+exactly six executable tasks, no dependency edges or recursive commands, and
+strict environment handling. Turbo reported remote caching disabled and used
+this worktree's `.turbo/cache` and `.turbo/runs` directories.
+
+The documented forced run of typecheck, root typecheck, lint, and formatting
+check completed five successful tasks; the unchanged second run reused all five
+cache entries. `pnpm typecheck` also passed. Temporary shared-configuration edits
+changed all six task hashes; an API-configuration edit changed API/root hashes
+while preserving the DB typecheck hash. Changing `NODE_ENV` or `TZ` affected only
+the unit-test task hash; an unrelated environment variable affected none.
+
+A temporary TypeScript assignment error made `pnpm typecheck` fail with exit 2
+on consecutive runs, with the invalid API task executed again each time. All
+temporary configuration edits were restored byte for byte. Explicit
+`--passWithNoTests` runner checks passed for both projects individually and
+together. The Turbo bootstrap runner check passed and reused its own cache, but
+ordinary Turbo tests still executed and failed on repeated runs. Normal
+`pnpm test` and `pnpm check` exited 1 because tests remain absent. No permanent
+test fixtures were added.
+
+Documentation links, anchors, fences/tables, and `git diff --check` were checked.
+These results establish tooling behavior only. T06 and its T01/T02/T04
+prerequisites remain open; application, database, deployment, remote-cache, and CI
+implementation evidence remains pending.
+
+## Local tooling preference (2026-10-24)
+
+**Owner instruction:** Prefer Docker images for tools and supporting services
+where practical, avoiding direct machine installations. A tool may run on the
+host when it needs host access; explain that need and obtain approval before
+installing it. Tell the owner about required apps before attempting installation
+or an alternative setup. The owner installed Docker Desktop 4.96.3 (244472),
+verified on 2026-10-24 with Engine/client 29.9.2, Compose 5.6.1 and a reachable
+Linux arm64 daemon in `desktop-linux`. The current agent shell does not find
+`docker` on PATH; the installed `~/.docker/bin/docker` and bundled CLI work by
+explicit path, without shell-profile changes. No image was pulled or container
+started during verification.
+
+This preference does not remove the approved Node.js/pnpm pins, root dependency
+ownership or existing tooling. The foundation proposal now recommends running
+new development commands in a pinned Node tooling container, including workspace
+dependency installation, Drizzle Kit, API development, builds and tests. Those
+concrete execution changes remain pending approval, as do the other proposal
+items. No host tooling replacement or application setup is authorized by this
+record.
+
+## Next foundation steps — planning checklist (2026-10-24)
+
+**Status: proposed implementation checklist, not approved technical decisions or
+implemented behavior.** On 2026-10-24, the owner identified the next five steps:
+development PostgreSQL through Docker Compose, Drizzle connection/migration
+tooling, Fastify boilerplate, tRPC/Zod integration, and smoke checks/setup
+documentation. The owner requested prerequisite guidance and documentation of
+important details. This authorizes this planning update; unspecified versions,
+tools, configuration, and implementation approaches still require approval.
+
+The existing checks-only Turbo setup remains the accepted starting point. Add
+real tasks and their dependency/cache declarations alongside the functionality
+they execute. A separate speculative Turbo expansion is not a prerequisite.
+Frontend scaffolding, remote caching, CI and production deployment remain later
+work; these five steps alone do not deliver the full frontend/backend foundation.
+
+### Before implementation: approve the foundation proposal
+
+The [2026-10-24 foundation proposal](t06-foundation-proposal-2026-10-24.md)
+records inspected local prerequisites, exact candidate versions, F01–F12 approval
+items, the proposed commands/task graph, and deferred schema/security/acceptance
+gates. **It is pending owner approval; its choices are not adopted or implemented.**
+
+Prepare one concrete proposal under [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26)
+covering compatible exact dependency/image versions, the PostgreSQL driver,
+development runner, build/start approach, package exports, migration workflow,
+environment loading/validation, and the commands/task graph for these steps.
+Preserve the existing Node.js/pnpm pins, ESM/NodeNext conventions, centralized
+tooling, and approved strict checks. Give a recommendation, alternatives,
+tradeoffs and verification plan for each new choice before asking for approval.
+Record actual approved outcomes separately, with date and rationale.
+
+Read the live issues and comments before implementation. Their existing
+dependencies and delivery ownership remain in force:
+
+| Checkpoint | Required boundary |
+| --- | --- |
+| Before any new installation or configuration | Obtain approval for the concrete T06 proposal. Identify the explicitly approved partial-bootstrap scope and its deferred outputs; this checklist does not waive T06's T01/T02/T04 prerequisites or move/close issues. |
+| Before business schema migrations or representative persistence operations | Reconcile [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21), applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) contracts, the [database design guide](database/design.md), and the [approved updates](requirement-updates/README.md). The DBML still has deferred uniqueness/scope keys and conceptual composite references without executable FK targets. It cannot be translated mechanically into migrations. |
+| Before protected business procedures or administrator bootstrap | Obtain the applicable [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) authorization/bootstrap decisions. Diagnostic scaffolding must not introduce business access through a temporary authentication bypass. |
+| Before operational/deployment acceptance | Resolve applicable [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) configuration, release/migration and recovery decisions. Local Compose does not select production hosting, backup retention or restore targets. |
+
+The proposal should distinguish infrastructure-only connection/migration-tool
+setup from business-schema delivery. If schema approval remains pending, state
+which checks can run without application tables and what migration evidence is
+deferred. Do not invent permanent sample domain tables to make the scaffold pass.
+
+### Step 1: Docker Compose with PostgreSQL
+
+Items to resolve and verify in the implementation proposal:
+
+- Pin the PostgreSQL image and document supported local architecture and Compose
+  requirements. Inspect the existing Docker runtime first; any runtime install
+  or developer-environment change needs its own concrete approval.
+- Define development database/user settings, host binding and configurable port,
+  persistent storage, and workspace-specific project/volume naming. Multiple
+  checkouts must have a documented way to avoid port collisions and unintended
+  database sharing. Keep test database/storage ownership explicit.
+- Supply a secret-free `.env.example` and document where Compose and host-run
+  Node commands obtain configuration. Distinguish the host connection address
+  from a Compose-network address; do not assume the API is containerized.
+- Define a bounded readiness check and verify a real connection. Container
+  startup alone does not establish database readiness; see [Compose startup and
+  readiness](https://docs.docker.com/compose/how-tos/startup-order/).
+- Document start, readiness, stop, logs and separately invoked destructive reset
+  commands. Verify ordinary stop/start preserves data. Database lifecycle/reset
+  commands must execute uncached; database storage is outside Turbo outputs.
+
+### Step 2: Drizzle connection and migration tooling
+
+- Compare supported PostgreSQL drivers and propose exact Drizzle/driver/tooling
+  versions. Define connection/pool ownership, initialization, timeouts, cleanup
+  and error behavior so importing a package does not unexpectedly start database
+  work. Reuse the same agreed environment contract in CLI and API entry points.
+- Propose the migration source of truth, generation/review/application workflow,
+  file locations and metadata, repeat-application behavior, and failure/recovery
+  procedure. Compare reviewed versioned SQL with direct schema push and choose
+  explicitly; Drizzle supports multiple [migration workflows](https://orm.drizzle.team/docs/migrations).
+  State whether migration application is a separate command or startup action;
+  do not select automatic startup migration implicitly.
+- Keep committed migration SQL/metadata distinct from disposable build output.
+  Applying migrations changes external state and must run uncached. The proposal
+  should initially keep migration generation uncached too, with its files
+  reviewed as source changes rather than restored as build artifacts.
+- Establish the DB package's public runtime/type exports and the API's declared
+  workspace dependency when it imports them. Decide whether consumers use source
+  or compiled output, how development observes DB package edits, and which
+  prerequisites and dependency inputs builds/typechecks actually require.
+- Include new Drizzle/CLI TypeScript configuration in strict typecheck and typed
+  lint coverage; existing package includes cover source, tests and Vitest config
+  only. Verify a real connection and client shutdown. After schema approval,
+  verify migration replay on a fresh database and a second application without
+  duplicate changes. Preserve the latest partial-expense-payment approval and
+  all scope/uniqueness invariants when implementing business tables.
+
+### Step 3: Fastify server boilerplate
+
+- Propose a testable application factory separately from the process entry point,
+  with explicit configuration and DB-resource ownership. Define host/port,
+  startup failure, signal handling, graceful server close and pool cleanup.
+  Fastify documents [application construction and request injection for tests](https://fastify.dev/docs/latest/Guides/Testing/).
+- Specify development, build and start commands, runtime dependencies, emitted
+  files and package exports. Current TypeScript profiles use `noEmit`; they do
+  not produce a runnable build. Verify the approved built entry point resolves
+  the DB package under Node.js without relying on the development runner.
+- Propose health endpoint paths, response contracts and availability semantics:
+  distinguish whether the process is alive from whether required dependencies
+  are ready. Define behavior when PostgreSQL is unavailable, including bounded
+  failures, useful logs and responses that omit credentials/private details.
+- Add real root/package commands to Turbo with ordering based on imports and
+  required artifacts. Persistent development tasks use `cache: false` and
+  `persistent: true`; keep them outside finite task prerequisites. Declare actual
+  build outputs and verify restoration. See [Turbo task configuration](https://turborepo.dev/docs/crafting-your-repository/configuring-tasks).
+- Preserve strict environment filtering. Declare variables needed by each task,
+  hash result-affecting values for cached tasks, and include loaded ignored
+  `.env` files as inputs where relevant. Turbo does not itself load `.env` files;
+  document the chosen loader and precedence. See [Turbo environment handling](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables).
+
+### Step 4: tRPC integration with Zod
+
+- Verify compatibility of the proposed Fastify/tRPC/Zod versions and use the
+  documented [Fastify adapter](https://trpc.io/docs/server/adapters/fastify).
+  Propose the route prefix, router layout, request context, error mapping and
+  response/serialization contracts rather than inheriting example defaults.
+- Use a minimal diagnostic procedure to exercise runtime [Zod input validation](https://trpc.io/docs/server/validators)
+  and typed responses. Verify both accepted and rejected input through the
+  actual HTTP adapter; calling a router directly does not verify its transport.
+  Keep domain-specific money/date filters subject to T03 contracts.
+- Define how the request context receives the DB dependency and later verified
+  identity/Organization authorization. Keep diagnostics distinct from business
+  procedures. Firebase identity alone does not grant Membership access; any
+  protected operation requires the applicable approved T02 enforcement.
+- Propose a type export for the future React client that preserves independent
+  application builds and keeps server initialization, database code and secrets
+  out of the browser runtime. Frontend HTTP calls alone do not create a Turbo
+  build dependency; declared package imports and required artifacts determine it.
+  Frontend scaffolding and final CORS policy remain explicit later decisions.
+
+### Step 5: smoke checks and setup documentation
+
+- Document a verified path from frozen install and example configuration through
+  PostgreSQL readiness, approved migration application, build/start, health and
+  valid/invalid tRPC requests, then normal shutdown. Record actual versions,
+  commands, expected results and limitations in the README. Include database
+  unavailable, invalid configuration and occupied-port behavior.
+- Add meaningful Vitest tests for the implemented configuration/server/adapter
+  behavior. Create separate real-PostgreSQL test configuration with explicit
+  database targeting, isolation/reset mechanics and cleanup; existing unit
+  projects intentionally exclude integration files. Keep live-database and
+  running-service smoke checks uncached, outside ordinary database-free checks
+  unless a different aggregate contract is explicitly approved.
+- Verify Turbo task discovery, dependency invalidation after DB package edits,
+  strict environment handling, successful reuse for unchanged cacheable tasks,
+  artifact restoration after deleting build output, repeated execution of
+  uncached database tasks, and nonzero exit propagation on failures.
+- Keep the ordinary empty-suite failure policy. A DB connection query, health
+  response or passing bootstrap test does not establish transaction atomicity,
+  Organization isolation or concurrency correctness. Record those checks as
+  scaffold evidence and identify the remaining T06 acceptance work explicitly.
+- Before T06 completion, supply the issue's real-PostgreSQL rollback,
+  Organization isolation, global Product reuse/private-data rejection and
+  deletion-versus-funding or settlement-source race evidence, together with the
+  applicable broader concurrency cases. Frontend/Playwright, CI and production
+  readiness stay tracked under their existing owners and prerequisites.
+
+### Prompt for the prerequisite planning agent
+
+```text
+Prepare an approval-ready foundation implementation proposal for T06 / #26.
+Read AGENTS.md, docs/technical-direction.md (especially the 2026-10-24 planning
+checklist), docs/agents/issue-tracker.md, docs/database/design.md, the approved
+update logs, and live issues #21, #22, #23, #24 and #26 including comments.
+
+Inspect the current workspace, package scripts, Turbo configuration and local
+Docker availability without installing or changing tools. For the five planned
+steps, recommend compatible exact dependency/image versions, a PostgreSQL
+driver, development/build/start approach, package exports and dependencies,
+migration workflow, environment contract, and Turbo task/cache behavior. Give
+alternatives, tradeoffs and concrete validation for each unapproved choice.
+
+Identify the T01/T02/T03/T04 decisions required before each affected operation,
+especially DBML keys/constraints before business migrations and authorization
+before business procedures. Separate infrastructure-only bootstrap from pending
+business schema and full T06 acceptance. Preserve existing issue dependencies.
+
+Write the proposal as pending approval in technical documentation, then present
+the concrete decisions for owner approval. Do not implement new choices,
+install/configure tools, change issue state, or treat this prompt as approval.
+```
 
 ## Approval workflow (2026-10-23)
 

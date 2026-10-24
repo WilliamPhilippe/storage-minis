@@ -56,6 +56,7 @@ tsconfig.json          # Root tooling typecheck
 eslint.config.mjs      # Shared lint rules
 .prettierrc.json       # Shared formatting settings
 vitest.config.mts      # Package test project discovery
+turbo.json             # Cached checks and shared task inputs
 apps/
   api/package.json     # @estoque164/api; future Fastify/tRPC server
   api/tsconfig.json
@@ -68,9 +69,9 @@ packages/
 
 Dependencies are saved with exact versions, and installs enforce engine
 compatibility. Development tools are installed at the root for use from a full
-workspace checkout. Application dependencies, build/dev/migration commands,
-Turborepo configuration, Docker Compose/PostgreSQL, and the React frontend belong
-to subsequent setup steps.
+workspace checkout. Turborepo 2.11.10 schedules and caches the existing checks.
+Application dependencies, build/dev/migration commands, Docker Compose/PostgreSQL,
+and the React frontend belong to subsequent setup steps.
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
 
@@ -80,7 +81,8 @@ Run these commands from the repository root with the pinned toolchain active:
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm typecheck` | Check root tooling, then both packages with strict TypeScript |
+| `pnpm typecheck` | Check root tooling and both packages concurrently through Turborepo |
+| `pnpm check` | Run cached typechecks, lint, formatting check, and unit tests through Turborepo |
 | `pnpm lint` | Check JavaScript/TypeScript with ESLint; warnings fail |
 | `pnpm lint:fix` | Apply ESLint automatic fixes |
 | `pnpm format:check` | Check formatting of supported source/configuration files |
@@ -89,6 +91,7 @@ Run these commands from the repository root with the pinned toolchain active:
 | `pnpm test:watch` | Watch unit tests during development |
 
 The [approved tooling decisions](docs/technical-direction.md#tooling-setup-decisions-2026-10-23)
+and [Turborepo setup decisions](docs/technical-direction.md#turborepo-setup-decisions-2026-10-23)
 record versions, settings, rationale, and scope. TypeScript's shared base carries
 correctness checks; the Node profile adds Node globals and NodeNext resolution.
 Use explicit type-only imports and `.js` extensions for relative imports in
@@ -122,6 +125,57 @@ tests must demonstrate rollback, constraints, and concurrent operations when the
 persistence foundation is implemented. Vitest execution does not replace
 `pnpm typecheck`.
 
+### Turborepo checks and cache
+
+Use the repository's pinned Turbo through pnpm. `pnpm typecheck` schedules the
+two package typechecks and the real root `typecheck:root` script. `pnpm check`
+adds the existing root lint, formatting check, and Vitest scripts. It currently
+exits 1 because there are no test files; successful tooling checks do not make
+the application suite complete.
+
+The standalone lint, formatting, and test commands still run their tools directly.
+`pnpm lint:fix`, `pnpm format`, and `pnpm test:watch` also run directly. To inspect
+the six executable tasks without running them:
+
+```sh
+pnpm exec turbo --version
+pnpm check --dry=json
+```
+
+To verify cache reuse for the five checks that can pass in the current checkout:
+
+```sh
+pnpm exec turbo run typecheck typecheck:root lint format:check --force --summarize
+pnpm exec turbo run typecheck typecheck:root lint format:check --summarize
+```
+
+The first command executes every selected task and writes successful results.
+The unchanged second run should report five cache hits. Summaries in
+`.turbo/runs/` record task hashes, inputs, and cache status. Use `--force` on a
+Turbo command when a fresh execution is needed.
+
+The explicit `.turbo/cache` directory keeps the cache inside each worktree;
+remote caching is disabled. All current tasks cache successful logs with no
+declared file outputs. Default inputs cover each package's files and, for root
+tasks, repository files including both workspaces. Shared tooling configuration
+changes invalidate every task. Documentation edits can also invalidate root
+checks because their inputs deliberately remain broad.
+
+Turbo uses strict environment filtering. Unit-test cache hashes include
+`NODE_ENV` and `TZ`; application environment variables and `.env` loading are not
+configured. Review task inputs and environment declarations when introducing
+code that depends on additional values or external state.
+
+The Turbo bootstrap runner check is separate from the aggregate command:
+
+```sh
+pnpm exec turbo run test -- --passWithNoTests
+```
+
+This verifies runner loading only. A cached bootstrap run does not change the
+normal empty-suite failure. See the [Turborepo decision record](docs/technical-direction.md#turborepo-setup-decisions-2026-10-23)
+for dependency, persistent-task, and future database-task boundaries.
+
 ## Agent guidance
 
 See [AGENTS.md](AGENTS.md) for repository context, current requirements, validation guidance, and decisions still needed before implementation.
@@ -141,6 +195,7 @@ tools, packages, versions, CLIs, architecture, and local environment changes; th
 - [Requirement ownership and backlog v0.7](docs/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical-direction.md)
+- [T06 foundation proposal — pending owner approval (2026-10-24)](docs/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical-direction-review.md)
 
 Keep this index linked only to the latest published version of each document. Versioned documents preserve change records and references to earlier versions. Read approved requirement update logs alongside published documents; explicit later decisions supersede conflicting wording.
