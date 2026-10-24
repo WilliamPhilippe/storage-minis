@@ -75,9 +75,9 @@ packages/
 Dependencies are saved with exact versions, and installs enforce engine
 compatibility. Development tools are installed at the root for use from a full
 workspace checkout. Turborepo 2.11.10 schedules and caches the existing checks.
-Application dependencies, build/dev/migration commands, PostgreSQL, and the React
-frontend belong to subsequent setup steps. Docker Compose currently provides
-only the tooling runner.
+Application dependencies, build/dev/migration commands and the React frontend
+belong to subsequent setup steps. Docker Compose provides the tooling runner
+and separate [local PostgreSQL services](#local-postgresql).
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
 
@@ -221,8 +221,10 @@ and one attempt. Ordinary build/init/run/down never invoke Doppler.
 
 ### Shutdown and explicit storage removal
 
-`./scripts/tooling.sh down` stops the selected project's resources and preserves
-all five volumes. There is no background tooling container after a finished
+`./scripts/tooling.sh down` stops the tooling-file resources and preserves
+all five volumes. Use `./scripts/database.sh down` for whole-project shutdown
+when PostgreSQL services have been started. There is no background tooling
+container after a finished
 command. To discard **all tooling dependencies and caches for one checkout**, use
 the separate destructive command below from its repository root. Confirm the
 project name first; subsequent use needs init and frozen install again.
@@ -236,6 +238,123 @@ docker compose --env-file /dev/null --file compose.yaml \
 Never use global pruning for checkout cleanup. Step 1 adds no database volumes.
 See the [approval and verification record](docs/technical/technical-direction.md#step-1-docker-tooling-2026-10-24)
 for actual evidence and remaining limits.
+
+## Local PostgreSQL
+
+Step 2 adds [compose.postgres.yaml](compose.postgres.yaml), explicitly combined
+with the tooling file by [database.sh](scripts/database.sh). PostgreSQL runs in
+separate development and test containers, using the Docker Official Image
+`postgres:18.6-bookworm` pinned by digest. The database is initially empty of
+application tables; the existing DBML is not applied. Drizzle belongs to Step 3.
+
+Reuse the checkout project name from Docker tooling. The owner added both
+passwords to Doppler project `storage-minis`, config `dev`; they must differ.
+Use the [existing dedicated browser login](#doppler-host-setup-and-verification).
+No host PostgreSQL client or additional Node dependencies are required.
+
+```sh
+export COMPOSE_PROJECT_NAME=storage-minis-beijing
+export DOPPLER_PROJECT=storage-minis
+export DOPPLER_CONFIG=dev
+export TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler
+unset DOPPLER_TOKEN
+
+./scripts/database.sh pull
+./scripts/database.sh up dev
+./scripts/database.sh up test
+./scripts/database.sh check dev
+./scripts/database.sh check test
+./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
+./scripts/database.sh psql test -c 'SELECT version();'
+```
+
+Pull explicitly before startup; the pull deadline is ten minutes. Each `up`
+waits up to 60 seconds for health, then performs a password-authenticated SQL
+identity check with a 15-second deadline. Success means the selected database,
+role `postgres` and timezone `UTC` match. `pg_isready` health alone does not prove
+authentication. A failed SQL check leaves storage intact and returns nonzero.
+
+| Target | From another container in this project | From a host database tool | Database / user | Password key in Doppler `dev` |
+| --- | --- | --- | --- | --- |
+| Development | `postgres:5432` | `127.0.0.1:5433` | `storage_minis_dev` / `postgres` | `POSTGRES_PASSWORD` |
+| Test | `postgres_test:5432` | `127.0.0.1:5434` | `storage_minis_test` / `postgres` | `POSTGRES_TEST_PASSWORD` |
+
+Both local roles are superusers. Future production/application/migration roles
+remain T04 work. TCP authentication uses SCRAM; host ports bind only to loopback.
+Containers use service DNS and port 5432, never a host-mapped port. A host
+database tool can use the corresponding password from Doppler; none is installed
+by this setup. `psql` runs noninteractively in a disposable image container: use
+`-c SQL`, not an interactive prompt. It propagates SQL errors and has a five-second
+connection timeout. Its general SQL commands have no statement timeout; readiness
+checks use five seconds.
+
+| Setting | Source / behavior |
+| --- | --- |
+| `POSTGRES_PASSWORD`, `POSTGRES_TEST_PASSWORD` | Owner-managed Doppler keys; no values in this repository. Only the selected key is fetched and passed to the matching service/client. |
+| `POSTGRES_PORT` | Nonsecret host override, default 5433. |
+| `POSTGRES_TEST_PORT` | Nonsecret host override, default 5434. Must differ from the development port. |
+| `COMPOSE_PROJECT_NAME` | Explicit unique checkout name; determines network and development volume ownership. |
+| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Must explicitly select `storage-minis` / `dev`; another mapping is rejected. |
+| Existing Docker/Doppler executable and credential-directory overrides | Same as Step 1. No new installation or shell initialization. |
+| `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Generated for the client from its explicit target; ambient libpq configuration is ignored. |
+
+For a second checkout, choose a different project name and export, for example,
+`POSTGRES_PORT=5435` and `POSTGRES_TEST_PORT=5436`. Never share a project name
+between checkouts. An occupied port fails; the launcher does not choose another
+port or database. Ports accept integers 1–65535 without leading zeros.
+
+Doppler runs on the host before Compose interpolation. The launcher clears
+ambient passwords, rejects service tokens, ignores `.env` and ambient Compose
+file selections, and disables fallback snapshots. Missing secrets, wrong
+project/config, missing browser login or failed network access stop the command.
+Do not print resolved Compose configuration or pass passwords in command-line
+URIs. Ordinary tooling and database stop/log/reset/pull commands need no Doppler
+access. No credentials or Doppler installation enter the Node image or Turbo.
+
+### Database lifecycle and reset
+
+Tooling-only commands may report the DB containers as “orphans” because they
+read only `compose.yaml`. This is expected with the optional database file;
+keep those containers and use the combined launcher for project shutdown.
+
+```sh
+./scripts/database.sh logs dev       # Follow selected service; Ctrl-C exits
+./scripts/database.sh logs test
+./scripts/database.sh stop test      # Discards test data
+./scripts/database.sh stop dev       # Preserves development data
+./scripts/database.sh down           # Stops project; preserves named volumes
+```
+
+Development storage is `<COMPOSE_PROJECT_NAME>_pgdata`, mounted at
+`/var/lib/postgresql`; PostgreSQL 18 uses `/var/lib/postgresql/18/docker` inside it.
+Ordinary stop/start and down/up preserve it. Test storage is a separate 512 MiB
+tmpfs, discarded on stop, restart, recreation or project shutdown. Its memory
+counts against the Docker VM's resources. Never use the development target as a
+disposable test fixture.
+
+Initialization runs only on empty storage. Changing a Doppler password does not
+change the role password in an existing development volume. A recreated server
+can be healthy while the authenticated check fails. Restore the matching Doppler
+credential or perform a separately reviewed SQL password change; the launcher
+does not change passwords or reset data automatically. Reinitialize disposable
+test storage to pick up its current credential.
+
+To deliberately discard one target, confirm the exact project name:
+
+```sh
+./scripts/database.sh reset test --confirm "$COMPOSE_PROJECT_NAME"
+./scripts/database.sh reset dev --confirm "$COMPOSE_PROJECT_NAME"
+```
+
+Test reset stops/removes only the test container and its tmpfs. Development
+reset checks Compose ownership labels, stops/removes only the development
+container and removes only `<project>_pgdata`. Both preserve the five tooling
+volumes; development reset preserves a running test database. Reset never
+restarts a service. Run `up <target>` explicitly afterward. Avoid
+`down --volumes` for DB reset because it also deletes tooling dependencies/cache.
+
+See [Step 2 approval and verification](docs/technical/technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
+for infrastructure evidence and the remaining application/schema boundaries.
 
 ## Development checks
 
@@ -360,6 +479,7 @@ tools, packages, versions, CLIs, architecture, and local environment changes; th
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical/technical-direction.md)
 - [Technical foundation implementation guide — agent steps, planning and expected results](docs/technical/technical-foundation-implementation-guide.md)
 - [Step 1 Docker tooling implementation plan — approved scope and handoff (2026-10-24)](docs/plans/step-1-tooling-plan-2026-10-24.md)
+- [Step 2 PostgreSQL implementation plan — approved scope and handoff (2026-10-24)](docs/plans/step-2-postgresql-plan-2026-10-24.md)
 - [T06 foundation proposal — pending owner approval (2026-10-24)](docs/technical/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical/technical-direction-review.md)
 
