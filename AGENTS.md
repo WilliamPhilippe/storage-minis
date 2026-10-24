@@ -6,6 +6,11 @@ StorageMinis manages inventory, purchases, sales, customer/supplier accounts, fi
 
 This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and a private pnpm workspace with `apps/api`, `packages/db`, a shared lockfile, strict TypeScript/ESLint/Prettier/Vitest configuration, and Turborepo checks with local caching. Docker tooling is implemented for existing workspace commands; see [Docker setup](README.md#docker-tooling) before running container checks or troubleshooting Doppler. There is no application source, implemented database schema, permanent test suite, or CI workflow. Application build/run commands remain pending.
 
+Step 2 supplies separate local development/test PostgreSQL services. Read
+[local PostgreSQL](README.md#local-postgresql) before starting, connecting to,
+stopping or resetting them. Development storage persists; test tmpfs is discarded
+on stop. The existing DBML has not been applied; Drizzle remains Step 3.
+
 Use this file as a navigation and implementation guide. Detailed business rules and acceptance scenarios live in the versioned documents below. Update this guide when approved decisions or actual tooling change.
 
 ## Owner approval before decisions

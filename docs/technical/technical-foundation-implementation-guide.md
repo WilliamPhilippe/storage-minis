@@ -4,10 +4,14 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Current status, 2026-10-24:** Workspace tooling, Turborepo checks and Step 1's
-Docker tooling/Doppler verification are implemented. Steps 2–6 remain
-unimplemented. The owner approved the concrete Step 1 plan and selected
-`storage-minis` naming. Later implementation choices follow the approval process
+**Current status, 2026-10-24:** Workspace tooling, Turborepo checks, Step 1's
+Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
+implemented. Steps 3–6 remain unimplemented. The owner approved both concrete
+plans and selected `storage-minis` naming. Step 1 PR #103 is merged. Step 2's
+[approved plan](../plans/step-2-postgresql-plan-2026-10-24.md) and
+[verification record](technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
+cover local database infrastructure only; the DBML has not been applied.
+Later implementation choices follow the approval process
 in [AGENTS.md](../../AGENTS.md#owner-approval-before-decisions).
 
 This guide owns the step sequence, planning instructions and completion criteria.
@@ -25,8 +29,8 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
-| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), awaiting review/merge. |
-| 2 | Development and test PostgreSQL | Step 1 | Not started |
+| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
+| 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). PR handoff pending. |
 | 3 | Drizzle connection and migration tooling | Steps 1–2 | Not started |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |

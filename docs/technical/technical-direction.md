@@ -261,7 +261,93 @@ with scope set to this absolute checkout. The Homebrew CLI was exercised; the
 standalone checksum installer is documented but was not executed. Probe files
 and secondary resources were removed, and only the renamed primary tooling
 volumes/image remain. [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103)
-contains the Step 1 handoff and awaits review/merge. T06 stays open.
+contains the Step 1 handoff and was merged on 2026-10-24 as
+`17771994adef99e6f575385266970d472c65b8b0`. T06 stays open.
+
+## Step 2 local PostgreSQL planning (2026-10-24)
+
+**Owner-approved scope:** PostgreSQL runs separately from the tooling container,
+with Compose definitions delivered in Step 2. The existing DBML is not applied;
+Drizzle schema and migrations remain later work. New required PostgreSQL
+environment variables must be added by the owner before implementation starts.
+
+During planning, the owner approved the `postgres` superuser in both local
+development and test containers, different passwords, databases
+`storage_minis_dev` / `storage_minis_test`, and both credential sets in the
+existing Doppler `storage-minis` / `dev` config. This keeps local setup small
+while separate servers/storage isolate test data. Separate application/migration
+roles and production privilege policy remain T04 work.
+
+The owner confirmed adding `POSTGRES_PASSWORD` and `POSTGRES_TEST_PASSWORD`
+to that config on 2026-10-24. Secret values were not fetched during planning;
+successful injection remains to be verified during implementation.
+
+**Implementation approval:** On 2026-10-24, the owner approved the concrete
+[Step 2 implementation plan](../plans/step-2-postgresql-plan-2026-10-24.md) with
+“Approved. Implement it”. This authorizes its exact image pin, optional Compose
+file, loopback ports, persistent development/disposable test storage, scoped host
+Doppler launcher, SQL utilities, readiness/reset commands and verification.
+No schema, application dependency or later foundation step is authorized.
+
+The first secret-free content comparison confirmed both keys exist but hold
+equal values. The owner was asked to change the test password before primary
+database initialization, preserving the approved separate-password setup.
+No secret value was displayed. The owner changed the test password, and a second
+comparison verified that both keys exist and differ before primary initialization.
+
+**Implemented outcome:** `compose.postgres.yaml` provides separate `postgres`,
+`postgres_test` and disposable `postgres-client` services using
+`postgres:18.6-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc`.
+Pulled image inspection confirms Linux arm64. Development uses the project-scoped
+`pgdata` volume; test uses a separate 512 MiB tmpfs. Both servers set UTC and SCRAM
+host authentication. Defaults publish loopback ports 5433/5434.
+
+`scripts/database.sh` implements the approved target-specific host Doppler
+injection, explicit project/config/files, ambient-value clearing, SQL identity
+checks, lifecycle commands and separately confirmed resets. The 60-second startup
+deadline excludes explicit image pull; SQL checks have a 15-second outer deadline
+and five-second connection/statement timeouts. SQL client cancellation also
+removes its uniquely named container and anonymous image volume. The image's
+declared anonymous client volume is transient and removed with `run --rm`; no
+development volume is mounted by the client. Ordinary SQL commands are
+noninteractive and have no global statement timeout.
+
+### Step 2 verification evidence (2026-10-24)
+
+Verified on Docker Desktop / Engine 29.9.2, Compose 5.6.1, Linux arm64. Primary
+project `storage-minis-beijing` uses real Doppler `storage-minis` / `dev` values.
+Disposable secondary project `storage-minis-step2-probe` used ports 5435/5436
+and process-scoped CLI fixture credentials, without modifying account secrets.
+
+| Scenario | Observed result |
+| --- | --- |
+| Image/start/authentication | Approved image pull completed within the 600-second bound; SQL reports 18.6. Both primary services reached health within 60 seconds and passed real password-authenticated role/database/UTC checks from the separate client service. |
+| Host access and target separation | Both bindings inspected as exactly `127.0.0.1:5433/5434`. SQL through Desktop's `host.docker.internal` reached each intended database. Development credentials were rejected by the test server. The host-route probe is Docker Desktop-specific. |
+| Persistent development / disposable tests | Empty probe schemas survived development stop/start and down/up in primary and secondary projects. Test schemas disappeared after test stop/start while development schemas remained. No business table was created. |
+| Workspace isolation | The same temporary schema name existed independently in both projects; dropping it from the secondary did not affect primary. Distinct project volumes/networks were verified. |
+| Port collision | A fresh collision project attempting the secondary's occupied port failed without choosing another port or reaching that existing DB as a successful startup. The original schema/data remained. Collision resources were removed. |
+| Credential initialization semantics | In the secondary project, recreating a retained development volume with a changed fixture initialization password left the server healthy but made authenticated startup fail. Restoring its original fixture credential restored access and preserved the schema. |
+| Resets | Both secondary resets required exact project confirmation. Development reset removed only `pgdata`, preserving a live test schema and markers in all five tooling volumes. Test reset discarded only test state, preserving development. Wrong confirmation failed without changes. |
+| Real Doppler failures | Empty browser-login state failed; a missing allowlisted key prevented a harmless payload; a deliberately unreachable API failed without running its payload. No account secret was changed by verification. Credential-directory file inventory was unchanged; no fallback snapshot was created. |
+| Fixture failures / validation | Process-scoped CLI fixtures separately proved missing/empty keys and outage failures despite ambient password placeholders. Invalid project/config, service token, equal ports, out-of-range ports and leading-zero ports were rejected. These fixture cases are distinct from real Doppler evidence above. |
+| Stale configuration | Real primary checks passed despite contradictory temporary `.env`, ambient passwords, libpq service/host/database/timezone options and Compose file selections. The temporary `.env` was removed; existing files would be restored byte for byte. |
+| SQL failures, identity and deadlines | Invalid SQL returned nonzero and removed its client. A secondary database timezone override caused the identity check to reject an empty result; resetting the override restored success. A delayed client-launch fixture failed at 15 seconds. |
+| Signals | TERM and INT interrupted a 60-second SQL sleep within ten seconds and removed its client container. INT uses TERM for child cancellation because asynchronous shells may inherit ignored INT, while the launcher reports exit 130. |
+| Cleanup | All temporary SQL schemas, secondary/collision containers, networks and volumes were removed. Primary development storage and all primary tooling volumes remain; both primary services are available. No global prune or primary reset ran. |
+| Tooling | Shell syntax and Compose validation passed. Forced container checks completed all five typecheck/root-typecheck/lint/format tasks successfully. The new Compose file passed targeted Prettier checking. Ordinary `pnpm test` still exits 1 because no test files exist. No dummy test, dependency, manifest, lockfile or Turbo task was added. |
+
+The existing tooling-only launcher may print Compose orphan warnings while the
+optional DB services run. It does not remove them; README explains using the
+combined database launcher for project shutdown. Host editor dependencies and
+production operation remain outside this delivery.
+
+The primary databases contain no application tables or probe schemas. These
+results establish local infrastructure, not schema correctness, Organization
+authorization, atomic business transactions or concurrency invariants. Step 3
+receives the service addresses, database/role/password-key mapping and lifecycle
+commands documented in [README](../../README.md#local-postgresql). It must begin
+from this step's merged handoff and obtain separate approval for Drizzle work.
+T06 and its T01/T02/T04 prerequisites remain open.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
