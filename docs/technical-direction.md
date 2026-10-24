@@ -160,6 +160,39 @@ These results establish tooling behavior only. T06 and its T01/T02/T04
 prerequisites remain open; application, database, deployment, remote-cache, and CI
 implementation evidence remains pending.
 
+## Environment configuration — Doppler (2026-10-24)
+
+**Owner decision:** Use Doppler to manage environment variables. This selects the
+provider and supersedes the foundation proposal's copied-local-`.env` and native
+env-file-loading approach. Application/CLI code receives environment values and
+validates them at explicit entry points. Doppler integration is not implemented.
+An example file may document variable names; it is not a copied secret store or
+automatic runtime fallback.
+
+The Docker-first preference still applies. The Step 1 agent must research and
+propose exact Doppler CLI/image pins and an authenticated launch path supplying
+both host Compose interpolation and container processes. A CLI running only in
+the Node container does not supply PostgreSQL initialization or host project/port
+settings to Compose. Prefer containerized tooling; explain a necessary host
+installation before requesting approval.
+
+Actual Doppler project/config identifiers, development/test/production mapping,
+credential bootstrap and access scope, injection placement, precedence for
+checkout-specific nonsecret values, rotation/restart behavior and offline/fallback
+policy remain decisions for the applicable step and T04. The provider selection
+does not approve those details. Tests and development retain separate database
+targets. Routine builds and DB-free checks stay independent of live secrets;
+application secrets stay out of image layers, committed files and test/cache
+artifacts.
+
+Doppler documents [process environment injection](https://docs.doppler.com/docs/cli),
+[Compose integration](https://docs.doppler.com/docs/docker-compose) and
+[container runtime injection](https://docs.doppler.com/docs/dockerfile). Its CLI
+also has [encrypted fallback behavior](https://docs.doppler.com/docs/automatic-fallbacks)
+that must be addressed explicitly rather than treated as an approved offline
+policy. No Doppler installation, credentials, project creation or account changes
+were made when recording this decision.
+
 ## Local tooling preference (2026-10-24)
 
 **Owner instruction:** Prefer Docker images for tools and supporting services
@@ -206,9 +239,10 @@ prerequisite boundaries below.
 ### Before implementation: approve the foundation proposal
 
 The [2026-10-24 foundation proposal](t06-foundation-proposal-2026-10-24.md)
-records inspected local prerequisites, exact candidate versions, F01–F13 approval
+records inspected local prerequisites, exact candidate versions, F01–F14 approval
 items, the proposed commands/task graph, and deferred schema/security/acceptance
-gates. **It is pending owner approval; its choices are not adopted or implemented.**
+gates. **Remaining implementation choices are pending approval. Doppler's provider
+selection is approved, and Docker Desktop availability is verified.**
 
 Prepare one concrete proposal under [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26)
 covering compatible exact dependency/image versions, the PostgreSQL driver,
@@ -245,9 +279,10 @@ Items to resolve and verify in the implementation proposal:
   persistent storage, and workspace-specific project/volume naming. Multiple
   checkouts must have a documented way to avoid port collisions and unintended
   database sharing. Keep test database/storage ownership explicit.
-- Supply a secret-free `.env.example` and document where Compose and host-run
-  Node commands obtain configuration. Distinguish the host connection address
-  from a Compose-network address; do not assume the API is containerized.
+- Document variable names and Doppler config mapping without secret values.
+  Specify how Compose and container Node commands receive required values,
+  including host versus Compose-network addresses. The copied `.env` setup path
+  is superseded.
 - Define a bounded readiness check and verify a real connection. Container
   startup alone does not establish database readiness; see [Compose startup and
   readiness](https://docs.docker.com/compose/how-tos/startup-order/).
@@ -300,10 +335,10 @@ Items to resolve and verify in the implementation proposal:
   required artifacts. Persistent development tasks use `cache: false` and
   `persistent: true`; keep them outside finite task prerequisites. Declare actual
   build outputs and verify restoration. See [Turbo task configuration](https://turborepo.dev/docs/crafting-your-repository/configuring-tasks).
-- Preserve strict environment filtering. Declare variables needed by each task,
-  hash result-affecting values for cached tasks, and include loaded ignored
-  `.env` files as inputs where relevant. Turbo does not itself load `.env` files;
-  document the chosen loader and precedence. See [Turbo environment handling](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables).
+- Preserve strict environment filtering. Account for Doppler injection placement:
+  declare variables before Turbo computes cached-task hashes, or keep a task
+  uncached when its inputs cannot be captured. Document precedence and any
+  approved fallback storage. See [Turbo environment handling](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables).
 
 ### Step 4: tRPC integration with Zod
 
@@ -403,6 +438,7 @@ environment changes. Existing approved choices retain their recorded scope.
 | Database | PostgreSQL | Final schema, constraints, and transaction/concurrency design remain pending. |
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
 | Development infrastructure | Docker Compose for PostgreSQL | Production database hosting remains undecided. |
+| Environment variables | Doppler | Selected on 2026-10-24; CLI/container injection, config mapping, authentication and operational policy remain implementation decisions. |
 | Tests | Vitest and Playwright | Vitest for unit/integration tests, including real PostgreSQL for rollback, constraints, and concurrency; Playwright for core administrator and public-catalog workflows. |
 | Lint and formatting | ESLint and Prettier | Concrete settings and commands approved in the 2026-10-23 tooling setup above. |
 
@@ -446,7 +482,7 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Final logical schema and state dimensions, transaction boundaries, Organization constraints, active-commitment/collection uniqueness, and allocation concurrency enforcement. |
 | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | Complete bootstrap, persistence, activity/inactivity handling, return behavior, logout scope/revocation, and recovery around the accepted Google/ID-token/active-use-refresh/logout choices and supplied administrator email. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
-| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, secrets/configuration, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
+| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
 | [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Pin supported versions, choose package layout and migration/API conventions, establish repeatable setup and CI, and prove rollback and Organization isolation with the selected stack. |
 

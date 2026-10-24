@@ -3,7 +3,8 @@
 **Status: proposed; awaiting owner approval.** This document recommends the five
 steps in the [planning checklist](technical-direction.md#next-foundation-steps--planning-checklist-2026-10-24).
 It authorizes no installation, application configuration, schema migration or
-business access. Approval date and implementation evidence are pending.
+business access. Approval and implementation evidence for the remaining choices
+are pending; Doppler's provider selection is approved as recorded below.
 
 For the current six-agent execution sequence, planning instructions and per-step
 completion criteria, read the [technical foundation implementation guide](technical-foundation-implementation-guide.md).
@@ -23,6 +24,13 @@ host installation needs a demonstrated reason and prior notice. The owner
 subsequently installed Docker; verified availability is recorded below. This
 approves the preference, not the entire proposal. F13 below revises the
 initial host-execution recommendation; concrete implementation remains pending.
+
+**Later owner decision (2026-10-24):** Use Doppler for environment variables.
+This supersedes the copied-local-`.env` and native env-file-loading recommendation.
+F08 and the shared environment contract now reflect that selection. Doppler
+CLI/image pins, config identifiers, authentication, injection and fallback policy
+still need the assigned agent's concrete plan; see
+[technical direction](technical-direction.md#environment-configuration--doppler-2026-10-24).
 
 ## 1. Inspected state and governing inputs
 
@@ -83,9 +91,10 @@ prerequisites; it does not unblock or complete T06.
 
 ## 2. Approval register and exact versions
 
-F02 is owner-completed and verified. The remaining F decisions are proposals;
-approve them individually or together. Installing Docker does not approve the
-application/container configuration or other implementation choices.
+F02 is owner-completed and verified; F14's Doppler provider selection is approved.
+The remaining implementation decisions are proposals; approve them individually
+or together. These recorded outcomes do not approve unspecified integration or
+application/container configuration.
 
 | Decision | Concrete recommendation |
 | --- | --- |
@@ -96,12 +105,13 @@ application/container configuration or other implementation choices.
 | F05 — Driver/lifecycle | Drizzle's `node-postgres` adapter with one explicitly owned `pg.Pool` per API process; bounded connection/query/shutdown behavior. |
 | F06 — Migrations | Reviewed Drizzle-generated SQL plus metadata committed as source; separate explicit application command, initially guarded while schema approval is pending. |
 | F07 — Modules/commands | Compiled ESM DB exports, TypeScript builds, `tsx` API development, DB compiler watch, Node built start, and a type-only API export. |
-| F08 — Environment | One ignored root `.env` for local tools, native Node loading plus Zod validation; injected production environment; explicit test targeting. |
+| F08 — Environment | Doppler-supplied environment plus Zod validation at command/process boundaries; explicit test targeting. The former copied `.env` and native loader are superseded; injection/authentication details remain planning. |
 | F09 — Server | Application factory/process-entry separation, `/health/live` and `/health/ready`, structured redacted logs and graceful shutdown. |
 | F10 — tRPC | `/trpc`, JSON transport, bounded `diagnostics.echo` input/output validation, explicit context and safe errors; diagnostic access only. |
 | F11 — Verification | Meaningful unit tests, separate uncached database tests and built-process smoke, plus documented failures/cleanup and deferred acceptance. |
 | F12 — Turbo | Add only real tasks; builds and checks cache with dependency ordering; live-state work stays uncached; development/start tasks are persistent. |
 | F13 — Container execution | Run dependency installation, Drizzle Kit, API development, builds and tests in a pinned Node tooling container; use Docker/Compose on the host for lifecycle commands. Keep Linux dependencies/cache isolated from host dependencies. |
+| F14 — Environment provider | **Owner-approved 2026-10-24:** Doppler manages environment variables. Exact CLI/image pins, project/config mapping, credentials, injection, precedence and offline/fallback behavior remain implementation decisions. |
 
 | New package | Exact version | Dependency owner and reason | Primary version evidence |
 | --- | --- | --- | --- |
@@ -148,8 +158,10 @@ without pulling it; Linux arm64/v8 and amd64 are available.
 node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
 ```
 
-Install only `pnpm@12.15.0` into that image using its npm; this is an image build
-step, not a machine/global-host install. Install workspace dependencies with
+Bootstrap `pnpm@12.15.0` into that image using its npm; this is an image build
+step, not a machine/global-host install. Step 1 also plans the pinned Doppler
+CLI/image execution path; no Doppler version or host install is selected here.
+Install workspace dependencies with
 pnpm and the shared lockfile in container-owned storage. Do not use an unpinned
 third-party Drizzle image or download CLI versions on each invocation. All
 package ownership/version and TypeScript build choices below remain unchanged.
@@ -172,16 +184,22 @@ Keep Docker orchestration on the host. The tooling service does not install the
 Docker CLI, mount the daemon socket or launch sibling containers. Explicit host
 Compose commands start the DB before a DB-dependent command. Root/package pnpm
 scripts remain normal Node/Turbo commands *inside* `tooling`; no recursive Docker
-wrapper is added to the root check scripts. Host entry points are:
+wrapper is added to the root check scripts. Host operations below are the Compose
+payloads for the Doppler-aware launch path planned in guide Step 1. They are not
+complete secret-bearing launch recipes until that injection path is approved.
+The plan must supply both Compose interpolation and container process values;
+placing Doppler only in the Node container leaves the host boundary unresolved.
+Pure image builds/install/checks must remain usable without application secrets.
+[Doppler's Compose integration options](https://docs.doppler.com/docs/docker-compose).
 
 | Operation | Proposed host command, from the repository root |
 | --- | --- |
-| Build tooling image | `docker compose --env-file .env --profile tools build tooling` |
-| Install locked dependencies | `docker compose --env-file .env --profile tools run --rm --no-deps tooling pnpm install --frozen-lockfile` |
-| Build / check / migration command | `docker compose --env-file .env --profile tools run --rm --no-deps tooling pnpm <command>` |
-| Development / built start | `docker compose --env-file .env --profile tools run --rm --no-deps --service-ports tooling pnpm dev` (or `pnpm start`). |
-| PostgreSQL lifecycle | Direct host `docker compose --env-file .env ...` actions from Step 1. |
-| SQL inspection | `docker compose --env-file .env exec postgres psql -U estoque164 -d estoque164_dev`; no host PostgreSQL client install. |
+| Build tooling image | `docker compose --profile tools build tooling` |
+| Install locked dependencies | `docker compose --profile tools run --rm --no-deps tooling pnpm install --frozen-lockfile` |
+| Build / check / migration command | `docker compose --profile tools run --rm --no-deps tooling pnpm <command>` |
+| Development / built start | `docker compose --profile tools run --rm --no-deps --service-ports tooling pnpm dev` (or `pnpm start`). |
+| PostgreSQL lifecycle | Host `docker compose ...` actions with the approved Doppler-to-Compose injection. |
+| SQL inspection | `docker compose exec postgres psql -U estoque164 -d estoque164_dev`; no host PostgreSQL client install. |
 
 Compose one-off commands do not publish service ports unless requested. Publish
 only `127.0.0.1:${API_PORT:-3000}:3000` for interactive API development/start.
@@ -258,8 +276,10 @@ local-only and privileged, not the production API role design.
 Require an explicit `COMPOSE_PROJECT_NAME`, initially `estoque164-budapest`, and
 document changing it for every checkout. A second checkout can use
 `estoque164-other`, PostgreSQL ports 5435/5436 and `API_PORT=3001`. Names isolate
-volumes/networks; distinct host ports prevent bind collisions. Keep project and
-ports in that checkout's ignored `.env`; never share a global named volume.
+volumes/networks; distinct host ports prevent bind collisions. Plan the checkout's
+Doppler mapping or explicit nonsecret launcher overrides for these values;
+their precedence must not silently override managed credentials. Never share a
+global named volume.
 [Compose project isolation](https://docs.docker.com/compose/how-tos/project-name/).
 
 `postgres_test` uses database `estoque164_test`, host port 5434 by default and
@@ -276,7 +296,7 @@ with the tooling-container driver's authenticated `SELECT 1`.
 Proposed host lifecycle commands, always run from the root. They execute directly
 and are never Turbo-cached; F13 supersedes the original host-pnpm/Turbo wrappers:
 
-| Purpose | Host Compose action, with `--env-file .env` |
+| Purpose | Host Compose action, inside the approved Doppler-aware launch path |
 | --- | --- |
 | Start development DB | `up -d --wait --wait-timeout 60 postgres` |
 | Stop development DB | `stop postgres`; preserve development volume. |
@@ -373,7 +393,7 @@ results are deferred until executable schema exists.
 F07 preserves the approved directories and adds only these responsibilities:
 
 ```text
-compose.yaml / .env.example                    local infrastructure/config contract
+compose.yaml / variable inventory              infrastructure/config contract, no local secret store
 docker/Dockerfile.tooling                       pinned container Node/pnpm runtime
 apps/api/src/{app,server,config}.ts              factory, process entry, validation
 apps/api/src/trpc/{context,router}.ts            diagnostic adapter contract
@@ -430,15 +450,16 @@ production packaging remain separate validation, not assumed completed here.
 
 | Entry | Proposed package/root command, executed inside tooling |
 | --- | --- |
-| API `dev` | `tsx watch --clear-screen=false --include '../../packages/db/dist/**/*.js' --include '../../.env' src/server.ts` |
+| API `dev` | `tsx watch --clear-screen=false --include '../../packages/db/dist/**/*.js' src/server.ts` |
 | DB `dev` | `tsc --project tsconfig.build.json --watch --preserveWatchOutput` |
 | Both package `build` | Native Node clean of own `dist`, then `tsc --project tsconfig.build.json`. |
 | API `start` | `node --enable-source-maps dist/server.js` |
 | Root `dev` / `build` | `turbo run dev` / `turbo run build`. |
 | Root `start` | `turbo run start --filter=@estoque164/api`, with a finite API build prerequisite. |
 
-`tsx` ignores `dist`/`node_modules` by default, so explicitly watch the DB output
-and local env file. The initial DB build completes before API watch starts;
+`tsx` ignores `dist`/`node_modules` by default, so explicitly watch the DB output.
+Doppler changes follow the approved restart policy, not a local env-file watcher.
+The initial DB build completes before API watch starts;
 subsequent DB compilation causes API reload. DB watch compilation errors keep
 the last successful output and show an error; successful checks remain the
 delivery gate. Native Node type stripping/watch is an alternative, but changes
@@ -481,14 +502,16 @@ No development runner is allowed to mask a broken built entry point.
 
 ## 6. Shared environment contract
 
-F08 recommends a committed, secret-free root `.env.example`, copied manually to
-ignored `.env`. It contains the following names/defaults; the password is a
-replacement marker and must be changed locally, not a working credential.
+**Approved source: Doppler.** F08 now recommends consuming its injected process
+environment and validating values with Zod. The former copied `.env` and native
+`process.loadEnvFile` path is superseded. A committed inventory or `.env.example`
+may show names, requirements and nonsecret examples, but is not copied to a live
+secret file or loaded by application code. The proposed variable contract is:
 
 | Variable | Local meaning / precedence |
 | --- | --- |
 | `COMPOSE_PROJECT_NAME` | Required checkout-specific value; example `estoque164-budapest`. |
-| `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` | `estoque164`, `estoque164_dev`, replacement marker; reject missing/blank/unchanged marker. |
+| `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` | Proposed local user/database `estoque164`, `estoque164_dev`; obtain the actual password from the approved Doppler config and reject missing/blank/example values. |
 | `POSTGRES_PORT`, `POSTGRES_TEST_PORT` | 5433 and 5434; integer ports 1–65535, distinct within one checkout. |
 | `API_PORT` | Host's loopback API mapping, default 3000; a second checkout can use 3001 without changing the internal API port. |
 | `DATABASE_HOST`, `DATABASE_PORT` | Tooling injects `postgres`, 5432. Code defaults to `127.0.0.1` and the mapped PostgreSQL port only for a separately approved host run. |
@@ -497,49 +520,60 @@ replacement marker and must be changed locally, not a working credential.
 | `NODE_ENV` | `development` locally; permit `development`, `test`, `production`. |
 | `HOST`, `PORT`, `LOG_LEVEL` | Code defaults `127.0.0.1`, 3000, `info`; tooling injects `0.0.0.0`, 3000. Validate the host/port and supported logger level. |
 | `SMOKE_BASE_URL` | Optional HTTP harness target; default `http://127.0.0.1:3000` inside tooling regardless of the listener's bind-all address; reject nonloopback targets. |
+| Doppler selection/bootstrap | Actual project/config and credential mechanism are not supplied. Plan them separately; bootstrap credentials are not business API variables and must not become committed values. |
 
-The example documents a placeholder test URL for the separate test service;
-the developer substitutes the local password using `postgres_test:5432` inside
-tooling, not the host-mapped port. Tests reject that marker,
-the development DB name, equality with the development URL, hosts other than the
-explicit test service or loopback, and
-any database name other than `estoque164_test`. This bootstrap supports one
-integration runner per checkout; parallel checkouts have separate service ports
-and projects. Broader CI target rules require a later approved configuration.
+The Doppler mapping must retain an explicit test URL using `postgres_test:5432`
+inside tooling. Tests reject missing/example values, the development DB name,
+equality with the development URL, hosts other than the test service or loopback,
+and database names other than `estoque164_test`. Config identifiers are still
+unknown; development/test/production are required roles to map, not invented
+Doppler config names. Broader CI targeting remains T04 work.
 
-At explicit API/DB command boundaries in development, resolve the root `.env`
-relative to the module location, never arbitrary cwd, and load it using Node
-24's native `process.loadEnvFile` if present. Existing process values win over
-file values. Missing files are allowed only if the required environment is
-already supplied; other file errors fail. Unit tests pass explicit config values
-and do not read developer files. Production skips file loading and requires an
-injected `DATABASE_URL`, with T04 still owning TLS/secret provisioning. Neither
-the DB factory nor the app/router import loads an environment file.
-[Native Node env loading](https://nodejs.org/docs/latest-v24.x/api/process.html#processloadenvfilepath).
+The Step 1 plan must resolve two boundaries: Doppler values available before host
+Compose interpolates its file, and explicit variables delivered to PostgreSQL,
+the Node tooling container and its Turbo child tasks. Docker's `environment`
+mapping must pass only needed keys; Compose interpolation alone does not inject
+every value into services. Disabling implicit local `.env` loading is part of
+the plan, so stale files cannot supply a second source; Compose supports
+`COMPOSE_DISABLE_ENV_FILE=1`. Document precedence and approved nonsecret checkout
+overrides rather than inheriting arbitrary developer credentials.
+[Compose environment controls](https://docs.docker.com/compose/how-tos/environment-variables/envvars/).
 
-Compose reads root `.env` explicitly through `--env-file`; interpolate only the
-needed PostgreSQL fields into each DB service. Tooling explicitly receives the
-runtime fields it needs, including container DB addresses, rather than the whole
-host environment. Shell
-overrides take precedence there as well. Compose must require the password and
-project name rather than silently falling back to a shared setup. Avoid Compose
-variable expansion/quotes in password values; document a literal local value
-compatible with both parsers. Node tooling uses `postgres:5432` on the Compose
-network. A separately approved host client uses `127.0.0.1` and the mapped host
-port; it cannot resolve the Compose service name. Changing init credentials on
-an existing volume does not reinitialize it;
-report authentication failure and resolve deliberately.
-[Compose interpolation](https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/).
+Doppler documents a runtime CLI inside an image and injection into the Compose
+process. Compare those with a containerized fetch/launcher bridge that keeps
+Docker orchestration on the host. A CLI installed only inside Node cannot modify
+the parent host environment. Select and pin the executable approach before
+publishing complete launch commands; a host CLI requires its own justified
+approval. No container receives the Docker socket to solve this boundary.
+[Doppler Compose integration](https://docs.doppler.com/docs/docker-compose).
 
-Zod validates runtime values and reports field names/categories without echoing
-secrets. Package builds/typechecks never read environment files or connect to a
-DB. `dotenv` is a familiar alternative but adds a dependency for behavior already
-available in the pinned Node; shell-only loading avoids code but is inconsistent
-across package working directories and test invocations. Prefer native loading
-at explicit entry points plus package-owned validation. Verify overrides, missing
-files, malformed ports/URLs, placeholder rejection, special-character password
-encoding and redaction. No Firebase credential or administrator bypass variable
-is introduced.
+Plan developer authentication, config-scoped runtime access and a bootstrap
+credential source outside the managed application values. Doppler credentials
+must not be image build arguments, committed files, captured command output or
+application response fields. The ordinary Node code consumes `process.env`;
+provider injection does not require an application SDK or `.env` parser.
+[Doppler CLI](https://docs.doppler.com/docs/cli),
+[service token scope](https://docs.doppler.com/docs/service-tokens).
+
+Zod validation remains at explicit API/DB command boundaries and reports field
+names/categories without values. Imports, builds and DB-free tests need no live
+Doppler or DB connection. Unit tests supply explicit fixtures. Node tooling uses
+`postgres:5432`; separately approved host clients use the host-mapped port.
+Changing a managed password does not reinitialize an existing PostgreSQL volume;
+rotation, synchronization and process restart behavior need explicit treatment.
+
+The CLI can maintain an encrypted fallback snapshot. Offline access, storage,
+cleanup and stale/revoked-credential behavior must be proposed and approved;
+do not silently adopt a native `.env` fallback or assume every network failure
+stops a CLI with cached secrets. Keep any approved snapshot outside build/source
+and Turbo artifact storage.
+[Doppler fallback behavior](https://docs.doppler.com/docs/automatic-fallbacks).
+
+Verify injection on both boundaries, missing/invalid access, wrong config/test
+target, precedence, special-character values, redaction and approved fallback
+behavior. Preserve graceful signal forwarding through the chosen launcher.
+T04 retains production authentication/integration/recovery details. No actual
+Doppler project, config, credential or host installation is created by this plan.
 
 ## 7. Step 4 — tRPC with Zod
 
@@ -618,8 +652,9 @@ After implementation approval, document the actually verified README sequence:
 
 1. Owner completes the Docker prerequisite; verify CLI/daemon/Compose. The host's
    existing Node/pnpm setup is untouched.
-2. Copy `.env.example` to `.env`, choose a unique project/ports and local password;
-   set the explicit disposable test URL with the test service's container address.
+2. Complete the approved Doppler authentication/config mapping. Set unique
+   workspace project/ports and managed DB values, including the explicit test URL
+   with the test service's container address; do not copy secrets into `.env`.
 3. Build the approved tooling image, verify its Node/pnpm pins, then run frozen
    install, workspace discovery and configuration validation inside tooling,
    without printing secrets. Start PostgreSQL through the explicit host Compose
@@ -633,7 +668,8 @@ After implementation approval, document the actually verified README sequence:
    way to verify API/DB edit feedback.
 6. Start the test service through host Compose, run `pnpm test:integration` inside
    tooling, then stop the test service through host Compose.
-7. Exercise invalid config, bad credentials, DB outage/recovery, occupied port,
+7. Exercise invalid/missing Doppler access/config, approved fallback behavior,
+   invalid application values, bad DB credentials, outage/recovery, occupied port,
    malformed HTTP and shutdown failures. Verify nonzero exits and redacted logs.
 8. Stop PostgreSQL or bring down the project through host Compose; document
    logs/restart and the separately invoked destructive reset. Record evidence
@@ -677,7 +713,7 @@ not hidden prerequisites of build/check/start. The root formatter already covers
 root YAML/JSON and package TypeScript; new root JS scripts join ESLint coverage.
 
 `build` and checks use default source inputs plus existing shared inputs. They
-must not load `.env` or embed runtime values. Unit tests only hash their approved
+must not fetch live Doppler configuration or embed runtime values. Unit tests only hash their approved
 `NODE_ENV`/`TZ`; config tests inject values explicitly. Uncached runtime tasks
 allow the variables they actually read through task-scoped `passThroughEnv`:
 
@@ -686,16 +722,19 @@ allow the variables they actually read through task-scoped `passThroughEnv`:
 | API `dev`/`start`, `smoke` | `DATABASE_URL`, `DATABASE_HOST`, `DATABASE_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ`; smoke also `SMOKE_BASE_URL`. |
 | `db:check`/`db:migrate` | Database URL/host/port/local PostgreSQL fields, `NODE_ENV`, `TZ`. |
 | `test:integration` | `TEST_DATABASE_URL`, `DATABASE_URL` for wrong-target rejection, `NODE_ENV`, `TZ`. |
-| Host Compose commands | Outside Turbo filtering; Compose interpolation uses the explicit root env file and host overrides. Do not forward Docker client selectors or the Docker socket into tooling. |
+| Host Compose commands | Outside Turbo filtering; the approved Doppler-aware launcher supplies interpolation values with explicit precedence. Do not forward Docker client selectors or the Docker socket into tooling. |
 
-Declare the ignored root `.env` explicitly as an input of tasks that load it:
-`$TURBO_DEFAULT$` plus `$TURBO_ROOT$/.env` for root tasks, or the equivalent
-`../../.env` for API/DB tasks. This includes generation if its wrapper loads the
-file; prefer offline generation without loading it. These tasks are uncached,
-but the declaration documents their real inputs. Do not add secrets globally or
-rely on pass-through values to invalidate cached results. If future cached code
-reads configuration, add both its env names to `env` and its loaded files to
-`inputs` before enabling caching. Turbo itself does not load `.env`.
+Doppler injection must occur before Turbo computes hashes for any cached task
+whose result depends on those values. Declare the actual result-affecting values
+in `env`; a Doppler project/config name alone does not capture changes to its
+contents. Fetching values from Doppler inside a cached task after hashing is
+unsafe unless its inputs are otherwise fully captured; use `cache: false` when
+they are not. Existing runtime/DB tasks already remain uncached. Keep Doppler
+bootstrap credentials out of global pass-through and cache/log artifacts; the
+launcher supplies task-scoped application values. Offline generation/builds do
+not need secrets. The old `.env` file-input declarations are superseded. Any
+approved encrypted Doppler fallback state needs separate storage/cleanup and
+must not enter source, images, fixtures or the Turbo cache.
 [Environment and cache rules](https://turborepo.dev/docs/crafting-your-repository/using-environment-variables).
 
 Verify dry-run task IDs/ordering and absence of recursion; force a successful
@@ -767,7 +806,8 @@ not duplicate or close their full workflows.
 
 ## 11. Approval and validation record
 
-**Owner decision:** F02 owner-completed; all other implementation items pending.
+**Owner decision:** F02 owner-completed; F14 Doppler provider selection approved;
+remaining implementation items pending.
 **Owner installation/verification date:** 2026-10-24. **Application implementation
 evidence:** pending. On approval, record exactly which F items and partial scope
 were approved, with date and rationale; preserve unapproved items as proposals.
@@ -781,6 +821,11 @@ recommendation under that preference and still need implementation approval.
 F01 and F03–F13 have not been collectively approved. The owner's subsequent
 Docker installation and successful read-only verification complete F02 only;
 they do not approve image pulls, tooling builds or application configuration.
+
+**Approved provider, 2026-10-24:** The owner selected Doppler for environment
+variables. This supersedes F08's local env-file source/loader and related command,
+watcher and cache recommendations. The updated documentation records the choice;
+no Doppler account, credentials, CLI or runtime integration has been configured.
 
 Completed for this proposal: local read-only environment/tool inspection; all five
 live issues including their empty comment collections; native #24/#26 blockers;
