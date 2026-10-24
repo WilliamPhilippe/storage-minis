@@ -2,9 +2,9 @@
 
 ## Project and repository state
 
-Estoque164 manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
+StorageMinis manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
-This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and a private pnpm workspace with `apps/api`, `packages/db`, a shared lockfile, strict TypeScript/ESLint/Prettier/Vitest configuration, and Turborepo checks with local caching. There is no application source, implemented database schema, permanent test suite, or CI workflow. Application build/run commands remain pending.
+This repository will contain the **full application**, including the backend/API and React frontend. It currently contains specifications, planning documents, a DBML draft, and a private pnpm workspace with `apps/api`, `packages/db`, a shared lockfile, strict TypeScript/ESLint/Prettier/Vitest configuration, and Turborepo checks with local caching. Docker tooling is implemented for existing workspace commands; see [Docker setup](README.md#docker-tooling) before running container checks or troubleshooting Doppler. There is no application source, implemented database schema, permanent test suite, or CI workflow. Application build/run commands remain pending.
 
 Use this file as a navigation and implementation guide. Detailed business rules and acceptance scenarios live in the versioned documents below. Update this guide when approved decisions or actual tooling change.
 
@@ -21,7 +21,7 @@ For Node.js version management, fnm and nvm are both compatible with the reposit
 
 ## Confirmed technical direction
 
-The owner confirmed the stack on 2026-10-21 and refined money, identity, and dates in the [2026-10-22 schema review](docs/requirement-updates/2026-10-22-schema-review.md). Read [Technical direction](docs/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling, applying the later log where wording conflicts.
+The owner confirmed the stack on 2026-10-21 and refined money, identity, and dates in the [2026-10-22 schema review](docs/requirement-updates/2026-10-22-schema-review.md). Read [Technical direction](docs/technical/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling, applying the later log where wording conflicts.
 
 | Area | Agreed choice |
 | --- | --- |
@@ -35,12 +35,12 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
 | Package manager | pnpm. |
 | Build tasks | Turborepo. |
-| Environment variables | Doppler, selected on 2026-10-24; integration and config mapping remain planning work. Read [environment configuration](docs/technical-direction.md#environment-configuration--doppler-2026-10-24). |
+| Environment variables | Doppler, selected on 2026-10-24; Step 1 supplies host Compose verification for `storage-minis` / `dev`; application/test/production mapping remains later work. Read [environment configuration](docs/technical/technical-direction.md#environment-configuration--doppler-2026-10-24). |
 | Tests | Vitest for unit/integration tests; real PostgreSQL for persistence invariants; Playwright for core browser workflows. |
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Numeric widths and detailed contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
-Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records before changing shared configuration, module conventions, or task caching. The remaining layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; workspace tooling is not evidence that the application foundation is implemented.
+Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records before changing shared configuration, module conventions, or task caching. The remaining layout, migration workflow, and concrete transaction/concurrency implementation remain design choices under T06/T01; workspace tooling is not evidence that the application foundation is implemented.
 
 Hosting, deployment, backups, and operational targets remain T04 work. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
@@ -49,14 +49,14 @@ Hosting, deployment, backups, and operational targets remain T04 work. Database 
 | Source | Purpose |
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
-| [Technical foundation implementation guide](docs/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
-| [Requirements v0.7](docs/requirements-v0.7.md) | Published requirements and acceptance scenarios; apply the later approved update log to conflicting wording. |
-| [Entity map v0.8](docs/entity-map-v0.8.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.7. Entities do not automatically imply SQL tables. |
+| [Technical foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
+| [Requirements v0.7](docs/requirements/requirements-v0.7.md) | Published requirements and acceptance scenarios; apply the later approved update log to conflicting wording. |
+| [Entity map v0.8](docs/entities/entity-map-v0.8.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.7. Entities do not automatically imply SQL tables. |
 | [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. Apply dated decisions in order, including the 2026-10-23 DBML review; the index tracks propagation. |
 | [Issue propagation record](docs/requirement-updates/2026-10-22-issue-propagation.md) | Read for backlog/acceptance work. Maps all 82 project issues, completed live updates, preserved ownership/dependencies, and remaining consolidation. |
-| [Earlier model decisions](docs/model-review.md) | Prior structural rationale, qualified by the later approved log and current entity map. |
-| [Requirement ownership v0.7](docs/requirements-coverage-v0.7.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
-| [PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md) | Shared expenses across Purchases, selected-unit allocation, affected workflows, and verification scope. |
+| [Earlier model decisions](docs/entities/model-review.md) | Prior structural rationale, qualified by the later approved log and current entity map. |
+| [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
+| [PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md) | Shared expenses across Purchases, selected-unit allocation, affected workflows, and verification scope. |
 
 The published requirements baseline tracker remains [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82). Entity map v0.8 consolidates the approved schema review but does not publish a complete v0.8 requirements baseline. Live project issue requirements/criteria now apply the approved review; requirements/coverage and DBML/design-guide consolidation remain pending. The issue propagation record reports current status; older versioned publication records retain their original pending-state notes. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than superseded wording.
 
@@ -68,7 +68,7 @@ For a task, read its live issue, relevant requirement IDs, acceptance criteria, 
 - Preserve requirement and entity discussion IDs. Retire withdrawn IDs explicitly; never reuse them. The v0.7 baseline has 307 active requirements and nine retired requirements: SAL-029–035, PAY-031, and CUS-016.
 - Keep requirement wording, accepted decisions, entity relationships, ownership mapping, and affected issue acceptance criteria consistent when changing agreed behavior. Every active requirement has one primary delivery owner.
 - Follow the existing hierarchy: Epic → business workflow issue → optional implementation sub-issue. Extend the existing owner for changed requirements instead of creating duplicate delivery work.
-- Respect prerequisites and the [remaining boundaries in entity map v0.8](docs/entity-map-v0.8.md#15-approved-policies-and-remaining-design-boundaries). Distinguish decisions now approved by the log from remaining design work; preserve existing delivery ownership during propagation.
+- Respect prerequisites and the [remaining boundaries in entity map v0.8](docs/entities/entity-map-v0.8.md#15-approved-policies-and-remaining-design-boundaries). Distinguish decisions now approved by the log from remaining design work; preserve existing delivery ownership during propagation.
 - Distinguish proposals, approved decisions, and implemented behavior. Decision outcomes need recorded owner approval, date, and examples. Delivery completion needs applicable acceptance evidence or an explicitly approved deferral; documentation alone is not implementation evidence.
 
 ## Business invariants to preserve
@@ -130,6 +130,8 @@ gh issue view 82 --repo WilliamPhilippe/storage-minis-be
 Use `gh issue view <number> --repo WilliamPhilippe/storage-minis-be --comments` for the relevant task and decision discussions. Read-only issue inspection does not require changing the backlog.
 
 For documentation changes, check changed relative links, Markdown fences/tables, referenced IDs, and consistency with the current baseline and affected issues. For baseline changes, verify active/retired IDs and unique primary ownership. Report what was checked and any unresolved gaps.
+
+Use `./scripts/tooling.sh run <command>` with the explicit checkout project and initialized volumes from [Docker setup](README.md#docker-tooling). The owner installed Doppler 3.77.1 through Homebrew; its explicit launcher override and dedicated browser login are documented there.
 
 With the pinned toolchain active, `pnpm install --frozen-lockfile` verifies installation and `pnpm list --recursive --depth -1` lists the root, API, and database workspace packages. Use [development checks](README.md#development-checks) for typecheck, lint, format, and Vitest commands, and [Turborepo checks](README.md#turborepo-checks-and-cache) for dry runs, cache reuse, and forced execution. Typecheck currently covers tooling configuration; normal `pnpm test` and aggregate `pnpm check` fail with no test files until meaningful tests exist. An explicit test-only `--passWithNoTests` verifies runner loading only. There are no dev, build, migration, deployment, or CI checks. Report tooling validation separately from application acceptance evidence.
 

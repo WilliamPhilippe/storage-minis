@@ -1,0 +1,13 @@
+FROM node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
+
+RUN npm install --global pnpm@12.15.0 \
+    && npm cache clean --force \
+    && test "$(node --version)" = "v24.22.1" \
+    && test "$(pnpm --version)" = "12.15.0"
+
+COPY init-volumes.sh /usr/local/bin/init-tooling-volumes
+
+ENV PNPM_CONFIG_STORE_DIR=/pnpm/store
+WORKDIR /workspace
+USER node
+CMD ["node", "--version"]

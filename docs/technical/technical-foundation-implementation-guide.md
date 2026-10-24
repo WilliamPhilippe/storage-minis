@@ -4,12 +4,11 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Status at publication, 2026-10-24:** Workspace tooling and Turborepo checks are
-implemented. Docker Desktop availability is verified. Steps 1–6 below have not
-been implemented. The owner requested this guide and the Docker-first approach,
-and selected Doppler for environment variables on 2026-10-24;
-concrete implementation choices still follow the approval process in
-[AGENTS.md](../AGENTS.md#owner-approval-before-decisions).
+**Current status, 2026-10-24:** Workspace tooling, Turborepo checks and Step 1's
+Docker tooling/Doppler verification are implemented. Steps 2–6 remain
+unimplemented. The owner approved the concrete Step 1 plan and selected
+`storage-minis` naming. Later implementation choices follow the approval process
+in [AGENTS.md](../../AGENTS.md#owner-approval-before-decisions).
 
 This guide owns the step sequence, planning instructions and completion criteria.
 [Technical direction](technical-direction.md) owns approved technical outcomes;
@@ -26,7 +25,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
-| 1 | Docker tooling environment | Existing workspace/tooling | [Plan proposed; choices pending](step-1-tooling-plan-2026-10-24.md). Implementation not started. |
+| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), awaiting review/merge. |
 | 2 | Development and test PostgreSQL | Step 1 | Not started |
 | 3 | Drizzle connection and migration tooling | Steps 1–2 | Not started |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
@@ -43,17 +42,17 @@ off; describe partial completion and deferrals explicitly.
 
 ### Read and inspect before proposing changes
 
-Read [AGENTS.md](../AGENTS.md), this guide's assigned step, the applicable
+Read [AGENTS.md](../../AGENTS.md), this guide's assigned step, the applicable
 [technical decisions](technical-direction.md) and
 [proposal sections](t06-foundation-proposal-2026-10-24.md). Read
-[issue-tracker conventions](agents/issue-tracker.md) before fetching the live
+[issue-tracker conventions](../agents/issue-tracker.md) before fetching the live
 #26 issue, comments and applicable prerequisites. Inspect the predecessor PR,
 current manifests, lockfile, scripts, environment examples and Turbo graph.
 Use files and actual command results to establish implemented behavior; reconcile
 discrepancies with approved decisions rather than treating setup notes as evidence.
 
-For persistence planning, also read the [database design guide](database/design.md)
-and [approved update logs](requirement-updates/README.md), following their current
+For persistence planning, also read the [database design guide](../database/design.md)
+and [approved update logs](../requirement-updates/README.md), following their current
 links to requirements and entity constraints. For protected access or operations,
 read the applicable T02/T04 issue before planning dependent behavior. Use the
 existing delivery owner rather than creating duplicate tickets.

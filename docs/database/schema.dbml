@@ -1,11 +1,11 @@
-// Estoque164 database design, draft 1 — reviewed 2026-10-23.
+// storage-minis database design, draft 1 — reviewed 2026-10-23.
 // Sources: entity-map-v0.8.md and dated schema-review logs. Review guide: design.md.
 // This is a visual proposal, not an approved physical schema or a migration.
 // Money uses integer BRL centavos; actual occurrence timestamps use timestamptz.
 // Key generation, column names, optionality beyond explicit requirements, and table boundaries
 // are proposals. All candidate table shapes were rejected and are absent.
 
-Project estoque164_draft_1 {
+Project storage_minis_draft_1 {
   database_type: 'PostgreSQL'
   Note: '''
     Visual schema draft with the 2026-10-23 owner field review applied; see design.md.

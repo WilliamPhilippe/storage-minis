@@ -1,4 +1,4 @@
-# Estoque164 v0.7 — requirement ownership and backlog
+# storage-minis v0.7 — requirement ownership and backlog
 
 **Version:** 0.7. **Published:** 2026-10-21.
 

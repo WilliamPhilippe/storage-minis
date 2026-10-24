@@ -1,4 +1,4 @@
-# Estoque164 v0.6 — entity and relationship map
+# storage-minis v0.6 — entity and relationship map
 
 **Version:** 0.6.
 

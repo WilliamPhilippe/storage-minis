@@ -1,7 +1,17 @@
 # Step 1 implementation plan — Docker tooling environment
 
-Proposal prepared 2026-10-24 for [guide Step 1](technical-foundation-implementation-guide.md#step-1--docker-tooling-environment) under [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26). This is a reviewable plan, not implementation evidence.
-Unanswered choices below remain pending; recommendations are not approvals.
+Proposal prepared 2026-10-24 for [guide Step 1](../technical/technical-foundation-implementation-guide.md#step-1--docker-tooling-environment) under [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26). This is a reviewable plan, not implementation evidence.
+The owner requested implementation of this concrete plan on 2026-10-24, selected
+`storage-minis` naming throughout, and confirmed disposable containers and the
+documented host-editor limitation. Docker and real Doppler verification passed;
+see the current decision record for evidence and handoff.
+The Doppler project is `storage-minis`, config `dev`. The owner installed CLI
+3.77.1 through Homebrew; use the explicit binary override instead of requiring
+the standalone location. The original proposal below is retained as planning
+history; current outcomes and evidence are in the
+[decision record](../technical/technical-direction.md#step-1-docker-tooling-2026-10-24).
+The installed CLI does not support the proposed `--no-interactive` flag; the
+implementation closes stdin during verification instead.
 
 ## Starting state and inherited approvals
 
@@ -35,7 +45,7 @@ New owner answers received during this planning session, 2026-10-24:
 | Disable encrypted secret fallback | Secret-bearing commands fail when Doppler cannot supply values; ordinary tooling remains independent of Doppler. No fallback snapshot is read or written. |
 | Browser login scoped to this checkout | Local individual authentication with credential state outside the repository; no service-token provisioning is selected. |
 
-Still awaiting owner input:
+At planning time, still awaiting owner input (resolved by the approval note above):
 
 1. Existing Doppler account, project and config names, or whether setup is needed.
 2. Disposable one-off containers versus a persistent development container.
@@ -113,9 +123,9 @@ Recommended workflow, pending the owner's container preference:
   container exit and ordinary `compose down`.
 
 Require an explicit unique `COMPOSE_PROJECT_NAME`; propose
-`estoque164-beijing` for this checkout. Do not silently use the common repository
+`storage-minis-beijing` for this checkout. Do not silently use the common repository
 name or a global volume. A second workspace uses another name, such as
-`estoque164-step1-probe`. Examples must explain that names are unique per checkout,
+`storage-minis-step1-probe`. Examples must explain that names are unique per checkout,
 even if two checkouts have the same directory basename.
 
 The persistent-container alternative reduces startup overhead and supports
@@ -129,7 +139,7 @@ Propose CLI **3.77.1**, the official stable release published 2026-10-22.
 Install the release binary at:
 
 ```text
-$HOME/.local/share/estoque164/tools/doppler/3.77.1/doppler
+$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler
 ```
 
 Use the official macOS arm64 archive and verify its SHA-256 before extraction:
@@ -146,7 +156,7 @@ the matching official 3.77.1 artifact and recorded checksum; verification on thi
 machine establishes macOS arm64 support only.
 
 Use a dedicated host configuration directory under
-`$HOME/.config/estoque164/doppler`, outside the checkout, with restrictive
+`$HOME/.config/storage-minis/doppler`, outside the checkout, with restrictive
 permissions. Browser login is scoped to the checkout's absolute path. Specify
 the approved project/config explicitly on every secret-bearing invocation,
 rather than silently inheriting another checkout's selection. Reject an ambient
@@ -162,13 +172,13 @@ with T04. Do not create a test/production environment incidentally.
 Proposed browser-login command, after approving and installing the exact artifact:
 
 ```sh
-"$HOME/.local/share/estoque164/tools/doppler/3.77.1/doppler" \
-  --config-dir "$HOME/.config/estoque164/doppler" \
+"$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler" \
+  --config-dir "$HOME/.config/storage-minis/doppler" \
   --scope "$PWD" login
 ```
 
 Run from the repository root. This authorizes the local CLI; adding the harmless
-`FOUNDATION_TOOLING_PROBE=estoque164-tooling-ok` entry to the actual development
+`FOUNDATION_TOOLING_PROBE=storage-minis-tooling-ok` entry to the actual development
 config is a separate explicit part of the proposed implementation scope.
 
 For comparison, the official container alternative was researched and supports
@@ -186,7 +196,7 @@ host CLI, so no Doppler image pull or CLI inside `tooling` is planned.
 Add a small host Bash launcher, `scripts/tooling.sh`, with these proposed commands:
 
 ```sh
-export COMPOSE_PROJECT_NAME=estoque164-beijing
+export COMPOSE_PROJECT_NAME=storage-minis-beijing
 ./scripts/tooling.sh build
 ./scripts/tooling.sh init
 ./scripts/tooling.sh run node --version
@@ -323,7 +333,7 @@ status if any criterion remains unverified or explicitly deferred.
 
 Expected files: `compose.yaml`, `docker/Dockerfile.tooling`,
 `docker/init-volumes.sh`, `scripts/tooling.sh`, `README.md`,
-`docs/technical-direction.md`, and the guide's progress row. Add a secret-free
+`docs/technical/technical-direction.md`, and the guide's progress row. Add a secret-free
 variable inventory in the setup docs. Root/package manifests, lockfile, Turbo
 tasks and ESLint/Prettier policy need no planned changes; any discovered need
 outside the approved scope must be raised with evidence first.

@@ -116,7 +116,7 @@ The following inventory records every issue examined. “No rewrite” refers on
 | Issue | Disposition |
 | --- | --- |
 | [#1 — Show user logged badge at the top of the app](https://github.com/WilliamPhilippe/storage-minis-be/issues/1) | No Product-specific rewrite identified |
-| [#2 — Estoque164 v0.5 — requirements baseline](https://github.com/WilliamPhilippe/storage-minis-be/issues/2) | Preserve historical baseline |
+| [#2 — storage-minis v0.5 — requirements baseline](https://github.com/WilliamPhilippe/storage-minis-be/issues/2) | Preserve historical baseline |
 | [#3 — [Epic E01] Organization administration and business integrity](https://github.com/WilliamPhilippe/storage-minis-be/issues/3) | Align epic summary / scope |
 | [#4 — [Epic E02] Products and individual inventory](https://github.com/WilliamPhilippe/storage-minis-be/issues/4) | Align epic summary / scope |
 | [#5 — [Epic E03] Purchase ordering and receipt](https://github.com/WilliamPhilippe/storage-minis-be/issues/5) | Align epic summary / scope |
@@ -211,7 +211,7 @@ The publication below preserves the v0.5 snapshots and applies those corrections
 - Replaced #61’s future-Sale credit outcome with existing eligible Sale/SaleItem funding reassignment. Rewrote the R$100 → R$80 swap example to refund/reassignment. Removed supplier-credit acceptance and corrected Membership, embedded address, parent-owned expenses, shared history, collection membership and Loss reversal behavior.
 - Published 304 active requirements: 302 previous − PAY-031/CUS-016 + PRO-012/PRO-013/PAY-037/PAY-038. Nine retired IDs are explicit and excluded from delivery acceptance. Every active ID has one primary delivery owner in the [coverage index](requirements-coverage-v0.6.md).
 - Added six native dependencies: #62/#63/#64 require #61; #68 requires D08; #75 requires D07 and D08. The graph has 63 parent links and 117 dependency links. D07 is a related policy gate for existing Product edits, not a whole-ticket blocker on auth, registration/read/reuse, or import preview.
-- Updated the Project description, README, requirement ownership table and four Estoque164 view filters to v0.6. Added `spec:v0.6` to current work; #2 retains `spec:v0.5`. Refreshed M3/M4 descriptions without moving existing milestones or changing estimates/statuses on existing items.
+- Updated the Project description, README, requirement ownership table and four storage-minis view filters to v0.6. Added `spec:v0.6` to current work; #2 retains `spec:v0.5`. Refreshed M3/M4 descriptions without moving existing milestones or changing estimates/statuses on existing items.
 - Preserved issue #1, issue #2’s complete source snapshot, both repository v0.5 documents and the existing 111 prerequisite links. No delivery work was marked complete.
 
 Verification compares every live current issue body/title to its prepared v0.6 draft; checks source excerpts, unique ownership of 304 IDs, retired-ID exclusion, Project membership, new decision fields/parents, native dependency equality and cycle absence; checks historical snapshots and unrelated issue #1; and checks documentation links, IDs, fences and whitespace. These are documentation/backlog checks. Application acceptance examples remain pending implementation, and D01–D08 remain open.

@@ -1,0 +1,81 @@
+services:
+  tooling:
+    profiles: [tools]
+    image: ${COMPOSE_PROJECT_NAME:?Set a unique COMPOSE_PROJECT_NAME}-tooling:step1
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.tooling
+    user: node
+    working_dir: /workspace
+    init: true
+    environment:
+      PNPM_CONFIG_STORE_DIR: /pnpm/store
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace
+      - type: volume
+        source: dependencies
+        target: /workspace/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: api-dependencies
+        target: /workspace/apps/api/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: db-dependencies
+        target: /workspace/packages/db/node_modules
+        volume:
+          nocopy: true
+      - type: volume
+        source: pnpm-store
+        target: /pnpm/store
+        volume:
+          nocopy: true
+      - type: volume
+        source: turbo
+        target: /workspace/.turbo
+        volume:
+          nocopy: true
+
+  tooling-init:
+    profiles: [tools]
+    image: ${COMPOSE_PROJECT_NAME:?Set a unique COMPOSE_PROJECT_NAME}-tooling:step1
+    user: "0:0"
+    working_dir: /
+    command: [sh, /usr/local/bin/init-tooling-volumes]
+    volumes:
+      - type: volume
+        source: dependencies
+        target: /volumes/dependencies
+        volume:
+          nocopy: true
+      - type: volume
+        source: api-dependencies
+        target: /volumes/api-dependencies
+        volume:
+          nocopy: true
+      - type: volume
+        source: db-dependencies
+        target: /volumes/db-dependencies
+        volume:
+          nocopy: true
+      - type: volume
+        source: pnpm-store
+        target: /volumes/pnpm-store
+        volume:
+          nocopy: true
+      - type: volume
+        source: turbo
+        target: /volumes/turbo
+        volume:
+          nocopy: true
+
+volumes:
+  dependencies:
+  api-dependencies:
+  db-dependencies:
+  pnpm-store:
+  turbo:
