@@ -35,6 +35,7 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
 | Package manager | pnpm. |
 | Build tasks | Turborepo. |
+| Environment variables | Doppler, selected on 2026-10-24; integration and config mapping remain planning work. Read [environment configuration](docs/technical-direction.md#environment-configuration--doppler-2026-10-24). |
 | Tests | Vitest for unit/integration tests; real PostgreSQL for persistence invariants; Playwright for core browser workflows. |
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Numeric widths and detailed contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |

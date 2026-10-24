@@ -6,7 +6,8 @@ Assign one step to one agent, deliver one PR, and hand off before the next step.
 
 **Status at publication, 2026-10-24:** Workspace tooling and Turborepo checks are
 implemented. Docker Desktop availability is verified. Steps 1–6 below have not
-been implemented. The owner requested this guide and the Docker-first approach;
+been implemented. The owner requested this guide and the Docker-first approach,
+and selected Doppler for environment variables on 2026-10-24;
 concrete implementation choices still follow the approval process in
 [AGENTS.md](../AGENTS.md#owner-approval-before-decisions).
 
@@ -93,6 +94,12 @@ date, scope and rationale of approved outcomes in technical direction.
 
 ### Keep each implementation independently reviewable
 
+Use the approved [Doppler direction](technical-direction.md#environment-configuration--doppler-2026-10-24)
+when planning configuration. The copied-`.env`/native-loader proposal is
+superseded. Distinguish injection into host Compose from injection into container
+processes. Keep the variable inventory secret-free; identify the actual Doppler
+project/config and credential bootstrap without inventing account details.
+
 Prefer Docker images for new tools and services. Preserve existing host tools;
 explain a necessary host installation and obtain approval before attempting it.
 Keep host Compose orchestration separate from Node commands inside the tooling
@@ -135,6 +142,10 @@ of PostgreSQL or application source. Completion requires evidence that:
   required generated files, and preserve those files after the container exits.
 - Another person can build, install, run a check and stop the tooling environment
   using the documented commands, with no database prerequisite.
+- The approved Doppler launch path supplies a harmless verification value to its
+  intended consumers without logging secrets. Routine dependency installation
+  and offline checks remain usable without application secrets. Missing Doppler
+  setup/access is identified as a prerequisite or explicitly approved deferral.
 
 ### Research and planning focus
 
@@ -143,6 +154,9 @@ and the approved workspace/tooling decisions. Concentrate on:
 
 - Official image architecture support, exact pins and pnpm provisioning inside
   the image; verify compatibility with strict package engines.
+- Doppler CLI/image pins, container authentication and credential bootstrap,
+  the host-Compose versus container-runtime injection boundary, and encrypted
+  fallback behavior. Research these before proposing a host CLI installation.
 - Bind mounts versus named volumes, `nocopy`, volume initialization/ownership,
   pnpm storage and isolation of native dependencies and Turbo cache entries.
 - One-off versus persistent Compose execution, exit/signal behavior and how
@@ -151,11 +165,13 @@ and the approved workspace/tooling decisions. Concentrate on:
 - Host editor access to container-only dependencies: describe the limitation and
   any required later decision rather than installing editor tools implicitly.
 
-The agent's plan must specify the proposed Dockerfile/service, minimal tooling
-environment example, first-install/volume initialization sequence, commands and
-cleanup boundaries. Keep tooling-only commands usable before DB credentials or
-API variables exist. Address the Linux container's view of this worktree and the
-actual Docker executable available in the agent environment.
+The agent's plan must specify the proposed Dockerfile/service, variable inventory,
+Doppler launch/authentication boundary, first-install/volume initialization
+sequence, commands and cleanup. Specify how checkout settings and secret-bearing
+runtime commands receive values, including precedence and fallback. Keep
+tooling-only commands usable before DB credentials or API variables exist.
+Address the Linux container's view of this worktree and the actual Docker
+executable available in the agent environment.
 
 **Scope boundary:** Establish the runner with existing package dependencies.
 PostgreSQL and new application framework/driver dependencies belong to their
@@ -187,7 +203,9 @@ Docker setup. Completion requires evidence that:
   and separate; test cleanup preserves development data.
 - Two workspace projects with different host ports do not share database data.
   An occupied port fails clearly rather than selecting another database silently.
-- The environment example contains no working secret. Documentation explains
+- Doppler supplies DB values to the correct consumers, keeping development and
+  test targets separate. The variable inventory contains no working secret.
+  Documentation explains
   container addresses, host addresses, logs, restart and initialization behavior.
 - Destructive reset is a separate, clearly documented action with its affected
   volumes identified; ordinary commands preserve development storage.
@@ -201,13 +219,16 @@ and inherit Step 1's service/volume conventions. Concentrate on:
   variables, password authentication and bundled SQL/readiness utilities.
 - Compose project/network/volume scope, loopback publishing, healthchecks, bounded
   readiness, test tmpfs lifecycle and collisions between workspaces.
-- Environment interpolation and precedence, credential changes on existing
+- Doppler-to-Compose injection and precedence, credential changes on existing
   volumes, and which values a tooling container needs to reach each service.
+  Fetching values only after Node starts cannot initialize PostgreSQL.
 - The difference between local initialization privileges and future production
   application/migration roles, which remain subject to T04.
 
 The plan must specify service definitions, development/test storage ownership,
-configuration names, connection examples and lifecycle/failure checks. Plan a
+variable/config mapping, connection examples and lifecycle/failure checks,
+including missing/wrong Doppler config and stale local `.env` values that must
+not silently supply credentials. Plan a
 disposable infrastructure-only persistence probe with cleanup; business tables
 are unnecessary. Use SQL utilities from the image instead of installing a host
 PostgreSQL client.
@@ -260,11 +281,13 @@ the database design guide and later approved logs. Concentrate on:
   explicit application, target validation and failure behavior.
 - Compiled package exports under ESM/NodeNext, dependency ownership and how
   consumers obtain current declarations without importing package source.
-- Environment loading/validation at explicit entry points and reuse of Step 2's
-  container addresses. Builds and imports remain independent of live DB access.
+- Validation of injected environment at explicit entry points and reuse of
+  Step 2's Doppler mapping/container addresses. Builds and imports remain
+  independent of live DB or Doppler access; `.env` autoload is superseded.
 
 The plan must define the public factory/types, resource owner, precise config
-contract, compiled output, CLI paths and guarded migration behavior. Add only the
+contract, Doppler injection boundary for DB commands, compiled output, CLI paths
+and guarded migration behavior. Add only the
 dependencies used by this step. List the remaining T01/T03 decisions before any
 business migration; the conceptual DBML is not executable migration input.
 
@@ -316,8 +339,10 @@ and the DB handoff. Concentrate on:
 - Watch behavior across compiled workspace dependencies, Docker bind mounts,
   signal forwarding and the distinction between container bind address and host
   loopback publication.
-- Deterministic configuration precedence, secret redaction and pool ownership
-  when startup fails partway through resource creation.
+- Doppler injection before startup, validated environment and redaction,
+  signal forwarding through any Doppler wrapper, and pool ownership when startup
+  fails partway through resource creation. Specify restart behavior when Doppler
+  values change; do not assume a running process updates automatically.
 
 The plan must define factory/entry responsibilities, health response contracts,
 timeouts, cleanup ordering, commands and build artifacts. Map each failure case
@@ -371,6 +396,8 @@ and inherit Step 4's lifecycle/error boundaries. Concentrate on:
   verified identity/Membership enforcement must enter under T02.
 - Type-only package exports and the distinction between declaration dependencies
   and executable browser imports.
+- Separation of server Doppler values from public responses/types and future
+  browser configuration. Diagnostic output must not expose environment contents.
 - The boundary between JSON diagnostic values and T03's future monetary/time
   contracts; additional serializers and browser/CORS policy remain decisions.
 
@@ -428,15 +455,18 @@ and all five predecessor handoffs. Concentrate on:
 
 - Gaps between existing component tests and a real built process: readiness
   deadlines, child ownership, logs, process signals and cleanup.
-- Vitest project discovery and explicit database targeting, setup/isolation and
-  cleanup; ordinary tests must remain independent of a running DB.
-- Turbo hashes, dependency inputs, strict environment filtering, ignored env-file
-  inputs, artifact restoration and external state that source hashes cannot cover.
+- Vitest project discovery, Doppler test-config/database targeting, setup/isolation
+  and cleanup; unit tests use explicit fixtures without contacting Doppler or a DB.
+- Turbo hashes, injection timing, strict environment filtering, artifact
+  restoration and external state that source hashes cannot cover. Cached tasks
+  must not fetch untracked configuration after their hash is computed.
 - A clean-install reproduction and the distinction between operational bootstrap
   evidence and schema/application integrity evidence.
 
 The plan must provide a verification matrix of scenario, command/test, expected
-outcome, resources and cleanup. Identify which checks already exist, which need
+outcome, resources and cleanup. Include missing/invalid Doppler credentials, wrong
+config/test target, approved offline/fallback behavior, precedence and redaction.
+Identify which checks already exist, which need
 automation and which are gated; avoid merely rerunning every predecessor check
 without a specific integration concern. Include a final evidence and limitations
 record for the next business-foundation work.
@@ -463,7 +493,7 @@ These assignments are partial T06 bootstrap, with these existing gates intact:
 | Business schema migrations | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21) executable keys, constraints, transitions and transaction design; applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24) numeric/overflow/time/input contracts; later approved schema logs. |
 | Protected procedures or administrator bootstrap | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22) verified identity, configured-owner bootstrap, Membership/Organization access and global Product-edit permission enforcement. |
 | Representative persistence operations | Applicable T01/T03 and business-policy decisions, followed by actual rollback, scope, reconciliation and concurrent-session evidence for the approved operation. |
-| Deployment and recovery acceptance | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23) production configuration, releases/migrations, privileges, daily backups/restore and operational targets. |
+| Deployment and recovery acceptance | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23) Doppler production access/injection/rotation/fallback policy, releases/migrations, privileges, daily backups/restore and operational targets. |
 | Full T06 completion | The live issue's original dependencies and acceptance outputs, including real global Product reuse/private-data rejection, allocation/commitment integrity and deletion-versus-funding or settlement-source race evidence, plus remaining application/check delivery. |
 
 Read the [proposal's prerequisite analysis](t06-foundation-proposal-2026-10-24.md#10-prerequisite-gates-and-full-acceptance)

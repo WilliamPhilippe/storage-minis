@@ -162,9 +162,10 @@ changes invalidate every task. Documentation edits can also invalidate root
 checks because their inputs deliberately remain broad.
 
 Turbo uses strict environment filtering. Unit-test cache hashes include
-`NODE_ENV` and `TZ`; application environment variables and `.env` loading are not
-configured. Review task inputs and environment declarations when introducing
-code that depends on additional values or external state.
+`NODE_ENV` and `TZ`; application environment injection is not configured yet.
+The owner selected [Doppler for environment variables](docs/technical-direction.md#environment-configuration--doppler-2026-10-24).
+Foundation agents must plan its Docker/Compose injection and task-scoped
+environment declarations. Copying a local `.env` is no longer the planned setup.
 
 The Turbo bootstrap runner check is separate from the aggregate command:
 
