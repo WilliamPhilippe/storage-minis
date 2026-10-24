@@ -197,6 +197,7 @@ tools, packages, versions, CLIs, architecture, and local environment changes; th
 - [Shared PurchaseExpense impact v0.7](docs/purchase-expense-impact-v0.7.md)
 - [Technical direction — accepted stack, authentication, and date choices](docs/technical-direction.md)
 - [Technical foundation implementation guide — agent steps, planning and expected results](docs/technical-foundation-implementation-guide.md)
+- [Step 1 Docker tooling implementation plan — pending choices and approval (2026-10-24)](docs/step-1-tooling-plan-2026-10-24.md)
 - [T06 foundation proposal — pending owner approval (2026-10-24)](docs/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review — documentation and backlog propagation](docs/technical-direction-review.md)
 
