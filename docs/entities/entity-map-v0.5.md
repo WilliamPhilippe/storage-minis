@@ -1,4 +1,4 @@
-# Estoque164 v0.5 — entity and relationship map
+# storage-minis v0.5 — entity and relationship map
 
 **Status:** Proposed conceptual model for review, before physical database design.
 

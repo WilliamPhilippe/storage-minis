@@ -1,4 +1,4 @@
-# Estoque164 v0.7 — shared PurchaseExpense impact
+# storage-minis v0.7 — shared PurchaseExpense impact
 
 **Version:** 0.7. **Decision date:** 2026-10-21.
 

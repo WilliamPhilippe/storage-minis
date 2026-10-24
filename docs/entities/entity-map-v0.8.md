@@ -1,4 +1,4 @@
-# Estoque164 v0.8 — entity and relationship map
+# storage-minis v0.8 — entity and relationship map
 
 **Version:** 0.8. **Reviewed:** 2026-10-22.
 

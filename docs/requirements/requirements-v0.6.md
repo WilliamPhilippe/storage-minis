@@ -1,4 +1,4 @@
-# Estoque164 — Full Requirements Specification
+# storage-minis — Full Requirements Specification
 
 **Version:** 0.6
 
@@ -10,7 +10,7 @@
 
 **Scope of this revision:** Consolidates the approved entity-model decisions and global Product access. Unchanged requirements retain their IDs; PAY-031 and CUS-016 are retired because future-Sale credit is unsupported. Adds PRO-012–013 and PAY-037–038. There are 304 active and nine retired requirement IDs. No implementation or open policy is implied.
 
-**Historical source:** [GitHub issue #2 — Estoque164 v0.5 requirements baseline](https://github.com/WilliamPhilippe/storage-minis-be/issues/2).
+**Historical source:** [GitHub issue #2 — storage-minis v0.5 requirements baseline](https://github.com/WilliamPhilippe/storage-minis-be/issues/2).
 
 **Decision baseline:** User-confirmed modeling and Product-scope decisions recorded on 2026-10-21; [accepted decisions](model-review.md).
 
@@ -24,7 +24,7 @@
 
 ## 1. Project objectives and principles
 
-Estoque164 manages a miniature business and its owner's personal collection in the same application. It tracks orders, incoming items, inventory, sales, customer reservations, payments, expenses, losses, supplier/customer accounts, and collection-cost recovery. Its public catalog shows only approved and available-for-sale physical items.
+storage-minis manages a miniature business and its owner's personal collection in the same application. It tracks orders, incoming items, inventory, sales, customer reservations, payments, expenses, losses, supplier/customer accounts, and collection-cost recovery. Its public catalog shows only approved and available-for-sale physical items.
 
 ### General requirements
 
@@ -35,7 +35,7 @@ Estoque164 manages a miniature business and its owner's personal collection in t
 - **REQ-005 — Manual sales:** Sales are initially entered by an authorized administrator; there are no external sales-platform integrations.
 - **REQ-006 — Source of truth:** Purchase records, individually identified InventoryItems, SaleItems, Payments, allocations, parent-owned expenses, refunds, Losses, retained income and its allocations, and business events are authoritative sources. No reusable supplier or customer credit is supported.
 - **REQ-007 — Consistency:** Source-record changes produce consistent downstream quantities, balances, and reports.
-- **REQ-008 — Single currency:** All amounts entered and reported in Estoque164 are **BRL**. The application does not perform currency conversion, store operational foreign-currency equivalents, or select FX rates. The administrator is responsible for determining the correct BRL amount before entry.
+- **REQ-008 — Single currency:** All amounts entered and reported in storage-minis are **BRL**. The application does not perform currency conversion, store operational foreign-currency equivalents, or select FX rates. The administrator is responsible for determining the correct BRL amount before entry.
 - **REQ-009 — Individual item identity:** Each physical unit has one persistent Item ID, assigned **when ordered/purchased**, including a preorder or direct order; the ID is never reused. Sale Items identify particular Item IDs rather than only Product plus quantity.
 - **REQ-010 — Atomic business events:** A single administrator action must generate all required corresponding inventory movements, financial changes, allocations, audit entries, and dependent recalculations as one logical, all-or-nothing operation. The administrator must not have to manually create multiple secondary records for a single event.
 - **REQ-011 — Event-dated reversals:** Subsequent edits, cancellations, returns, and corrections preserve original dated activity and record their adjustments on the date the adjustment occurs. Historical reporting must not silently backdate or rewrite these effects.
@@ -344,7 +344,7 @@ The following former requirements are **retired in v0.5**, rather than reused. F
 
 ## 8. Customer payments, allocations, reassignment, and refunds
 
-A customer Payment represents the **merchandise portion** of incoming money recorded in Estoque164. Shipping amounts paid by customers are deliberately outside application scope and are not included in recorded customer Payment amounts, Sale dues, revenue, or expenses. The application is **not** a complete reconciliation of bank deposits containing customer-paid shipping.
+A customer Payment represents the **merchandise portion** of incoming money recorded in storage-minis. Shipping amounts paid by customers are deliberately outside application scope and are not included in recorded customer Payment amounts, Sale dues, revenue, or expenses. The application is **not** a complete reconciliation of bank deposits containing customer-paid shipping.
 
 ### New customer payments and Sale allocations
 
@@ -371,7 +371,7 @@ A customer Payment represents the **merchandise portion** of incoming money reco
 - **PAY-030:** Every allocation belongs to a Sale of the **same Customer and organization** as the underlying Payment. Cross-customer/organization transfers are not permitted.
 - **PAY-032:** When an edit, cancellation, or Return releases funded amounts, explicitly refund or reassign money owed to the Customer to eligible existing Sales/SaleItems. Separately recognize only legitimately earned retained income. Preserve original Payment and dated allocation history, with no orphan allocations or reusable credit.
 
-**Shipping example:** The miniature sells for R$100; the customer transfers R$115 including R$15 shipping. Estoque164 records a **R$100 Sale and R$100 customer Payment**. The R$15 shipping component is not tracked in Estoque164. Business-paid selling/delivery costs, however, are recorded separately where applicable.
+**Shipping example:** The miniature sells for R$100; the customer transfers R$115 including R$15 shipping. storage-minis records a **R$100 Sale and R$100 customer Payment**. The R$15 shipping component is not tracked in storage-minis. Business-paid selling/delivery costs, however, are recorded separately where applicable.
 
 ### Refund and financial-settlement concepts
 

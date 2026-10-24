@@ -35,7 +35,7 @@ still need the assigned agent's concrete plan; see
 ## 1. Inspected state and governing inputs
 
 Inspection on 2026-10-24 found macOS 27.0.1, arm64, Node.js 24.22.1 and pnpm
-12.15.0. The existing private root, `@estoque164/api` and `@estoque164/db` packages
+12.15.0. The existing private root, `@storage-minis/api` and `@storage-minis/db` packages
 have checks/configuration but no application source, runtime dependencies,
 business schema, migrations, Compose file or permanent tests. Existing uncommitted
 tooling/documentation changes, including `turbo.json`, predate this proposal.
@@ -199,7 +199,7 @@ Pure image builds/install/checks must remain usable without application secrets.
 | Build / check / migration command | `docker compose --profile tools run --rm --no-deps tooling pnpm <command>` |
 | Development / built start | `docker compose --profile tools run --rm --no-deps --service-ports tooling pnpm dev` (or `pnpm start`). |
 | PostgreSQL lifecycle | Host `docker compose ...` actions with the approved Doppler-to-Compose injection. |
-| SQL inspection | `docker compose exec postgres psql -U estoque164 -d estoque164_dev`; no host PostgreSQL client install. |
+| SQL inspection | `docker compose exec postgres psql -U storage-minis -d storage-minis_dev`; no host PostgreSQL client install. |
 
 Compose one-off commands do not publish service ports unless requested. Publish
 only `127.0.0.1:${API_PORT:-3000}:3000` for interactive API development/start.
@@ -265,7 +265,7 @@ rebuild from silently changing local infrastructure.
 
 Proposed root `compose.yaml` has `postgres` and profile-`test` service
 `postgres_test`, plus F13's Node tooling service, no fixed `container_name` and no external
-volumes. Development uses role `estoque164`, database `estoque164_dev`, container
+volumes. Development uses role `storage-minis`, database `storage-minis_dev`, container
 port 5432, host `127.0.0.1:${POSTGRES_PORT}` (default 5433), and named volume
 `pgdata`, scoped as `<COMPOSE_PROJECT_NAME>_pgdata`. Mount it at
 `/var/lib/postgresql`, retaining the image's PostgreSQL 18 versioned PGDATA.
@@ -273,16 +273,16 @@ Use password authentication, no trust mode; the official initialization role is
 local-only and privileged, not the production API role design.
 [PostgreSQL image storage contract](https://hub.docker.com/_/postgres).
 
-Require an explicit `COMPOSE_PROJECT_NAME`, initially `estoque164-budapest`, and
+Require an explicit `COMPOSE_PROJECT_NAME`, initially `storage-minis-budapest`, and
 document changing it for every checkout. A second checkout can use
-`estoque164-other`, PostgreSQL ports 5435/5436 and `API_PORT=3001`. Names isolate
+`storage-minis-other`, PostgreSQL ports 5435/5436 and `API_PORT=3001`. Names isolate
 volumes/networks; distinct host ports prevent bind collisions. Plan the checkout's
 Doppler mapping or explicit nonsecret launcher overrides for these values;
 their precedence must not silently override managed credentials. Never share a
 global named volume.
 [Compose project isolation](https://docs.docker.com/compose/how-tos/project-name/).
 
-`postgres_test` uses database `estoque164_test`, host port 5434 by default and
+`postgres_test` uses database `storage-minis_test`, host port 5434 by default and
 tmpfs at `/var/lib/postgresql`; it never mounts `pgdata`. Tests are disposable
 and must not use the development database. Both services use the pinned image,
 explicit UTC server timezone, the local configured password and healthcheck
@@ -430,7 +430,7 @@ DB package exports are compiled-only:
 }
 ```
 
-The API declares runtime dependency `"@estoque164/db": "workspace:*"` and imports
+The API declares runtime dependency `"@storage-minis/db": "workspace:*"` and imports
 its public factory/types. It does not reach into `packages/db/src`. Keep DB
 schema/migration files out of the public export surface. The API exposes only
 `"./types": { "types": "./dist/types.d.ts" }`, whose source contains
@@ -455,7 +455,7 @@ production packaging remain separate validation, not assumed completed here.
 | Both package `build` | Native Node clean of own `dist`, then `tsc --project tsconfig.build.json`. |
 | API `start` | `node --enable-source-maps dist/server.js` |
 | Root `dev` / `build` | `turbo run dev` / `turbo run build`. |
-| Root `start` | `turbo run start --filter=@estoque164/api`, with a finite API build prerequisite. |
+| Root `start` | `turbo run start --filter=@storage-minis/api`, with a finite API build prerequisite. |
 
 `tsx` ignores `dist`/`node_modules` by default, so explicitly watch the DB output.
 Doppler changes follow the approved restart policy, not a local env-file watcher.
@@ -510,13 +510,13 @@ secret file or loaded by application code. The proposed variable contract is:
 
 | Variable | Local meaning / precedence |
 | --- | --- |
-| `COMPOSE_PROJECT_NAME` | Required checkout-specific value; example `estoque164-budapest`. |
-| `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` | Proposed local user/database `estoque164`, `estoque164_dev`; obtain the actual password from the approved Doppler config and reject missing/blank/example values. |
+| `COMPOSE_PROJECT_NAME` | Required checkout-specific value; example `storage-minis-budapest`. |
+| `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` | Proposed local user/database `storage-minis`, `storage-minis_dev`; obtain the actual password from the approved Doppler config and reject missing/blank/example values. |
 | `POSTGRES_PORT`, `POSTGRES_TEST_PORT` | 5433 and 5434; integer ports 1–65535, distinct within one checkout. |
 | `API_PORT` | Host's loopback API mapping, default 3000; a second checkout can use 3001 without changing the internal API port. |
 | `DATABASE_HOST`, `DATABASE_PORT` | Tooling injects `postgres`, 5432. Code defaults to `127.0.0.1` and the mapped PostgreSQL port only for a separately approved host run. |
 | `DATABASE_URL` | Optional explicit override; otherwise construct from validated DB host/port and PostgreSQL fields with URL-encoded credentials. Required injected value in production. |
-| `TEST_DATABASE_URL` | Explicit required target for integration tests, with database name `estoque164_test`; no fallback to `DATABASE_URL`. |
+| `TEST_DATABASE_URL` | Explicit required target for integration tests, with database name `storage-minis_test`; no fallback to `DATABASE_URL`. |
 | `NODE_ENV` | `development` locally; permit `development`, `test`, `production`. |
 | `HOST`, `PORT`, `LOG_LEVEL` | Code defaults `127.0.0.1`, 3000, `info`; tooling injects `0.0.0.0`, 3000. Validate the host/port and supported logger level. |
 | `SMOKE_BASE_URL` | Optional HTTP harness target; default `http://127.0.0.1:3000` inside tooling regardless of the listener's bind-all address; reject nonloopback targets. |
@@ -525,7 +525,7 @@ secret file or loaded by application code. The proposed variable contract is:
 The Doppler mapping must retain an explicit test URL using `postgres_test:5432`
 inside tooling. Tests reject missing/example values, the development DB name,
 equality with the development URL, hosts other than the test service or loopback,
-and database names other than `estoque164_test`. Config identifiers are still
+and database names other than `storage-minis_test`. Config identifiers are still
 unknown; development/test/production are required roles to map, not invented
 Doppler config names. Broader CI targeting remains T04 work.
 
@@ -613,7 +613,7 @@ Verify through `app.inject()` and real HTTP, not only `router.createCaller()`:
 and `result.data.message = "ok"`; empty/oversized/non-string/unknown-key inputs
 return 400; unknown procedures return 404; an invalid-output test returns a safe
 500. Verify malformed/oversized requests and batching rejection. Compile a
-temporary type consumer of `@estoque164/api/types` and confirm its emitted JS
+temporary type consumer of `@storage-minis/api/types` and confirm its emitted JS
 contains no server import; a real browser-bundle assertion accompanies later
 frontend delivery. Health/tRPC tests establish transport scaffolding only.
 
@@ -695,15 +695,15 @@ host, so no Docker CLI/socket or recursive Docker wrapper is needed inside Turbo
 | `build` | `^build` | Cached, `dist/**`; DB builds before API because of declared `workspace:*`. |
 | `typecheck` | `^build` | Cached, `[]`; API requires DB declarations. DB has no workspace dependency. |
 | `//#typecheck:root` | None | Preserve cached `[]`; root tooling does not import DB. |
-| `//#lint` | `@estoque164/db#build` | Cached, `[]`; typed API lint needs DB declarations. |
+| `//#lint` | `@storage-minis/db#build` | Cached, `[]`; typed API lint needs DB declarations. |
 | `//#format:check` | None | Preserve cached `[]`. |
-| `//#test` | `@estoque164/db#build` | Cached, `[]`; retain `env: ["NODE_ENV", "TZ"]`. DB-free tests import compiled DB exports without connection side effects. |
+| `//#test` | `@storage-minis/db#build` | Cached, `[]`; retain `env: ["NODE_ENV", "TZ"]`. DB-free tests import compiled DB exports without connection side effects. |
 | `dev` | `^build` | `cache: false`, `persistent: true`; API watcher and DB compiler watcher. |
 | API `start` | Own `build` (which requires DB build) | `cache: false`, `persistent: true`; local root start builds first. Direct built deployment is T04 work. |
 | DB `db:check` | Own `build` | `cache: false`, `[]`; live database state. |
 | DB `db:generate`, `db:migrate` | None; source/config-based CLI wrappers | `cache: false`, `[]`; SQL/metadata are reviewed source, never restored outputs. |
-| `//#test:integration` | `@estoque164/db#build` | `cache: false`, `[]`; uses TS API tests plus built DB exports and the externally ready test service. |
-| `//#smoke` | `@estoque164/api#build` | `cache: false`, `[]`; built-process/live-DB result. |
+| `//#test:integration` | `@storage-minis/db#build` | `cache: false`, `[]`; uses TS API tests plus built DB exports and the externally ready test service. |
+| `//#smoke` | `@storage-minis/api#build` | `cache: false`, `[]`; built-process/live-DB result. |
 | PostgreSQL start/stop/down/reset/logs | Outside Turbo; direct host Compose | Always executed; no volume is a cached build output. No root lifecycle task is registered. |
 
 Root `check` continues orchestrating its existing finite

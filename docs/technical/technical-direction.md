@@ -2,7 +2,7 @@
 
 **Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below; no application implementation exists yet.
 
-This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](requirements-v0.7.md), [entity map](entity-map-v0.7.md), and [ownership index](requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](model-review.md) and [PurchaseExpense impact](purchase-expense-impact-v0.7.md) continue to govern domain invariants.
+This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
 ## Workspace bootstrap progress (2026-10-23)
 
@@ -10,7 +10,7 @@ The owner authorized the first setup step: a private pnpm workspace, lockfile,
 pinned Node.js/pnpm versions, and initial `apps/api` (Fastify/tRPC) and
 `packages/db` (Drizzle connection, schema, migrations) package directories. The
 toolchain pins are recorded in the root `package.json` and `.nvmrc`; verified
-installation commands and current scope are in [local setup](../README.md#local-setup).
+installation commands and current scope are in [local setup](../../README.md#local-setup).
 Node.js 24 LTS is the selected runtime line, with an exact patch pinned for
 repeatable setup. The workspace uses one shared lockfile and exact versions for
 future dependency additions.
@@ -18,7 +18,7 @@ future dependency additions.
 Node.js version management is a local tooling choice. fnm was used for the
 initial setup because Homebrew was available; both fnm and nvm can read the
 repository's `.nvmrc`. The pinned Node.js/pnpm versions are required, while fnm
-is optional. See [local setup](../README.md#local-setup) for both workflows and
+is optional. See [local setup](../../README.md#local-setup) for both workflows and
 their validation status.
 
 This is partial T06 setup progress. The later tooling and Turborepo steps are
@@ -63,11 +63,11 @@ Approved root development dependencies:
 | `vitest` | `5.0.5` |
 | `vite` | `8.3.5` |
 
-The exact configurations live in [the shared TypeScript base](../tsconfig.base.json),
-[the Node profile](../tsconfig.node.json), [ESLint](../eslint.config.mjs),
-[Prettier](../.prettierrc.json), and [Vitest project discovery](../vitest.config.mts).
-The [root manifest](../package.json) and shared lockfile record installed versions.
-See [development checks](../README.md#development-checks) for command usage and
+The exact configurations live in [the shared TypeScript base](../../tsconfig.base.json),
+[the Node profile](../../tsconfig.node.json), [ESLint](../../eslint.config.mjs),
+[Prettier](../../.prettierrc.json), and [Vitest project discovery](../../vitest.config.mts).
+The [root manifest](../../package.json) and shared lockfile record installed versions.
+See [development checks](../../README.md#development-checks) for command usage and
 current empty-suite limitations.
 
 Examples: reading `items[index]` requires handling an absent value; an optional
@@ -118,8 +118,8 @@ centralized tooling, and strict empty-suite behavior.
 | Environment | Use strict filtering. Include `NODE_ENV` and `TZ` in unit-test hashes. Current checks need no application secrets or database variables. Declare additional result-affecting variables per task when introduced; pass-through values are unhashed, and tasks loading ignored `.env` files must declare those files as inputs. |
 | Mutating and persistent work | Retain direct `lint:fix`, `format`, and `test:watch` commands. Future persistent tasks should use `cache: false` and `persistent: true`, outside finite task prerequisites. Future database mutations and, initially, real-database integration tests should be uncached because source hashes do not capture live database state. Concrete future tasks remain separate implementation decisions. |
 
-The exact configuration is [turbo.json](../turbo.json); command usage and the
-cache demonstration live in [Turborepo checks](../README.md#turborepo-checks-and-cache).
+The exact configuration is [turbo.json](../../turbo.json); command usage and the
+cache demonstration live in [Turborepo checks](../../README.md#turborepo-checks-and-cache).
 This adopts the documented [incremental installation](https://turborepo.dev/docs/getting-started/add-to-existing-repository),
 [root tasks](https://turborepo.dev/docs/crafting-your-repository/configuring-tasks#registering-root-tasks),
 [configuration](https://turborepo.dev/docs/reference/configuration),
@@ -165,7 +165,8 @@ implementation evidence remains pending.
 **Owner decision:** Use Doppler to manage environment variables. This selects the
 provider and supersedes the foundation proposal's copied-local-`.env` and native
 env-file-loading approach. Application/CLI code receives environment values and
-validates them at explicit entry points. Doppler integration is not implemented.
+validates them at explicit entry points. This original provider decision is
+implemented only for the [Step 1 verification path](#step-1-docker-tooling-2026-10-24); application integration remains pending.
 An example file may document variable names; it is not a copied secret store or
 automatic runtime fallback.
 
@@ -214,6 +215,53 @@ concrete execution changes remain pending approval, as do the other proposal
 items. No host tooling replacement or application setup is authorized by this
 record.
 
+## Step 1 Docker tooling (2026-10-24)
+
+**Owner approval:** The owner explicitly requested implementation of the
+[Step 1 plan](../plans/step-1-tooling-plan-2026-10-24.md), preferred Docker Official
+Images, confirmed the application/package/tooling name `storage-minis`, disposable
+containers with persistent volumes, and accepted the documented host-editor limitation. The owner chose Doppler project
+`storage-minis` with the proposed development config `dev`, and installed CLI
+3.77.1 through Homebrew. This authorizes partial T06 bootstrap only; no T01/T02/T04
+dependency is removed and Steps 2–6 remain separate assignments.
+
+| Decision | Approved implementation and rationale |
+| --- | --- |
+| Image/runtime | Docker Official Image `node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205`; npm provisions pnpm 12.15.0 and clears its cache. Only `docker/` enters the build context; dependencies install afterward from the existing lockfile. Debian avoids a libc change. |
+| Execution | Profile `tools`, disposable Compose commands, explicit unique `COMPOSE_PROJECT_NAME` (`storage-minis-beijing` here), no ports or DB dependency. Commands run as `node` 1000:1000. Reviewable generated files stay on the bind mount. |
+| Storage | Five project-scoped named volumes for root/API/DB dependencies, pnpm store and Turbo; all use `nocopy`. A root-only initializer has no checkout mount and changes mount-root ownership only. Normal down preserves volumes. |
+| Host orchestration | Bash launcher locates this checkout and the existing Docker CLI, preserves Docker host context, ignores `.env`/ambient Compose env-file selection, and propagates payload exits. TERM/INT traps signal only the invocation's named container; testing showed attached Compose alone leaves it running. No host shell/profile change. |
+| Doppler | Host CLI 3.77.1 supplies values before Compose. The owner's Homebrew path uses `TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler`; exact version checking rejects upgrades. Standalone release/checksum installation remains documented. Browser auth uses a dedicated host config directory and checkout scope, with explicit project/config on each fetch. |
+| Injection/fallback | Only `FOUNDATION_TOOLING_PROBE` is fetched; validate on host, pass by name to direct container Node. Managed values win; ambient service tokens are rejected. No secret fallback reads/writes, no credentials in Node/image/cache, no global Turbo pass-through. Requests time out in 10 seconds with one attempt. |
+| CLI compatibility | CLI 3.77.1's actual help has no proposed `--no-interactive` flag. Verification instead closes stdin, with browser login performed separately; this implements the approved noninteractive launch intent. Parent credential directories must be created before `doppler login`. |
+| Editor/Git | Preserve host dependencies. Host editor diagnostics cannot see Docker volumes; additional editor setup remains separate. Git stays on host; container Turbo uses filesystem hashing. Git-history filters are outside this runner's contract. |
+
+**Infrastructure verification on macOS arm64 / Docker Desktop:** Engine/client
+29.9.2, Compose 5.6.1, `desktop-linux`. Local built tooling image manifest digest
+`sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`
+(build under the owner-corrected name; not a published image). Build/runtime
+probes confirmed Node `v24.22.1`, pnpm `12.15.0`, UID/GID 1000:1000 and effective
+store `/pnpm/store/v11`. No Git executable was installed.
+
+| Scenario | Observed evidence |
+| --- | --- |
+| Build/install/discovery | Official image build passed; frozen install passed in primary and fresh secondary projects, with root/API/DB discovered and byte-identical lockfile. Each network-heavy attempt had a 600-second bound. |
+| Checks | `pnpm typecheck`, `pnpm lint`, `pnpm format:check` passed. Ordinary `pnpm test` and `pnpm check` failed with exit 1 / no test files. Explicit `pnpm test --passWithNoTests` passed for runner loading only. |
+| Turbo | Six executable tasks in dry JSON; five successful tasks forced, then five cache hits. Ignored `.context`/dependency changes preserved hashes. A temporary API tsconfig edit invalidated the API and root tasks while DB stayed unchanged; restoring bytes restored hashes. |
+| Host/checkout isolation | Unique host sentinel files in all dependency/cache trees remained unchanged and invisible inside tooling. All five primary/secondary volume markers stayed separate. Node wrote volume roots and checkout output; output survived exit and was host-editable. |
+| Watch/signals/exits | Directory watching observed both ordinary edit and atomic-save events within ten seconds. TERM/INT reached Node and exited within ten seconds after launcher forwarding was added. A child exit of 37 propagated as 37. |
+| Reproduction/lifecycle | Fresh secondary build → init → frozen install → typecheck → down passed. Named volume inspection confirmed survival after down; only secondary project's volumes/network/image tag were removed. Primary dependencies survived down and a new container. |
+| Doppler | Real `storage-minis` / `dev` launch passed both host/container assertions. Conflicting ambient marker and temporary `.env` were overridden/ignored. Invalid project/config, empty login state, failed API connection and ambient token all failed before payload. A direct CLI missing-allowlisted-key check failed without starting its payload. Dedicated credential-directory file inventory was unchanged: no fallback files created. Ordinary tooling received no Doppler variables. |
+
+These are tooling checks, not application, persistence, authorization or business
+acceptance. No schema, PostgreSQL, new workspace dependency/task, dummy test,
+frontend, CI or production configuration is introduced. Setup and variable
+inventory live in [README](../../README.md#docker-tooling). The dedicated host credential directory has mode 700; browser login completed
+with scope set to this absolute checkout. The Homebrew CLI was exercised; the
+standalone checksum installer is documented but was not executed. Probe files
+and secondary resources were removed, and only the renamed primary tooling
+volumes/image remain. T06 stays open.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -259,7 +307,7 @@ dependencies and delivery ownership remain in force:
 | Checkpoint | Required boundary |
 | --- | --- |
 | Before any new installation or configuration | Obtain approval for the concrete T06 proposal. Identify the explicitly approved partial-bootstrap scope and its deferred outputs; this checklist does not waive T06's T01/T02/T04 prerequisites or move/close issues. |
-| Before business schema migrations or representative persistence operations | Reconcile [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21), applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) contracts, the [database design guide](database/design.md), and the [approved updates](requirement-updates/README.md). The DBML still has deferred uniqueness/scope keys and conceptual composite references without executable FK targets. It cannot be translated mechanically into migrations. |
+| Before business schema migrations or representative persistence operations | Reconcile [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21), applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) contracts, the [database design guide](../database/design.md), and the [approved updates](../requirement-updates/README.md). The DBML still has deferred uniqueness/scope keys and conceptual composite references without executable FK targets. It cannot be translated mechanically into migrations. |
 | Before protected business procedures or administrator bootstrap | Obtain the applicable [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) authorization/bootstrap decisions. Diagnostic scaffolding must not introduce business access through a temporary authentication bypass. |
 | Before operational/deployment acceptance | Resolve applicable [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) configuration, release/migration and recovery decisions. Local Compose does not select production hosting, backup retention or restore targets. |
 
@@ -416,7 +464,7 @@ install/configure tools, change issue state, or treat this prompt as approval.
 
 The owner requires agents to ask first, with a recommendation, before making any
 new or changed technical or implementation decision. Follow the
-[owner-approval workflow](../AGENTS.md#owner-approval-before-decisions), including
+[owner-approval workflow](../../AGENTS.md#owner-approval-before-decisions), including
 for tooling, packages and versions, CLIs, architecture, configuration, and local
 environment changes. Existing approved choices retain their recorded scope.
 
@@ -438,7 +486,7 @@ environment changes. Existing approved choices retain their recorded scope.
 | Database | PostgreSQL | Final schema, constraints, and transaction/concurrency design remain pending. |
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
 | Development infrastructure | Docker Compose for PostgreSQL | Production database hosting remains undecided. |
-| Environment variables | Doppler | Selected on 2026-10-24; CLI/container injection, config mapping, authentication and operational policy remain implementation decisions. |
+| Environment variables | Doppler | Step 1 provides local host-to-Compose verification; application/test/production mapping and operational policy remain later decisions. |
 | Tests | Vitest and Playwright | Vitest for unit/integration tests, including real PostgreSQL for rollback, constraints, and concurrency; Playwright for core administrator and public-catalog workflows. |
 | Lint and formatting | ESLint and Prettier | Concrete settings and commands approved in the 2026-10-23 tooling setup above. |
 
