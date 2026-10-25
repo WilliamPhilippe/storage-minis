@@ -917,6 +917,37 @@ explicitly deferred to their owners. First development application is an owner
 command after reviewing these artifacts; no development schema/data, seed,
 spreadsheet import or production state was changed.
 
+### DB command error visibility follow-up (2026-10-25)
+
+The owner requested that DB scripts log their actual error messages. Command
+handlers now retain messages, nested causes and driver codes, redacting the
+injected password and PostgreSQL URL credentials. Check/shutdown/artifact errors
+preserve their causes. The Doppler launcher forwards payload stderr before
+suppressing its own fetch diagnostics; errors from Docker and the DB commands
+reach the terminal.
+
+**Owner approval, 2026-10-25:** “Approve the direct Drizzle ORM runner
+(recommended).” Kit 0.31.11 bundles Hanji's `renderWithTask`, whose rejection
+handler calls `process.exit(1)` without logging or rethrowing the error. Capturing
+its streams therefore cannot recover migration authentication/lock errors. The
+application now invokes the same installed
+`drizzle-orm/node-postgres/migrator` used internally by Kit, retaining the existing
+commands, SQL/journal/history, native transactions, process supervision and timeout
+settings. This avoids a third-party patch or dependency/version change and
+supersedes the earlier `drizzle-kit migrate` application entrypoint. Generation
+remains on Kit. The separate runner owns and closes a single-connection pg pool;
+the existing supervisor still bounds its process and forwards signals.
+
+`pnpm check` passes all seven tasks and 27 unit tests (strict types, lint and
+formatting included). `./scripts/tooling.sh run-db test pnpm test:db` passes all
+30 real-PostgreSQL tests: 20 schema/migration checks and 10 connection/lifecycle
+checks. The two migration message assertions that failed with Kit now pass:
+authentication failures and lock timeouts include the actual message/code while
+passwords remain absent. Fresh replay, repeat application, native rollback and
+interrupted backend cleanup also pass. Bash syntax and diff whitespace pass.
+No development migration or data reset was performed; SQL/snapshot/journal
+artifacts and dependency versions are unchanged.
+
 ## Remaining design and delivery boundaries
 
 | Work item | Still required |

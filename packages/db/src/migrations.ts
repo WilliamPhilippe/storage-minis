@@ -1,5 +1,10 @@
 import { readMigrationFiles } from "drizzle-orm/migrator";
 
+export const migrationHistory = {
+  schema: "drizzle",
+  table: "__drizzle_migrations",
+} as const;
+
 export const migrationLimits = {
   processMs: 120_000,
   lockMs: 5_000,
@@ -20,9 +25,10 @@ export function requireMigrationArtifacts(folder: string): void {
     ) {
       throw new Error("Empty migration chain.");
     }
-  } catch {
+  } catch (error) {
     throw new Error(
       "Migration artifacts are missing or invalid. Restore the reviewed SQL and Drizzle journal before applying.",
+      { cause: error },
     );
   }
 }

@@ -1026,6 +1026,10 @@ it("bounds CLI lock waits on the actual migration connection and sanitizes failu
     expect(options).toContain("__drizzle_migrations");
     const failure = await pending;
     expect(failure).toMatchObject({ code: 1 });
+    expect(String(failure)).toContain(
+      "canceling statement due to lock timeout",
+    );
+    expect(String(failure)).toContain("55P03");
     expect(String(failure)).not.toContain(config.password);
     expect(performance.now() - started).toBeGreaterThan(4_500);
     expect(performance.now() - started).toBeLessThan(9_000);
@@ -1034,21 +1038,53 @@ it("bounds CLI lock waits on the actual migration connection and sanitizes failu
   }
 });
 
-it("rejects invalid targets and wrong credentials without exposing injected values", async () => {
-  for (const environment of [
-    { ...process.env, DB_TARGET: "test", PGDATABASE: "storage_minis_dev" },
-    { ...process.env, PGPASSWORD: "deliberately-invalid-fixture-password" },
-  ]) {
+it("logs invalid-target and authentication messages without exposing injected values", async () => {
+  for (const [environment, message] of [
+    [
+      { ...process.env, DB_TARGET: "test", PGDATABASE: "storage_minis_dev" },
+      "Invalid database configuration",
+    ],
+    [
+      { ...process.env, PGPASSWORD: "deliberately-invalid-fixture-password" },
+      "password authentication failed",
+    ],
+  ] as const) {
     const failure: unknown = await applyCommand(environment).then(
       () => null,
       (error: unknown) => error,
     );
     expect(failure).toMatchObject({ code: 1 });
+    expect(String(failure)).toContain(message);
     expect(String(failure)).not.toContain(config.password);
     expect(String(failure)).not.toContain(
       "deliberately-invalid-fixture-password",
     );
   }
+});
+
+it("logs the driver's authentication message from db:check", async () => {
+  const failure: unknown = await execute(
+    process.execPath,
+    ["--import", "tsx", "scripts/check.ts"],
+    {
+      cwd: packageRoot,
+      env: {
+        ...process.env,
+        PGPASSWORD: "deliberately-invalid-fixture-password",
+      },
+      timeout: 15_000,
+    },
+  ).then(
+    () => null,
+    (error: unknown) => error,
+  );
+  expect(failure).toMatchObject({ code: 1 });
+  expect(String(failure)).toContain("Database command failed");
+  expect(String(failure)).toContain("password authentication failed");
+  expect(String(failure)).toContain("28P01");
+  expect(String(failure)).not.toContain(
+    "deliberately-invalid-fixture-password",
+  );
 });
 
 it("interrupts a blocked migration without leaking its backend or changing history", async () => {

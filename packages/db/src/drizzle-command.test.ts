@@ -35,10 +35,12 @@ it("propagates native Kit generation errors even when Kit exits zero", async () 
         join(fixture, "scripts", name),
       );
     }
-    await copyFile(
-      fileURLToPath(new URL("./migrations.ts", import.meta.url)),
-      join(fixture, "src/migrations.ts"),
-    );
+    for (const name of ["migrations.ts", "diagnostics.ts"]) {
+      await copyFile(
+        fileURLToPath(new URL(`./${name}`, import.meta.url)),
+        join(fixture, "src", name),
+      );
+    }
     await writeFile(join(fixture, "package.json"), '{"type":"module"}');
     await writeFile(
       join(fixture, "drizzle.config.ts"),

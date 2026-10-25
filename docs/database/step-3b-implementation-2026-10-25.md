@@ -103,7 +103,7 @@ Generation is offline:
 ./scripts/tooling.sh run pnpm db:generate -- --name describe_change
 ```
 
-The wrapper executes the pinned native Drizzle CLI from `packages/db`, using a
+Generation executes the pinned native Drizzle CLI from `packages/db`, using a
 relative `./drizzle` output path. Kit 0.31.11 incorrectly prepends `./` to absolute
 snapshot paths on repeat generation; keeping the package working directory
 fixed avoids that upstream behavior. Its generation handler also catches some
@@ -113,11 +113,19 @@ all artifacts.
 
 Application validates the exact approved dev/test tuple, checks that the native
 SQL/journal chain exists and is nonempty before connecting, and passes only
-component credentials to the config. The CLI's actual pg connections receive
+component credentials to the runner. The migrator's actual pg connection receives
 5s lock / 30s statement / 30s idle-in-transaction timeouts through replaced
 `PGOPTIONS`, plus a 2s connection timeout. The supervisor bounds the process at
-120s, forwards SIGINT/SIGTERM, forces termination after 5s and sanitizes live
-errors. An interrupted run requires inspecting history before retry; no automatic
+120s, forwards SIGINT/SIGTERM and forces termination after 5s. Failed commands
+log actual messages and nested causes/codes with password redaction. On
+2026-10-25 the owner approved calling the installed native
+`drizzle-orm/node-postgres/migrator` directly through the supervised
+[application runner](../../packages/db/scripts/apply-migrations.ts). Kit 0.31.11's
+progress renderer otherwise discards migration failures before logging them.
+The native SQL/journal/history and transaction semantics are unchanged; no custom
+SQL executor or dependency change is introduced. The host launcher forwards
+command stderr across the Doppler boundary.
+An interrupted run requires inspecting history before retry; no automatic
 down migration or destructive recovery is supplied. Use the wrapper commands
 for these bounds; a raw CLI invocation bypasses their process supervision.
 

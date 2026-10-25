@@ -116,8 +116,8 @@ case "$operation" in
         fail "Set DOPPLER_PROJECT=storage-minis and DOPPLER_CONFIG=$target for this target."
       resolve_doppler
       unset POSTGRES_PASSWORD POSTGRES_TEST_PASSWORD PGPASSWORD
-      # Diagnostics from the fetch are suppressed; payload errors below are
-      # sanitized and use stdout so useful Docker errors remain visible.
+      # Suppress Doppler fetch diagnostics only. Forward the payload's stderr to
+      # stdout before that boundary so DB and Docker errors remain visible.
       if bounded 0 "$doppler_bin" --config-dir "$doppler_config_dir" --scope "$checkout" \
         --project storage-minis --config "$target" --no-check-version --timeout 10s --attempts 1 \
         run --no-fallback --forward-signals --no-liveness-ping --only-secrets "$secret_key" \
@@ -127,7 +127,7 @@ case "$operation" in
             printf "%s\n" "Required Doppler database password is missing."
             exit 1
           fi
-          exec "$@"
+          exec "$@" 2>&1
         ' database-env "$secret_key" "$checkout/scripts/database.sh" _injected "$operation" "$target" "$@" \
         </dev/null 2>/dev/null; then
         exit 0

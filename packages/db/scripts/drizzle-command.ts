@@ -1,12 +1,13 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { migrationLimits } from "../src/migrations.js";
+import { redactDatabaseMessage } from "../src/diagnostics.js";
 
 // Keep Drizzle's native generation/application and transaction semantics. This
 // supervisor only bounds process lifetime, forwards signals and sanitizes live
-// errors, which can otherwise include connection details or raw SQL parameters.
+// errors while retaining the native failure diagnostics.
 export async function runDrizzleCommand(
   operation: "generate" | "migrate",
   arguments_: readonly string[] = [],
@@ -14,22 +15,26 @@ export async function runDrizzleCommand(
   const require = createRequire(import.meta.url);
   const child = spawn(
     process.execPath,
-    [
-      join(dirname(require.resolve("drizzle-kit")), "bin.cjs"),
-      operation,
-      "--config",
-      operation === "generate"
-        ? "drizzle.config.ts"
-        : "drizzle.migrate.config.ts",
-      ...arguments_,
-    ],
+    operation === "generate"
+      ? [
+          join(dirname(require.resolve("drizzle-kit")), "bin.cjs"),
+          "generate",
+          "--config",
+          "drizzle.config.ts",
+          ...arguments_,
+        ]
+      : [
+          "--import",
+          pathToFileURL(require.resolve("tsx")).href,
+          fileURLToPath(new URL("./apply-migrations.ts", import.meta.url)),
+        ],
     {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
         // pg reads these options on its actual connections, including those
-        // created inside drizzle-kit. Replace any ambient PGOPTIONS.
+        // created by the native ORM migrator. Replace any ambient PGOPTIONS.
         PGOPTIONS: `-c lock_timeout=${migrationLimits.lockMs} -c statement_timeout=${migrationLimits.statementMs} -c idle_in_transaction_session_timeout=${migrationLimits.statementMs} -c timezone=UTC`,
         PGCONNECT_TIMEOUT: "2",
       },
@@ -37,6 +42,7 @@ export async function runDrizzleCommand(
   );
   let interrupted = false;
   let generationOutput = "";
+  let migrationOutput = "";
   let killTimer: ReturnType<typeof setTimeout> | undefined;
   function interrupt(signal: NodeJS.Signals) {
     if (interrupted) return;
@@ -56,15 +62,31 @@ export async function runDrizzleCommand(
     child.stdout.pipe(process.stdout);
     child.stderr.pipe(process.stderr);
   } else {
-    child.stdout.resume();
-    child.stderr.resume();
+    // Capture either stream. Buffer until exit so password redaction also works
+    // across stream chunk boundaries.
+    const capture = (chunk: Buffer) => {
+      migrationOutput += chunk.toString();
+    };
+    child.stdout.on("data", capture);
+    child.stderr.on("data", capture);
   }
   try {
     const code = await new Promise<number | null>((resolve, reject) => {
       child.once("error", reject);
       child.once("close", resolve);
     });
-    if (interrupted || code !== 0) throw new Error("Drizzle command failed.");
+    if (interrupted || code !== 0) {
+      throw new Error(
+        [
+          interrupted
+            ? "Drizzle command interrupted or timed out."
+            : `Drizzle command failed (exit ${code}).`,
+          redactDatabaseMessage(migrationOutput.trim()),
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
+    }
     // Kit 0.31.11 catches some generation exceptions and exits zero. Require
     // its terminal success message as well as the process status.
     if (

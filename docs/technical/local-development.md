@@ -452,9 +452,11 @@ The local pool has at most five clients, a 10s idle timeout, 2s acquisition/conn
 timeout, 3s statement timeout and 4s query timeout. `check()` verifies authenticated
 database/user/UTC within 6s. `close()` drains owned work for up to 10s, then ends
 tracked sockets and rejects if a caller leaked a checked-out client. Command
-processes enforce a final exit deadline and handle SIGINT/SIGTERM. Check errors
-are sanitized; future API code still owns safe translation of ordinary query
-errors. Production pool, TLS and role policies remain T04 decisions.
+processes enforce a final exit deadline and handle SIGINT/SIGTERM. Commands log
+the actual error message, nested causes and driver codes, with password and
+connection-URL credential redaction. Library errors retain their causes; future
+API code still owns safe translation of errors. Production pool, TLS and role
+policies remain T04 decisions.
 
 The build emits ESM JavaScript and declarations to `packages/db/dist/`. Package
 exports resolve `@storage-minis/db` through `dist/index.js` / `dist/index.d.ts`.
@@ -482,11 +484,18 @@ pnpm docker:migrate
 Commands remain uncached and separate. Startup applies no migrations; preserved
 volumes keep both schema and history after a restart. Application skips committed
 history already applied and validates local component credentials. Missing/empty
-artifacts fail before connecting. The native Drizzle CLI receives 5s lock / 30s
-statement / 30s idle-in-transaction limits and a 2s connection limit; its supervisor
-allows 120s, forwards signals and forces termination after 5s. Live errors are
-sanitized. Inspect history after interruption before retrying. Use these wrappers
-for supervision; raw CLI use bypasses the process bounds.
+artifacts fail before connecting. The native Drizzle ORM runner receives 5s lock /
+30s statement / 30s idle-in-transaction limits and a 2s connection limit; its supervisor
+allows 120s, forwards signals and forces termination after 5s. On failure, the
+wrapper logs actual messages, nested PostgreSQL causes and error codes with
+password redaction. Application calls the installed
+`drizzle-orm/node-postgres/migrator` directly in a supervised child process,
+preserving native SQL/journal/history and transactions. The owner approved this
+on 2026-10-25 because Kit 0.31.11's progress renderer discards migration errors.
+Generation still uses Kit. The Doppler launcher forwards the command's stderr
+while suppressing only Doppler's own fetch diagnostics.
+Inspect history after interruption before retrying. Use these wrappers for
+supervision; raw CLI or runner use bypasses the process bounds.
 
 The wrapper fixes its working directory to the DB package and uses relative
 `./drizzle` output for pinned Kit snapshot compatibility. It rejects generation

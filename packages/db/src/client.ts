@@ -89,11 +89,12 @@ export function createDatabase(input: DatabaseConfig) {
           }, databaseLimits.checkMs);
         }),
       ]);
-    } catch {
+    } catch (error) {
       ready = false;
       release(true);
       throw new Error(
         "Database check failed. Verify target, credentials and availability.",
+        { cause: error },
       );
     } finally {
       clearTimeout(timer);
@@ -105,7 +106,7 @@ export function createDatabase(input: DatabaseConfig) {
     closing ??= new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         // End sockets even when a caller failed to finish a checked-out transaction.
-        // Commands also enforce a process deadline; never expose the driver error.
+        // Commands also enforce a process deadline and redact logged diagnostics.
         for (const client of clients) void client.end().catch(() => {});
         reject(
           new Error(
@@ -118,9 +119,13 @@ export function createDatabase(input: DatabaseConfig) {
           clearTimeout(timer);
           resolve();
         },
-        () => {
+        (error: unknown) => {
           clearTimeout(timer);
-          reject(new Error("Database shutdown failed."));
+          reject(
+            new Error("Database shutdown failed.", {
+              cause: error,
+            }),
+          );
         },
       );
     });

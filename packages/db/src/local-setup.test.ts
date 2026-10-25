@@ -134,6 +134,10 @@ exec "$@"
 set -eu
 [[ \${COMPOSE_PROJECT_NAME:-} == saved-project && \${POSTGRES_PORT:-} == 6433 && \${POSTGRES_TEST_PORT:-} == 6434 ]] || exit 10
 printf '%s\\n' "$*" >> "$FIXTURE_CALLS"
+if [[ \${FIXTURE_FAILURE:-} == tooling && $* == *" tooling "* ]]; then
+  echo 'underlying database diagnostic' >&2
+  exit 7
+fi
 if [[ $* == *" run "* ]]; then echo 1; fi
 `,
   );
@@ -154,6 +158,11 @@ if [[ $* == *" run "* ]]; then echo 1; fi
     expect(result.stdout).not.toContain("fixture-secret");
   }
   expect(run("tooling.sh", "run", "node", "--version").status).toBe(0);
+  environment.FIXTURE_FAILURE = "tooling";
+  const failed = run("database.sh", "run", "test", "pnpm", "db:check");
+  expect(failed.status).toBe(7);
+  expect(failed.stdout).toContain("underlying database diagnostic");
+  expect(failed.stdout + failed.stderr).not.toContain("fixture-secret");
   expect(
     run("reset-volumes.sh", "--confirm", "different-project").status,
   ).not.toBe(0);
