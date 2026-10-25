@@ -10,7 +10,7 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "noEmit": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true,
     "allowJs": false,
     "types": []
   }

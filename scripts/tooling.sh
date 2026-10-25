@@ -7,7 +7,7 @@ fail() {
 }
 
 usage() {
-  printf '%s\n' 'Usage: tooling.sh {build|init|run COMMAND [ARG...]|verify-env|down}'
+  printf '%s\n' 'Usage: tooling.sh {build|init|run COMMAND [ARG...]|run-db TARGET COMMAND [ARG...]|verify-env|down}'
 }
 
 if [[ $# -eq 0 ]]; then
@@ -19,6 +19,7 @@ shift
 case "$operation" in
   build|init|verify-env|down) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
   run) [[ $# -gt 0 ]] || { usage >&2; exit 2; } ;;
+  run-db|_run-db) [[ $# -ge 2 && ( $1 == dev || $1 == test ) ]] || { usage >&2; exit 2; } ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 2 ;;
 esac
@@ -27,6 +28,10 @@ esac
   fail 'Set COMPOSE_PROJECT_NAME to a unique lowercase name for this checkout.'
 
 checkout=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+if [[ $operation == run-db ]]; then
+  # Reuse exactly the database lifecycle's target validation and secret injection.
+  exec "$checkout/scripts/database.sh" run "$@"
+fi
 docker_bin=${DOCKER_BIN:-}
 if [[ -z "$docker_bin" ]]; then
   docker_bin=$(command -v docker || true)
@@ -44,6 +49,15 @@ export COMPOSE_DISABLE_ENV_FILE=1
 compose=("$docker_bin" compose --env-file /dev/null
   --file "$checkout/compose.yaml" --project-directory "$checkout"
   --project-name "$COMPOSE_PROJECT_NAME" --profile tools)
+container_environment=(--no-deps)
+if [[ $operation == _run-db ]]; then
+  [[ ${DB_TARGET:-} == "$1" && -n ${PGPASSWORD:-} ]] || fail 'Missing injected database configuration.'
+  shift
+  compose=("$docker_bin" compose --env-file /dev/null --file "$checkout/compose.yaml"
+    --file "$checkout/compose.postgres.yaml" --project-directory "$checkout"
+    --project-name "$COMPOSE_PROJECT_NAME" --profile '*')
+  container_environment+=(--env DB_TARGET --env PGHOST --env PGPORT --env PGDATABASE --env PGUSER --env PGPASSWORD)
+fi
 
 # Compose run does not forward host TERM/INT reliably in attached pipe mode.
 # Name only this invocation so traps can signal its container directly.
@@ -69,7 +83,7 @@ run_tooling() {
 
   trap 'forward_signal SIGTERM' TERM
   trap 'forward_signal SIGINT' INT
-  "${compose[@]}" run --rm --no-deps --name "$container_name" tooling "$@" <&0 &
+  "${compose[@]}" run --rm --name "$container_name" "${container_environment[@]}" tooling "$@" <&0 &
   child=$!
   if [[ -n "$signal_to_forward" ]]; then forward_signal "$signal_to_forward"; fi
   while true; do
@@ -84,7 +98,7 @@ run_tooling() {
 case "$operation" in
   build) exec "${compose[@]}" build tooling ;;
   init) exec "${compose[@]}" run --rm --no-deps tooling-init ;;
-  run) run_tooling "$@" ;;
+  run|_run-db) run_tooling "$@" ;;
   down) exec "${compose[@]}" down ;;
   verify-env)
     [[ -z ${DOPPLER_TOKEN:-} ]] ||

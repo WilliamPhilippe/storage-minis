@@ -4,6 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "build": "tsc --project tsconfig.build.json",
+    "db:check": "tsx scripts/check.ts",
+    "db:generate": "tsx scripts/generate.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "test:integration": "tsx scripts/integration.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1",
+    "zod": "4.6.7"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   }
 }

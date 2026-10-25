@@ -350,8 +350,70 @@ from this step's merged handoff and obtain separate approval for Drizzle work.
 T06 and its T01/T02/T04 prerequisites remain open.
 
 [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104) contains the
-Step 2 implementation and handoff, awaiting review/merge. It does not authorize
-merging or starting Step 3.
+Step 2 implementation and handoff. Its merged status was verified on 2026-10-24
+during Step 3 planning. The merge does not approve Step 3's implementation choices.
+
+## Step 3 planning direction (2026-10-24)
+
+The owner requested a [two-part Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md):
+Drizzle installation/connection tooling, followed by base migration creation from
+the existing DBML. The owner explicitly approved reconciliation with current
+requirements before migration generation, then approved running Drizzle and its
+CLI in the existing Docker tooling container with the `pg` driver and separate
+generation/application commands. Generated artifacts remain in the mounted
+repository; no host Drizzle installation is needed. This reuses the existing
+tooling environment and keeps migration history reviewable.
+
+The owner subsequently created a Doppler environment named `test` and authorized
+its use. Step 3 planning now separates development and test configuration sources.
+The actual test config slug and key inventory still require verification; the
+plan recommends retaining the existing `POSTGRES_TEST_PASSWORD` key. Both database
+lifecycle and Node-tooling launchers must use the same selected test config.
+Implemented Step 2 still reads both passwords from `dev`; no runtime mapping was
+changed during this planning update. Internal port 5432 remains valid for both
+distinct container addresses; host ports remain separately mapped to 5433/5434.
+
+Any required local-machine installation must be performed by the owner after
+being asked. Exact dependency pins, package/configuration/command contracts,
+physical-schema decisions and implementation remain pending as identified in the
+plan. These direction approvals do not approve all recommendations in the older
+foundation proposal or deliver an executable schema. No installation or database
+mutation was performed during planning.
+
+## Step 3A Drizzle implementation (2026-10-25)
+
+**Owner approval:** On 2026-10-24 the owner approved the
+[two-part plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md),
+requested a new branch from `main`, and instructed implementation. Branch
+`chore/step-3-drizzle` starts at merged `origin/main` commit `acb9f05` and preserves
+the planning documents. This delivers 3A; the plan's physical-schema review and
+first-development-migration gates remain in force for 3B.
+
+Two installation/compatibility findings required additional choices. The owner
+explicitly answered “Approve exact-version allowlist” for esbuild 0.18.20,
+0.25.12 and 0.28.2, and “Approve skipLibCheck:true” after Drizzle 0.45.4 failed
+full dependency-declaration checking. These supersede P04's library-checking
+choice for the shared compiler configuration. Strict checking of project source,
+API use of library types, exact optional properties and indexed access remains;
+no unused Gel/MySQL/native driver packages were added to hide declaration errors.
+The esbuild allowlist is version-specific; future builds require review.
+
+| Area | Implemented contract and rationale |
+| --- | --- |
+| Dependencies | DB runtime: Drizzle ORM 0.45.4, pg 8.23.1, Zod 4.6.7. Root tools: Drizzle Kit 0.31.11, @types/pg 8.23.1, tsx 4.23.15. Installation is inside existing Docker volumes, with a shared exact lockfile. |
+| Environment | Verified project `storage-minis`, config/environment `test`, and key name `POSTGRES_TEST_PASSWORD`. Both PostgreSQL lifecycle and Node commands require `DOPPLER_CONFIG` equal to `dev` or `test` as selected. Dev keeps `POSTGRES_PASSWORD`; no test fallback to dev. Only the selected password is fetched. |
+| Factory | Explicit validated configuration, lazy pg pool, typed Drizzle handle, bounded authenticated `check()`, idempotent `close()`, last-check readiness flag. Import has no environment/network side effect. Command process owns cleanup. |
+| Limits | Pool max 5; idle 10s; connection/acquisition 2s; statement 3s; query 4s; complete check 6s; graceful pool cleanup 10s. Command watchdog and signal handlers provide final process cleanup. These remain local defaults, not production targets. |
+| Exports | TypeScript emits ESM and declarations to `dist/`; normal Node and NodeNext consumers resolve compiled package exports. No source alias or API runtime was introduced. |
+| Tasks | DB build emits cached `dist/**`. DB typecheck and root typed lint build required exports first. `db:check`, `db:generate`, `db:migrate`, and `test:integration` are uncached; only named DB environment values pass to secret-bearing tasks. |
+| Migration state | Generation/application commands and direct CLI configs refuse before credentials or schema mutation. No placeholder schema, empty journal, dummy tables or migration exists. Config paths/history namespace are recorded; CLI execution and migration credentials will be completed with approved real artifacts in 3B. |
+| Tests | Colocated unit tests validate configuration, target isolation and migration refusal. Separate real-PostgreSQL tests validate connection/rollback/timeouts, idle errors, process exports and cleanup. Integration requires the exact test tuple, 30s per test and 120s suite bound. |
+
+No host tool was installed or upgraded. The setup documentation now explains the
+separate Doppler configs, internal port 5432 on distinct containers, and host
+ports 5433/5434. The final evidence and remaining schema work are recorded in the
+[Step 3A handoff](step-3a-verification-2026-10-25.md). These checks do not establish
+business atomicity, Organization authorization, schema constraints or T06 completion.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

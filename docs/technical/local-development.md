@@ -71,7 +71,7 @@ apps/
   api/tsconfig.json
   api/vitest.config.mts
 packages/
-  db/package.json      # @storage-minis/db; future Drizzle connection/schema/migrations
+  db/package.json      # @storage-minis/db; compiled connection package and guarded CLI
   db/tsconfig.json
   db/vitest.config.mts
 ```
@@ -79,8 +79,9 @@ packages/
 Dependencies are saved with exact versions, and installs enforce engine
 compatibility. Development tools are installed at the root for use from a full
 workspace checkout. Turborepo 2.11.10 schedules and caches the existing checks.
-Application dependencies, build/dev/migration commands and the React frontend
-belong to subsequent setup steps. Docker Compose provides the tooling runner
+Step 3A adds the DB runtime dependencies, build, connection check and guarded
+migration commands. API commands, business schema and the React frontend remain
+later deliveries. Docker Compose provides the tooling runner
 and separate [local PostgreSQL services](#local-postgresql).
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
@@ -139,9 +140,9 @@ observed by a directory watcher on the macOS bind mount; later API watchers stil
 need their own verification.
 
 Run any [development check](#development-checks) by prefixing it with
-`./scripts/tooling.sh run`. Normal `pnpm test` and `pnpm check` still fail with
-"No test files found"; `pnpm test --passWithNoTests` is runner-loading evidence
-only. Use the same prefix for the documented Turbo dry runs and cache probes.
+`./scripts/tooling.sh run`. `pnpm check` now includes meaningful DB unit tests.
+Use `run-db test` with the matching Doppler config for live integration tests;
+ordinary `run` does not inject database credentials.
 
 ### Doppler host setup and verification
 
@@ -189,8 +190,9 @@ chmod 700 "$HOME/.config/storage-minis/doppler"
 Use the Doppler project `storage-minis`, config `dev`, with the harmless entry
 `FOUNDATION_TOOLING_PROBE=storage-minis-tooling-ok`. Account/project creation and
 browser login require the owner's account. Do not provide tokens in chat or add
-credentials to the checkout. Test/production mapping and DB variables are later
-steps. Credential state stays in the dedicated host directory, separate from
+credentials to the checkout. Database commands use target-matching `dev` / `test`
+configs as described below; production remains later work. Credential state stays
+in the dedicated host directory, separate from
 existing global Doppler state.
 
 ```sh
@@ -249,10 +251,13 @@ Step 2 adds [compose.postgres.yaml](../../compose.postgres.yaml), explicitly com
 with the tooling file by [database.sh](../../scripts/database.sh). PostgreSQL runs in
 separate development and test containers, using the Docker Official Image
 `postgres:18.6-bookworm` pinned by digest. The database is initially empty of
-application tables; the existing DBML is not applied. Drizzle belongs to Step 3.
+application tables; the existing DBML is not applied. Step 3A supplies the
+[Drizzle connection package](#drizzle-tooling).
 
-Reuse the checkout project name from Docker tooling. The owner added both
-passwords to Doppler project `storage-minis`, config `dev`; they must differ.
+Reuse the checkout project name from Docker tooling. Use Doppler project
+`storage-minis`: `POSTGRES_PASSWORD` in config `dev`, and
+`POSTGRES_TEST_PASSWORD` in config `test`. The passwords must differ. The
+config must match the command target; tests never fall back to `dev`.
 Use the [existing dedicated browser login](#doppler-host-setup-and-verification).
 No host PostgreSQL client or additional Node dependencies are required.
 
@@ -265,11 +270,11 @@ unset DOPPLER_TOKEN
 
 ./scripts/database.sh pull
 ./scripts/database.sh up dev
-./scripts/database.sh up test
+DOPPLER_CONFIG=test ./scripts/database.sh up test
 ./scripts/database.sh check dev
-./scripts/database.sh check test
+DOPPLER_CONFIG=test ./scripts/database.sh check test
 ./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
-./scripts/database.sh psql test -c 'SELECT version();'
+DOPPLER_CONFIG=test ./scripts/database.sh psql test -c 'SELECT version();'
 ```
 
 Pull explicitly before startup; the pull deadline is ten minutes. Each `up`
@@ -278,10 +283,10 @@ identity check with a 15-second deadline. Success means the selected database,
 role `postgres` and timezone `UTC` match. `pg_isready` health alone does not prove
 authentication. A failed SQL check leaves storage intact and returns nonzero.
 
-| Target | From another container in this project | From a host database tool | Database / user | Password key in Doppler `dev` |
+| Target | From another container in this project | From a host database tool | Database / user | Doppler config / password key |
 | --- | --- | --- | --- | --- |
-| Development | `postgres:5432` | `127.0.0.1:5433` | `storage_minis_dev` / `postgres` | `POSTGRES_PASSWORD` |
-| Test | `postgres_test:5432` | `127.0.0.1:5434` | `storage_minis_test` / `postgres` | `POSTGRES_TEST_PASSWORD` |
+| Development | `postgres:5432` | `127.0.0.1:5433` | `storage_minis_dev` / `postgres` | `dev` / `POSTGRES_PASSWORD` |
+| Test | `postgres_test:5432` | `127.0.0.1:5434` | `storage_minis_test` / `postgres` | `test` / `POSTGRES_TEST_PASSWORD` |
 
 Both local roles are superusers. Future production/application/migration roles
 remain T04 work. TCP authentication uses SCRAM; host ports bind only to loopback.
@@ -298,7 +303,7 @@ checks use five seconds.
 | `POSTGRES_PORT` | Nonsecret host override, default 5433. |
 | `POSTGRES_TEST_PORT` | Nonsecret host override, default 5434. Must differ from the development port. |
 | `COMPOSE_PROJECT_NAME` | Explicit unique checkout name; determines network and development volume ownership. |
-| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Must explicitly select `storage-minis` / `dev`; another mapping is rejected. |
+| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Must explicitly select project `storage-minis` and config matching the target: `dev` or `test`. Another mapping is rejected. |
 | Existing Docker/Doppler executable and credential-directory overrides | Same as Step 1. No new installation or shell initialization. |
 | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Generated for the client from its explicit target; ambient libpq configuration is ignored. |
 
@@ -313,7 +318,9 @@ file selections, and disables fallback snapshots. Missing secrets, wrong
 project/config, missing browser login or failed network access stop the command.
 Do not print resolved Compose configuration or pass passwords in command-line
 URIs. Ordinary tooling and database stop/log/reset/pull commands need no Doppler
-access. No credentials or Doppler installation enter the Node image or Turbo.
+access. No credentials are baked into the Node image. `run-db` passes only the selected
+connection components to the process and relevant uncached Turbo tasks; Doppler
+login state remains on the host.
 
 ### Database lifecycle and reset
 
@@ -360,105 +367,131 @@ restarts a service. Run `up <target>` explicitly afterward. Avoid
 See [Step 2 approval and verification](../../docs/technical/technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
 for infrastructure evidence and the remaining application/schema boundaries.
 
+## Drizzle tooling
+
+Step 3A installs Drizzle ORM 0.45.4, `pg` 8.23.1 and Zod 4.6.7 in the DB
+package, with Drizzle Kit 0.31.11, `@types/pg` 8.23.1 and `tsx` 4.23.15 as root
+development tools. Use the existing Docker dependency volumes. No host Drizzle,
+PostgreSQL client or extra global CLI is needed.
+
+The approved `pnpm-workspace.yaml` allowlist permits only esbuild 0.18.20, 0.25.12
+and 0.28.2 install scripts. Frozen installation must succeed; do not bypass
+unreviewed future build scripts or change package pins implicitly.
+
+With PostgreSQL started and the project/login settings above:
+
+```sh
+./scripts/tooling.sh run pnpm build
+./scripts/tooling.sh run-db dev pnpm db:check
+DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm db:check
+DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm test:db
+```
+
+`run-db` delegates target validation and selected-key Doppler injection to the
+same launcher used to initialize PostgreSQL. It forwards `DB_TARGET`, `PGHOST`,
+`PGPORT`, `PGDATABASE`, `PGUSER` and `PGPASSWORD` by name into the tooling container.
+The tuple is fixed to the selected local service/database and validated again by
+Node. Host `.env`, ambient passwords, `DATABASE_URL` and other libpq overrides
+cannot select another database. Doppler entries with these component names are
+not injected; the selected target determines them, and Doppler supplies only its
+password. Both internal ports remain 5432 because the container addresses differ.
+
+`createDatabase(config)` validates explicit input and returns `db` (typed Drizzle),
+`check()`, idempotent `close()`, and a `healthy` flag reflecting the last readiness
+check/idle error. Importing the package reads no environment and opens no socket;
+creating it constructs a lazy pool. Each process owns its instance and must close
+it in `finally`; transactions must finish/release before shutdown. Do not share
+one process's cleanup with another process or instantiate a second API pool.
+
+The local pool has at most five clients, a 10s idle timeout, 2s acquisition/connect
+timeout, 3s statement timeout and 4s query timeout. `check()` verifies authenticated
+database/user/UTC within 6s. `close()` drains owned work for up to 10s, then ends
+tracked sockets and rejects if a caller leaked a checked-out client. Command
+processes enforce a final exit deadline and handle SIGINT/SIGTERM. Check errors
+are sanitized; future API code still owns safe translation of ordinary query
+errors. Production pool, TLS and role policies remain T04 decisions.
+
+The build emits ESM JavaScript and declarations to `packages/db/dist/`. Package
+exports resolve `@storage-minis/db` through `dist/index.js` / `dist/index.d.ts`.
+Build before direct package typechecks or typed lint; root `pnpm check` and
+`pnpm typecheck` arrange the dependency automatically. Step 4 must add the actual
+API workspace dependency and use these compiled exports, not source aliases.
+
+### Migration approval gate
+
+`pnpm db:generate` and `pnpm db:migrate` are separate uncached commands. Both
+currently return nonzero with “Schema/migrations pending approval (Step 3B)”.
+The host launcher refuses a migration request before fetching Doppler secrets;
+package wrappers and direct Drizzle configs also enforce the gate. There is no
+placeholder schema, dummy table, migration folder or empty journal.
+
+Step 3B must deliberately replace the gate after physical-schema approval,
+complete the CLI execution wrappers/validated migration credentials, and prove
+replay before first development application. The checked configuration records
+`src/schema/index.ts`, output `packages/db/drizzle/` and history location
+`drizzle.__drizzle_migrations`. Generation will be offline; application will be
+explicit. No `push`, automatic startup migration, seed or production migration
+is available. Preserve SQL/snapshots/journal as reviewed source once delivered.
+
+### Database integration tests
+
+`pnpm test:db` dispatches `test:integration`, requires the exact test tuple, and
+runs uncached. Individual tests have a 30s limit; the suite supervisor allows
+120s, then terminates its process group, with a 10s forced-cleanup bound. Tests
+exercise real PostgreSQL queries, transaction rollback, timeouts, wrong-password
+failure, idle disconnection/recovery, bounded shutdown, normal ESM consumption
+and signal cleanup. They create no business or dummy tables. Unit launcher tests
+use temporary CLI fixtures; they are not real Doppler authentication evidence.
+
+The development target is rejected before an integration payload starts. Test
+cleanup never drops development storage. Stop the test service when finished;
+its tmpfs is discarded. Business constraints, concurrent commitments, audit
+survival and migration replay remain Step 3B/T01/T06 acceptance work.
+
 ## Development checks
 
-Run these commands from the repository root with the pinned toolchain active:
+Run from the root, prefixed with `./scripts/tooling.sh run` for Docker:
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm typecheck` | Check root tooling and both packages concurrently through Turborepo |
-| `pnpm check` | Run cached typechecks, lint, formatting check, and unit tests through Turborepo |
-| `pnpm lint` | Check JavaScript/TypeScript with ESLint; warnings fail |
-| `pnpm lint:fix` | Apply ESLint automatic fixes |
-| `pnpm format:check` | Check formatting of supported source/configuration files |
-| `pnpm format` | Rewrite those files with Prettier |
-| `pnpm test` | Run the API and DB unit-test projects once |
-| `pnpm test:watch` | Watch unit tests during development |
+| `pnpm build` | Build the DB package's runtime and declarations. |
+| `pnpm typecheck` | Build required DB exports, then check root and package source/configuration types. |
+| `pnpm check` | Run build prerequisites, typechecks, lint, formatting and unit tests. |
+| `pnpm lint` / `pnpm lint:fix` | Typed ESLint checks / automatic fixes; warnings fail. |
+| `pnpm format:check` / `pnpm format` | Check / rewrite supported source and config formatting. |
+| `pnpm test` / `pnpm test:watch` | Run / watch unit projects; no database prerequisite. |
 
-The [approved tooling decisions](../../docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23)
-and [Turborepo setup decisions](../../docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23)
-record versions, settings, rationale, and scope. TypeScript's shared base carries
-correctness checks; the Node profile adds Node globals and NodeNext resolution.
-Use explicit type-only imports and `.js` extensions for relative imports in
-application `.ts` files. The future React application will need a browser profile.
+The shared compiler retains strict source checks, exact optional properties,
+checked indexed access and ESM/NodeNext. The owner approved `skipLibCheck: true`
+after Drizzle's published declarations failed full library checking; source use
+of its types remains checked. See the [Step 3A record](technical-direction.md#step-3a-drizzle-implementation-2026-10-25).
 
-ESLint uses type information for TypeScript source, tests, and configuration.
-An intentionally unused parameter may start with `_`; unused locals remain
-errors. Prettier runs separately and checks root tooling plus supported files
-under `apps` and `packages`. Existing specifications, DBML, the generated lockfile,
-and workspace scratch files are outside the formatter command scope.
-
-Unit tests belong alongside source as `src/**/*.test.ts`. Import `test`, `expect`,
-and other APIs from `vitest`; test globals are disabled. The Node projects are
-named `api-unit` and `db-unit`. For a focused run:
-
-```sh
-pnpm test --project api-unit
-pnpm test --project db-unit
-```
-
-There are no application source files or permanent tests yet. Consequently,
-`pnpm typecheck` currently checks tooling configuration, and `pnpm test` exits
-with code 1 and "No test files found". The explicit bootstrap command
-`pnpm test --passWithNoTests` verifies runner configuration loading only; it is
-not application-test evidence. Keep the normal command strict when adding tests.
-
-Files named `*.integration.test.ts` are excluded from these unit projects.
-Real-PostgreSQL integration setup, isolation/reset mechanics, Playwright browser
-workflows, coverage reporting/thresholds, and CI remain future work. PostgreSQL
-tests must demonstrate rollback, constraints, and concurrent operations when the
-persistence foundation is implemented. Vitest execution does not replace
-`pnpm typecheck`.
+Unit tests live beside source as `src/**/*.test.ts`; import Vitest APIs explicitly.
+The `api-unit` and `db-unit` projects exclude integration files. The API has no
+tests yet; the root suite now passes because the DB has meaningful tests. An
+explicit empty suite still fails. Playwright, coverage thresholds and CI remain
+future work. Passing infrastructure tests does not deliver business workflows.
 
 ### Turborepo checks and cache
 
-Use the repository's pinned Turbo through pnpm. `pnpm typecheck` schedules the
-two package typechecks and the real root `typecheck:root` script. `pnpm check`
-adds the existing root lint, formatting check, and Vitest scripts. It currently
-exits 1 because there are no test files; successful tooling checks do not make
-the application suite complete.
+`build` caches `dist/**`; DB typechecks and root typed lint depend on that build.
+Consumer builds/typechecks depend on dependency builds when a real workspace
+edge exists. Root unit tests remain independent of database availability.
 
-The standalone lint, formatting, and test commands still run their tools directly.
-`pnpm lint:fix`, `pnpm format`, and `pnpm test:watch` also run directly. To inspect
-the six executable tasks without running them:
+Inspect the graph and verify cache reuse with:
 
 ```sh
-pnpm exec turbo --version
 pnpm check --dry=json
+pnpm check --force --summarize
+pnpm check --summarize
 ```
 
-To verify cache reuse for the five checks that can pass in the current checkout:
+Unchanged second runs reuse successful build/check results. Summaries live in
+`.turbo/runs/`; local cache stays in `.turbo/cache`, with remote caching disabled.
+Default package inputs include source/tests/configuration; broad root inputs
+include documentation, so documentation changes may invalidate root checks.
 
-```sh
-pnpm exec turbo run typecheck typecheck:root lint format:check --force --summarize
-pnpm exec turbo run typecheck typecheck:root lint format:check --summarize
-```
-
-The first command executes every selected task and writes successful results.
-The unchanged second run should report five cache hits. Summaries in
-`.turbo/runs/` record task hashes, inputs, and cache status. Use `--force` on a
-Turbo command when a fresh execution is needed.
-
-The explicit `.turbo/cache` directory keeps the cache inside each worktree;
-remote caching is disabled. All current tasks cache successful logs with no
-declared file outputs. Default inputs cover each package's files and, for root
-tasks, repository files including both workspaces. Shared tooling configuration
-changes invalidate every task. Documentation edits can also invalidate root
-checks because their inputs deliberately remain broad.
-
-Turbo uses strict environment filtering. Unit-test cache hashes include
-`NODE_ENV` and `TZ`; application environment injection is not configured yet.
-The owner selected [Doppler for environment variables](../../docs/technical/technical-direction.md#environment-configuration--doppler-2026-10-24).
-Step 1 implements the allowlisted host-to-Compose verification path above.
-Application injection and task-scoped environment declarations remain later work.
-
-The Turbo bootstrap runner check is separate from the aggregate command:
-
-```sh
-pnpm exec turbo run test -- --passWithNoTests
-```
-
-This verifies runner loading only. A cached bootstrap run does not change the
-normal empty-suite failure. See the [Turborepo decision record](../../docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23)
-for dependency, persistent-task, and future database-task boundaries.
-
+`db:check`, `db:generate`, `db:migrate` and `test:integration` always execute and
+never cache results. Secret-bearing tasks allow only named DB environment values
+through strict Turbo filtering; those values are not added to cache hashes.
+Unit tests retain `NODE_ENV` / `TZ` hashing. API startup/watch tasks remain pending.
