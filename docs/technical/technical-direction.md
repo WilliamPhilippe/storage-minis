@@ -415,6 +415,198 @@ ports 5433/5434. The final evidence and remaining schema work are recorded in th
 [Step 3A handoff](step-3a-verification-2026-10-25.md). These checks do not establish
 business atomicity, Organization authorization, schema constraints or T06 completion.
 
+## Docker lifecycle commands (2026-10-25)
+
+**Owner approval:** The owner approved phase 1 and the staged approach in the
+[application-container and lifecycle plan](../plans/docker-application-lifecycle-plan-2026-10-25.md),
+then asked whether Docker Compose needs local installation. Docker Desktop
+already supplies Compose 5.6.1 with Docker client/Engine 29.9.2; no installation,
+dependency/image-pin change, or shell-profile change was needed.
+
+**Historical implemented scope (superseded by the standard Compose revision below):**
+Root `docker:*` scripts invoke the host tooling/lifecycle
+launchers directly, outside Turbo. `scripts/docker.sh` delegates development/test
+startup to the existing Doppler-aware database launcher, and supplies project
+stop, status, logs, container/network cleanup and confirmed volume deletion.
+Startup explicitly reports PostgreSQL infrastructure only. The existing Compose
+definitions and the Step 3B migration gate are unchanged. Separate API/frontend
+services remain attached to their later approved application implementations.
+
+Project pruning preserves named volumes. Volume deletion requires the exact
+project confirmation, inventories the six declared names and validates every
+existing volume's Compose ownership before any teardown. It removes only those
+owned volumes after project teardown and refuses forced release of in-use volumes.
+Stop/cleanup/status/logs do not fetch Doppler secrets. Existing target-specific
+database reset commands remain available for narrower cleanup.
+
+| Executed check | Evidence |
+| --- | --- |
+| Workspace | `COMPOSE_PROJECT_NAME=storage-minis-beijing ./scripts/tooling.sh run pnpm check` passed all seven Turbo tasks, including strict typechecks, lint, formatting and 15 unit tests. |
+| Guard tests | Eight new Vitest cases exercise argument/config refusal, exact volume selection, validation before mutation, ambient overrides, another working directory, repeated empty cleanup and Docker failure propagation through a fake executable. These fixtures delete no Docker resources. |
+| Real startup | Disposable project `storage-minis-lifecycle-21959`, loopback ports 63506/63507: actual host pnpm commands initialized all five tooling volumes and started development/test PostgreSQL with real target-matching Doppler injection. Repeated development startup authenticated successfully; default startup excluded test services. |
+| Persistence | A temporary probe table survived development stop/start and container/network pruning. Targeted test stop preserved development access; test restart had no probe table because tmpfs was discarded. Project-wide stop left no running project service. |
+| Deletion guards | Missing/wrong confirmation through actual pnpm argument forwarding preserved container IDs. A real same-name volume bearing another project's label caused refusal before any container teardown. |
+| Cleanup | Prune and repeated prune retained all six declared volumes. Exact confirmation removed all six; repeated confirmed deletion tolerated absent volumes under macOS Bash 3.2. A separate running sentinel project and its attached volume survived. |
+| Secret-free operations | Status/prune/volume deletion succeeded with an unavailable Doppler executable, a fixture token, and contradictory ambient Compose file/env-file/profile settings. No secret value was printed. |
+| Recovery and isolation | A direct shell invocation from `/private/tmp` succeeded without host pnpm. After volume deletion, initialization and frozen dependency installation in fresh volumes succeeded. All disposable project/sentinel containers, networks, volumes and the temporary image tag were removed; the existing development project was not stopped or reset. |
+| Static/docs | `bash -n scripts/docker.sh`, `git diff --check`, and changed documentation links, tables and fences were checked. |
+
+The startup/deadline/credential mechanics remain the previously verified database
+launcher's contract; they were reused rather than reimplemented. These results
+establish local lifecycle behavior, not business schema, authorization,
+transaction/concurrency invariants, production readiness or T06 completion.
+Read [Docker lifecycle commands](../../README.md#docker-lifecycle-commands) for
+host/direct-shell usage and the storage-deletion warning.
+
+## Standard infrastructure tooling direction (2026-10-25)
+
+**Owner approval:** After reviewing the lifecycle implementation, the owner
+approved replacing the general lifecycle wrapper with standard Compose commands,
+retaining narrow helpers for the existing Doppler checks and confirmed volume
+deletion. The owner then requested a drafted change plan and directed the project
+to avoid custom infrastructure code where standard tools provide the behavior.
+Rationale: easier maintenance, deployment reuse and familiarity for developers.
+
+The owner requested implementation of the concrete
+[standard Compose maintenance plan](../plans/standard-compose-maintenance-plan-2026-10-25.md)
+on 2026-10-25. This approves its canonical layout, native aliases and narrow
+exceptions; the earlier lifecycle evidence above remains historical.
+
+**Implemented outcome:** One `compose.yaml` owns the existing services and six
+logical volumes. Development `postgres` is the default; `postgres_test`, tooling,
+and the SQL client use `test`, `tools`, and `db-tools` profiles. Service/image pins,
+UTC, loopback ports, PostgreSQL 18 storage, persistent development data, test tmpfs,
+and dependency-volume identities are preserved. Ordinary shutdown declares a
+10-second grace period. `compose.postgres.yaml` and the general `scripts/docker.sh`
+dispatcher are retired. Root `docker:*` scripts use native Compose directly except
+for Doppler-aware startup and confirmed volume deletion; all run on the host,
+outside Turbo. README supplies equivalent Docker-only commands.
+
+Development startup delegates the default service selection and health wait to
+native `up --detach --wait --wait-timeout 60`; test startup explicitly selects only
+`postgres_test --no-deps`. The authenticated SQL check remains separate from
+`pg_isready`. Secret-free tooling/configuration and teardown parse the same model
+with empty password defaults. The startup helper still requires the selected
+managed password before mutation and keeps the selected-key/config boundary.
+
+| Retained custom code | Reason beyond native lifecycle behavior |
+| --- | --- |
+| `database.sh` Doppler entry point | Enforces pinned CLI/browser login, matching target/config/key, no fallback, ambient-password removal and selected container variables. |
+| Database `run`, `check`, `psql`, and target reset | Supplies explicit test targeting, authenticated SQL identity, client deadlines/cleanup, guarded migrations and narrower confirmed storage reset. Native Compose owns startup health timing. |
+| `tooling.sh` command/env runner | Preserves tested TERM/INT forwarding and workspace exit codes, DB injection, and the harmless environment probe; build/init/down dispatch is removed. |
+| `reset-volumes.sh` | Confirms the exact project and validates every existing candidate's Compose ownership before native full-profile `down --volumes --remove-orphans --timeout 10`. Volume keys come from `config --volumes`, with no duplicate inventory or deletion loop. |
+| `docker/init-volumes.sh` | Sets ownership only at declared mount roots for the existing non-root tooling user. |
+
+The volume helper supports this local model's Compose-managed project names;
+external/custom-named volumes require a separately reviewed ownership contract.
+Compose inventories volumes referenced by selected services. The extra-volume
+probe therefore attaches its declared volume to a disposable service. An unused
+declaration alone is outside native cleanup's inventory. Ordinary `down` preserves
+named volumes; confirmed full deletion erases development data and dependencies.
+
+**Executed verification, 2026-10-25:** Live T06/#26 and T04/#23 were rechecked;
+this remains local foundation work, with no issue closure or production changes.
+
+| Check | Evidence |
+| --- | --- |
+| Configuration and identities | Secret-free default selection returned only `postgres`; all-profile inspection returned the five existing services and six volume keys. Compared the resolved model against HEAD `e7883196256d409bfa1dd46647101b41ff45261c`: volume identities, PostgreSQL image/environment/ports/mounts/tmpfs/health checks match. Optional profiles and 10-second grace declarations are present. No rendered secret-bearing configuration was printed. |
+| Build and workspace | Native `docker:build` succeeded with the existing pinned image/toolchain. Native init, frozen installation and container `pnpm check` passed with no DB startup or Doppler access. Host `pnpm check` passed all seven Turbo tasks and 17 unit tests. |
+| Guard tests | Seven volume-helper cases cover confirmation/project refusal, canonical-file/ambient-override handling, all-before-teardown inspection, inventory/inspection/ownership failures, repeated empty cleanup, native failure propagation and additional declared volumes. Six DB launcher cases cover selected target/key isolation, config mismatch, migration/integration gates, missing keys/native startup failure, authenticated default/test startup, and the SQL container name retained for EXIT cleanup. |
+| Real startup and isolation | Disposable project `storage-minis-compose-verify-2510` used unique loopback ports and real matching Doppler configs. Default startup excluded test/tools. Test stop preserved the running development container and its probe; restarted test tmpfs contained no probe. Missing managed keys and config mismatch failed before startup. An occupied test port failed nonzero while development remained accessible. |
+| Consolidation persistence | A probe created with HEAD's two-file Compose model and launcher survived switching to the canonical file in `storage-minis-compose-upgrade-2510`; the actual `pgdata` name/creation timestamp stayed identical. |
+| Persistence and teardown | Probe data survived development stop/start and native container/network teardown. Native package aliases and raw commands addressed the same project. Full-profile stop included test; status/logs worked; shutdown with an unavailable Doppler executable preserved all six named volumes. |
+| Real deletion guards | Wrong/missing confirmation preserved container IDs. An unmounted declared tooling volume with another project's ownership label caused refusal before teardown. Correct confirmation removed project containers/network and six volumes while a separately running sentinel project/volume remained intact. A declared, service-attached extra volume in a disposable source copy was discovered/removed without helper edits. |
+| Recovery | After complete deletion, native init and a new frozen dependency installation succeeded. |
+| Real DB tests | All 10 PostgreSQL connection/lifecycle integration tests passed through `tooling.sh run-db test pnpm test:db`, including query timeout, wrong credentials, rollback, socket recovery, cleanup, compiled consumer and signal behavior. |
+| Signals and SQL cleanup | TERM reached a running SQL client and removed its temporary container; TERM reached a workspace process and preserved its exit code 42. Failed SQL readiness also removed its temporary client. After the Bash 3.2 fix below, a deliberately stalled real SQL client hit the retained 15-second host deadline, returned nonzero in 17.6 seconds including cancellation/cleanup, and left no temporary client. |
+| Native health deadline | An intentionally unhealthy service using the pinned image/model returned nonzero in 60.3 seconds with native `--wait-timeout 60`. |
+
+The deadline probe exposed an existing Bash 3.2 issue: EXIT traps cannot depend
+on function locals after the frame unwinds. The SQL cleanup trap now binds the
+validated generated container name at registration; a regression test verifies
+that failed SQL commands still remove that exact temporary client. This preserves
+the approved cleanup contract without adding lifecycle orchestration.
+
+All disposable verification containers, networks, volumes, source copies and
+tooling image tags were removed. The existing development project
+`storage-minis-beijing` was not started, stopped or reset. Production hosting/backups, API/frontend services, application
+reconnection/shutdown and business acceptance remain later work. Step 3B's schema
+and migration gate is preserved. These checks establish local tooling behavior,
+not completion of T06 or business persistence invariants.
+
+## One-time local setup (2026-10-25)
+
+**Owner approval:** After reviewing the exact command expansion, the owner approved
+implementing `docker:setup`, `docker:migrate`, and export-free `docker:up`. This
+amends the earlier standard Compose plan's routine environment-selection contract.
+The goal is one setup after Doppler browser login, then a short restart command
+using preserved volumes. Native lifecycle aliases and all existing pins remain.
+
+**Implemented outcome:** `pnpm docker:setup` chains the narrow
+`configure-local.sh` helper, native Compose build/pull/init, frozen dependency
+installation in tooling, and `database.sh up dev`. First use prompts for a unique
+Compose project name and development/test ports; noninteractive configuration uses
+`--project`, `--port`, and `--test-port`. Repeated setup validates/reuses the saved
+file and stops at any failing command. It neither resets storage nor migrates.
+
+Git-ignored `.env.compose` contains only `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`,
+and `POSTGRES_TEST_PORT`. Compose uses its native explicit `--env-file` support;
+plain `.env` loading remains disabled. A small shared `local-config.sh` reader
+loads only those literal keys for the existing host helpers, validates distinct
+ports and project syntax, and rejects missing/duplicate/unknown entries. It never
+sources the user-editable file as shell code. Configuration creation refuses
+concurrent overwrite. These are the only new custom responsibilities: saving and
+validating checkout settings; service lifecycle remains native Compose.
+
+`docker:up` loads the saved settings and starts/checks development PostgreSQL.
+It performs no image build/pull, dependency installation or migration application.
+The test command automatically selects test. Doppler's project remains
+`storage-minis`, with config/key selected from the requested target; explicit
+contradictory overrides still fail. The executable is discovered on PATH, falling
+back to the approved standalone location, with version 3.77.1 enforced. The
+existing dedicated login directory, selected-key allowlist, ambient-password
+removal, no fallback, client deadlines and signal/cleanup behavior are retained.
+No shell-profile change, package, host installation or credential file is added.
+
+All existing native build/init/stop/status/log/down aliases now explicitly use
+`.env.compose`, so restart and cleanup work after opening a fresh terminal.
+Helpers retain explicit environment overrides for disposable verification and
+can operate without the saved file when an explicit project is supplied; native
+package aliases require the file. Clear earlier experimental exports once before
+using saved settings. Full volume deletion preserves the settings file and still
+requires the exact saved project name plus ownership validation before teardown.
+
+`pnpm docker:migrate` delegates to `tooling.sh run-db dev pnpm db:migrate`.
+The Step 3B gate remains first: it refuses before configuration, Docker or Doppler
+work while physical schema approval is pending. No actual migration is created or
+applied. Startup has no implicit schema changes; future approved migration
+application continues to use the separate entry point.
+
+**Executed validation, 2026-10-25:** A disposable source copy and project
+`storage-minis-setup-2510` used free loopback ports and the existing scoped Doppler
+browser login. Project, port, Doppler-selection and executable-override variables
+were removed from the test environment; the real commands discovered the host
+Doppler executable. No secret-bearing configuration was printed.
+
+| Check | Evidence |
+| --- | --- |
+| First configuration | A real terminal session prompted for project/dev/test ports and saved exactly the three nonsecret values. Unit cases also verify malformed/duplicate/unknown-key refusal, no shell execution and existing-file preservation. |
+| First setup | Actual `pnpm docker:setup` built the pinned image, pulled PostgreSQL, initialized dependency volumes, installed from the frozen lockfile, and started/authenticated only development PostgreSQL. |
+| Workspace | Host and container `pnpm check` passed all seven Turbo tasks and 21 unit tests. Launcher fixtures use isolated source copies so developer-local `.env.compose` cannot affect tests. |
+| Later startup | A fresh environment ran stop/up and authenticated successfully without exports. A conflicting plain `.env` was ignored; the development probe survived. |
+| Explicit migration | `pnpm docker:migrate` returned nonzero with the Step 3B approval message and preserved running container identities; no schema was applied. |
+| Test target | `pnpm docker:up:test` selected matching real Doppler test credentials without an export; all 10 PostgreSQL integration tests passed through `run-db test pnpm test:db`. Stopping test preserved development. |
+| Repeated setup | A second actual setup ran noninteractively, preserved the settings bytes and retained the development probe. |
+| Native aliases and cleanup | Status/stop/down addressed the same saved project; ordinary teardown retained six volumes and probe data. Wrong reset confirmation preserved containers; correct confirmation deleted project volumes while retaining `.env.compose`. |
+| Static checks | Bash syntax, changed Markdown relative links/fences/table shapes, ignored-file selection and `git diff --check` passed. |
+
+All disposable containers, networks, volumes, source copies and tooling image tags
+were removed. Existing `storage-minis-beijing` container identities were unchanged.
+This remains T06 local foundation work, with API/frontend services, production
+operations and business acceptance outside this change. The preceding standard
+Compose evidence records the earlier revision; this section owns the updated
+saved-settings workflow.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or

@@ -22,7 +22,19 @@
     "db:check": "turbo run db:check",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
-    "test:db": "turbo run test:integration"
+    "test:db": "turbo run test:integration",
+    "docker:build": "docker compose --env-file .env.compose --file compose.yaml build tooling",
+    "docker:init": "docker compose --env-file .env.compose --file compose.yaml run --rm --no-deps tooling-init",
+    "docker:up": "./scripts/database.sh up dev",
+    "docker:up:test": "./scripts/database.sh up test",
+    "docker:stop": "docker compose --env-file .env.compose --file compose.yaml --profile '*' stop --timeout 10",
+    "docker:stop:test": "docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test",
+    "docker:prune": "docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans --timeout 10",
+    "docker:prune:volumes": "./scripts/reset-volumes.sh",
+    "docker:ps": "docker compose --env-file .env.compose --file compose.yaml --profile '*' ps --all",
+    "docker:logs": "docker compose --env-file .env.compose --file compose.yaml logs --follow postgres",
+    "docker:setup": "./scripts/configure-local.sh && pnpm docker:build && docker compose --env-file .env.compose --file compose.yaml pull postgres && pnpm docker:init && ./scripts/tooling.sh run pnpm install --frozen-lockfile && pnpm docker:up",
+    "docker:migrate": "./scripts/tooling.sh run-db dev pnpm db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

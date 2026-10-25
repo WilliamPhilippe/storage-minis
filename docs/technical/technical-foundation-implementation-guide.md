@@ -17,6 +17,21 @@ cover local database infrastructure only; the DBML has not been applied.
 Later implementation choices follow the approval process
 in [AGENTS.md](../../AGENTS.md#owner-approval-before-decisions).
 
+**Lifecycle follow-up, 2026-10-25:** The owner approved the
+[application-container and lifecycle plan](../plans/docker-application-lifecycle-plan-2026-10-25.md).
+Its first stage supplies host `docker:*` commands for existing infrastructure and
+guarded project cleanup. API/frontend Compose services follow their runnable
+application deliveries; this does not change Step 3B or later-step prerequisites.
+The owner subsequently approved replacing the general wrapper with standard
+Compose commands; use the [maintenance plan](../plans/standard-compose-maintenance-plan-2026-10-25.md)
+for the implemented canonical configuration, direct package aliases and retained
+Doppler/confirmed-deletion helpers. Current verification is recorded in
+[technical direction](technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25),
+separately from the earlier lifecycle evidence. The owner then approved the
+[one-time setup amendment](technical-direction.md#one-time-local-setup-2026-10-25):
+saved nonsecret checkout settings, automatic Doppler target selection, setup/start
+commands and a separate migration command preserving the Step 3B gate.
+
 This guide owns the step sequence, planning instructions and completion criteria.
 [Technical direction](technical-direction.md) owns approved technical outcomes;
 the [foundation proposal](t06-foundation-proposal-2026-10-24.md) supplies candidate
@@ -34,7 +49,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [draft PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), awaiting review. 3B remains gated on physical-schema review. |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B remains gated on physical-schema review. |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |

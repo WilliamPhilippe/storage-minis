@@ -7,7 +7,7 @@ fail() {
 }
 usage() {
   printf '%s\n' \
-    'Usage: database.sh {pull|down|up TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|logs TARGET|stop TARGET|reset TARGET --confirm PROJECT}' \
+    'Usage: database.sh {up TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|reset TARGET --confirm PROJECT}' \
     'TARGET is dev or test. psql is noninteractive; use -c SQL.'
 }
 
@@ -53,14 +53,13 @@ operation=$1; shift
 target=""
 case "$operation" in
   -h|--help) usage; exit 0 ;;
-  pull|down) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
-  up|check|logs|stop|psql|reset|run)
+  up|check|psql|reset|run)
     [[ $# -ge 1 ]] || { usage >&2; exit 2; }
     target=$1; shift
     [[ $target == dev || $target == test ]] || fail 'Target must be dev or test.'
     case "$operation" in
       psql|run) [[ $# -gt 0 ]] || { usage >&2; exit 2; } ;;
-      reset) [[ $# -eq 2 && $1 == --confirm && $2 == "${COMPOSE_PROJECT_NAME:-}" && -n $2 ]] ||
+      reset) [[ $# -eq 2 && $1 == --confirm && -n $2 ]] ||
         fail 'Reset requires --confirm with the exact COMPOSE_PROJECT_NAME.' ;;
       *) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
     esac ;;
@@ -78,17 +77,13 @@ if [[ $operation == run ]]; then
     esac
   done
 fi
-[[ ${COMPOSE_PROJECT_NAME:-} =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
-  fail 'Set COMPOSE_PROJECT_NAME to a unique lowercase name for this checkout.'
-export POSTGRES_PORT=${POSTGRES_PORT:-5433}
-export POSTGRES_TEST_PORT=${POSTGRES_TEST_PORT:-5434}
-for port in "$POSTGRES_PORT" "$POSTGRES_TEST_PORT"; do
-  [[ $port =~ ^[1-9][0-9]{0,4}$ ]] && ((port <= 65535)) ||
-    fail 'Database ports must be integers in 1–65535 without leading zeros.'
-done
-[[ $POSTGRES_PORT != "$POSTGRES_TEST_PORT" ]] || fail 'Development and test ports must differ.'
-
 checkout=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+source "$checkout/scripts/local-config.sh"
+load_local_config
+if [[ $operation == reset ]]; then
+  [[ $2 == "$COMPOSE_PROJECT_NAME" ]] || fail 'Reset requires --confirm with the exact COMPOSE_PROJECT_NAME.'
+fi
+
 docker_bin=${DOCKER_BIN:-}
 if [[ -z $docker_bin ]]; then
   docker_bin=$(command -v docker || true)
@@ -99,9 +94,9 @@ fi
 [[ -n $docker_bin && -x $docker_bin ]] || fail 'Docker CLI unavailable; start Docker Desktop or set DOCKER_BIN.'
 unset COMPOSE_ENV_FILES COMPOSE_FILE COMPOSE_PROFILES
 export COMPOSE_DISABLE_ENV_FILE=1
-compose=("$docker_bin" compose --env-file /dev/null --file "$checkout/compose.yaml"
-  --file "$checkout/compose.postgres.yaml" --project-directory "$checkout"
-  --project-name "$COMPOSE_PROJECT_NAME" --profile '*')
+compose=("$docker_bin" compose --env-file "$compose_env_file" --file "$checkout/compose.yaml"
+  --project-directory "$checkout"
+  --project-name "$COMPOSE_PROJECT_NAME")
 
 service=postgres
 database=storage_minis_dev
@@ -116,13 +111,9 @@ case "$operation" in
   up|check|psql|run)
     if [[ $injected -eq 0 ]]; then
       [[ -z ${DOPPLER_TOKEN:-} ]] || fail 'Unset DOPPLER_TOKEN; checkout-scoped browser login is required.'
-      [[ ${DOPPLER_PROJECT:-} == storage-minis && ${DOPPLER_CONFIG:-} == "$target" ]] ||
+      [[ ${DOPPLER_PROJECT:-storage-minis} == storage-minis && ${DOPPLER_CONFIG:-$target} == "$target" ]] ||
         fail "Set DOPPLER_PROJECT=storage-minis and DOPPLER_CONFIG=$target for this target."
-      doppler_bin=${TOOLING_DOPPLER_BIN:-"$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler"}
-      doppler_config_dir=${TOOLING_DOPPLER_CONFIG_DIR:-"$HOME/.config/storage-minis/doppler"}
-      [[ -x $doppler_bin ]] || fail 'Pinned Doppler CLI unavailable; see README.'
-      [[ $("$doppler_bin" --version 2>/dev/null) == v3.77.1 ]] || fail 'Doppler CLI 3.77.1 is required.'
-      [[ -d $doppler_config_dir ]] || fail 'Complete browser login in the dedicated Doppler directory.'
+      resolve_doppler
       unset POSTGRES_PASSWORD POSTGRES_TEST_PASSWORD PGPASSWORD
       # Diagnostics from the fetch are suppressed; payload errors below are
       # sanitized and use stdout so useful Docker errors remain visible.
@@ -157,8 +148,10 @@ sql_client() {
   export PGHOST=$service PGPORT=5432 PGDATABASE=$database PGUSER=postgres
   export PGPASSWORD=${!secret_key} PGCONNECT_TIMEOUT=5 PGOPTIONS=""
   [[ $operation != check && $operation != up ]] || export PGOPTIONS='-c statement_timeout=5000'
-  cleanup_client() { "$docker_bin" rm --force --volumes "$client_name" >/dev/null 2>&1 || true; }
-  trap cleanup_client EXIT
+  cleanup_client() { "$docker_bin" rm --force --volumes "$1" >/dev/null 2>&1 || true; }
+  # Bash 3.2 unwinds function locals before EXIT. Bind the generated name now;
+  # its characters come only from the validated project name, PID and RANDOM.
+  trap "cleanup_client '$client_name'" EXIT
   if [[ $operation == check || $operation == up ]]; then
     if bounded 15 "${compose[@]}" run --rm --no-deps -T --name "$client_name" \
       --env PGHOST --env PGPORT --env PGDATABASE --env PGUSER --env PGPASSWORD \
@@ -176,9 +169,12 @@ sql_client() {
 }
 
 case "$operation" in
-  pull) bounded 600 "${compose[@]}" pull postgres 2>&1 ;;
   up)
-    bounded 60 "${compose[@]}" up -d --no-deps --pull never --wait --wait-timeout 60 "$service" 2>&1 || exit $?
+    if [[ $target == test ]]; then
+      "${compose[@]}" up --detach --no-deps --pull never --wait --wait-timeout 60 postgres_test 2>&1
+    else
+      "${compose[@]}" up --detach --pull never --wait --wait-timeout 60 2>&1
+    fi
     # psql exits zero for an empty result, so assert the exact identity result.
     output=$(sql_client) || { printf '%s\n' "$output"; exit 1; }
     [[ $(printf '%s\n' "$output" | tail -n 1) == 1 ]] || fail 'Database identity check failed.'
@@ -199,9 +195,6 @@ case "$operation" in
     unset password
     exec "$checkout/scripts/tooling.sh" _run-db "$target" "$@"
     ;;
-  logs) exec "${compose[@]}" logs --follow "$service" ;;
-  stop) exec "${compose[@]}" stop --timeout 10 "$service" ;;
-  down) exec "${compose[@]}" down --timeout 10 ;;
   reset)
     printf 'Resetting %s for project %s.\n' "$service" "$COMPOSE_PROJECT_NAME"
     volume="${COMPOSE_PROJECT_NAME}_pgdata"

@@ -7,7 +7,7 @@ fail() {
 }
 
 usage() {
-  printf '%s\n' 'Usage: tooling.sh {build|init|run COMMAND [ARG...]|run-db TARGET COMMAND [ARG...]|verify-env|down}'
+  printf '%s\n' 'Usage: tooling.sh {run COMMAND [ARG...]|run-db TARGET COMMAND [ARG...]|verify-env}'
 }
 
 if [[ $# -eq 0 ]]; then
@@ -17,21 +17,20 @@ fi
 operation=$1
 shift
 case "$operation" in
-  build|init|verify-env|down) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
+  verify-env) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
   run) [[ $# -gt 0 ]] || { usage >&2; exit 2; } ;;
   run-db|_run-db) [[ $# -ge 2 && ( $1 == dev || $1 == test ) ]] || { usage >&2; exit 2; } ;;
   -h|--help) usage; exit 0 ;;
   *) usage >&2; exit 2 ;;
 esac
 
-[[ ${COMPOSE_PROJECT_NAME:-} =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
-  fail 'Set COMPOSE_PROJECT_NAME to a unique lowercase name for this checkout.'
-
 checkout=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
 if [[ $operation == run-db ]]; then
   # Reuse exactly the database lifecycle's target validation and secret injection.
   exec "$checkout/scripts/database.sh" run "$@"
 fi
+source "$checkout/scripts/local-config.sh"
+load_local_config
 docker_bin=${DOCKER_BIN:-}
 if [[ -z "$docker_bin" ]]; then
   docker_bin=$(command -v docker || true)
@@ -46,15 +45,15 @@ fi
 # load a checkout .env or an ambient COMPOSE_ENV_FILES selection.
 unset COMPOSE_ENV_FILES COMPOSE_FILE COMPOSE_PROFILES
 export COMPOSE_DISABLE_ENV_FILE=1
-compose=("$docker_bin" compose --env-file /dev/null
+compose=("$docker_bin" compose --env-file "$compose_env_file"
   --file "$checkout/compose.yaml" --project-directory "$checkout"
   --project-name "$COMPOSE_PROJECT_NAME" --profile tools)
 container_environment=(--no-deps)
 if [[ $operation == _run-db ]]; then
   [[ ${DB_TARGET:-} == "$1" && -n ${PGPASSWORD:-} ]] || fail 'Missing injected database configuration.'
   shift
-  compose=("$docker_bin" compose --env-file /dev/null --file "$checkout/compose.yaml"
-    --file "$checkout/compose.postgres.yaml" --project-directory "$checkout"
+  compose=("$docker_bin" compose --env-file "$compose_env_file" --file "$checkout/compose.yaml"
+    --project-directory "$checkout"
     --project-name "$COMPOSE_PROJECT_NAME" --profile '*')
   container_environment+=(--env DB_TARGET --env PGHOST --env PGPORT --env PGDATABASE --env PGUSER --env PGPASSWORD)
 fi
@@ -96,28 +95,19 @@ run_tooling() {
 }
 
 case "$operation" in
-  build) exec "${compose[@]}" build tooling ;;
-  init) exec "${compose[@]}" run --rm --no-deps tooling-init ;;
   run|_run-db) run_tooling "$@" ;;
-  down) exec "${compose[@]}" down ;;
   verify-env)
     [[ -z ${DOPPLER_TOKEN:-} ]] ||
       fail 'Unset DOPPLER_TOKEN; this workflow requires checkout-scoped browser login.'
-    [[ -n ${DOPPLER_PROJECT:-} && -n ${DOPPLER_CONFIG:-} ]] ||
-      fail 'Set DOPPLER_PROJECT and DOPPLER_CONFIG explicitly (see README).'
-    doppler_bin=${TOOLING_DOPPLER_BIN:-"$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler"}
-    doppler_config_dir=${TOOLING_DOPPLER_CONFIG_DIR:-"$HOME/.config/storage-minis/doppler"}
-    [[ -x "$doppler_bin" ]] || fail 'Install the pinned Doppler CLI using the README instructions.'
-    [[ $("$doppler_bin" --version 2>/dev/null) == v3.77.1 ]] ||
-      fail 'This launcher requires Doppler CLI 3.77.1.'
-    [[ -d "$doppler_config_dir" ]] ||
-      fail 'Complete browser login in the dedicated Doppler config directory (see README).'
+    [[ ${DOPPLER_PROJECT:-storage-minis} == storage-minis && ${DOPPLER_CONFIG:-dev} == dev ]] ||
+      fail 'Environment verification requires Doppler storage-minis/dev.'
+    resolve_doppler
 
     # The only managed key is a harmless marker. Doppler fetches it before
     # starting host Compose; no credential/config directory enters the image.
     # Suppress upstream diagnostics so errors cannot print configuration values.
     if "$doppler_bin" --config-dir "$doppler_config_dir" --scope "$checkout" \
-      --project "$DOPPLER_PROJECT" --config "$DOPPLER_CONFIG" \
+      --project storage-minis --config dev \
       --no-check-version --timeout 10s --attempts 1 \
       run --no-fallback --forward-signals --no-liveness-ping \
       --only-secrets FOUNDATION_TOOLING_PROBE -- /bin/bash -c '
