@@ -4,6 +4,9 @@
 `origin/main` (`acb9f05`, containing merged Step 2). **Scope:** Drizzle connection
 and guarded migration tooling; no business schema or migration applied.
 
+**Review:** [Draft PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105),
+awaiting owner review; not merged.
+
 The owner approved the [plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 and explicitly approved the esbuild exact-version build allowlist and shared
 `skipLibCheck: true` after installation/compiler findings. Source strictness
