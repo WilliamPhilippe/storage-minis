@@ -16,19 +16,71 @@
   ],
   "tasks": {
     "typecheck": {
-      "outputs": []
+      "outputs": [],
+      "dependsOn": ["^build"]
     },
     "//#typecheck:root": {
       "outputs": []
     },
     "//#lint": {
-      "outputs": []
+      "outputs": [],
+      "dependsOn": ["@storage-minis/db#build"]
     },
     "//#format:check": {
       "outputs": []
     },
     "//#test": {
       "outputs": [],
+      "env": ["NODE_ENV", "TZ"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "@storage-minis/db#typecheck": {
+      "dependsOn": ["build"],
+      "outputs": []
+    },
+    "db:check": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL"
+      ]
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL"
+      ]
+    },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL"
+      ],
       "env": ["NODE_ENV", "TZ"]
     }
   }

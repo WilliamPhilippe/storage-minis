@@ -4,14 +4,15 @@ StorageMinis manages inventory, purchases, sales, finances, collections, and a
 public stock catalog for 1/64 miniature sellers and collectors.
 
 This repository contains workspace tooling, local PostgreSQL services, and
-application specifications. Application source, database tables, the React
-frontend, and CI are pending. Application startup commands are not available.
+application specifications. The Drizzle connection package and its tests are
+implemented. Business tables, the API, the React frontend, and CI are pending.
+Application startup commands are not available.
 
 ## Structure
 
 ```text
 apps/api/              Fastify and tRPC workspace package; configuration only
-packages/db/           Drizzle workspace package; configuration only
+packages/db/           Drizzle connection package, commands and tests
 docker/                Tooling image and volume initializer
 scripts/tooling.sh     Run workspace commands in Docker
 scripts/database.sh    Manage development and test PostgreSQL
@@ -68,8 +69,9 @@ before you start PostgreSQL. Ordinary tooling commands do not require Doppler.
 
 ## Local PostgreSQL
 
-Complete the Doppler setup first. Set different passwords for `POSTGRES_PASSWORD`
-and `POSTGRES_TEST_PASSWORD` in Doppler project `storage-minis`, config `dev`.
+Complete the Doppler setup first. In Doppler project `storage-minis`, keep
+`POSTGRES_PASSWORD` in config `dev` and `POSTGRES_TEST_PASSWORD` in config `test`.
+Use different passwords. The launcher requires the config to match its target.
 
 ```sh
 export COMPOSE_PROJECT_NAME=storage-minis-beijing
@@ -80,9 +82,9 @@ unset DOPPLER_TOKEN
 
 ./scripts/database.sh pull
 ./scripts/database.sh up dev
-./scripts/database.sh up test
+DOPPLER_CONFIG=test ./scripts/database.sh up test
 ./scripts/database.sh check dev
-./scripts/database.sh check test
+DOPPLER_CONFIG=test ./scripts/database.sh check test
 ./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
 ```
 
@@ -110,6 +112,27 @@ Use `database.sh down` for project shutdown when databases have been started.
 For logs, port conflicts, password changes, or data deletion, see the
 [database reference](docs/technical/local-development.md#local-postgresql).
 
+## Drizzle tooling
+
+No host Drizzle installation is needed. After Docker dependency installation:
+
+```sh
+./scripts/tooling.sh run pnpm build
+./scripts/tooling.sh run-db dev pnpm db:check
+DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm db:check
+DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm test:db
+```
+
+These commands reuse the project/Doppler settings above. `build` emits the DB
+package; `db:check` verifies an authenticated query; `test:db` requires the test
+service and runs uncached integration tests. Stop test storage only after tests
+finish; it is discarded on stop.
+
+`pnpm db:generate` and `pnpm db:migrate` currently refuse with
+“Schema/migrations pending approval (Step 3B)” before connecting or creating files.
+The first business migration requires the separate schema reconciliation review.
+See [Drizzle setup and lifecycle](docs/technical/local-development.md#drizzle-tooling).
+
 ## Development checks
 
 Prefix each command with `./scripts/tooling.sh run` when you use Docker.
@@ -125,9 +148,9 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 | `pnpm test:watch` | Run unit tests in watch mode |
 | `pnpm check` | Run type, lint, format, and unit-test checks |
 
-There are no permanent tests. `pnpm test` and `pnpm check` fail with
-"No test files found". `pnpm test --passWithNoTests` checks runner loading only.
-Type checks currently cover tooling configuration.
+`pnpm check` builds the DB package and checks types, lint, formatting and meaningful
+DB unit tests. Integration tests run separately with `pnpm test:db` and require
+PostgreSQL. Empty suites still fail; do not use `--passWithNoTests` as evidence.
 
 ### Turborepo checks and cache
 
@@ -153,8 +176,8 @@ for forced runs and cache checks.
 - Use Conventional Commits.
 
 The unit projects are `api-unit` and `db-unit`. They exclude
-`*.integration.test.ts` files. Database integration tests, Playwright setup,
-coverage, and CI remain pending.
+`*.integration.test.ts` files. The separate DB integration suite uses real PostgreSQL. Playwright setup,
+business persistence tests, coverage, and CI remain pending.
 
 ## Agent guidance
 
@@ -173,11 +196,11 @@ database drafts still need consolidation.
 - [Approved updates and propagation status](docs/requirement-updates/README.md)
 - [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md)
-- Database drafts: [DBML](docs/database/schema.dbml) and [design guide](docs/database/design.md)
+- Database drafts: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [Step 3B schema review](docs/database/step-3b-schema-review-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
-- Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md) and [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md)
+- Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review](docs/technical/technical-direction-review.md)
 

@@ -7,7 +7,7 @@ fail() {
 }
 usage() {
   printf '%s\n' \
-    'Usage: database.sh {pull|down|up TARGET|check TARGET|psql TARGET ARGS...|logs TARGET|stop TARGET|reset TARGET --confirm PROJECT}' \
+    'Usage: database.sh {pull|down|up TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|logs TARGET|stop TARGET|reset TARGET --confirm PROJECT}' \
     'TARGET is dev or test. psql is noninteractive; use -c SQL.'
 }
 
@@ -54,18 +54,30 @@ target=""
 case "$operation" in
   -h|--help) usage; exit 0 ;;
   pull|down) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
-  up|check|logs|stop|psql|reset)
+  up|check|logs|stop|psql|reset|run)
     [[ $# -ge 1 ]] || { usage >&2; exit 2; }
     target=$1; shift
     [[ $target == dev || $target == test ]] || fail 'Target must be dev or test.'
     case "$operation" in
-      psql) [[ $# -gt 0 ]] || { usage >&2; exit 2; } ;;
+      psql|run) [[ $# -gt 0 ]] || { usage >&2; exit 2; } ;;
       reset) [[ $# -eq 2 && $1 == --confirm && $2 == "${COMPOSE_PROJECT_NAME:-}" && -n $2 ]] ||
         fail 'Reset requires --confirm with the exact COMPOSE_PROJECT_NAME.' ;;
       *) [[ $# -eq 0 ]] || { usage >&2; exit 2; } ;;
     esac ;;
   *) usage >&2; exit 2 ;;
 esac
+# Step 3B must deliberately replace this gate after physical-schema approval.
+# Refuse even without Docker/Doppler setup, before any secret fetch or mutation.
+if [[ $operation == run ]]; then
+  for argument in "$@"; do
+    case "$argument" in
+      db:migrate|db:generate)
+        fail 'Schema/migrations pending approval (Step 3B). No database or migration files were changed.' ;;
+      test:db|test:integration)
+        [[ $target == test ]] || fail 'Database integration tests require the explicit test target.' ;;
+    esac
+  done
+fi
 [[ ${COMPOSE_PROJECT_NAME:-} =~ ^[a-z0-9][a-z0-9_-]*$ ]] ||
   fail 'Set COMPOSE_PROJECT_NAME to a unique lowercase name for this checkout.'
 export POSTGRES_PORT=${POSTGRES_PORT:-5433}
@@ -101,11 +113,11 @@ fi
 # Only DB-bearing commands fetch secrets. Remove ambient values before Doppler
 # runs so a missing managed key cannot inherit an old password.
 case "$operation" in
-  up|check|psql)
+  up|check|psql|run)
     if [[ $injected -eq 0 ]]; then
       [[ -z ${DOPPLER_TOKEN:-} ]] || fail 'Unset DOPPLER_TOKEN; checkout-scoped browser login is required.'
-      [[ ${DOPPLER_PROJECT:-} == storage-minis && ${DOPPLER_CONFIG:-} == dev ]] ||
-        fail 'Set DOPPLER_PROJECT=storage-minis and DOPPLER_CONFIG=dev explicitly.'
+      [[ ${DOPPLER_PROJECT:-} == storage-minis && ${DOPPLER_CONFIG:-} == "$target" ]] ||
+        fail "Set DOPPLER_PROJECT=storage-minis and DOPPLER_CONFIG=$target for this target."
       doppler_bin=${TOOLING_DOPPLER_BIN:-"$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler"}
       doppler_config_dir=${TOOLING_DOPPLER_CONFIG_DIR:-"$HOME/.config/storage-minis/doppler"}
       [[ -x $doppler_bin ]] || fail 'Pinned Doppler CLI unavailable; see README.'
@@ -115,7 +127,7 @@ case "$operation" in
       # Diagnostics from the fetch are suppressed; payload errors below are
       # sanitized and use stdout so useful Docker errors remain visible.
       if bounded 0 "$doppler_bin" --config-dir "$doppler_config_dir" --scope "$checkout" \
-        --project storage-minis --config dev --no-check-version --timeout 10s --attempts 1 \
+        --project storage-minis --config "$target" --no-check-version --timeout 10s --attempts 1 \
         run --no-fallback --forward-signals --no-liveness-ping --only-secrets "$secret_key" \
         -- /bin/bash -c '
           key=$1; shift
@@ -178,6 +190,15 @@ case "$operation" in
     printf '%s\n' "$target database authentication and identity passed."
     ;;
   psql) sql_client "$@" ;;
+  run)
+    password=${!secret_key}
+    for key in ${!PG@}; do unset "$key"; done
+    unset DATABASE_URL POSTGRES_PASSWORD POSTGRES_TEST_PASSWORD
+    export DB_TARGET=$target PGHOST=$service PGPORT=5432 PGDATABASE=$database PGUSER=postgres
+    export PGPASSWORD=$password
+    unset password
+    exec "$checkout/scripts/tooling.sh" _run-db "$target" "$@"
+    ;;
   logs) exec "${compose[@]}" logs --follow "$service" ;;
   stop) exec "${compose[@]}" stop --timeout 10 "$service" ;;
   down) exec "${compose[@]}" down --timeout 10 ;;
