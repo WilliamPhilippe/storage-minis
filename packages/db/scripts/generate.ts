@@ -1,10 +1,10 @@
-import { requireApprovedSchema } from "../src/migrations.js";
+import { runDrizzleCommand } from "./drizzle-command.js";
 
 try {
-  requireApprovedSchema();
-} catch (error) {
+  await runDrizzleCommand("generate", process.argv.slice(2));
+} catch {
   console.error(
-    error instanceof Error ? error.message : "Migration generation refused.",
+    "Migration generation failed. Review the schema and Drizzle diagnostics.",
   );
   process.exitCode = 1;
 }

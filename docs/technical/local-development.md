@@ -71,7 +71,7 @@ apps/
   api/tsconfig.json
   api/vitest.config.mts
 packages/
-  db/package.json      # @storage-minis/db; compiled connection package and guarded CLI
+  db/package.json      # @storage-minis/db; compiled schema/connection package and CLI
   db/tsconfig.json
   db/vitest.config.mts
 ```
@@ -79,9 +79,10 @@ packages/
 Dependencies are saved with exact versions, and installs enforce engine
 compatibility. Development tools are installed at the root for use from a full
 workspace checkout. Turborepo 2.11.10 schedules and caches the existing checks.
-Step 3A adds the DB runtime dependencies, build, connection check and guarded
-migration commands. API commands, business schema and the React frontend remain
-later deliveries. Docker Compose provides the tooling runner
+Step 3A adds the DB runtime dependencies, build and connection check. Step 3B
+adds the approved structural schema, migrations and constraint tests. Business
+writers, API commands and the React frontend remain later deliveries.
+Docker Compose provides the tooling runner
 and separate [local PostgreSQL services](#local-postgresql).
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
@@ -132,8 +133,8 @@ pnpm docker:up
 The setup package script chains configuration, native build/pull/init, frozen
 installation and the existing database startup helper. It stops on the first
 failed command. Startup itself performs none of the installation/migration steps.
-Use `pnpm docker:migrate` explicitly when migrations are available; until Step 3B
-approval, it refuses before fetching secrets or mutating schema.
+Use `pnpm docker:migrate` explicitly to apply pending committed migrations after
+review. Ordinary startup retains both development data and migration history.
 
 Expected versions are `v24.22.1` and `12.15.0`, store `/pnpm/store/v11`, and three
 private workspace packages. Build before init; repeat init safely when creating
@@ -461,21 +462,39 @@ Build before direct package typechecks or typed lint; root `pnpm check` and
 `pnpm typecheck` arrange the dependency automatically. Step 4 must add the actual
 API workspace dependency and use these compiled exports, not source aliases.
 
-### Migration approval gate
+### Schema generation and migration application
 
-`pnpm db:generate` and `pnpm db:migrate` are separate uncached commands. Both
-currently return nonzero with “Schema/migrations pending approval (Step 3B)”.
-The host launcher refuses a migration request before fetching Doppler secrets;
-package wrappers and direct Drizzle configs also enforce the gate. There is no
-placeholder schema, dummy table, migration folder or empty journal.
+The owner approved S01–S10 on 2026-10-25. The compiled package exports `schema`
+from `src/schema/index.ts`; SQL/snapshots/journal live in `packages/db/drizzle/`
+and applied history lives in `drizzle.__drizzle_migrations`. See the
+[schema reconciliation and deferred writer contracts](../database/step-3b-implementation-2026-10-25.md).
 
-Step 3B must deliberately replace the gate after physical-schema approval,
-complete the CLI execution wrappers/validated migration credentials, and prove
-replay before first development application. The checked configuration records
-`src/schema/index.ts`, output `packages/db/drizzle/` and history location
-`drizzle.__drizzle_migrations`. Generation will be offline; application will be
-explicit. No `push`, automatic startup migration, seed or production migration
-is available. Preserve SQL/snapshots/journal as reviewed source once delivered.
+```sh
+# Offline comparison/generation; review every changed artifact:
+./scripts/tooling.sh run pnpm db:generate
+./scripts/tooling.sh run pnpm db:generate -- --name describe_change
+# Explicit pending migration application after first setup/review:
+pnpm docker:migrate
+# Disposable test target only:
+./scripts/tooling.sh run-db test pnpm db:migrate
+```
+
+Commands remain uncached and separate. Startup applies no migrations; preserved
+volumes keep both schema and history after a restart. Application skips committed
+history already applied and validates local component credentials. Missing/empty
+artifacts fail before connecting. The native Drizzle CLI receives 5s lock / 30s
+statement / 30s idle-in-transaction limits and a 2s connection limit; its supervisor
+allows 120s, forwards signals and forces termination after 5s. Live errors are
+sanitized. Inspect history after interruption before retrying. Use these wrappers
+for supervision; raw CLI use bypasses the process bounds.
+
+The wrapper fixes its working directory to the DB package and uses relative
+`./drizzle` output for pinned Kit snapshot compatibility. It rejects generation
+without the native success marker because Kit can catch an exception and exit
+zero. Generation needs no DB/Doppler. No `push`, startup migration, seed, production
+target or automatic down migration is supplied. Commit SQL/snapshots/journal
+together; preserve applied history and make subsequent corrections with forward
+migrations. The custom immutable base36 function is owned by the base SQL.
 
 ### Database integration tests
 
@@ -484,13 +503,18 @@ runs uncached. Individual tests have a 30s limit; the suite supervisor allows
 120s, then terminates its process group, with a 10s forced-cleanup bound. Tests
 exercise real PostgreSQL queries, transaction rollback, timeouts, wrong-password
 failure, idle disconnection/recovery, bounded shutdown, normal ESM consumption
-and signal cleanup. They create no business or dummy tables. Unit launcher tests
+and signal cleanup. Schema tests reset disposable test schemas, apply the full
+chain and check catalog coverage, repeat application, full-chain rollback,
+generated identities, amount/date boundaries, scope/party rejection, typed audit
+survival and real concurrent unique-index races. Fixtures are cleaned afterward.
+These fixture SQL operations do not implement business writers. Unit launcher tests
 use temporary CLI fixtures; they are not real Doppler authentication evidence.
 
 The development target is rejected before an integration payload starts. Test
 cleanup never drops development storage. Stop the test service when finished;
-its tmpfs is discarded. Business constraints, concurrent commitments, audit
-survival and migration replay remain Step 3B/T01/T06 acceptance work.
+its tmpfs is discarded. Aggregate reconciliation, permanent locks, authorized
+transitions, typed snapshot contracts and actual deletion-versus-funding races
+remain T01/T06 business-operation acceptance work.
 
 ## Development checks
 

@@ -1,11 +1,19 @@
 import { defineConfig } from "drizzle-kit";
 import generation from "./drizzle.config.js";
-import { requireApprovedSchema } from "./src/migrations.js";
+import { readDatabaseConfig } from "./src/config.js";
 
-// Guard direct CLI invocations too; never read credentials while approval is pending.
-requireApprovedSchema();
+const config = readDatabaseConfig(process.env);
 
 export default defineConfig({
   ...generation,
+  dialect: "postgresql",
+  dbCredentials: {
+    host: config.host,
+    port: config.port,
+    database: config.database,
+    user: config.user,
+    password: config.password,
+    ssl: false,
+  },
   migrations: { schema: "drizzle", table: "__drizzle_migrations" },
 });

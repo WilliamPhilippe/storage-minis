@@ -133,29 +133,28 @@ it("rejects mismatched Doppler config before any injected payload", () => {
   ).toThrow("DOPPLER_CONFIG=test");
 });
 
-it("refuses migration commands and development integration tests before credentials", () => {
-  for (const [target, command, message] of [
-    ["test", "db:migrate", "Schema/migrations pending approval"],
-    ["test", "db:generate", "Schema/migrations pending approval"],
-    ["dev", "test:db", "explicit test target"],
-  ]) {
+it("allows approved migrations through the selected test-target injection", () => {
+  const output = execFileSync(
+    "/bin/bash",
+    [join(root, "scripts/tooling.sh"), "run-db", "test", "pnpm", "db:migrate"],
+    { env: environment, encoding: "utf8", timeout: 5_000 },
+  );
+  expect(output).toContain("test target and secret isolation passed");
+});
+
+it("refuses development integration tests before credentials", () => {
+  for (const command of ["test:db", "test:integration"]) {
     expect(() =>
       execFileSync(
         "/bin/bash",
-        [
-          join(root, "scripts/tooling.sh"),
-          "run-db",
-          target ?? "",
-          "pnpm",
-          command ?? "",
-        ],
+        [join(root, "scripts/tooling.sh"), "run-db", "dev", "pnpm", command],
         {
           env: { COMPOSE_PROJECT_NAME: "storage-minis-fixture" },
           stdio: "pipe",
           timeout: 5_000,
         },
       ),
-    ).toThrow(message);
+    ).toThrow("explicit test target");
   }
 });
 

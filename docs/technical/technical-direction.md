@@ -868,17 +868,66 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 
 [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) still needs exact BRL representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
 
+## Step 3B structural schema (2026-10-25)
+
+The owner approved the [S01–S10 schema review](../database/step-3b-schema-review-2026-10-25.md)
+on 2026-10-25: “Schema is approved. Implement it.” The resulting
+[implementation/reconciliation record](../database/step-3b-implementation-2026-10-25.md)
+is authoritative for the structural delivery and named writer deferrals. This
+supersedes the earlier Step 3A migration gate and its pending-schema statements.
+The one-time Compose/setup behavior remains; `pnpm docker:migrate` now applies
+pending committed development migrations through native Drizzle.
+
+Implemented scope is 33 tables, 316 columns, 11 enums, 157 FKs, 76 row checks,
+48 unique constraints and 32 explicit indexes. The 310-column/158-reference draft
+is preserved in the review packet; the synchronized DBML includes the approved
+permission/public fields, Customer name and generated scope representation.
+The migration chain is `0000_base` plus `0001_customer_name_whitespace`, with
+native snapshots/journal and history at `drizzle.__drizzle_migrations`. The
+immutable base36 function is the only custom migration function. No dependency
+or version changes were needed. Compiled exports now include the typed `schema`.
+
+Generation remains offline and application remains explicit. The wrapper fixes
+Kit's package working directory/relative snapshot path, checks its native terminal
+success marker because some generation errors exit zero, and bounds live CLI
+connections/processes with sanitized failures. A temporary failing-schema test
+reproduces the upstream zero exit and proves the wrapper returns nonzero. The
+SQL-client watchdog installs cleanup before its delay and closes inherited output
+pipes, correcting an immediate-client-exit race exposed by setup checks.
+
+Validation, on the pinned Docker toolchain and disposable PostgreSQL 18.6:
+
+| Check | Result |
+| --- | --- |
+| `./scripts/tooling.sh run pnpm check` | All seven Turbo tasks passed; 24 unit tests. Strict source/config types, lint and formatting passed. |
+| `./scripts/tooling.sh run-db test pnpm test:db` | 29 tests passed: 19 schema/migration checks and 10 connection/lifecycle checks. Includes fresh replay, catalog coverage, repeat no-op, full-chain rollback, real uniqueness races and interrupted migration backend cleanup. |
+| No-change `db:generate` | Native “No schema changes” result; hashes of all five SQL/snapshot/journal artifacts unchanged. |
+| SQL client / documentation | Authenticated test identity check passed after watchdog fix; Bash syntax, diff whitespace, changed relative Markdown paths/fences and diagram field/reference reconciliation passed. |
+
+The schema tests preserve global Product reuse while rejecting cross-Organization
+acquisition/event paths and cross-Customer/Supplier funding. They cover readable
+identity, zero/nonnegative prices, positive cash, int32 overflow, UTC milliseconds,
+installment/completion checks, opening/unknown-Supplier uniqueness and retained
+SaleItem audit identity. Separate overlapping PostgreSQL sessions prove one
+winner for active commitments and collection membership. A copied full migration
+chain with an invalid final statement rolls back source DDL/function and history
+entries; a real CLI lock wait fails at five seconds. Full business writers,
+source/cache reconciliation, permanent locks, authorization and reporting remain
+explicitly deferred to their owners. First development application is an owner
+command after reviewing these artifacts; no development schema/data, seed,
+spreadsheet import or production state was changed.
+
 ## Remaining design and delivery boundaries
 
 | Work item | Still required |
 | --- | --- |
-| [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Final logical schema and state dimensions, transaction boundaries, Organization constraints, active-commitment/collection uniqueness, and allocation concurrency enforcement. |
+| [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
 | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | Complete bootstrap, persistence, activity/inactivity handling, return behavior, logout scope/revocation, and recovery around the accepted Google/ID-token/active-use-refresh/logout choices and supplied administrator email. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
-| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Pin supported versions, choose package layout and migration/API conventions, establish repeatable setup and CI, and prove rollback and Organization isolation with the selected stack. |
+| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Complete API/framework integration, application authorization/isolation, representative business transactions/races, CI and full setup acceptance. |
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
-Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no infrastructure has been provisioned. Workspace tooling checks and the unit-test runner are configured as described above; application builds and meaningful application/persistence tests remain pending.
+Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no production infrastructure has been provisioned. Workspace/tooling checks and structural PostgreSQL tests are implemented as recorded above; API/frontend builds, business workflows and their acceptance evidence remain pending.

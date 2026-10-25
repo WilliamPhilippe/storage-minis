@@ -5,7 +5,8 @@ public stock catalog for 1/64 miniature sellers and collectors.
 
 This repository contains workspace tooling, local PostgreSQL services, and
 application specifications. The Drizzle connection package and its tests are
-implemented. Business tables, the API, the React frontend, and CI are pending.
+implemented, along with the approved structural schema and replayable migrations.
+Business operations, the API, the React frontend, and CI are pending.
 Docker lifecycle commands currently start PostgreSQL infrastructure only; API
 and frontend startup will follow their application implementation.
 
@@ -13,7 +14,7 @@ and frontend startup will follow their application implementation.
 
 ```text
 apps/api/                 Fastify and tRPC workspace package; configuration only
-packages/db/              Drizzle connection package, commands and tests
+packages/db/              Drizzle schema, migrations, connection package and tests
 docker/                   Tooling image and volume initializer
 scripts/tooling.sh        Run workspace commands in Docker
 scripts/database.sh       Manage development and test PostgreSQL
@@ -67,15 +68,16 @@ Doppler is discovered on PATH, then at the approved standalone location; version
 3.77.1 remains required. Passwords and browser credentials stay outside the checkout.
 Startup performs no build, dependency installation or migration application.
 
-The proposed first-run migration step has its own command:
+After first-time setup, apply the committed schema with:
 
 ```sh
 pnpm docker:migrate
 ```
 
-**Migration application remains blocked on Step 3B schema approval.** This command
-currently refuses before fetching secrets or changing schema. Setup/startup work
-with the existing empty database; there are no application tables yet.
+The schema was approved on 2026-10-25. This explicit command applies only pending
+migrations; repeat runs skip applied migrations. Ordinary startup needs only
+`pnpm docker:up`, with the volume preserved. There are no business API/frontend
+services yet. See the [schema implementation and boundaries](docs/database/step-3b-implementation-2026-10-25.md).
 
 The package shortcuts require the pinned host Node/pnpm versions. For Docker-only
 setup and command expansions, see the
@@ -114,7 +116,8 @@ normal commands choose the correct config without them.
 
 Both services use PostgreSQL 18.6, user `postgres`, and timezone `UTC`.
 Development data persists. Test data is deleted when its container stops.
-The DBML draft is not applied. Change only the three documented nonsecret settings
+Apply the approved schema separately with `pnpm docker:migrate`. Change only the
+three documented nonsecret settings
 in `.env.compose` deliberately; changing the project name selects different volumes.
 For logs, port conflicts, password changes, or target-specific data deletion, see
 the [database reference](docs/technical/local-development.md#local-postgresql).
@@ -134,7 +137,7 @@ Run package scripts on the host from the repository root. In the table,
 | `pnpm docker:init` | `docker compose … run --rm --no-deps tooling-init` | Initialize dependency/cache volumes |
 | `pnpm docker:up` | `./scripts/database.sh up dev` | Start default services and verify database authentication |
 | `pnpm docker:up:test` | `./scripts/database.sh up test` | Start/check only test PostgreSQL |
-| `pnpm docker:migrate` | `./scripts/tooling.sh run-db dev pnpm db:migrate` | Explicit migration entry point; currently refuses pending Step 3B |
+| `pnpm docker:migrate` | `./scripts/tooling.sh run-db dev pnpm db:migrate` | Apply pending committed migrations to development PostgreSQL |
 | `pnpm docker:stop` | `docker compose … --profile '*' stop --timeout 10` | Stop all services; retain containers and named volumes |
 | `pnpm docker:stop:test` | `docker compose … stop --timeout 10 postgres_test` | Stop only test PostgreSQL |
 | `pnpm docker:prune` | `docker compose … --profile '*' down --remove-orphans --timeout 10` | Remove project containers/network; preserve named volumes |
@@ -184,9 +187,17 @@ package; `db:check` verifies an authenticated query; `test:db` requires the test
 service and runs uncached integration tests. Stop test storage only after tests
 finish; it is discarded on stop.
 
-`pnpm db:generate` and `pnpm db:migrate` currently refuse with
-“Schema/migrations pending approval (Step 3B)” before connecting or creating files.
-The first business migration requires the separate schema reconciliation review.
+Generation and application are separate uncached commands:
+
+```sh
+./scripts/tooling.sh run pnpm db:generate
+pnpm docker:migrate
+```
+
+Generation compares the approved TypeScript schema with committed snapshots,
+without connecting. Review generated SQL/snapshots/journal before applying.
+Application validates the explicit local target, skips applied history, and has
+bounded connection/lock/statement/process waits. It runs no seed or import.
 See [Drizzle setup and lifecycle](docs/technical/local-development.md#drizzle-tooling).
 
 ## Development checks
@@ -245,14 +256,15 @@ new technical decisions. Use the existing
 
 Read approved update logs with the published requirements. Later approved
 decisions take precedence over conflicting text. Requirements, ownership, and
-database drafts still need consolidation.
+the versioned requirements baseline still needs consolidation; the database
+diagram now matches the approved structural schema.
 
 - [Requirements v0.7](docs/requirements/requirements-v0.7.md)
 - [Entity map v0.8](docs/entities/entity-map-v0.8.md)
 - [Approved updates and propagation status](docs/requirement-updates/README.md)
 - [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md)
-- Database drafts: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [Step 3B schema review](docs/database/step-3b-schema-review-2026-10-25.md)
+- Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), [approved review](docs/database/step-3b-schema-review-2026-10-25.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)

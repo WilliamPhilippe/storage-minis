@@ -1,0 +1,5440 @@
+{
+  "id": "89cecffe-b7d4-4a45-9e16-dd0ff9f782ec",
+  "prevId": "7c2a56b1-cb14-48b3-9922-21da6d63f04d",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.memberships": {
+      "name": "memberships",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "memberships_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "granted_at": {
+          "name": "granted_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "membership_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "memberships_organization_idx": {
+          "name": "memberships_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_memberships": {
+          "name": "owner_memberships",
+          "tableFrom": "memberships",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "membership_user": {
+          "name": "membership_user",
+          "tableFrom": "memberships",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "memberships_key_1": {
+          "name": "memberships_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "user_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "memberships_positive_id": {
+          "name": "memberships_positive_id",
+          "value": "\"memberships\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.organizations": {
+      "name": "organizations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "organizations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "organizations_positive_id": {
+          "name": "organizations_positive_id",
+          "value": "\"organizations\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "users_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "firebase_uid": {
+          "name": "firebase_uid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "can_edit_products": {
+          "name": "can_edit_products",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_key_1": {
+          "name": "users_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["firebase_uid"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "users_positive_id": {
+          "name": "users_positive_id",
+          "value": "\"users\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.inventory_items": {
+      "name": "inventory_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "inventory_items_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "inventoryId": {
+          "name": "inventoryId",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "public.inventory_id_base36(id)",
+            "type": "stored"
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_item_id": {
+          "name": "purchase_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "merchandise_cost": {
+          "name": "merchandise_cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sealed": {
+          "name": "sealed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "damaged": {
+          "name": "damaged",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "damage_description": {
+          "name": "damage_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "private_notes": {
+          "name": "private_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asking_price": {
+          "name": "asking_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "inventory_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_status": {
+          "name": "sale_status",
+          "type": "sale_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unapproved'"
+        },
+        "first_received_event_id": {
+          "name": "first_received_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_sale_approval_event_id": {
+          "name": "first_sale_approval_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "removed_event_id": {
+          "name": "removed_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acquisition_expense_completeness": {
+          "name": "acquisition_expense_completeness",
+          "type": "expense_completeness",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unknown'"
+        },
+        "finalized_acquisition_cost": {
+          "name": "finalized_acquisition_cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cost_finalized_event_id": {
+          "name": "cost_finalized_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "public_description": {
+          "name": "public_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_images": {
+          "name": "public_images",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "inventory_items_organization_idx": {
+          "name": "inventory_items_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "one_collection_unit": {
+          "name": "one_collection_unit",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "sale_status = 'collection'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_inventory_items": {
+          "name": "owner_inventory_items",
+          "tableFrom": "inventory_items",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "unit_global_product": {
+          "name": "unit_global_product",
+          "tableFrom": "inventory_items",
+          "tableTo": "products",
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "unit_purchase": {
+          "name": "unit_purchase",
+          "tableFrom": "inventory_items",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "purchase_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "unit_purchase_line": {
+          "name": "unit_purchase_line",
+          "tableFrom": "inventory_items",
+          "tableTo": "purchase_items",
+          "columnsFrom": ["organization_id", "purchase_id", "purchase_item_id"],
+          "columnsTo": ["organization_id", "purchase_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_inventory_items": {
+          "name": "created_inventory_items",
+          "tableFrom": "inventory_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "inventory_items_first_received": {
+          "name": "inventory_items_first_received",
+          "tableFrom": "inventory_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "first_received_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "inventory_items_first_sale_approval": {
+          "name": "inventory_items_first_sale_approval",
+          "tableFrom": "inventory_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "first_sale_approval_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "inventory_items_removed": {
+          "name": "inventory_items_removed",
+          "tableFrom": "inventory_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "removed_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "inventory_items_cost_finalized": {
+          "name": "inventory_items_cost_finalized",
+          "tableFrom": "inventory_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "cost_finalized_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "inventory_items_key_1": {
+          "name": "inventory_items_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "purchase_id", "id"]
+        },
+        "inventory_items_key_2": {
+          "name": "inventory_items_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "inventory_items_key_3": {
+          "name": "inventory_items_key_3",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "inventoryId"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "inventory_items_positive_id": {
+          "name": "inventory_items_positive_id",
+          "value": "\"inventory_items\".\"id\" > 0"
+        },
+        "cost_snapshot_has_event": {
+          "name": "cost_snapshot_has_event",
+          "value": "((finalized_acquisition_cost IS NULL) = (cost_finalized_event_id IS NULL))"
+        },
+        "inventory_items_merchandise_cost_nonnegative": {
+          "name": "inventory_items_merchandise_cost_nonnegative",
+          "value": "\"inventory_items\".\"merchandise_cost\" >= 0"
+        },
+        "inventory_items_asking_price_nonnegative": {
+          "name": "inventory_items_asking_price_nonnegative",
+          "value": "\"inventory_items\".\"asking_price\" >= 0"
+        },
+        "inventory_items_finalized_acquisition_cost_nonnegative": {
+          "name": "inventory_items_finalized_acquisition_cost_nonnegative",
+          "value": "\"inventory_items\".\"finalized_acquisition_cost\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.products": {
+      "name": "products",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "products_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sku": {
+          "name": "sku",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brand": {
+          "name": "brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "images": {
+          "name": "images",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_chase": {
+          "name": "is_chase",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "registration_event_id": {
+          "name": "registration_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registration_scope": {
+          "name": "registration_scope",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "0",
+            "type": "stored"
+          }
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "product_registration": {
+          "name": "product_registration",
+          "tableFrom": "products",
+          "tableTo": "business_events",
+          "columnsFrom": ["registration_event_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "product_registration_global_scope": {
+          "name": "product_registration_global_scope",
+          "tableFrom": "products",
+          "tableTo": "business_events",
+          "columnsFrom": ["registration_event_id", "registration_scope"],
+          "columnsTo": ["id", "scope_organization_id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "products_positive_id": {
+          "name": "products_positive_id",
+          "value": "\"products\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.purchase_items": {
+      "name": "purchase_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "purchase_items_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordered_quantity": {
+          "name": "ordered_quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "merchandise_total": {
+          "name": "merchandise_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "purchase_items_organization_idx": {
+          "name": "purchase_items_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_purchase_items": {
+          "name": "owner_purchase_items",
+          "tableFrom": "purchase_items",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchase_line_header": {
+          "name": "purchase_line_header",
+          "tableFrom": "purchase_items",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "purchase_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_purchase_items": {
+          "name": "created_purchase_items",
+          "tableFrom": "purchase_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "purchase_items_key_1": {
+          "name": "purchase_items_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "purchase_id", "id"]
+        },
+        "purchase_items_key_2": {
+          "name": "purchase_items_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "purchase_items_positive_id": {
+          "name": "purchase_items_positive_id",
+          "value": "\"purchase_items\".\"id\" > 0"
+        },
+        "positive_ordered_quantity": {
+          "name": "positive_ordered_quantity",
+          "value": "ordered_quantity > 0"
+        },
+        "purchase_items_merchandise_total_nonnegative": {
+          "name": "purchase_items_merchandise_total_nonnegative",
+          "value": "\"purchase_items\".\"merchandise_total\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.purchases": {
+      "name": "purchases",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "purchases_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ordered_on": {
+          "name": "ordered_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_opening": {
+          "name": "is_opening",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "opening_month": {
+          "name": "opening_month",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opening_source_description": {
+          "name": "opening_source_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opening_evidence": {
+          "name": "opening_evidence",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lifecycle": {
+          "name": "lifecycle",
+          "type": "purchase_lifecycle",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "expense_completeness": {
+          "name": "expense_completeness",
+          "type": "expense_completeness",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unknown'"
+        },
+        "expenses_confirmed_event_id": {
+          "name": "expenses_confirmed_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "incoming_shipping_notes": {
+          "name": "incoming_shipping_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_event_id": {
+          "name": "completed_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "canceled_event_id": {
+          "name": "canceled_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "purchases_organization_idx": {
+          "name": "purchases_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "one_opening_purchase": {
+          "name": "one_opening_purchase",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "supplier_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "opening_month",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "is_opening",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_purchases": {
+          "name": "owner_purchases",
+          "tableFrom": "purchases",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchase_supplier": {
+          "name": "purchase_supplier",
+          "tableFrom": "purchases",
+          "tableTo": "suppliers",
+          "columnsFrom": ["organization_id", "supplier_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_purchases": {
+          "name": "created_purchases",
+          "tableFrom": "purchases",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchases_expenses_confirmed": {
+          "name": "purchases_expenses_confirmed",
+          "tableFrom": "purchases",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "expenses_confirmed_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchases_completed": {
+          "name": "purchases_completed",
+          "tableFrom": "purchases",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "completed_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchases_canceled": {
+          "name": "purchases_canceled",
+          "tableFrom": "purchases",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "canceled_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "purchases_key_1": {
+          "name": "purchases_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "purchases_key_2": {
+          "name": "purchases_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "supplier_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "purchases_positive_id": {
+          "name": "purchases_positive_id",
+          "value": "\"purchases\".\"id\" > 0"
+        },
+        "opening_purchase_has_month": {
+          "name": "opening_purchase_has_month",
+          "value": "((opening_month IS NOT NULL) = is_opening)"
+        },
+        "valid_opening_month": {
+          "name": "valid_opening_month",
+          "value": "(opening_month IS NULL OR (opening_month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$' AND left(opening_month, 4) <> '0000'))"
+        },
+        "opening_purchase_uses_second_day": {
+          "name": "opening_purchase_uses_second_day",
+          "value": "(NOT is_opening OR ordered_on = (opening_month || '-02T00:00:00Z')::timestamptz)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_payment_allocations": {
+      "name": "supplier_payment_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "supplier_payment_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_payment_id": {
+          "name": "supplier_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "supplier_payment_allocations_organization_idx": {
+          "name": "supplier_payment_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_supplier_payment_allocations": {
+          "name": "owner_supplier_payment_allocations",
+          "tableFrom": "supplier_payment_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_allocation_payment_party": {
+          "name": "supplier_allocation_payment_party",
+          "tableFrom": "supplier_payment_allocations",
+          "tableTo": "supplier_payments",
+          "columnsFrom": [
+            "organization_id",
+            "supplier_id",
+            "supplier_payment_id"
+          ],
+          "columnsTo": ["organization_id", "supplier_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_allocation_purchase_party": {
+          "name": "supplier_allocation_purchase_party",
+          "tableFrom": "supplier_payment_allocations",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "supplier_id", "purchase_id"],
+          "columnsTo": ["organization_id", "supplier_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_allocation_unit_purchase": {
+          "name": "supplier_allocation_unit_purchase",
+          "tableFrom": "supplier_payment_allocations",
+          "tableTo": "inventory_items",
+          "columnsFrom": [
+            "organization_id",
+            "purchase_id",
+            "inventory_item_id"
+          ],
+          "columnsTo": ["organization_id", "purchase_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_supplier_payment_allocations": {
+          "name": "created_supplier_payment_allocations",
+          "tableFrom": "supplier_payment_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_payment_allocations_key_1": {
+          "name": "supplier_payment_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_payment_allocations_positive_id": {
+          "name": "supplier_payment_allocations_positive_id",
+          "value": "\"supplier_payment_allocations\".\"id\" > 0"
+        },
+        "supplier_payment_allocations_positive_amount": {
+          "name": "supplier_payment_allocations_positive_amount",
+          "value": "\"supplier_payment_allocations\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_payments": {
+      "name": "supplier_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "supplier_payments_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_on": {
+          "name": "paid_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "supplier_payments_organization_idx": {
+          "name": "supplier_payments_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_supplier_payments": {
+          "name": "owner_supplier_payments",
+          "tableFrom": "supplier_payments",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_payment_party": {
+          "name": "supplier_payment_party",
+          "tableFrom": "supplier_payments",
+          "tableTo": "suppliers",
+          "columnsFrom": ["organization_id", "supplier_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_supplier_payments": {
+          "name": "created_supplier_payments",
+          "tableFrom": "supplier_payments",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_payments_key_1": {
+          "name": "supplier_payments_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "supplier_id", "id"]
+        },
+        "supplier_payments_key_2": {
+          "name": "supplier_payments_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_payments_positive_id": {
+          "name": "supplier_payments_positive_id",
+          "value": "\"supplier_payments\".\"id\" > 0"
+        },
+        "supplier_payments_positive_amount": {
+          "name": "supplier_payments_positive_amount",
+          "value": "\"supplier_payments\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_refunds": {
+      "name": "supplier_refunds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "supplier_refunds_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settlement_id": {
+          "name": "settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_on": {
+          "name": "received_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_loss_id": {
+          "name": "related_loss_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "supplier_refunds_organization_idx": {
+          "name": "supplier_refunds_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_supplier_refunds": {
+          "name": "owner_supplier_refunds",
+          "tableFrom": "supplier_refunds",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_refund_party": {
+          "name": "supplier_refund_party",
+          "tableFrom": "supplier_refunds",
+          "tableTo": "suppliers",
+          "columnsFrom": ["organization_id", "supplier_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_refund_original_loss": {
+          "name": "supplier_refund_original_loss",
+          "tableFrom": "supplier_refunds",
+          "tableTo": "losses",
+          "columnsFrom": ["organization_id", "related_loss_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_supplier_refunds": {
+          "name": "created_supplier_refunds",
+          "tableFrom": "supplier_refunds",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_refund_settlement_party": {
+          "name": "supplier_refund_settlement_party",
+          "tableFrom": "supplier_refunds",
+          "tableTo": "supplier_settlements",
+          "columnsFrom": ["organization_id", "supplier_id", "settlement_id"],
+          "columnsTo": ["organization_id", "supplier_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_refunds_key_1": {
+          "name": "supplier_refunds_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_refunds_positive_id": {
+          "name": "supplier_refunds_positive_id",
+          "value": "\"supplier_refunds\".\"id\" > 0"
+        },
+        "supplier_refunds_positive_amount": {
+          "name": "supplier_refunds_positive_amount",
+          "value": "\"supplier_refunds\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_settlement_source_allocations": {
+      "name": "supplier_settlement_source_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "supplier_settlement_source_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settlement_id": {
+          "name": "settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_supplier_payment_allocation_id": {
+          "name": "source_supplier_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "supplier_settlement_outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_refund_id": {
+          "name": "supplier_refund_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_supplier_payment_allocation_id": {
+          "name": "target_supplier_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loss_id": {
+          "name": "loss_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "related_prior_loss_id": {
+          "name": "related_prior_loss_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "supplier_settlement_source_allocations_organization_idx": {
+          "name": "supplier_settlement_source_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_supplier_settlement_sources": {
+          "name": "owner_supplier_settlement_sources",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_header": {
+          "name": "supplier_settlement_source_header",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "supplier_settlements",
+          "columnsFrom": ["organization_id", "settlement_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_payment": {
+          "name": "supplier_settlement_source_payment",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "supplier_payment_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "source_supplier_payment_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_refund": {
+          "name": "supplier_settlement_source_refund",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "supplier_refunds",
+          "columnsFrom": ["organization_id", "supplier_refund_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_target": {
+          "name": "supplier_settlement_source_target",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "supplier_payment_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "target_supplier_payment_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_loss": {
+          "name": "supplier_settlement_source_loss",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "losses",
+          "columnsFrom": ["organization_id", "loss_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_source_prior_loss": {
+          "name": "supplier_settlement_source_prior_loss",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "losses",
+          "columnsFrom": ["organization_id", "related_prior_loss_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_supplier_settlement_source_allocations": {
+          "name": "created_supplier_settlement_source_allocations",
+          "tableFrom": "supplier_settlement_source_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_settlement_source_allocations_key_1": {
+          "name": "supplier_settlement_source_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_settlement_source_allocations_positive_id": {
+          "name": "supplier_settlement_source_allocations_positive_id",
+          "value": "\"supplier_settlement_source_allocations\".\"id\" > 0"
+        },
+        "positive_supplier_settlement_portion": {
+          "name": "positive_supplier_settlement_portion",
+          "value": "amount > 0"
+        },
+        "one_supplier_settlement_outcome": {
+          "name": "one_supplier_settlement_outcome",
+          "value": "((outcome = 'refund' AND target_supplier_payment_allocation_id IS NULL AND loss_id IS NULL) OR (outcome = 'reassignment' AND target_supplier_payment_allocation_id IS NOT NULL AND supplier_refund_id IS NULL AND loss_id IS NULL) OR (outcome = 'loss' AND loss_id IS NOT NULL AND supplier_refund_id IS NULL AND target_supplier_payment_allocation_id IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.supplier_settlements": {
+      "name": "supplier_settlements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "supplier_settlements_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "supplier_settlements_organization_idx": {
+          "name": "supplier_settlements_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_supplier_settlements": {
+          "name": "owner_supplier_settlements",
+          "tableFrom": "supplier_settlements",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_supplier": {
+          "name": "supplier_settlement_supplier",
+          "tableFrom": "supplier_settlements",
+          "tableTo": "suppliers",
+          "columnsFrom": ["organization_id", "supplier_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "supplier_settlement_purchase": {
+          "name": "supplier_settlement_purchase",
+          "tableFrom": "supplier_settlements",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "supplier_id", "purchase_id"],
+          "columnsTo": ["organization_id", "supplier_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_supplier_settlements": {
+          "name": "created_supplier_settlements",
+          "tableFrom": "supplier_settlements",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "supplier_settlements_key_1": {
+          "name": "supplier_settlements_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "supplier_settlements_key_2": {
+          "name": "supplier_settlements_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "supplier_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "supplier_settlements_positive_id": {
+          "name": "supplier_settlements_positive_id",
+          "value": "\"supplier_settlements\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.suppliers": {
+      "name": "suppliers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "suppliers_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "supplier_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_unknown": {
+          "name": "is_unknown",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "suppliers_organization_idx": {
+          "name": "suppliers_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "one_unknown_supplier": {
+          "name": "one_unknown_supplier",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "is_unknown",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_suppliers": {
+          "name": "owner_suppliers",
+          "tableFrom": "suppliers",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_suppliers": {
+          "name": "created_suppliers",
+          "tableFrom": "suppliers",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "suppliers_key_1": {
+          "name": "suppliers_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "suppliers_positive_id": {
+          "name": "suppliers_positive_id",
+          "value": "\"suppliers\".\"id\" > 0"
+        },
+        "known_supplier_has_contact_and_type": {
+          "name": "known_supplier_has_contact_and_type",
+          "value": "(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))"
+        },
+        "unknown_supplier_has_no_fabricated_details": {
+          "name": "unknown_supplier_has_no_fabricated_details",
+          "value": "(NOT is_unknown OR (phone IS NULL AND type IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.acquisition_expense_allocations": {
+      "name": "acquisition_expense_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "acquisition_expense_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_expense_id": {
+          "name": "purchase_expense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "acquisition_expense_allocations_organization_idx": {
+          "name": "acquisition_expense_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_acquisition_expense_allocations": {
+          "name": "owner_acquisition_expense_allocations",
+          "tableFrom": "acquisition_expense_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "expense_allocation_source": {
+          "name": "expense_allocation_source",
+          "tableFrom": "acquisition_expense_allocations",
+          "tableTo": "purchase_expenses",
+          "columnsFrom": ["organization_id", "purchase_expense_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "expense_allocation_unit_purchase": {
+          "name": "expense_allocation_unit_purchase",
+          "tableFrom": "acquisition_expense_allocations",
+          "tableTo": "inventory_items",
+          "columnsFrom": [
+            "organization_id",
+            "purchase_id",
+            "inventory_item_id"
+          ],
+          "columnsTo": ["organization_id", "purchase_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_acquisition_expense_allocations": {
+          "name": "created_acquisition_expense_allocations",
+          "tableFrom": "acquisition_expense_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "acquisition_expense_allocations_key_1": {
+          "name": "acquisition_expense_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "acquisition_expense_allocations_key_2": {
+          "name": "acquisition_expense_allocations_key_2",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "purchase_expense_id",
+            "inventory_item_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "acquisition_expense_allocations_positive_id": {
+          "name": "acquisition_expense_allocations_positive_id",
+          "value": "\"acquisition_expense_allocations\".\"id\" > 0"
+        },
+        "acquisition_expense_allocations_amount_nonnegative": {
+          "name": "acquisition_expense_allocations_amount_nonnegative",
+          "value": "\"acquisition_expense_allocations\".\"amount\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.purchase_expense_payments": {
+      "name": "purchase_expense_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "purchase_expense_payments_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_expense_id": {
+          "name": "purchase_expense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_on": {
+          "name": "paid_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "purchase_expense_payments_organization_idx": {
+          "name": "purchase_expense_payments_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_purchase_expense_payments": {
+          "name": "owner_purchase_expense_payments",
+          "tableFrom": "purchase_expense_payments",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "purchase_expense_payment_source": {
+          "name": "purchase_expense_payment_source",
+          "tableFrom": "purchase_expense_payments",
+          "tableTo": "purchase_expenses",
+          "columnsFrom": ["organization_id", "purchase_expense_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_purchase_expense_payments": {
+          "name": "created_purchase_expense_payments",
+          "tableFrom": "purchase_expense_payments",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "purchase_expense_payments_key_1": {
+          "name": "purchase_expense_payments_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "purchase_expense_payments_positive_id": {
+          "name": "purchase_expense_payments_positive_id",
+          "value": "\"purchase_expense_payments\".\"id\" > 0"
+        },
+        "positive_purchase_expense_payment": {
+          "name": "positive_purchase_expense_payment",
+          "value": "amount > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.purchase_expenses": {
+      "name": "purchase_expenses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "purchase_expenses_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "incurred_on": {
+          "name": "incurred_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context": {
+          "name": "context",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allocation_method": {
+          "name": "allocation_method",
+          "type": "acquisition_allocation_method",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'proportional_to_value'"
+        },
+        "settled_amount": {
+          "name": "settled_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "settled_on": {
+          "name": "settled_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "purchase_expenses_organization_idx": {
+          "name": "purchase_expenses_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_purchase_expenses": {
+          "name": "owner_purchase_expenses",
+          "tableFrom": "purchase_expenses",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_purchase_expenses": {
+          "name": "created_purchase_expenses",
+          "tableFrom": "purchase_expenses",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "purchase_expenses_key_1": {
+          "name": "purchase_expenses_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "purchase_expenses_positive_id": {
+          "name": "purchase_expenses_positive_id",
+          "value": "\"purchase_expenses\".\"id\" > 0"
+        },
+        "positive_purchase_expense": {
+          "name": "positive_purchase_expense",
+          "value": "amount > 0"
+        },
+        "purchase_expense_payment_bounds": {
+          "name": "purchase_expense_payment_bounds",
+          "value": "(settled_amount >= 0 AND settled_amount <= amount)"
+        },
+        "purchase_expense_fully_paid_timestamp": {
+          "name": "purchase_expense_fully_paid_timestamp",
+          "value": "((settled_on IS NOT NULL) = (settled_amount = amount))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sale_expense_payments": {
+      "name": "sale_expense_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sale_expense_payments_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_expense_id": {
+          "name": "sale_expense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_on": {
+          "name": "paid_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "sale_expense_payments_organization_idx": {
+          "name": "sale_expense_payments_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_sale_expense_payments": {
+          "name": "owner_sale_expense_payments",
+          "tableFrom": "sale_expense_payments",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sale_expense_payment_source": {
+          "name": "sale_expense_payment_source",
+          "tableFrom": "sale_expense_payments",
+          "tableTo": "sale_expenses",
+          "columnsFrom": ["organization_id", "sale_expense_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_sale_expense_payments": {
+          "name": "created_sale_expense_payments",
+          "tableFrom": "sale_expense_payments",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sale_expense_payments_key_1": {
+          "name": "sale_expense_payments_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sale_expense_payments_positive_id": {
+          "name": "sale_expense_payments_positive_id",
+          "value": "\"sale_expense_payments\".\"id\" > 0"
+        },
+        "positive_sale_expense_payment": {
+          "name": "positive_sale_expense_payment",
+          "value": "amount > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sale_expenses": {
+      "name": "sale_expenses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sale_expenses_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "incurred_on": {
+          "name": "incurred_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context": {
+          "name": "context",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "settled_amount": {
+          "name": "settled_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "settled_on": {
+          "name": "settled_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "sale_expenses_organization_idx": {
+          "name": "sale_expenses_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_sale_expenses": {
+          "name": "owner_sale_expenses",
+          "tableFrom": "sale_expenses",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "selling_expense_sale": {
+          "name": "selling_expense_sale",
+          "tableFrom": "sale_expenses",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "sale_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_sale_expenses": {
+          "name": "created_sale_expenses",
+          "tableFrom": "sale_expenses",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sale_expenses_key_1": {
+          "name": "sale_expenses_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sale_expenses_positive_id": {
+          "name": "sale_expenses_positive_id",
+          "value": "\"sale_expenses\".\"id\" > 0"
+        },
+        "positive_sale_expense": {
+          "name": "positive_sale_expense",
+          "value": "amount > 0"
+        },
+        "sale_expense_payment_bounds": {
+          "name": "sale_expense_payment_bounds",
+          "value": "(settled_amount >= 0 AND settled_amount <= amount)"
+        },
+        "sale_expense_fully_paid_timestamp": {
+          "name": "sale_expense_fully_paid_timestamp",
+          "value": "((settled_on IS NOT NULL) = (settled_amount = amount))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customers": {
+      "name": "customers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customers_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_line_1": {
+          "name": "address_line_1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_line_2": {
+          "name": "address_line_2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_neighborhood": {
+          "name": "address_neighborhood",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_city": {
+          "name": "address_city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_region": {
+          "name": "address_region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_postal_code": {
+          "name": "address_postal_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_country": {
+          "name": "address_country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customers_organization_idx": {
+          "name": "customers_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customers": {
+          "name": "owner_customers",
+          "tableFrom": "customers",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customers": {
+          "name": "created_customers",
+          "tableFrom": "customers",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customers_key_1": {
+          "name": "customers_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customers_positive_id": {
+          "name": "customers_positive_id",
+          "value": "\"customers\".\"id\" > 0"
+        },
+        "customer_nonblank_name": {
+          "name": "customer_nonblank_name",
+          "value": "\"customers\".\"name\" ~ '[^[:space:]]'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.return_items": {
+      "name": "return_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "return_items_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_id": {
+          "name": "return_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_item_id": {
+          "name": "sale_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sealed": {
+          "name": "sealed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "damaged": {
+          "name": "damaged",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "damage_description": {
+          "name": "damage_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_for_sale": {
+          "name": "approved_for_sale",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "condition_notes": {
+          "name": "condition_notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "return_items_organization_idx": {
+          "name": "return_items_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_return_items": {
+          "name": "owner_return_items",
+          "tableFrom": "return_items",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "return_line_header_sale": {
+          "name": "return_line_header_sale",
+          "tableFrom": "return_items",
+          "tableTo": "returns",
+          "columnsFrom": ["organization_id", "sale_id", "return_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "return_line_original_sale_line": {
+          "name": "return_line_original_sale_line",
+          "tableFrom": "return_items",
+          "tableTo": "sale_items",
+          "columnsFrom": ["organization_id", "sale_id", "sale_item_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "return_items_key_1": {
+          "name": "return_items_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "return_items_key_2": {
+          "name": "return_items_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "sale_item_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "return_items_positive_id": {
+          "name": "return_items_positive_id",
+          "value": "\"return_items\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.returns": {
+      "name": "returns",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "returns_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_on": {
+          "name": "received_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "returns_organization_idx": {
+          "name": "returns_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_returns": {
+          "name": "owner_returns",
+          "tableFrom": "returns",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "return_original_sale": {
+          "name": "return_original_sale",
+          "tableFrom": "returns",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "sale_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_returns": {
+          "name": "created_returns",
+          "tableFrom": "returns",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "returns_key_1": {
+          "name": "returns_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "sale_id", "id"]
+        },
+        "returns_key_2": {
+          "name": "returns_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "returns_positive_id": {
+          "name": "returns_positive_id",
+          "value": "\"returns\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sale_items": {
+      "name": "sale_items",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sale_items_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agreed_price": {
+          "name": "agreed_price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recognized_acquisition_cost": {
+          "name": "recognized_acquisition_cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "released_event_id": {
+          "name": "released_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "sale_items_organization_idx": {
+          "name": "sale_items_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "one_active_item_commitment": {
+          "name": "one_active_item_commitment",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "inventory_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "released_event_id IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_sale_items": {
+          "name": "owner_sale_items",
+          "tableFrom": "sale_items",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sale_line_header": {
+          "name": "sale_line_header",
+          "tableFrom": "sale_items",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "sale_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sale_line_unit": {
+          "name": "sale_line_unit",
+          "tableFrom": "sale_items",
+          "tableTo": "inventory_items",
+          "columnsFrom": ["organization_id", "inventory_item_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_sale_items": {
+          "name": "created_sale_items",
+          "tableFrom": "sale_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sale_items_released": {
+          "name": "sale_items_released",
+          "tableFrom": "sale_items",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "released_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sale_items_key_1": {
+          "name": "sale_items_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "sale_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sale_items_positive_id": {
+          "name": "sale_items_positive_id",
+          "value": "\"sale_items\".\"id\" > 0"
+        },
+        "sale_items_agreed_price_nonnegative": {
+          "name": "sale_items_agreed_price_nonnegative",
+          "value": "\"sale_items\".\"agreed_price\" >= 0"
+        },
+        "sale_items_recognized_acquisition_cost_nonnegative": {
+          "name": "sale_items_recognized_acquisition_cost_nonnegative",
+          "value": "\"sale_items\".\"recognized_acquisition_cost\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sales": {
+      "name": "sales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "sales_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sold_on": {
+          "name": "sold_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dispatched_on": {
+          "name": "dispatched_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dispatch_event_id": {
+          "name": "dispatch_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tracking_code": {
+          "name": "tracking_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "canceled_event_id": {
+          "name": "canceled_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "sales_organization_idx": {
+          "name": "sales_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_sales": {
+          "name": "owner_sales",
+          "tableFrom": "sales",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sale_customer": {
+          "name": "sale_customer",
+          "tableFrom": "sales",
+          "tableTo": "customers",
+          "columnsFrom": ["organization_id", "customer_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_sales": {
+          "name": "created_sales",
+          "tableFrom": "sales",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sales_dispatch": {
+          "name": "sales_dispatch",
+          "tableFrom": "sales",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "dispatch_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "sales_canceled": {
+          "name": "sales_canceled",
+          "tableFrom": "sales",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "canceled_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "sales_key_1": {
+          "name": "sales_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "sales_key_2": {
+          "name": "sales_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "customer_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "sales_positive_id": {
+          "name": "sales_positive_id",
+          "value": "\"sales\".\"id\" > 0"
+        },
+        "dispatch_has_date_and_event": {
+          "name": "dispatch_has_date_and_event",
+          "value": "((dispatched_on IS NULL) = (dispatch_event_id IS NULL))"
+        },
+        "ordinary_cancellation_before_dispatch": {
+          "name": "ordinary_cancellation_before_dispatch",
+          "value": "(canceled_event_id IS NULL OR dispatch_event_id IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_payment_allocations": {
+      "name": "customer_payment_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_payment_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_payment_id": {
+          "name": "customer_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_item_id": {
+          "name": "sale_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_payment_allocations_organization_idx": {
+          "name": "customer_payment_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customer_payment_allocations": {
+          "name": "owner_customer_payment_allocations",
+          "tableFrom": "customer_payment_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_allocation_payment_party": {
+          "name": "customer_allocation_payment_party",
+          "tableFrom": "customer_payment_allocations",
+          "tableTo": "customer_payments",
+          "columnsFrom": [
+            "organization_id",
+            "customer_id",
+            "customer_payment_id"
+          ],
+          "columnsTo": ["organization_id", "customer_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_allocation_sale_party": {
+          "name": "customer_allocation_sale_party",
+          "tableFrom": "customer_payment_allocations",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "customer_id", "sale_id"],
+          "columnsTo": ["organization_id", "customer_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_allocation_sale_line": {
+          "name": "customer_allocation_sale_line",
+          "tableFrom": "customer_payment_allocations",
+          "tableTo": "sale_items",
+          "columnsFrom": ["organization_id", "sale_id", "sale_item_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customer_payment_allocations": {
+          "name": "created_customer_payment_allocations",
+          "tableFrom": "customer_payment_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_payment_allocations_key_1": {
+          "name": "customer_payment_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customer_payment_allocations_positive_id": {
+          "name": "customer_payment_allocations_positive_id",
+          "value": "\"customer_payment_allocations\".\"id\" > 0"
+        },
+        "customer_payment_allocations_positive_amount": {
+          "name": "customer_payment_allocations_positive_amount",
+          "value": "\"customer_payment_allocations\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_payments": {
+      "name": "customer_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_payments_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "paid_on": {
+          "name": "paid_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_payments_organization_idx": {
+          "name": "customer_payments_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customer_payments": {
+          "name": "owner_customer_payments",
+          "tableFrom": "customer_payments",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_payment_party": {
+          "name": "customer_payment_party",
+          "tableFrom": "customer_payments",
+          "tableTo": "customers",
+          "columnsFrom": ["organization_id", "customer_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customer_payments": {
+          "name": "created_customer_payments",
+          "tableFrom": "customer_payments",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_payments_key_1": {
+          "name": "customer_payments_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "customer_id", "id"]
+        },
+        "customer_payments_key_2": {
+          "name": "customer_payments_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customer_payments_positive_id": {
+          "name": "customer_payments_positive_id",
+          "value": "\"customer_payments\".\"id\" > 0"
+        },
+        "customer_payments_positive_amount": {
+          "name": "customer_payments_positive_amount",
+          "value": "\"customer_payments\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_refunds": {
+      "name": "customer_refunds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_refunds_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settlement_id": {
+          "name": "settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refunded_on": {
+          "name": "refunded_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_refunds_organization_idx": {
+          "name": "customer_refunds_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customer_refunds": {
+          "name": "owner_customer_refunds",
+          "tableFrom": "customer_refunds",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_refund_sale_party": {
+          "name": "customer_refund_sale_party",
+          "tableFrom": "customer_refunds",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "customer_id", "sale_id"],
+          "columnsTo": ["organization_id", "customer_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customer_refunds": {
+          "name": "created_customer_refunds",
+          "tableFrom": "customer_refunds",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_refund_settlement_sale_party": {
+          "name": "customer_refund_settlement_sale_party",
+          "tableFrom": "customer_refunds",
+          "tableTo": "customer_settlements",
+          "columnsFrom": [
+            "organization_id",
+            "customer_id",
+            "sale_id",
+            "settlement_id"
+          ],
+          "columnsTo": ["organization_id", "customer_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_refunds_key_1": {
+          "name": "customer_refunds_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customer_refunds_positive_id": {
+          "name": "customer_refunds_positive_id",
+          "value": "\"customer_refunds\".\"id\" > 0"
+        },
+        "customer_refunds_positive_amount": {
+          "name": "customer_refunds_positive_amount",
+          "value": "\"customer_refunds\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_settlement_source_allocations": {
+      "name": "customer_settlement_source_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_settlement_source_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settlement_id": {
+          "name": "settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_customer_payment_allocation_id": {
+          "name": "source_customer_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "customer_settlement_outcome",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_refund_id": {
+          "name": "customer_refund_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_customer_payment_allocation_id": {
+          "name": "target_customer_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retained_income_id": {
+          "name": "retained_income_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_settlement_source_allocations_organization_idx": {
+          "name": "customer_settlement_source_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customer_settlement_sources": {
+          "name": "owner_customer_settlement_sources",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_source_header": {
+          "name": "customer_settlement_source_header",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "customer_settlements",
+          "columnsFrom": ["organization_id", "settlement_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_source_payment": {
+          "name": "customer_settlement_source_payment",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "customer_payment_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "source_customer_payment_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_source_refund": {
+          "name": "customer_settlement_source_refund",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "customer_refunds",
+          "columnsFrom": ["organization_id", "customer_refund_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_source_target": {
+          "name": "customer_settlement_source_target",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "customer_payment_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "target_customer_payment_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_source_retention": {
+          "name": "customer_settlement_source_retention",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "retained_income",
+          "columnsFrom": ["organization_id", "retained_income_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customer_settlement_source_allocations": {
+          "name": "created_customer_settlement_source_allocations",
+          "tableFrom": "customer_settlement_source_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_settlement_source_allocations_key_1": {
+          "name": "customer_settlement_source_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customer_settlement_source_allocations_positive_id": {
+          "name": "customer_settlement_source_allocations_positive_id",
+          "value": "\"customer_settlement_source_allocations\".\"id\" > 0"
+        },
+        "positive_customer_settlement_portion": {
+          "name": "positive_customer_settlement_portion",
+          "value": "amount > 0"
+        },
+        "one_customer_settlement_outcome": {
+          "name": "one_customer_settlement_outcome",
+          "value": "((outcome = 'refund' AND target_customer_payment_allocation_id IS NULL AND retained_income_id IS NULL) OR (outcome = 'reassignment' AND target_customer_payment_allocation_id IS NOT NULL AND customer_refund_id IS NULL AND retained_income_id IS NULL) OR (outcome = 'retained_income' AND retained_income_id IS NOT NULL AND customer_refund_id IS NULL AND target_customer_payment_allocation_id IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_settlements": {
+      "name": "customer_settlements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_settlements_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_id": {
+          "name": "return_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_settlements_organization_idx": {
+          "name": "customer_settlements_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_customer_settlements": {
+          "name": "owner_customer_settlements",
+          "tableFrom": "customer_settlements",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_customer": {
+          "name": "customer_settlement_customer",
+          "tableFrom": "customer_settlements",
+          "tableTo": "customers",
+          "columnsFrom": ["organization_id", "customer_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_sale": {
+          "name": "customer_settlement_sale",
+          "tableFrom": "customer_settlements",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "customer_id", "sale_id"],
+          "columnsTo": ["organization_id", "customer_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_settlement_return": {
+          "name": "customer_settlement_return",
+          "tableFrom": "customer_settlements",
+          "tableTo": "returns",
+          "columnsFrom": ["organization_id", "sale_id", "return_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_customer_settlements": {
+          "name": "created_customer_settlements",
+          "tableFrom": "customer_settlements",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_settlements_key_1": {
+          "name": "customer_settlements_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "customer_settlements_key_2": {
+          "name": "customer_settlements_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "customer_id", "sale_id", "id"]
+        },
+        "customer_settlements_key_3": {
+          "name": "customer_settlements_key_3",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "sale_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "customer_settlements_positive_id": {
+          "name": "customer_settlements_positive_id",
+          "value": "\"customer_settlements\".\"id\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.retained_income": {
+      "name": "retained_income",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "retained_income_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settlement_id": {
+          "name": "settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recognized_on": {
+          "name": "recognized_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "retained_income_organization_idx": {
+          "name": "retained_income_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_retained_income": {
+          "name": "owner_retained_income",
+          "tableFrom": "retained_income",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "retained_income_sale": {
+          "name": "retained_income_sale",
+          "tableFrom": "retained_income",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "sale_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_retained_income": {
+          "name": "created_retained_income",
+          "tableFrom": "retained_income",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "retained_income_settlement_sale": {
+          "name": "retained_income_settlement_sale",
+          "tableFrom": "retained_income",
+          "tableTo": "customer_settlements",
+          "columnsFrom": ["organization_id", "sale_id", "settlement_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "retained_income_key_1": {
+          "name": "retained_income_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "sale_id", "id"]
+        },
+        "retained_income_key_2": {
+          "name": "retained_income_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "retained_income_positive_id": {
+          "name": "retained_income_positive_id",
+          "value": "\"retained_income\".\"id\" > 0"
+        },
+        "retained_income_positive_amount": {
+          "name": "retained_income_positive_amount",
+          "value": "\"retained_income\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.retained_income_allocations": {
+      "name": "retained_income_allocations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "retained_income_allocations_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "retained_income_id": {
+          "name": "retained_income_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sale_item_id": {
+          "name": "sale_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "retained_income_allocations_organization_idx": {
+          "name": "retained_income_allocations_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_retained_income_allocations": {
+          "name": "owner_retained_income_allocations",
+          "tableFrom": "retained_income_allocations",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "retained_allocation_income_sale": {
+          "name": "retained_allocation_income_sale",
+          "tableFrom": "retained_income_allocations",
+          "tableTo": "retained_income",
+          "columnsFrom": ["organization_id", "sale_id", "retained_income_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "retained_allocation_affected_sale_line": {
+          "name": "retained_allocation_affected_sale_line",
+          "tableFrom": "retained_income_allocations",
+          "tableTo": "sale_items",
+          "columnsFrom": ["organization_id", "sale_id", "sale_item_id"],
+          "columnsTo": ["organization_id", "sale_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_retained_income_allocations": {
+          "name": "created_retained_income_allocations",
+          "tableFrom": "retained_income_allocations",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "retained_income_allocations_key_1": {
+          "name": "retained_income_allocations_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "retained_income_allocations_positive_id": {
+          "name": "retained_income_allocations_positive_id",
+          "value": "\"retained_income_allocations\".\"id\" > 0"
+        },
+        "retained_income_allocations_positive_amount": {
+          "name": "retained_income_allocations_positive_amount",
+          "value": "\"retained_income_allocations\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.business_event_changes": {
+      "name": "business_event_changes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "business_event_changes_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "business_event_id": {
+          "name": "business_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "change_kind": {
+          "name": "change_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "membership_user_id": {
+          "name": "membership_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_id": {
+          "name": "supplier_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_item_id": {
+          "name": "purchase_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_payment_id": {
+          "name": "supplier_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_payment_allocation_id": {
+          "name": "supplier_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_refund_id": {
+          "name": "supplier_refund_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_expense_id": {
+          "name": "purchase_expense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_expense_payment_id": {
+          "name": "purchase_expense_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "acquisition_expense_allocation_id": {
+          "name": "acquisition_expense_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_id": {
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sale_item_id": {
+          "name": "sale_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sale_expense_id": {
+          "name": "sale_expense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sale_expense_payment_id": {
+          "name": "sale_expense_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_payment_id": {
+          "name": "customer_payment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_payment_allocation_id": {
+          "name": "customer_payment_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_refund_id": {
+          "name": "customer_refund_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_id": {
+          "name": "return_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_item_id": {
+          "name": "return_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retained_income_id": {
+          "name": "retained_income_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retained_income_allocation_id": {
+          "name": "retained_income_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loss_id": {
+          "name": "loss_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_settlement_id": {
+          "name": "customer_settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "customer_settlement_source_allocation_id": {
+          "name": "customer_settlement_source_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_settlement_id": {
+          "name": "supplier_settlement_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "supplier_settlement_source_allocation_id": {
+          "name": "supplier_settlement_source_allocation_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before_facts": {
+          "name": "before_facts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after_facts": {
+          "name": "after_facts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reverses_change_id": {
+          "name": "reverses_change_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope_organization_id": {
+          "name": "scope_organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "coalesce(organization_id, 0)",
+            "type": "stored"
+          }
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "owner_business_event_changes": {
+          "name": "owner_business_event_changes",
+          "tableFrom": "business_event_changes",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_event_identity": {
+          "name": "change_event_identity",
+          "tableFrom": "business_event_changes",
+          "tableTo": "business_events",
+          "columnsFrom": ["business_event_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_event_owner": {
+          "name": "change_event_owner",
+          "tableFrom": "business_event_changes",
+          "tableTo": "business_events",
+          "columnsFrom": ["scope_organization_id", "business_event_id"],
+          "columnsTo": ["scope_organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_global_product": {
+          "name": "change_global_product",
+          "tableFrom": "business_event_changes",
+          "tableTo": "products",
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_membership_user": {
+          "name": "change_membership_user",
+          "tableFrom": "business_event_changes",
+          "tableTo": "users",
+          "columnsFrom": ["membership_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_reversal_identity": {
+          "name": "change_reversal_identity",
+          "tableFrom": "business_event_changes",
+          "tableTo": "business_event_changes",
+          "columnsFrom": ["reverses_change_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_reversal_owner": {
+          "name": "change_reversal_owner",
+          "tableFrom": "business_event_changes",
+          "tableTo": "business_event_changes",
+          "columnsFrom": ["scope_organization_id", "reverses_change_id"],
+          "columnsTo": ["scope_organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_inventory_item": {
+          "name": "change_inventory_item",
+          "tableFrom": "business_event_changes",
+          "tableTo": "inventory_items",
+          "columnsFrom": ["organization_id", "inventory_item_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier": {
+          "name": "change_supplier",
+          "tableFrom": "business_event_changes",
+          "tableTo": "suppliers",
+          "columnsFrom": ["organization_id", "supplier_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_purchase": {
+          "name": "change_purchase",
+          "tableFrom": "business_event_changes",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "purchase_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_purchase_item": {
+          "name": "change_purchase_item",
+          "tableFrom": "business_event_changes",
+          "tableTo": "purchase_items",
+          "columnsFrom": ["organization_id", "purchase_item_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier_payment": {
+          "name": "change_supplier_payment",
+          "tableFrom": "business_event_changes",
+          "tableTo": "supplier_payments",
+          "columnsFrom": ["organization_id", "supplier_payment_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier_payment_allocation": {
+          "name": "change_supplier_payment_allocation",
+          "tableFrom": "business_event_changes",
+          "tableTo": "supplier_payment_allocations",
+          "columnsFrom": ["organization_id", "supplier_payment_allocation_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier_refund": {
+          "name": "change_supplier_refund",
+          "tableFrom": "business_event_changes",
+          "tableTo": "supplier_refunds",
+          "columnsFrom": ["organization_id", "supplier_refund_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_purchase_expense": {
+          "name": "change_purchase_expense",
+          "tableFrom": "business_event_changes",
+          "tableTo": "purchase_expenses",
+          "columnsFrom": ["organization_id", "purchase_expense_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_acquisition_expense_allocation": {
+          "name": "change_acquisition_expense_allocation",
+          "tableFrom": "business_event_changes",
+          "tableTo": "acquisition_expense_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "acquisition_expense_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer": {
+          "name": "change_customer",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customers",
+          "columnsFrom": ["organization_id", "customer_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_sale_expense": {
+          "name": "change_sale_expense",
+          "tableFrom": "business_event_changes",
+          "tableTo": "sale_expenses",
+          "columnsFrom": ["organization_id", "sale_expense_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer_payment": {
+          "name": "change_customer_payment",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customer_payments",
+          "columnsFrom": ["organization_id", "customer_payment_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer_payment_allocation": {
+          "name": "change_customer_payment_allocation",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customer_payment_allocations",
+          "columnsFrom": ["organization_id", "customer_payment_allocation_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer_refund": {
+          "name": "change_customer_refund",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customer_refunds",
+          "columnsFrom": ["organization_id", "customer_refund_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_return": {
+          "name": "change_return",
+          "tableFrom": "business_event_changes",
+          "tableTo": "returns",
+          "columnsFrom": ["organization_id", "return_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_return_item": {
+          "name": "change_return_item",
+          "tableFrom": "business_event_changes",
+          "tableTo": "return_items",
+          "columnsFrom": ["organization_id", "return_item_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_retained_income": {
+          "name": "change_retained_income",
+          "tableFrom": "business_event_changes",
+          "tableTo": "retained_income",
+          "columnsFrom": ["organization_id", "retained_income_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_retained_income_allocation": {
+          "name": "change_retained_income_allocation",
+          "tableFrom": "business_event_changes",
+          "tableTo": "retained_income_allocations",
+          "columnsFrom": ["organization_id", "retained_income_allocation_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_loss": {
+          "name": "change_loss",
+          "tableFrom": "business_event_changes",
+          "tableTo": "losses",
+          "columnsFrom": ["organization_id", "loss_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer_settlement_id": {
+          "name": "change_customer_settlement_id",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customer_settlements",
+          "columnsFrom": ["organization_id", "customer_settlement_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_customer_settlement_source_allocation_id": {
+          "name": "change_customer_settlement_source_allocation_id",
+          "tableFrom": "business_event_changes",
+          "tableTo": "customer_settlement_source_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "customer_settlement_source_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier_settlement_id": {
+          "name": "change_supplier_settlement_id",
+          "tableFrom": "business_event_changes",
+          "tableTo": "supplier_settlements",
+          "columnsFrom": ["organization_id", "supplier_settlement_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_supplier_settlement_source_allocation_id": {
+          "name": "change_supplier_settlement_source_allocation_id",
+          "tableFrom": "business_event_changes",
+          "tableTo": "supplier_settlement_source_allocations",
+          "columnsFrom": [
+            "organization_id",
+            "supplier_settlement_source_allocation_id"
+          ],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_purchase_expense_payment": {
+          "name": "change_purchase_expense_payment",
+          "tableFrom": "business_event_changes",
+          "tableTo": "purchase_expense_payments",
+          "columnsFrom": ["organization_id", "purchase_expense_payment_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "change_sale_expense_payment": {
+          "name": "change_sale_expense_payment",
+          "tableFrom": "business_event_changes",
+          "tableTo": "sale_expense_payments",
+          "columnsFrom": ["organization_id", "sale_expense_payment_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "business_event_changes_key_1": {
+          "name": "business_event_changes_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["scope_organization_id", "id"]
+        },
+        "business_event_changes_key_2": {
+          "name": "business_event_changes_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["business_event_id", "sequence"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "business_event_changes_positive_id": {
+          "name": "business_event_changes_positive_id",
+          "value": "\"business_event_changes\".\"id\" > 0"
+        },
+        "one_typed_business_subject": {
+          "name": "one_typed_business_subject",
+          "value": "num_nonnulls(product_id, membership_user_id, inventory_item_id, supplier_id, purchase_id, purchase_item_id, supplier_payment_id, supplier_payment_allocation_id, supplier_refund_id, purchase_expense_id, purchase_expense_payment_id, acquisition_expense_allocation_id, customer_id, sale_id, sale_item_id, sale_expense_id, sale_expense_payment_id, customer_payment_id, customer_payment_allocation_id, customer_refund_id, return_id, return_item_id, retained_income_id, retained_income_allocation_id, loss_id, customer_settlement_id, customer_settlement_source_allocation_id, supplier_settlement_id, supplier_settlement_source_allocation_id) = 1"
+        },
+        "change_subject_matches_scope": {
+          "name": "change_subject_matches_scope",
+          "value": "((organization_id IS NULL AND product_id IS NOT NULL) OR (organization_id IS NOT NULL AND product_id IS NULL))"
+        },
+        "preserved_business_facts": {
+          "name": "preserved_business_facts",
+          "value": "(before_facts IS NOT NULL OR after_facts IS NOT NULL)"
+        },
+        "positive_change_sequence": {
+          "name": "positive_change_sequence",
+          "value": "sequence > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.business_events": {
+      "name": "business_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "business_events_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "scope": {
+          "name": "scope",
+          "type": "business_event_scope",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "context_organization_id": {
+          "name": "context_organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action_type": {
+          "name": "action_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reverses_event_id": {
+          "name": "reverses_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope_organization_id": {
+          "name": "scope_organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "generated": {
+            "as": "coalesce(organization_id, 0)",
+            "type": "stored"
+          }
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "owner_business_events": {
+          "name": "owner_business_events",
+          "tableFrom": "business_events",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "event_actor": {
+          "name": "event_actor",
+          "tableFrom": "business_events",
+          "tableTo": "users",
+          "columnsFrom": ["actor_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "event_context": {
+          "name": "event_context",
+          "tableFrom": "business_events",
+          "tableTo": "organizations",
+          "columnsFrom": ["context_organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "event_reversal_identity": {
+          "name": "event_reversal_identity",
+          "tableFrom": "business_events",
+          "tableTo": "business_events",
+          "columnsFrom": ["reverses_event_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "event_reversal_owner": {
+          "name": "event_reversal_owner",
+          "tableFrom": "business_events",
+          "tableTo": "business_events",
+          "columnsFrom": ["scope_organization_id", "reverses_event_id"],
+          "columnsTo": ["scope_organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "business_events_key_1": {
+          "name": "business_events_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["scope_organization_id", "id"]
+        },
+        "business_events_key_2": {
+          "name": "business_events_key_2",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        },
+        "business_events_key_3": {
+          "name": "business_events_key_3",
+          "nullsNotDistinct": false,
+          "columns": ["id", "scope_organization_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "business_events_positive_id": {
+          "name": "business_events_positive_id",
+          "value": "\"business_events\".\"id\" > 0"
+        },
+        "business_event_scope_matches_owner": {
+          "name": "business_event_scope_matches_owner",
+          "value": "((scope = 'organization' AND organization_id IS NOT NULL) OR (scope = 'global_product' AND organization_id IS NULL))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.losses": {
+      "name": "losses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "losses_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inventory_item_id": {
+          "name": "inventory_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_id": {
+          "name": "purchase_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sale_id": {
+          "name": "sale_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_on": {
+          "name": "occurred_on",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reversed_event_id": {
+          "name": "reversed_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_event_id": {
+          "name": "created_event_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "losses_organization_idx": {
+          "name": "losses_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "owner_losses": {
+          "name": "owner_losses",
+          "tableFrom": "losses",
+          "tableTo": "organizations",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "loss_inventory_item": {
+          "name": "loss_inventory_item",
+          "tableFrom": "losses",
+          "tableTo": "inventory_items",
+          "columnsFrom": ["organization_id", "inventory_item_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "loss_purchase": {
+          "name": "loss_purchase",
+          "tableFrom": "losses",
+          "tableTo": "purchases",
+          "columnsFrom": ["organization_id", "purchase_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "loss_sale": {
+          "name": "loss_sale",
+          "tableFrom": "losses",
+          "tableTo": "sales",
+          "columnsFrom": ["organization_id", "sale_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "created_losses": {
+          "name": "created_losses",
+          "tableFrom": "losses",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "created_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "losses_reversed": {
+          "name": "losses_reversed",
+          "tableFrom": "losses",
+          "tableTo": "business_events",
+          "columnsFrom": ["organization_id", "reversed_event_id"],
+          "columnsTo": ["organization_id", "id"],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "losses_key_1": {
+          "name": "losses_key_1",
+          "nullsNotDistinct": false,
+          "columns": ["organization_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "losses_positive_id": {
+          "name": "losses_positive_id",
+          "value": "\"losses\".\"id\" > 0"
+        },
+        "losses_amount_nonnegative": {
+          "name": "losses_amount_nonnegative",
+          "value": "\"losses\".\"amount\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.acquisition_allocation_method": {
+      "name": "acquisition_allocation_method",
+      "schema": "public",
+      "values": ["proportional_to_value", "equal_per_unit", "manual"]
+    },
+    "public.business_event_scope": {
+      "name": "business_event_scope",
+      "schema": "public",
+      "values": ["organization", "global_product"]
+    },
+    "public.customer_settlement_outcome": {
+      "name": "customer_settlement_outcome",
+      "schema": "public",
+      "values": ["refund", "reassignment", "retained_income"]
+    },
+    "public.expense_completeness": {
+      "name": "expense_completeness",
+      "schema": "public",
+      "values": ["unknown", "confirmed_zero", "accounted_for"]
+    },
+    "public.inventory_status": {
+      "name": "inventory_status",
+      "schema": "public",
+      "values": ["china", "brasil", "eua", "bolivia", "shipped", "received"]
+    },
+    "public.membership_role": {
+      "name": "membership_role",
+      "schema": "public",
+      "values": ["owner", "editor", "viewer"]
+    },
+    "public.purchase_lifecycle": {
+      "name": "purchase_lifecycle",
+      "schema": "public",
+      "values": ["open", "completed", "canceled"]
+    },
+    "public.sale_status": {
+      "name": "sale_status",
+      "schema": "public",
+      "values": ["unapproved", "available", "held", "collection"]
+    },
+    "public.supplier_settlement_outcome": {
+      "name": "supplier_settlement_outcome",
+      "schema": "public",
+      "values": ["refund", "reassignment", "loss"]
+    },
+    "public.supplier_type": {
+      "name": "supplier_type",
+      "schema": "public",
+      "values": ["person", "business"]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": ["global_admin", "editor", "user"]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

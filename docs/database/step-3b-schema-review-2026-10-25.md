@@ -1,10 +1,13 @@
 # Step 3B — schema reconciliation review
 
-**Date:** 2026-10-25. **Status:** Review packet; no executable schema or migration.
+**Date:** 2026-10-25. **Status:** S01–S10 approved by WilliamPhilippe on
+2026-10-25: “Schema is approved. Implement it.” The original draft inventory below
+is preserved for reconciliation. See the [implementation record](step-3b-implementation-2026-10-25.md)
+for executable artifacts, exact scope/deletion handling and workflow deferrals.
 The owner approved the [implementation plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 with a separate physical-schema review gate. Step 3A does not remove that gate.
-This packet inventories the current DBML and makes the next choices reviewable.
-It does not claim that all cross-record enforcement is already designed.
+This packet inventories the preimplementation DBML. Approval covers the base
+structural delivery; cross-record business writers remain explicitly deferred.
 
 ## Sources and precedence
 
@@ -18,8 +21,9 @@ below covers physical draft declarations, not one SQL table per entity.
 
 ## Decisions for owner review
 
-The following remain **recommendations**. Approval of 3A and selection of Drizzle
-are not approval of these physical-schema changes.
+The following recommendations were subsequently **approved** by the owner on
+2026-10-25. The implementation record resolves their flagged storage shapes and
+names the S09/S10 deferrals. The earlier 3A approval alone did not cover them.
 
 | ID | Recommendation | Why / alternative | Primary owner |
 | --- | --- | --- | --- |
@@ -831,7 +835,6 @@ and source/outcome context under S09. Reference names are preserved for traceabi
 
 Inventory totals: **33 tables, 310 columns, 11 enums and 158 references**.
 
-Before generation, record the owner's decisions above, finish the flagged shape
-checks, update DBML/design consistently, and record the explicit workflow
-deferrals or their implementation scope. Do not lift Step 3A's migration gate
-merely because this inventory exists.
+The original review gate required approval, shape reconciliation and explicit
+workflow deferrals before generation. Those outcomes now live in the dated
+implementation record; this original inventory remains the comparison baseline.

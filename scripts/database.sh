@@ -20,15 +20,19 @@ bounded() {
   child=$!
   if ((seconds > 0)); then
     (
+      delay=""
+      # Install cleanup before starting the delay. A fast client can finish
+      # immediately; cancelling its watchdog must not leave a sleeping process
+      # holding the caller's captured output pipe open.
+      trap '[[ -z $delay ]] || kill "$delay" 2>/dev/null || true' EXIT
+      trap 'exit 0' TERM INT
       sleep "$seconds" &
       delay=$!
-      trap 'kill "$delay" 2>/dev/null || true' EXIT
-      trap 'exit 0' TERM INT
       wait "$delay"
       kill -TERM "$child" 2>/dev/null || exit 0
       sleep 2
       kill -KILL "$child" 2>/dev/null || true
-    ) &
+    ) </dev/null >/dev/null 2>&1 &
     timer=$!
   fi
   trap 'kill -TERM "$child" ${timer:+"$timer"} 2>/dev/null || true; wait "$child" 2>/dev/null || true; exit 143' TERM
@@ -65,13 +69,10 @@ case "$operation" in
     esac ;;
   *) usage >&2; exit 2 ;;
 esac
-# Step 3B must deliberately replace this gate after physical-schema approval.
-# Refuse even without Docker/Doppler setup, before any secret fetch or mutation.
+# Integration tests always require disposable storage, before any secret fetch.
 if [[ $operation == run ]]; then
   for argument in "$@"; do
     case "$argument" in
-      db:migrate|db:generate)
-        fail 'Schema/migrations pending approval (Step 3B). No database or migration files were changed.' ;;
       test:db|test:integration)
         [[ $target == test ]] || fail 'Database integration tests require the explicit test target.' ;;
     esac

@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import type { Client, PoolClient } from "pg";
 import { validateDatabaseConfig } from "./config.js";
 import type { DatabaseConfig } from "./config.js";
+import * as schema from "./schema/index.js";
 
 export const databaseLimits = {
   connections: 5,
@@ -31,7 +32,7 @@ export function createDatabase(input: DatabaseConfig) {
     statement_timeout: databaseLimits.statementMs,
     query_timeout: databaseLimits.queryMs,
   });
-  const db = drizzle({ client: pool });
+  const db = drizzle({ client: pool, schema });
   let closing: Promise<void> | undefined;
   let ready = false;
   const clients = new Set<Client>();
