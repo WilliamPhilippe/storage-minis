@@ -1,5 +1,6 @@
 import { createDatabase, readDatabaseConfig } from "../dist/index.js";
 import type { Database } from "../dist/index.js";
+import { formatDatabaseError } from "../src/diagnostics.js";
 
 export async function runDatabaseCommand(
   action: (database: Database) => Promise<void>,
@@ -18,8 +19,11 @@ export async function runDatabaseCommand(
     closing ??= (async () => {
       try {
         await database?.close();
-      } catch {
-        console.error("Database command cleanup failed.");
+      } catch (error) {
+        console.error(
+          "Database command cleanup failed.",
+          formatDatabaseError(error),
+        );
         process.exitCode ??= 1;
       }
     })();
@@ -45,9 +49,10 @@ export async function runDatabaseCommand(
   try {
     database = createDatabase(readDatabaseConfig(process.env));
     await action(database);
-  } catch {
+  } catch (error) {
     console.error(
       "Database command failed. Verify configuration, credentials and availability.",
+      formatDatabaseError(error),
     );
     process.exitCode ??= 1;
   } finally {

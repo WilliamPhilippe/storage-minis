@@ -71,7 +71,7 @@ apps/
   api/tsconfig.json
   api/vitest.config.mts
 packages/
-  db/package.json      # @storage-minis/db; compiled connection package and guarded CLI
+  db/package.json      # @storage-minis/db; compiled schema/connection package and CLI
   db/tsconfig.json
   db/vitest.config.mts
 ```
@@ -79,9 +79,10 @@ packages/
 Dependencies are saved with exact versions, and installs enforce engine
 compatibility. Development tools are installed at the root for use from a full
 workspace checkout. Turborepo 2.11.10 schedules and caches the existing checks.
-Step 3A adds the DB runtime dependencies, build, connection check and guarded
-migration commands. API commands, business schema and the React frontend remain
-later deliveries. Docker Compose provides the tooling runner
+Step 3A adds the DB runtime dependencies, build and connection check. Step 3B
+adds the approved structural schema, migrations and constraint tests. Business
+writers, API commands and the React frontend remain later deliveries.
+Docker Compose provides the tooling runner
 and separate [local PostgreSQL services](#local-postgresql).
 This workspace setup is partial progress toward [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26);
 its remaining prerequisites and acceptance criteria still apply.
@@ -93,25 +94,47 @@ based on the Docker Official Image `node:24.22.1-bookworm-slim`, pinned by diges
 in [Dockerfile.tooling](../../docker/Dockerfile.tooling), with pnpm 12.15.0. Docker is
 needed on the host; Node, pnpm and application secrets are not.
 
-Choose a **unique project name for each checkout**, including checkouts with the
-same directory basename. This checkout uses `storage-minis-beijing`; another
-checkout could use `storage-minis-feature-x`. Never share a name between checkouts.
-From the repository root:
+After the [one-time Doppler browser login](#doppler-host-setup-and-verification),
+run `pnpm docker:setup` with the pinned host Node/pnpm versions. First setup asks
+for a unique project name and development/test ports, saving only those three
+values in Git-ignored `.env.compose`. Choose `storage-minis-beijing`, `5433`, and
+`5434` to reuse this checkout's existing resources. Repeated setup preserves the
+file and data. Later startup needs only `pnpm docker:up`.
+
+Docker-only users can execute the same sequence without host Node/pnpm:
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-beijing
-./scripts/tooling.sh build
-./scripts/tooling.sh init
+./scripts/configure-local.sh
+docker compose --env-file .env.compose --file compose.yaml build tooling
+docker compose --env-file .env.compose --file compose.yaml pull postgres
+docker compose --env-file .env.compose --file compose.yaml run --rm --no-deps tooling-init
+./scripts/tooling.sh run pnpm install --frozen-lockfile
+./scripts/database.sh up dev
+```
+
+For noninteractive configuration, first use:
+
+```sh
+./scripts/configure-local.sh --project UNIQUE_PROJECT --port 5433 --test-port 5434
+```
+
+This refuses to overwrite an existing file. Edit the saved nonsecret values
+deliberately when necessary. For later startup and checks:
+
+```sh
+pnpm docker:up
 ./scripts/tooling.sh run node --version
 ./scripts/tooling.sh run pnpm --version
 ./scripts/tooling.sh run pnpm store path
-./scripts/tooling.sh run pnpm install --frozen-lockfile
 ./scripts/tooling.sh run pnpm list --recursive --depth -1
-./scripts/tooling.sh run pnpm typecheck
-./scripts/tooling.sh run pnpm lint
-./scripts/tooling.sh run pnpm format:check
-./scripts/tooling.sh down
+./scripts/tooling.sh run pnpm check
 ```
+
+The setup package script chains configuration, native build/pull/init, frozen
+installation and the existing database startup helper. It stops on the first
+failed command. Startup itself performs none of the installation/migration steps.
+Use `pnpm docker:migrate` explicitly to apply pending committed migrations after
+review. Ordinary startup retains both development data and migration history.
 
 Expected versions are `v24.22.1` and `12.15.0`, store `/pnpm/store/v11`, and three
 private workspace packages. Build before init; repeat init safely when creating
@@ -126,7 +149,10 @@ No ports are published and no database starts. The launcher locates the checkout
 from its own path, so later invocations may run from another working directory.
 It discovers Docker on PATH, then the Docker Desktop bundled path. Set
 `DOCKER_BIN` to an explicit executable path if needed. Docker context/client
-settings remain on the host. Checkout `.env` and `COMPOSE_ENV_FILES` are ignored.
+settings remain on the host. Helpers load literal, allowlisted values from
+`.env.compose`, then pass that explicit env file to Compose. Checkout `.env` and
+ambient `COMPOSE_ENV_FILES` are ignored. The saved file is never executed as shell
+code. Missing/duplicate/unknown keys and invalid values fail before Docker runs.
 
 Five project-scoped named volumes store root/API/DB dependencies, the pnpm store
 and Turbo cache. `nocopy` preserves host trees without importing their native
@@ -141,7 +167,7 @@ need their own verification.
 
 Run any [development check](#development-checks) by prefixing it with
 `./scripts/tooling.sh run`. `pnpm check` now includes meaningful DB unit tests.
-Use `run-db test` with the matching Doppler config for live integration tests;
+Use `run-db test` for live integration tests; it selects Doppler config `test`;
 ordinary `run` does not inject database credentials.
 
 ### Doppler host setup and verification
@@ -149,7 +175,7 @@ ordinary `run` does not inject database credentials.
 Doppler runs on the **host** so it can supply values before host Compose parses
 configuration. It is not installed in the Node image. The pinned CLI is 3.77.1;
 this machine's owner installed it through Homebrew at `/opt/homebrew/bin/doppler`.
-Use the explicit override below for that installation. The launcher rejects
+The launcher discovers that executable on PATH without an override. It rejects
 other versions, including an incidental Homebrew upgrade.
 
 For a fresh macOS arm64 setup, the approved standalone installation avoids PATH
@@ -176,15 +202,14 @@ and shell-profile edits. Verify the official release checksum before extraction:
 
 Linux/Intel require the corresponding official 3.77.1 artifact/checksum; only
 macOS arm64 is verified here. No automatic installation or upgrade is performed.
-For the standalone path, omit `TOOLING_DOPPLER_BIN` below. From the repository root,
-create the parent directories **before** login, then complete browser approval:
+From the repository root, create the parent directories **before** login, then
+complete browser approval. For the standalone installation, substitute its full
+executable path for `doppler`:
 
 ```sh
-export TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler
 mkdir -p "$HOME/.config/storage-minis/doppler"
 chmod 700 "$HOME/.config/storage-minis/doppler"
-"${TOOLING_DOPPLER_BIN:-$HOME/.local/share/storage-minis/tools/doppler/3.77.1/doppler}" \
-  --config-dir "$HOME/.config/storage-minis/doppler" login --scope "$PWD"
+doppler --config-dir "$HOME/.config/storage-minis/doppler" login --scope "$PWD"
 ```
 
 Use the Doppler project `storage-minis`, config `dev`, with the harmless entry
@@ -196,88 +221,108 @@ in the dedicated host directory, separate from
 existing global Doppler state.
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-beijing
-export DOPPLER_PROJECT=storage-minis
-export DOPPLER_CONFIG=dev
-unset DOPPLER_TOKEN
 ./scripts/tooling.sh verify-env
 ```
 
-The command validates the marker on the host before launching Compose, then
-passes only that named value to a direct Node assertion. Output is pass/fail;
+After local setup, this optional command validates the marker on the host before
+launching Compose, then passes only that named value to a direct Node assertion. Output is pass/fail;
 upstream diagnostics are suppressed, and a failed fetch exits nonzero before
 the container starts. Check the selected project/config, login directory, pinned
 CLI and network if verification fails. No token enters the container.
 Managed values override conflicting ambient values; `.env` is never sourced.
 `--no-fallback` disables reading and writing encrypted snapshots. Each launch
 fetches current values; running processes do not receive rotations automatically.
-The pinned CLI has no `--no-interactive` flag; verification instead closes stdin
+The pinned `doppler run` has no `--no-interactive` flag; verification closes stdin
 and performs browser authorization separately. Requests use a ten-second timeout
 and one attempt. Ordinary build/init/run/down never invoke Doppler.
 
 | Variable | Source and consumer |
 | --- | --- |
-| `COMPOSE_PROJECT_NAME` | Explicit unique checkout setting; host Compose resource scope. |
+| `COMPOSE_PROJECT_NAME` | Saved in `.env.compose` once; unique host Compose resource scope. |
+| `POSTGRES_PORT`, `POSTGRES_TEST_PORT` | Saved nonsecret ports in `.env.compose`; distinct defaults 5433/5434. |
 | `DOCKER_BIN` | Optional host Docker executable override; launcher only. |
-| `TOOLING_DOPPLER_BIN` | Optional pinned host CLI override; default standalone path above. |
+| `TOOLING_DOPPLER_BIN` | Optional host CLI override; otherwise discover on PATH, then the approved standalone path. Version 3.77.1 is checked. |
 | `TOOLING_DOPPLER_CONFIG_DIR` | Optional host credential-directory override; default `$HOME/.config/storage-minis/doppler`. |
-| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Explicit nonsecret selection: `storage-minis` / `dev`. |
+| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Normally omitted: target selects `storage-minis` / `dev` or `test`; contradictory explicit overrides fail. |
 | `FOUNDATION_TOOLING_PROBE` | Doppler-managed harmless verification value; host assertion and one container only. |
 | `PNPM_CONFIG_STORE_DIR` | Fixed inside tooling at `/pnpm/store`; no host configuration change. |
 
 ### Shutdown and explicit storage removal
 
-`./scripts/tooling.sh down` stops the tooling-file resources and preserves
-all five volumes. Use `./scripts/database.sh down` for whole-project shutdown
-when PostgreSQL services have been started. There is no background tooling
-container after a finished
-command. To discard **all tooling dependencies and caches for one checkout**, use
-the separate destructive command below from its repository root. Confirm the
-project name first; subsequent use needs init and frozen install again.
+Use the host [Docker lifecycle commands](../../README.md#docker-lifecycle-commands)
+for the complete project. Docker Desktop supplies `docker compose`; a separate
+`docker-compose` installation is unnecessary. Run native aliases from the root;
+Docker must be on PATH. They follow normal Docker context behavior and use
+`--env-file .env.compose --file compose.yaml` explicitly.
+The remaining helpers select the canonical file/project explicitly, ignore
+ambient file/profile overrides, and locate the checkout from their own path.
+
+`docker:stop` stops services without removing containers or named volumes;
+`docker:stop:test` affects only test PostgreSQL. Test tmpfs is discarded on stop.
+`docker:prune` removes the project's containers (including orphans) and network,
+preserving all named volumes and images. These operations, status, and logs work
+without Doppler. They execute on the host, outside Turbo and the tooling runner.
+
+To erase **development data and all dependency/cache volumes for one checkout**:
 
 ```sh
-docker compose --env-file /dev/null --file compose.yaml \
-  --project-directory "$PWD" --project-name "$COMPOSE_PROJECT_NAME" \
-  --profile tools down --volumes
+pnpm docker:prune:volumes --confirm storage-minis-beijing
+# Docker-only equivalent:
+./scripts/reset-volumes.sh --confirm storage-minis-beijing
 ```
 
-Never use global pruning for checkout cleanup. Step 1 adds no database volumes.
+The volume helper obtains declared keys from `docker compose config --volumes`,
+prints their project-scoped names, and checks each existing volume's Compose project/logical-volume labels before changing any resources.
+Missing/wrong confirmation, failed inventory/inspection, or an ownership mismatch
+refuses teardown. Correct confirmation delegates removal to native full-profile
+`down --volumes --remove-orphans --timeout 10`, covering the owned
+`dependencies`, `api-dependencies`, `db-dependencies`,
+`pnpm-store`, `turbo`, and `pgdata` volumes. Other projects and images are retained.
+The supported local model has no external/custom-named volumes; adopting those
+requires a reviewed ownership contract. An in-use volume fails deletion instead
+of forcing another container to release it. Repeat cleanup tolerates missing resources.
+
+After full deletion, rerun `pnpm docker:setup`; `.env.compose` survives Docker
+volume deletion.
+For narrower cleanup, `database.sh reset dev --confirm PROJECT` deletes only
+development database storage; `reset test --confirm PROJECT` discards only test
+state. Both preserve the five tooling volumes. With the canonical file,
+`down --volumes` includes development storage even when the tools profile is
+selected; use the confirmed helper for full deletion.
+
+Never use global pruning for checkout cleanup. Ordinary lifecycle commands
+preserve development storage; full volume deletion is a separate operation.
 See the [approval and verification record](../../docs/technical/technical-direction.md#step-1-docker-tooling-2026-10-24)
 for actual evidence and remaining limits.
 
 ## Local PostgreSQL
 
-Step 2 adds [compose.postgres.yaml](../../compose.postgres.yaml), explicitly combined
-with the tooling file by [database.sh](../../scripts/database.sh). PostgreSQL runs in
+The canonical [compose.yaml](../../compose.yaml) contains all local services.
+[database.sh](../../scripts/database.sh) supplies target/config/password guards.
+PostgreSQL runs in
 separate development and test containers, using the Docker Official Image
 `postgres:18.6-bookworm` pinned by digest. The database is initially empty of
 application tables; the existing DBML is not applied. Step 3A supplies the
 [Drizzle connection package](#drizzle-tooling).
 
-Reuse the checkout project name from Docker tooling. Use Doppler project
+The helpers load the saved checkout settings. They use Doppler project
 `storage-minis`: `POSTGRES_PASSWORD` in config `dev`, and
 `POSTGRES_TEST_PASSWORD` in config `test`. The passwords must differ. The
-config must match the command target; tests never fall back to `dev`.
+config is selected from the command target; tests never fall back to `dev`.
+Explicit contradictory Doppler environment overrides are rejected.
 Use the [existing dedicated browser login](#doppler-host-setup-and-verification).
 No host PostgreSQL client or additional Node dependencies are required.
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-beijing
-export DOPPLER_PROJECT=storage-minis
-export DOPPLER_CONFIG=dev
-export TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler
-unset DOPPLER_TOKEN
-
-./scripts/database.sh pull
-./scripts/database.sh up dev
-DOPPLER_CONFIG=test ./scripts/database.sh up test
+pnpm docker:up
+pnpm docker:up:test
 ./scripts/database.sh check dev
-DOPPLER_CONFIG=test ./scripts/database.sh check test
+./scripts/database.sh check test
 ./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
-DOPPLER_CONFIG=test ./scripts/database.sh psql test -c 'SELECT version();'
+./scripts/database.sh psql test -c 'SELECT version();'
 ```
 
-Pull explicitly before startup; the pull deadline is ten minutes. Each `up`
+Setup pulls PostgreSQL explicitly before startup. Each `up`
 waits up to 60 seconds for health, then performs a password-authenticated SQL
 identity check with a 15-second deadline. Success means the selected database,
 role `postgres` and timezone `UTC` match. `pg_isready` health alone does not prove
@@ -300,15 +345,15 @@ checks use five seconds.
 | Setting | Source / behavior |
 | --- | --- |
 | `POSTGRES_PASSWORD`, `POSTGRES_TEST_PASSWORD` | Owner-managed Doppler keys; no values in this repository. Only the selected key is fetched and passed to the matching service/client. |
-| `POSTGRES_PORT` | Nonsecret host override, default 5433. |
-| `POSTGRES_TEST_PORT` | Nonsecret host override, default 5434. Must differ from the development port. |
-| `COMPOSE_PROJECT_NAME` | Explicit unique checkout name; determines network and development volume ownership. |
-| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Must explicitly select project `storage-minis` and config matching the target: `dev` or `test`. Another mapping is rejected. |
+| `POSTGRES_PORT` | Saved nonsecret setting in `.env.compose`, default 5433. |
+| `POSTGRES_TEST_PORT` | Saved nonsecret setting in `.env.compose`, default 5434. Must differ from the development port. |
+| `COMPOSE_PROJECT_NAME` | Saved unique checkout name in `.env.compose`; determines network and development volume ownership. |
+| `DOPPLER_PROJECT`, `DOPPLER_CONFIG` | Selected automatically as `storage-minis` and the target (`dev`/`test`); contradictory explicit overrides are rejected. |
 | Existing Docker/Doppler executable and credential-directory overrides | Same as Step 1. No new installation or shell initialization. |
 | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Generated for the client from its explicit target; ambient libpq configuration is ignored. |
 
-For a second checkout, choose a different project name and export, for example,
-`POSTGRES_PORT=5435` and `POSTGRES_TEST_PORT=5436`. Never share a project name
+For a second checkout, save a different project name and ports during setup,
+for example 5435 and 5436. Never share a project name
 between checkouts. An occupied port fails; the launcher does not choose another
 port or database. Ports accept integers 1–65535 without leading zeros.
 
@@ -317,23 +362,23 @@ ambient passwords, rejects service tokens, ignores `.env` and ambient Compose
 file selections, and disables fallback snapshots. Missing secrets, wrong
 project/config, missing browser login or failed network access stop the command.
 Do not print resolved Compose configuration or pass passwords in command-line
-URIs. Ordinary tooling and database stop/log/reset/pull commands need no Doppler
-access. No credentials are baked into the Node image. `run-db` passes only the selected
-connection components to the process and relevant uncached Turbo tasks; Doppler
+URIs. Ordinary tooling, native stop/log/pull commands, and database reset need no
+Doppler access. No credentials are baked into the Node image. `run-db` passes only
+the selected connection components to the process and relevant uncached Turbo tasks; Doppler
 login state remains on the host.
 
 ### Database lifecycle and reset
 
-Tooling-only commands may report the DB containers as “orphans” because they
-read only `compose.yaml`. This is expected with the optional database file;
-keep those containers and use the combined launcher for project shutdown.
+All commands now use the same Compose model. Development is the default service;
+`test`, `tools`, and `db-tools` are optional profiles. Full-project stop/down/status
+uses `--profile '*'` to include optional services.
 
 ```sh
-./scripts/database.sh logs dev       # Follow selected service; Ctrl-C exits
-./scripts/database.sh logs test
-./scripts/database.sh stop test      # Discards test data
-./scripts/database.sh stop dev       # Preserves development data
-./scripts/database.sh down           # Stops project; preserves named volumes
+docker compose --env-file .env.compose --file compose.yaml logs --follow postgres       # Follow selected service; Ctrl-C exits
+docker compose --env-file .env.compose --file compose.yaml logs --follow postgres_test
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test      # Discards test data
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres       # Preserves development data
+docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans --timeout 10           # Stops project; preserves named volumes
 ```
 
 Development storage is `<COMPOSE_PROJECT_NAME>_pgdata`, mounted at
@@ -353,8 +398,8 @@ test storage to pick up its current credential.
 To deliberately discard one target, confirm the exact project name:
 
 ```sh
-./scripts/database.sh reset test --confirm "$COMPOSE_PROJECT_NAME"
-./scripts/database.sh reset dev --confirm "$COMPOSE_PROJECT_NAME"
+./scripts/database.sh reset test --confirm storage-minis-beijing
+./scripts/database.sh reset dev --confirm storage-minis-beijing
 ```
 
 Test reset stops/removes only the test container and its tmpfs. Development
@@ -383,8 +428,8 @@ With PostgreSQL started and the project/login settings above:
 ```sh
 ./scripts/tooling.sh run pnpm build
 ./scripts/tooling.sh run-db dev pnpm db:check
-DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm db:check
-DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm test:db
+./scripts/tooling.sh run-db test pnpm db:check
+./scripts/tooling.sh run-db test pnpm test:db
 ```
 
 `run-db` delegates target validation and selected-key Doppler injection to the
@@ -407,9 +452,11 @@ The local pool has at most five clients, a 10s idle timeout, 2s acquisition/conn
 timeout, 3s statement timeout and 4s query timeout. `check()` verifies authenticated
 database/user/UTC within 6s. `close()` drains owned work for up to 10s, then ends
 tracked sockets and rejects if a caller leaked a checked-out client. Command
-processes enforce a final exit deadline and handle SIGINT/SIGTERM. Check errors
-are sanitized; future API code still owns safe translation of ordinary query
-errors. Production pool, TLS and role policies remain T04 decisions.
+processes enforce a final exit deadline and handle SIGINT/SIGTERM. Commands log
+the actual error message, nested causes and driver codes, with password and
+connection-URL credential redaction. Library errors retain their causes; future
+API code still owns safe translation of errors. Production pool, TLS and role
+policies remain T04 decisions.
 
 The build emits ESM JavaScript and declarations to `packages/db/dist/`. Package
 exports resolve `@storage-minis/db` through `dist/index.js` / `dist/index.d.ts`.
@@ -417,21 +464,46 @@ Build before direct package typechecks or typed lint; root `pnpm check` and
 `pnpm typecheck` arrange the dependency automatically. Step 4 must add the actual
 API workspace dependency and use these compiled exports, not source aliases.
 
-### Migration approval gate
+### Schema generation and migration application
 
-`pnpm db:generate` and `pnpm db:migrate` are separate uncached commands. Both
-currently return nonzero with “Schema/migrations pending approval (Step 3B)”.
-The host launcher refuses a migration request before fetching Doppler secrets;
-package wrappers and direct Drizzle configs also enforce the gate. There is no
-placeholder schema, dummy table, migration folder or empty journal.
+The owner approved S01–S10 on 2026-10-25. The compiled package exports `schema`
+from `src/schema/index.ts`; SQL/snapshots/journal live in `packages/db/drizzle/`
+and applied history lives in `drizzle.__drizzle_migrations`. See the
+[schema reconciliation and deferred writer contracts](../database/step-3b-implementation-2026-10-25.md).
 
-Step 3B must deliberately replace the gate after physical-schema approval,
-complete the CLI execution wrappers/validated migration credentials, and prove
-replay before first development application. The checked configuration records
-`src/schema/index.ts`, output `packages/db/drizzle/` and history location
-`drizzle.__drizzle_migrations`. Generation will be offline; application will be
-explicit. No `push`, automatic startup migration, seed or production migration
-is available. Preserve SQL/snapshots/journal as reviewed source once delivered.
+```sh
+# Offline comparison/generation; review every changed artifact:
+./scripts/tooling.sh run pnpm db:generate
+./scripts/tooling.sh run pnpm db:generate -- --name describe_change
+# Explicit pending migration application after first setup/review:
+pnpm docker:migrate
+# Disposable test target only:
+./scripts/tooling.sh run-db test pnpm db:migrate
+```
+
+Commands remain uncached and separate. Startup applies no migrations; preserved
+volumes keep both schema and history after a restart. Application skips committed
+history already applied and validates local component credentials. Missing/empty
+artifacts fail before connecting. The native Drizzle ORM runner receives 5s lock /
+30s statement / 30s idle-in-transaction limits and a 2s connection limit; its supervisor
+allows 120s, forwards signals and forces termination after 5s. On failure, the
+wrapper logs actual messages, nested PostgreSQL causes and error codes with
+password redaction. Application calls the installed
+`drizzle-orm/node-postgres/migrator` directly in a supervised child process,
+preserving native SQL/journal/history and transactions. The owner approved this
+on 2026-10-25 because Kit 0.31.11's progress renderer discards migration errors.
+Generation still uses Kit. The Doppler launcher forwards the command's stderr
+while suppressing only Doppler's own fetch diagnostics.
+Inspect history after interruption before retrying. Use these wrappers for
+supervision; raw CLI or runner use bypasses the process bounds.
+
+The wrapper fixes its working directory to the DB package and uses relative
+`./drizzle` output for pinned Kit snapshot compatibility. It rejects generation
+without the native success marker because Kit can catch an exception and exit
+zero. Generation needs no DB/Doppler. No `push`, startup migration, seed, production
+target or automatic down migration is supplied. Commit SQL/snapshots/journal
+together; preserve applied history and make subsequent corrections with forward
+migrations. The custom immutable base36 function is owned by the base SQL.
 
 ### Database integration tests
 
@@ -440,13 +512,18 @@ runs uncached. Individual tests have a 30s limit; the suite supervisor allows
 120s, then terminates its process group, with a 10s forced-cleanup bound. Tests
 exercise real PostgreSQL queries, transaction rollback, timeouts, wrong-password
 failure, idle disconnection/recovery, bounded shutdown, normal ESM consumption
-and signal cleanup. They create no business or dummy tables. Unit launcher tests
+and signal cleanup. Schema tests reset disposable test schemas, apply the full
+chain and check catalog coverage, repeat application, full-chain rollback,
+generated identities, amount/date boundaries, scope/party rejection, typed audit
+survival and real concurrent unique-index races. Fixtures are cleaned afterward.
+These fixture SQL operations do not implement business writers. Unit launcher tests
 use temporary CLI fixtures; they are not real Doppler authentication evidence.
 
 The development target is rejected before an integration payload starts. Test
 cleanup never drops development storage. Stop the test service when finished;
-its tmpfs is discarded. Business constraints, concurrent commitments, audit
-survival and migration replay remain Step 3B/T01/T06 acceptance work.
+its tmpfs is discarded. Aggregate reconciliation, permanent locks, authorized
+transitions, typed snapshot contracts and actual deletion-versus-funding races
+remain T01/T06 business-operation acceptance work.
 
 ## Development checks
 

@@ -12,6 +12,17 @@ containing Fastify. The image requirement supersedes this plan's original use of
 the generic tooling container as the application runtime. The detailed image and
 launcher recommendations below remain pending implementation approval.
 
+**Merge reconciliation, 2026-10-28:** PR #106 is now merged into `main` at
+`db74a6541804b3ed04529427f018723a399d479b`. It supplies the approved Step 3B
+structural schema/migrations and standard Compose one-time setup. The starting
+snapshot and P4-01 sequencing exception below describe the earlier planning
+state; that exception is no longer needed for the delivered structural scope.
+See the [Step 3B implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md)
+and [current local setup](../technical/local-development.md) for inherited behavior.
+Before implementation, reconcile the proposed launcher, Compose and migration
+handling below with those approved records. Step 4 recommendations still await
+approval; this merge adopts no new API implementation choices.
+
 ## Starting state and dependency review
 
 The entire six-step guide, technical direction, relevant foundation-proposal
