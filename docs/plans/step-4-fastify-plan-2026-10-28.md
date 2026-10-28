@@ -1,67 +1,77 @@
 # Step 4 — Fastify server implementation plan
 
-**Date:** 2026-10-28. **Status:** proposal; owner approval pending.
+**Date:** 2026-10-28. **Status:** Step 4 in progress. Stage 4.1 is approved,
+implemented and verified in commit `472e0a7`; stages 4.2–4.11 remain pending.
+See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
+Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 This plans Step 4 of the [implementation guide](../technical/technical-foundation-implementation-guide.md#step-4--fastify-server-foundation).
 It does not authorize dependency installation, runtime configuration changes,
-implementation, database startup, or completion of Step 3B.
+implementation or database startup. Step 3B's structural delivery is inherited.
 
 **Owner refinement, 2026-10-28:** Step 4 must supply explicit acceptance criteria,
 a way to verify the application locally, and a repository-owned API Docker image
 containing Fastify. The image requirement supersedes this plan's original use of
 the generic tooling container as the application runtime. The detailed image and
-launcher recommendations below remain pending implementation approval.
+packaging recommendations below remain pending implementation approval, subject
+to the approved review amendments recorded next.
 
-**Merge reconciliation, 2026-10-28:** PR #106 is now merged into `main` at
+**Reviewed predecessor, 2026-10-28:** PR #106 is merged into `main` at
 `db74a6541804b3ed04529427f018723a399d479b`. It supplies the approved Step 3B
-structural schema/migrations and standard Compose one-time setup. The starting
-snapshot and P4-01 sequencing exception below describe the earlier planning
-state; that exception is no longer needed for the delivered structural scope.
+structural schema/migrations and standard Compose one-time setup. This revision
+replaces the earlier pre-#106 starting snapshot and retires P4-01.
 See the [Step 3B implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md)
 and [current local setup](../technical/local-development.md) for inherited behavior.
-Before implementation, reconcile the proposed launcher, Compose and migration
-handling below with those approved records. Step 4 recommendations still await
-approval; this merge adopts no new API implementation choices.
+The owner accepted all eight review recommendations on 2026-10-28 and requested
+this plan update. The rationale and scope are also recorded in
+[technical direction](../technical/technical-direction.md#step-4-review-decisions-after-step-3-2026-10-28).
+
+| Review item | Approved decision and rationale |
+| --- | --- |
+| 1 — Compose/lifecycle | Add profiled API services to canonical `compose.yaml`; use native Compose lifecycle operations and direct package aliases. Avoid a second Compose file or general API shell dispatcher to retain Step 3's standard tooling direction. |
+| 2 — Configuration/security | Reuse saved `.env.compose` settings and Doppler's selected-target credential boundary. Routine startup needs no project/config/executable exports; security checks and no-fallback behavior remain mandatory. |
+| 3 — Commands | Replace retired tooling build/init and database stop calls with existing native aliases or raw Compose equivalents, so the quickstart matches implemented Step 3 commands. |
+| 4 — Prerequisites | Retire P4-01 without reusing its ID. Inherit Step 3B schema/migration/replay delivery; retain first-development-application ownership and the named business-writer deferrals. |
+| 5 — Shutdown | Respect service grace periods on every project/API shutdown path; verify in-flight request cleanup through project-wide commands as well as direct signals. Prevent a global timeout from shortening API cleanup. |
+| 6 — Diagnostics | Reuse Step 3's payload stderr forwarding and detailed redacted DB CLI diagnostics. Test the boundary; keep the proposed HTTP logging policy separate. |
+| 7 — DB handoff | Include typed schema exports in API build/package/watch proof. Readiness proves current connection identity, not migration currency; startup never migrates. |
+| 8 — Test isolation | Serialize schema tests, API process tests, smoke and outage experiments sharing a test target. Step 3 schema reset and service stop must not race another suite. |
+
+These decisions approve the plan amendments, not every remaining P4 dependency,
+packaging or application recommendation. This request changes documentation only.
 
 ## Starting state and dependency review
 
 The entire six-step guide, technical direction, relevant foundation-proposal
 sections, Step 3 plan/handoff, README, local-development reference, manifests,
 TypeScript/Vitest configuration, Turbo graph, launchers and Compose files were
-reviewed. Live #21, #22, #23, #24 and #26 and their comments were read on this date;
-all remain open, with no comments. Native #26 blockers remain #21/#22/#23.
+reviewed. The original planning review read live #21, #22, #23, #24 and #26;
+the post-merge review reread live #26, which remains open with no comments and
+the same #21/#22/#23 dependencies. This update changes no issue dependencies.
 
-The checkout was clean before planning. `HEAD` and local `origin/main` both point
-to `e7883196256d409bfa1dd46647101b41ff45261c`, the merge of PR #105. GitHub confirms
-that Steps 1 and 2 and Step 3A are merged. Remote `main` was not fetched or changed;
-recheck its current tip before implementation.
+The original planning snapshot was PR #105 at `e788319`. The refreshed
+`origin/main` reviewed after the merge is PR #106 at `db74a65`; the current branch
+has merged that predecessor. Recheck remote main and the current checkout before
+implementation rather than reusing the original environment observations.
 
 | Predecessor or gate | Verified state | Effect on Step 4 |
 | --- | --- | --- |
 | Step 1 / [#103](https://github.com/WilliamPhilippe/storage-minis/pull/103) | Merged 2026-10-24; pinned tooling image, isolated volumes, unprivileged execution and Doppler launcher exist. | Reuse Docker execution, ownership and signal-forwarding conventions. |
 | Step 2 / [#104](https://github.com/WilliamPhilippe/storage-minis/pull/104) | Merged 2026-10-24; separate persistent development and disposable test PostgreSQL services exist. | Supplies target addresses and lifecycle commands; requires no redesign. |
 | Step 3A / [#105](https://github.com/WilliamPhilippe/storage-minis/pull/105) | Merged 2026-10-25; compiled DB exports, target validation, pool/check/close limits and tests exist. | The actual code prerequisite for the diagnostic API is delivered. |
-| Step 3B | No business schema or migrations; migration commands deliberately refuse. The physical-schema packet is unapproved. | Neither startup nor health routes require application tables. Keep migration guards intact. |
-| T01/T03 | Executable business constraints, numeric/time contracts and migration approval remain open. | Gate schema and business operations; health responses introduce none of those contracts. |
+| Step 3B / [#106](https://github.com/WilliamPhilippe/storage-minis/pull/106) | Approved 33-table structural schema, two committed migrations, typed schema exports and real PostgreSQL replay/constraint tests are implemented. Final recorded evidence is 27 unit tests and 30 DB integration tests. | Inherit compiled schema and working explicit migration commands. Startup/health remain table-free; first development application is still an owner action. |
+| Local Compose/setup / #106 | One canonical file, native lifecycle aliases, `.env.compose`, automatic Doppler target selection and payload stderr forwarding are implemented. | Extend existing profiles/configuration/security instead of replacing their lifecycle with a dispatcher. |
+| T01/T03 | Structural keys, int32 storage and UTC millisecond timestamps are selected/implemented. Writers, exact allocation/overflow enforcement and API/period contracts remain. | Keep business operations outside Step 4; diagnostic responses introduce no money/date contracts. |
 | T02 | Firebase/session/bootstrap/authorization details remain open. | Expose only fixed diagnostic responses; create no identity or business-access bypass. |
 | T04 | Production configuration, deployment, privileges and recovery targets remain open. | Propose local behavior only; do not claim production readiness. |
-| Local execution | Docker CLI exists, but daemon inspection failed because the Desktop socket was absent. This worktree has no installed package dependencies or DB build output. | No fresh container/build/DB evidence was obtained. Running Docker and checkout-specific initialization are required for implementation verification. |
+| Local execution | Original planning recorded an unavailable Docker socket. Step 3 has its own recorded execution evidence; this documentation review ran no new container/build/DB checks. | Inspect current daemon/settings/volumes before implementation. Historical environment observations are not current runtime evidence. |
 
-**Dependency conclusion:** there is no missing predecessor implementation needed
-for the table-free diagnostic server after Step 3A. There is a documentation and
-approval ambiguity: the guide says “Steps 1–3,” requires the previous merged
-handoff, and also explicitly describes schema-dependent evidence as deferrable.
-Do not silently interpret the whole of Step 3 as complete.
-
-**Recommendation requiring approval (P4-01):** permit Step 4 after merged Steps
-1, 2 and 3A, leaving Step 3B separately gated. On approval, clarify that exact
-prerequisite in the guide. Waiting for all of 3B is the alternative: it preserves
-a literal sequential reading but delays an independent HTTP/lifecycle delivery.
-This exception changes no issue dependencies and does not authorize Step 5.
-
-The guide and historical Step 3A handoff still described #105 as awaiting review.
-This planning change corrects the guide's current status; preserve the handoff's
-original dated verification record.
+**Dependency conclusion:** Steps 1–3B now provide the structural prerequisite
+delivery for the diagnostic API. **P4-01 is retired:** no sequencing exception or
+new prerequisite approval is needed. Its ID is preserved as retired. Business
+writers, authorization and full T06 acceptance remain deferred under their
+existing owners. First development migration application and Step 4
+implementation are separate actions; neither is performed by this plan update.
 
 ## Inherited approvals and assigned scope
 
@@ -74,12 +84,17 @@ projects, exact versions/shared lockfile, Docker-first execution, Doppler
 the exact esbuild build-script allowlist. Do not upgrade existing packages.
 
 The existing DB public API exports `createDatabase`, `readDatabaseConfig`,
-`validateDatabaseConfig`, `requireTestDatabase`, `databaseLimits` and their types.
-`Database` contains typed `db`, `check()`, `close()` and `healthy`. Its limits
-are 5 connections, 10s idle, 2s connect/acquisition, 3s statement, 4s query,
+`validateDatabaseConfig`, `requireTestDatabase`, `databaseLimits`, the `schema`
+namespace and their types. `Database` contains a schema-aware Drizzle `db`,
+`check()`, `close()` and `healthy`. Its limits are 5 connections, 10s idle,
+2s connect/acquisition, 3s statement, 4s query,
 6s complete check and 10s pool close. `check()` already authenticates and checks
 database/user/UTC identity; it is stronger than an unrelated `SELECT 1`.
 `healthy` is last-check state, so it is insufficient as a current readiness probe.
+The schema import opens no connection. Verify its compiled runtime/declaration
+files and transitive imports in the image and watch tests, not only `dist/index`.
+`check()` does not inspect migration history or table presence. Schema replay is
+already demonstrated by Step 3B; it is not an API readiness requirement.
 
 Deliver application construction, configuration, process lifecycle, health
 routes, development/build/start commands, necessary launcher/Turbo changes and
@@ -91,7 +106,7 @@ defect requires a separately approved change.
 
 | Foundation decision | Step 4 subset proposed for approval |
 | --- | --- |
-| F01 | Diagnostic-server scope and the explicit Step 3B sequencing clarification. |
+| F01 | Diagnostic-server scope after delivered Steps 1–3B; P4-01 retired. |
 | F04 | API runtime Fastify 5.12.7, Zod 4.6.7 and the DB workspace dependency only. |
 | F05 | API process ownership of one existing DB factory result and cleanup. |
 | F07 | API build/start, compiled dependency use, development watching and stale-output cleanup. Browser type exports stay with Step 5. |
@@ -103,10 +118,13 @@ defect requires a separately approved change.
 
 ## Proposed decisions
 
-The dedicated API image and local verification are owner requirements. Their
-concrete implementation choices below remain recommendations until explicitly
-approved. These labels are local plan references, not new business requirements
-or backlog decisions.
+The dedicated API image and local verification are owner requirements. The eight
+amendments above are approved. P4-02, the configuration contract and stage 4.1's
+finite-build/strict-check portions of P4-08/P4-09 were subsequently approved and
+implemented; see [technical direction](../technical/technical-direction.md#step-41-configuration-and-finite-build-approval-2026-10-28).
+Other details below remain recommendations until explicit implementation approval.
+These labels are local plan references, not new business requirements or backlog
+decisions. P4-01 remains retired.
 
 | ID | Concrete recommendation and rationale | Alternative and tradeoff |
 | --- | --- | --- |
@@ -115,15 +133,16 @@ or backlog decisions.
 | P4-04 — Lifecycle | A lifecycle module owns exactly one `Database`, one app and one idempotent close operation. Accept an optional async route-registration callback receiving that app and owned DB, before readiness/listen. A thin process entry validates configuration and installs signal handlers. Close resources on every partial-startup failure. | Listening while initially unready changes fail-fast behavior. Constructing another pool in Step 5 would duplicate ownership; the registration callback supplies an explicit extension point. |
 | P4-05 — HTTP | Use the live/ready contracts below, 16 KiB body limit, 10s request-receive timeout, `forceCloseConnections: "idle"`, and `trustProxy: false`. Each readiness request uses a current bounded DB check. | One health route loses the process/dependency distinction. Cached readiness reduces queries but needs freshness and recovery policies. |
 | P4-06 — Errors/logs | Use Fastify's JSON logger, server-generated request IDs, fixed failure categories and allowlisted request metadata. Disable default request logging, which includes raw URLs; never log environment objects, bodies, headers, raw errors or causes. | Header redaction alone leaves query strings and exception messages exposed. A second logging package is unnecessary. |
-| P4-07 — Configuration/launch | Add `scripts/api.sh` for image build, development, built start, logs, stop and verification. Reuse the database launcher's selected-password injection through a host callback; run the new API Compose services. Ordinary tooling/DB commands remain port-free. | Raw Compose commands repeat credential/target handling. The former tooling-only runtime proposal does not satisfy the owner's API-image requirement. |
+| P4-07 — Configuration/launch | Approved direction: reuse `.env.compose`, native Compose commands and existing Doppler injection. Recommend narrow allowlisted API operations in `database.sh` for runtime injection, plus a bounded `verify-api.sh`; ordinary build/logs/stop use Compose directly. Ordinary tooling/DB commands remain port-free. | A general API dispatcher or duplicated secret-fetch implementation adds maintenance and diverges from the accepted standard Compose direction. |
 | P4-08 — Emit/watch | Use TypeScript for finite builds, compiled DB exports, a DB `tsc --watch` task and native Node watch with the already installed tsx loader for API source. Clean each package's own `dist` before finite builds. | `tsx watch` is the original candidate but has a 5s child-kill timer, shorter than the proposed API shutdown budget. Source DB exports break the agreed compiled boundary; bundling adds tooling. |
 | P4-09 — Task graph | Declare actual API dependencies, cached finite builds/checks and uncached persistent dev/start tasks. Add a separate uncached API process-test command; keep live resources outside ordinary checks. | Putting live checks into `pnpm check` adds DB/Doppler prerequisites to offline work. Making a persistent watcher a build prerequisite prevents finite completion. |
-| P4-10 — Evidence | Test the factory/configuration offline; test built Node processes and current DB behavior against the explicit test target. Add only the harness needed to prove Step 4. | Injection tests alone cannot prove bind failures, ESM exports, signal forwarding or released process resources. Deferring all process tests to Step 6 leaves Step 4 incomplete. |
-| P4-11 — API image | Add `docker/Dockerfile.api`, a root `.dockerignore` and `compose.api.yaml`. Use the existing pinned official Node base, a development target and a self-contained runtime target with compiled API/DB and production dependencies. | One image containing all build tools is easier to assemble but enlarges runtime scope. Copying host pnpm links or depending on tooling volumes makes the image incomplete. |
+| P4-10 — Evidence | Test the factory/configuration offline; test built Node processes and current DB behavior against the explicit test target. Approved amendments require shared-target serialization and project-wide shutdown proof. Add only the harness needed to prove Step 4. | Injection tests alone cannot prove bind failures, ESM exports, signal forwarding or released process resources. Deferring all process tests to Step 6 leaves Step 4 incomplete. |
+| P4-11 — API image | Approved layout: profiled API services in canonical `compose.yaml`. Recommend `docker/Dockerfile.api`, root `.dockerignore`, the existing pinned Node base, development/runtime targets and portable compiled API/DB production dependencies. | A second Compose model fragments lifecycle/cleanup inventory. One image containing all build tools enlarges runtime scope; host pnpm links or tooling volumes make it incomplete. |
 
 Published exact manifests were inspected without installing packages. At research
 time Fastify 5.12.7 and Zod 4.6.7 were the registry's current stable releases.
-Installation/strict compilation remain required compatibility evidence.
+Installation and strict compilation passed for stage 4.1; later runtime/image
+compatibility evidence remains pending.
 [Fastify manifest](https://registry.npmjs.org/fastify/5.12.7),
 [Zod manifest](https://registry.npmjs.org/zod/4.6.7).
 
@@ -153,19 +172,23 @@ The detailed scenarios and resource cleanup are in the verification matrix.
   `{"status":"ok"}` without querying PostgreSQL, including during a DB outage.
 - [ ] **AC4-07 — Readiness:** real HTTP `/health/ready` returns the specified
   200/503 body from a fresh authenticated check. DB failure is bounded by 6s plus
-  HTTP scheduling margin, and recovery restores 200 without API restart.
+  HTTP scheduling margin, and recovery restores 200 without API restart. This
+  checks connection identity, not migration currency; startup never migrates.
 - [ ] **AC4-08 — Startup failures:** wrong credentials, unavailable DB, invalid
   configuration and occupied ports fail nonzero with safe diagnostics and no
   leaked listener/pool; startup/failure cleanup respects the 17s outer deadline.
 - [ ] **AC4-09 — Shutdown:** SIGINT/SIGTERM, repeated signals, startup interruption
   and failed/blocked cleanup have tested ownership and exit outcomes. Mark
   unready, drain HTTP and close the one pool within the 10s total process bound.
+  Native API and project stop/down paths honor the 15s API service grace period,
+  including during a bounded in-flight request; no global 10s override cuts it short.
 - [ ] **AC4-10 — Safe HTTP/logging:** route, framework and unexpected failures
   preserve documented safe status/body behavior; tests prove logs/responses omit
   credentials, raw queries/bodies, stacks, causes and untrusted request IDs.
 - [ ] **AC4-11 — Build contract:** NodeNext runtime/type exports work, finite
   builds remove stale emitted files, and API imports only compiled DB exports.
-  Packaged workspace links resolve wholly within the API runtime image.
+  Packaged workspace links resolve wholly within the API runtime image, including
+  all compiled schema modules and declarations.
 - [ ] **AC4-12 — Task graph:** actual build/typecheck/test dependencies and
   `dist/**` outputs are declared. Finite work restores/reuses valid cache entries;
   source changes invalidate consumers. Persistent/live work is uncached and no
@@ -173,11 +196,15 @@ The detailed scenarios and resource cleanup are in the verification matrix.
 - [ ] **AC4-13 — Environment boundary:** matching Doppler dev/test configs supply
   only the selected password at runtime. Missing access/config/key, stale ambient
   values and fallback attempts cannot run an unintended target or leak secrets.
-  Image builds and ordinary checks work without DB/Doppler access.
+  Reuse saved nonsecret settings without required exports, ignore plain `.env`,
+  and preserve existing DB CLI diagnostics. Image builds and ordinary checks
+  work without DB/Doppler access.
 - [ ] **AC4-14 — Meaningful tests:** factory/config/lifecycle unit tests and the
   guarded real-test-DB process suite pass; dev/wrong targets are rejected before
-  connecting. Normal empty suites still fail. Unit checks require no live DB.
-- [ ] **AC4-15 — Automated local proof:** `./scripts/api.sh verify test` exercises
+  secret fetching/connecting. Schema resets, API tests, smoke and outages sharing
+  a test target run sequentially. Normal empty suites still fail; unit checks
+  require no live DB.
+- [ ] **AC4-15 — Automated local proof:** `./scripts/database.sh api-verify test` exercises
   the built API image over host HTTP, checks exact health responses, signals
   shutdown and removes every owned probe container on success/failure. It exits
   0 only after all assertions pass and reports bounded, sanitized failures.
@@ -188,10 +215,13 @@ The detailed scenarios and resource cleanup are in the verification matrix.
 - [ ] **AC4-17 — Resource isolation:** API publication is host-loopback-only;
   explicit occupied ports fail without probing another service. API stop/verify
   cleanup preserves development DB storage and unrelated worktree resources.
+  All API services are profiled in canonical `compose.yaml`; default DB startup
+  excludes them and native project status/stop/down includes them when selected.
 - [ ] **AC4-18 — Handoff evidence:** the implementation PR records results for
   all these criteria, setup instructions, image identity and Step 5/6 contracts.
-  Schema, business, authorization and production acceptance stay explicitly
-  deferred; unresolved Step 4 criteria mean Step 4 is incomplete.
+  Step 3B structural/replay evidence is inherited; remaining business writers,
+  authorization and production acceptance stay explicitly deferred. Unresolved
+  Step 4 criteria mean Step 4 is incomplete.
 
 ## Application and process contract
 
@@ -208,8 +238,9 @@ Proposed source responsibilities:
 | `apps/api/scripts/process-tests.ts` | Test-target guard, dedicated Vitest invocation, suite watchdog and child cleanup. |
 | `apps/api/vitest.process.config.mts` | Separate `api-process` project with real-DB process tests. |
 | `apps/api/tsconfig.build.json` | Emit runtime ESM/declarations from `src`, excluding tests; broad no-emit config also covers scripts and test/config files. |
-| `docker/Dockerfile.api`, `.dockerignore`, `compose.api.yaml` | Build and run API development/runtime targets with explicit context, dependency packaging and network contracts. |
-| `scripts/api.sh`, `scripts/verify-api.sh` | Host Docker lifecycle and bounded local image/HTTP smoke; reuse selected-target injection in `scripts/database.sh`. |
+| `docker/Dockerfile.api`, `.dockerignore`, existing `compose.yaml` | Build and run profiled API development/runtime targets with explicit context, dependency packaging and network contracts. |
+| Existing `scripts/database.sh` and `scripts/local-config.sh` | Reuse the saved-settings reader and selected-target Doppler boundary; add only allowlisted API injection operations, keeping native lifecycle behavior in Compose. |
+| `scripts/verify-api.sh` | Bounded local runtime-image/HTTP smoke, exact test guard and owned-container cleanup; credentials arrive through the existing host Doppler boundary. |
 
 The lifecycle registration callback receives the same full `Database` instance
 the process owns; `buildApp` itself only needs the narrow readiness capability.
@@ -245,6 +276,9 @@ never as a silently selected configured runtime port.
 Normal DB loss leaves liveness 200. Reuse `check()` rather than querying business
 tables or trusting the last `healthy` flag. Readiness failures log only request
 ID, fixed category and result; no raw database exception.
+An authenticated but unmigrated database can therefore report ready for this
+diagnostic server. Preserve explicit `docker:migrate` and the owner's first
+development application action; neither health nor API startup applies SQL.
 
 Request logging allowlists generated ID, method, matched route template (or a
 fixed unmatched label), status and elapsed time. Set `requestIdHeader: false`;
@@ -253,6 +287,10 @@ serialization with safe categories and retain authorization/cookie redaction as
 defense in depth. Pre-logger configuration failures use fixed stderr text.
 Preserve safe malformed/oversized-body status codes rather than converting all
 framework failures to 500. These are local diagnostics, not Step 5's tRPC errors.
+This proposed HTTP policy does not replace Step 3's DB CLI policy: retain actual
+messages, nested causes and driver codes with password/URL redaction for DB
+commands. Do not reuse their formatter in HTTP responses or weaken their command
+diagnostics while extending the shared injection helper.
 [Fastify server options](https://github.com/fastify/fastify/blob/v5.12.7/docs/Reference/Server.md),
 [logging](https://github.com/fastify/fastify/blob/v5.12.7/docs/Reference/Logging.md).
 
@@ -271,6 +309,9 @@ reports 1. Repeated signals share the same close promise; they cannot start a
 second pool close. A signal received during DB startup must prevent subsequent
 `listen()`. Remove handlers/timers on completed cleanup without leaving a window
 where unfinished startup can acquire an unowned resource.
+Assert these application/container outcomes separately from the Compose client's
+native exit semantics. Ordinary Compose stop retains stopped service containers;
+only the smoke harness must remove its one-off probe on every outcome.
 [Fastify close implementation](https://github.com/fastify/fastify/blob/v5.12.7/fastify.js),
 [Node 24 signal behavior](https://nodejs.org/docs/latest-v24.x/api/process.html#signal-events).
 
@@ -322,78 +363,112 @@ host Doppler directory or credentials into any stage. The tooling Dockerfile
 retains its existing `docker/` context and responsibilities.
 [Docker build context](https://docs.docker.com/build/concepts/context/#dockerignore-files).
 
-### Compose and launcher ownership
+### Compose, saved settings and credential ownership
 
-Add `compose.api.yaml` with `api` (runtime image, profile `api`) and `api-dev`
-(development image, profile `api-dev`). Use project-scoped tags
+**Approved direction:** extend canonical `compose.yaml` with `api` (runtime
+image, profile `api`) and `api-dev` (development image, profile `api-dev`). Do
+not add a second Compose file or general API lifecycle shell dispatcher. Keep
+PostgreSQL as the only default service: existing `docker:up` continues to start
+and authenticate the database without implicitly starting API/watchers. Existing
+DB service definitions, six volume identities and pins remain unchanged.
+
+Proposed API details: use project-scoped tags
 `${COMPOSE_PROJECT_NAME}-api:step4` and `${COMPOSE_PROJECT_NAME}-api:step4-dev`.
-Both services join the existing project's default network and use `init: true`,
-`restart: "no"` and a 15s stop grace period, longer than the API's 10s deadline.
-The runtime service has no source/dependency volumes. Only api-dev reuses the
-five tooling volume definitions; add no new persistent storage.
+Both services join the existing default network, use `init: true`,
+`restart: "no"` and a 15s stop grace period, longer than the API's 10s process deadline.
+Runtime has no source/dependency volumes; api-dev reuses the five existing
+project-scoped tooling volumes. Add no persistent storage.
 
 The runtime service publishes `127.0.0.1:${API_HOST_PORT:-3000}:3000`. Give it a
 Node-based `/health/ready` healthcheck with a 7s HTTP abort, 8s Docker timeout,
-2s interval, 5s start period and three retries; it needs no curl installation
-inside the image. Explicit DB startup remains the database launcher's job.
-`api.sh start` uses `--no-deps --no-build --pull never --wait --wait-timeout 30`;
-an unready/failed owned startup returns nonzero and removes its failed API
-container, preserving the database and other running resources. Reject an
-already-running API rather than replacing it implicitly. For dev Compose run,
-publish loopback explicitly because `run` does not inherit service publication.
-[Compose run](https://docs.docker.com/reference/cli/docker/compose/run/).
+2s interval, 5s start period and three retries; it needs no curl installation.
+Database startup remains explicit. Credential-bearing API startup delegates to
+native `up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api`.
+Compose owns readiness waiting, idempotent service reuse/recreation and failure
+status; no custom polling/replacement policy is needed for ordinary startup.
+On failure, preserve safe diagnostics and inspect/stop the selected service with
+native commands. API process startup failure must release its listener/pool;
+a stopped service container may remain for diagnosis. For foreground dev use
+native `up --no-deps --no-build --pull never api-dev`, after stopping built mode
+if it owns the same host port. Both modes cannot publish the same port together.
 
-`scripts/api.sh` owns these host commands: `build`, `dev TARGET`, `start TARGET`,
-`logs`, `stop` and `verify test`. Its Compose invocations use explicit project
-and file arguments, disable env-file loading, and never run through Turbo or a
-container-mounted Docker socket. `build` builds both image targets without
-Doppler; it allows the existing 600s build bound. `dev` is foreground, `start`
-is detached with bounded readiness, and `logs`/`stop` require no secret fetch.
+Build, status, logs, stop and removal use direct Compose commands/package aliases
+with `--env-file .env.compose --file compose.yaml`. Full-project commands retain
+`--profile '*'` so optional API/test/tooling services are included. They run on
+the host, outside Turbo, without a mounted Docker socket or fetching secrets.
+Native aliases require Docker on PATH and the saved file, as in Step 3. Retain
+the existing 600s allowance for build/install verification attempts.
 
-Extend `scripts/database.sh` with a narrowly validated API callback operation
-that supplies the existing selected-target tuple to host `api.sh`; do not route
-the built API back through `tooling.sh _run-db`. Reuse project/config/password
-validation and the existing Doppler fetch block, rather than adding another
-secret-fetch implementation. Keep the tooling runner for dependency maintenance
-and tests. In particular, built start executes the API image's Node CMD rather
-than calling root `pnpm start` inside the tooling image.
+**Approved shutdown amendment:** keep service-specific grace declarations rather
+than a global 10s override. Remove `--timeout 10` from full-project stop/prune,
+the confirmed volume helper's native down, and any new API stop/removal commands;
+native Compose then uses 15s for API and the existing 10s for other services.
+Explicit database-only stop/reset can retain their 10s contract. Verify direct
+signals, API-only stop, full-profile stop/down and guarded volume teardown with
+a bounded in-flight test request in a disposable project. Check clean drain,
+exit status and no premature SIGKILL; never run destructive evidence on the
+owner's development project. Normal stop/down preserves named volumes.
+
+**Doppler remains mandatory for credential-bearing commands.** Reuse
+`load_local_config`, `resolve_doppler` and the existing selected-password fetch
+in `scripts/database.sh`. Recommend narrowly allowlisted operations
+`api-up TARGET`, `api-dev TARGET` and `api-verify test`: map them only to the corresponding
+native Compose payload or verifier, not arbitrary host callbacks. These proposed
+names are for the implementation below; they do not exist yet. Built startup
+executes the image's Node CMD, never `tooling.sh _run-db` or root `pnpm start`.
+Keep the tooling runner for checks/dependency maintenance and process tests.
+
+The injection operation validates mode, target and nonsecret API settings before
+Doppler/Docker work, clears ambient PG/URL/password settings and supplies only the
+selected DB tuple to the selected API payload. Extend the existing pre-fetch
+integration guard to recognize `test:api` and `test:process` as test-only commands;
+the process runner and its Vitest config also enforce the exact test tuple.
+No separate secret-fetch implementation, new Doppler key, raw secret arguments,
+secret file or fallback is introduced. Build/status/logs/stop remain secret-free;
+the declarative model must parse with empty runtime credential defaults.
 
 | Input | Source, precedence and consumer |
 | --- | --- |
-| Compose project | Explicit unique checkout setting. Propose `storage-minis-topeka` for this checkout; verify it is unused before creating resources. |
-| DB target/config | Explicit `dev` or `test`, matching Doppler project `storage-minis` and config of the same name. |
-| DB password | Existing managed `POSTGRES_PASSWORD` or `POSTGRES_TEST_PASSWORD` only; no new Doppler keys or account mutation required. |
-| DB components | Generate `DB_TARGET`, `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` exactly as Step 3A. Ambient connection values never override them. |
-| `API_HOST_PORT` | Nonsecret checkout override, default 3000 for start/dev; validate 1–65535 before Doppler/Docker. Host loopback publication only. Fail on collision; do not choose another port. |
-| `API_VERIFY_HOST_PORT` | Optional nonsecret verifier-only port, validated with the same bounds. If absent, deliberately request a Docker-assigned loopback port. Do not inherit `API_HOST_PORT` into this choice. |
-| `HOST` / `PORT` | API launcher sets container `0.0.0.0` / `3000`. Host publication and process bind address are distinct. Direct Node defaults remain loopback/3000. |
-| `LOG_LEVEL` | Explicit nonsecret launcher override, default `info`; validate before launch and again at process entry. |
-| `NODE_ENV` / `TZ` | Development uses `development`, isolated tests use `test`, and built runtime defaults to `production`; `TZ=UTC`. These flags do not choose production infrastructure. |
+| Compose project / DB host ports | Reuse `.env.compose` through `load_local_config` and native `--env-file` selection. Preserve Step 3's validated explicit environment overrides for deliberate disposable projects. Do not choose a replacement project name for an initialized checkout. |
+| Saved settings schema | Keep exactly `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, `POSTGRES_TEST_PORT`. The literal allowlist/duplicate/unknown-key checks remain; no shell sourcing or new API key in this file. |
+| DB target/config | Explicit `dev` or `test`; the helper automatically selects Doppler `storage-minis` and the matching config. Contradictory overrides fail. Routine startup requires no exports. |
+| DB password | Existing managed `POSTGRES_PASSWORD` or `POSTGRES_TEST_PASSWORD` only, selected before payload startup. Ambient passwords cannot satisfy a missing managed key. |
+| DB components | Supply `DB_TARGET`, `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` using the existing approved tuples; ambient connection values cannot override them. |
+| Doppler executable/login | Use existing automatic executable discovery and dedicated browser-login directory, enforcing 3.77.1. Preserve explicit approved overrides for troubleshooting; no required path export or new login mechanism. |
+| `API_HOST_PORT` | Optional nonsecret invocation override, default 3000 for built/dev mode; validate 1–65535 without leading zeros before Doppler/Docker. No persistence change to `.env.compose`. Host loopback only; fail on collision. |
+| `API_VERIFY_HOST_PORT` | Optional verifier-only port with the same bounds. If absent, deliberately request a Docker-assigned loopback port; do not inherit `API_HOST_PORT` into this choice. |
+| `HOST` / `PORT` | Compose API services set container `0.0.0.0` / `3000`. Direct Node defaults remain loopback/3000. Host publication and process bind address are distinct. |
+| `LOG_LEVEL` | Optional nonsecret invocation override, default `info`; validate before launch and again at process entry. |
+| `NODE_ENV` / `TZ` | Development uses `development`, isolated tests use `test`, built runtime defaults to `production`; `TZ=UTC`. These flags choose no production infrastructure. |
 
-Ordinary DB process tests use `run-db test` without publishing a host API port.
-Pass only required variables by name to Docker and only to actual runtime/live
-Turbo tasks. Do not forward credentials to the DB compiler watcher, finite
-builds or unit tests. Do not place secret values in arguments, files or logs.
-Keep `.env` loading disabled, selected-key-only fetching, dedicated host browser
-login, 10s Doppler request timeout/one attempt and `--no-fallback` behavior.
-Do not forward Doppler credentials into the container. A failure to fetch must
-prevent process startup. These inherited choices follow the
-[Doppler launch contract](../technical/local-development.md#doppler-host-setup-and-verification).
+Ordinary DB/API process tests use `run-db test` without publishing a host API
+port. Pass only required variables by name to containers and runtime/live Turbo
+tasks. Do not forward credentials to DB compiler watchers, finite builds or unit
+tests. No Doppler credentials enter the image/container. Keep selected-key-only
+fetching, dedicated browser login, token refusal, a 10s request timeout/one
+attempt, `--no-fallback` and no live re-fetch on source reload. Missing login,
+config/key or network access prevents credential-bearing payload startup.
 
-The existing Doppler wrapper suppresses its stderr, which also hides child
-stderr. For the API callback, redirect validated payload stderr into its stdout
-inside the payload shell before executing the child. This preserves sanitized
-API startup diagnostics while retaining suppression of Doppler's own errors.
-Test these streams explicitly; do not print raw upstream diagnostics to recover
-application visibility.
+Ordinary `.env` autoload stays disabled; explicit `.env.compose` is intentional
+nonsecret configuration, not a credential fallback. Helpers clear ambient
+`COMPOSE_FILE`, `COMPOSE_ENV_FILES` and `COMPOSE_PROFILES` as in Step 3. Document
+native command equivalents with explicit canonical-file/saved-settings selection.
+The [Doppler launch contract](../technical/local-development.md#doppler-host-setup-and-verification)
+and [saved setup](../technical/local-development.md#docker-tooling) are inherited.
 
-Changing Doppler values requires stopping and relaunching the outer command.
-Automatic source reload reuses the launch environment; it does not refetch
-secrets. Password rotation does not change an initialized PostgreSQL volume;
-use the existing documented credential procedure. The foreground API launcher
-reuses the named-container signal-forwarding approach and removes only its own
-invocation. Verify the dev Doppler/shell/Compose/pnpm/Turbo/Node chain and the
-built container's direct Node signal path separately.
+Step 3 already forwards payload stderr into stdout before suppressing Doppler's
+own fetch diagnostics. Reuse this boundary and test both streams with sentinels;
+API diagnostics must be visible and sanitized, DB CLI messages/causes/codes must
+remain visible and redacted, and secret values must not appear. Do not add the
+old proposed stderr fix again or print raw Doppler diagnostics.
+
+Changing Doppler values requires relaunching the outer credential-bearing
+command. Source reload reuses its environment. Password rotation does not change
+an initialized PostgreSQL volume; retain the documented credential procedure.
+Native Compose owns the foreground dev service lifecycle; test signal delivery
+through Doppler/shell/Compose/pnpm/Turbo/Node as well as the built container's
+Node path. Retain existing signal protection only where an actual verification
+gap requires it, limited to the owned credential payload or smoke container.
 
 ## Build, development and Turbo contract
 
@@ -418,15 +493,16 @@ the same output while development watchers are active.
 | Root `start` | `turbo run start --filter=@storage-minis/api`. |
 | Root `test:api` | `turbo run test:process --filter=@storage-minis/api`. |
 | API `test:process` | `tsx scripts/process-tests.ts`, which validates the test tuple and launches dedicated Vitest. |
-| Host API lifecycle | `./scripts/api.sh build`, `dev dev`, `start dev`, `logs`, `stop`. |
-| Host API smoke | `./scripts/api.sh verify test`; invokes `scripts/verify-api.sh` against the runtime image. |
+| Host API lifecycle | Native Compose API build/logs/stop and existing project status/down, with direct package aliases; Doppler-backed `database.sh api-up dev` / `api-dev dev` for runtime injection. |
+| Host API smoke | `./scripts/database.sh api-verify test`; injects the exact test tuple into `scripts/verify-api.sh` against the runtime image. |
 
 The root/package Node commands remain available for tooling and process checks.
-User-facing local runtime commands use `api.sh start`; the API image's Node CMD
-does not invoke Turbo, build the source or install dependencies at startup.
-`api.sh dev` runs the root dev command in the API development service.
+User-facing built startup uses the Doppler-backed native Compose payload. The
+API image's Node CMD does not invoke Turbo, build or install at startup.
+`database.sh api-dev dev` starts the API development service, whose command is
+root `pnpm dev`. Native Compose manages its lifecycle.
 
-Node watch observes imported modules, including the compiled DB dependency;
+Node watch observes imported modules, including the compiled DB schema files;
 the tsx loader executes API source without changing the DB export boundary.
 Unlike tsx's watcher, the pinned Node watch implementation waits for child exit
 on restart, allowing the API's own 10s deadline to govern cleanup. Do not use
@@ -470,37 +546,64 @@ preserves the existing root `test:db` command's DB-only scope.
 
 ## Implementation order after approval
 
-1. Record approved P4 decisions, date/rationale and the limited Step 3B prerequisite
-   clarification in technical direction/the guide. Recheck remote main and merged
-   predecessor. Keep the current branch name unless the owner instructs otherwise.
-2. Once Docker is running, inspect resource ownership, choose unused checkout
-   project/host ports, build the existing tooling image and initialize only this
-   checkout's volumes. Do not reuse another worktree's project or reset its data.
-3. Add API dependencies through container pnpm, inspect transitive/build-script
-   changes, and verify frozen installation. Unexpected compatibility or install
-   policy changes require a concrete follow-up recommendation.
-4. Add clean finite builds, workspace consumption and the minimum Turbo ordering
-   needed for API source/configuration tests. Demonstrate compiled DB resolution.
-5. Implement configuration, factory/health/logging, lifecycle and thin process
-   entry with meaningful unit tests, including partial startup and closing races.
-6. Add the approved API launcher and dev/start tasks; verify explicit injection,
-   dedicated Dockerfile targets, portable runtime packaging, Compose services,
-   loopback publication, watcher behavior and end-to-end signal delivery.
-7. Add the guarded process-test runner and local runtime-image verifier. Run the
-   Step 4 matrix and acceptance checklist, including host curl/browser access.
-   Use the test DB for failure/timeout/shutdown experiments; development gets
-   only an ordinary authenticated startup/health check.
-8. Record actual commands/results and limitations, update setup references/current
-   status and deliver one Step 4 PR when implementation is requested. Stop at its
-   handoff; opening a PR grants no merge or next-step authorization.
+**Owner execution requirement, 2026-10-28:** implement this plan in small
+sequential assignments because an agent may exhaust its usage allowance during
+one session. Assign one stage at a time and stop at its documented handoff.
+The [sequential implementation guide](step-4-fastify-implementation-stages-2026-10-28.md)
+splits the work into **11 stages (4.1–4.11)** with bounded scope, files,
+verification, acceptance completion owners and progress tracking. The owner
+confirmed retaining these boundaries after the planning interview. Use the
+[individual stage prompts](step-4-fastify-stage-prompts-2026-10-28.md) as the
+starting packets for fresh or resumed sessions.
+It replaces the earlier eight-item order; the technical contracts and all 18
+acceptance criteria in this parent plan remain in force.
+
+The sequence is configuration/build → HTTP factory → process lifecycle →
+guarded process tests → runtime image → canonical Compose/Doppler startup →
+development/reload → runtime-image smoke → DB recovery/isolation → native
+project shutdown → cache/documentation/final handoff. Each stage requires its
+predecessor's completed handoff. Do not implement the entire sequence in a single
+assignment or start the next stage automatically.
+
+Inspect the checkout, existing diff, approvals and saved configuration before each
+assignment. Add commands/services only when their stage supplies the working
+implementation; this document's final command inventory is not a requirement to
+add placeholders early. Stage 4.1 emits configuration first, 4.3 adds the process
+entry, 4.6 adds the runtime Compose service and 4.7 adds development mode.
+
+Use the already-planned verification record as a cumulative checkpoint across
+sessions. Write an initial in-progress entry before implementation, update it
+after meaningful verified results and before live/temporary-fixture experiments,
+and save exact checks, pending actions and nonsecret resource/cleanup state at
+handoff. Resume an interrupted stage rather than splitting it or advancing.
+Obtain remaining technical approvals before their consuming stage work. A
+completed stage's agent stages its changes/evidence and executes a local
+Conventional Commit on `WilliamPhilippe/step-4-implementation-plan` after required
+checks pass, then reports the actual commit hash. It must perform the commit,
+not leave it to the owner. Unfinished or commit-blocked work stays explicitly
+in progress. This adds no automatic push
+or PR-publication authorization.
+
+Run focused tests and affected strict checks per stage. Full ordinary
+`./scripts/tooling.sh run pnpm check` milestones are 4.4 (application foundation),
+4.8 (container integration) and 4.11 (final integration); live checks remain
+separate. Reuse predecessor evidence only while relevant source/configuration/
+dependency/image/environment inputs remain valid; rerun affected checks after
+changes, failures or gaps. Stage completion and acceptance completion are
+separate: AC4-06 stays partial until outage proof in 4.9, and AC4-13 until all
+runtime/development/smoke credential paths pass by 4.8.
+The existing Step 4 PR boundary, approval requirements, shared-target test
+serialization and Step 5/6 scope boundaries are unchanged. This planning request
+starts no implementation and approves no additional technical choices.
 
 ## Verification matrix
 
 All commands below are future implementation checks. None ran during this plan.
-Existing Step 1–3A evidence is inherited as historical evidence, not a fresh pass.
+Existing Step 1–3B evidence is inherited as historical evidence, not a fresh pass.
 The API process suite validates the exact test tuple before creating clients,
 starting children or performing any cleanup. It uses no business tables, resets,
-migrations, seeds or imports.
+migrations, seeds or imports. Step 3B already proves schema/replay separately;
+API readiness remains valid against an authenticated unmigrated test database.
 
 | Criterion/scenario | Check or command | Expected result, bound and cleanup |
 | --- | --- | --- |
@@ -510,22 +613,36 @@ migrations, seeds or imports.
 | Logger/framework errors | Unit tests with captured logger output and secret sentinels in URL, headers/body/cause | No sentinel, stack, raw URL or supplied request ID; safe unmatched/error responses, malformed JSON 400 and oversized body 413. |
 | Partial acquisition / Step 5 seam | Lifecycle tests: factory/registration failure, callback DB identity, readiness rejection, listen rejection, close rejection and signal during pending startup | Callback receives the one owned DB before readiness/listen; every acquired resource closes once, pool close still runs after HTTP close failure, no listen after cancellation. |
 | Built Node consumption | `tooling.sh run pnpm build`; guarded `run-db test pnpm test:api` | Harness spawns `node --enable-source-maps dist/server.js` directly with no loader. Runtime resolves compiled DB, answers real HTTP and releases its listener/pool. |
-| Self-contained API image | `api.sh build`; `DOPPLER_CONFIG=test api.sh verify test`; inspect runtime image/package files | Runtime has Fastify/Zod/compiled DB and self-contained production dependencies; Node runs as `node`, without TS tooling, source/dependency mounts or an install at startup. No secret/local environment files or dangling workspace links enter the image. |
-| Automated local smoke | `DOPPLER_CONFIG=test ./scripts/api.sh verify test`, repeated unchanged | Actual runtime image is launched each time; owned host HTTP returns exact live/ready bodies, TERM exits cleanly, temporary container is removed. Deliberately invalid credentials cause nonzero exit and the same cleanup, never cached success. |
+| Self-contained API image | Native API image build; `database.sh api-verify test`; inspect runtime image/package files | Runtime has Fastify/Zod/compiled DB/schema modules/declarations and self-contained production dependencies; Node runs as `node`, without TS tooling, source/dependency mounts or an install at startup. No secret/local environment files or dangling workspace links enter the image. |
+| Automated local smoke | `./scripts/database.sh api-verify test`, repeated unchanged | Actual runtime image is launched each time; owned host HTTP returns exact live/ready bodies, TERM exits cleanly, temporary container is removed. Deliberately invalid credentials cause nonzero exit and the same cleanup, never cached success. |
 | Startup invalid credentials/config/unavailable DB | Guarded process suite with fixture environment and outer timeout | Nonzero sanitized failure, no startup-success marker or surviving child. Startup/failure cleanup at most 17s plus test scheduling margin. Do not mutate managed Doppler values. |
 | Occupied application port | Harness owns an explicit competing listener inside the test container | API bind fails; harness never accepts a response from that listener as API readiness. Original listener remains under harness ownership until cleanup. |
-| SIGINT and SIGTERM | Built children, API runtime container and full outer `api.sh dev` invocation checks | In-flight bounded diagnostic request drains, pool closes, no child/listener/container remains; conventional process signal code on success, 1 on cleanup failure. API cleanup at most 10s; allow 5s outer launcher overhead. |
+| SIGINT and SIGTERM | Built children, API runtime container and full Doppler/Compose `database.sh api-dev dev` invocation checks | In-flight bounded diagnostic request drains; no running child/listener or leaked pool remains. Assert application/container signal code separately from native Compose client status; stopped service containers may remain. Cleanup failure is nonzero. API cleanup at most 10s; allow 5s outer launcher overhead. |
+| Native project shutdown | API-only stop, full-profile `docker:stop` / `docker:prune`, and guarded volume teardown in a disposable project while a bounded test request is in flight | API gets its declared 15s grace, drains within the 10s application budget and is not prematurely killed by a global timeout. Verify exit/container state; ordinary down preserves volumes, confirmed disposable deletion removes only owned volumes. |
+| Canonical model and saved settings | Secret-free service/profile/volume inspection; native aliases and raw equivalents from a fresh terminal | One model lists the profiled API services and same six volumes; default DB startup excludes API. Saved project/ports are reused; plain `.env` and conflicting helper Compose overrides cannot redirect resources. Build/logs/stop need no Doppler; missing runtime access/key fails before payload startup. |
+| Shared test target scheduling | Run DB schema suite, API process suite, smoke and outage phases sequentially against a disposable project's target | No schema reset or test-service stop overlaps another consumer. Record target ownership, order and cleanup; per-file serial execution alone is insufficient. |
 | Repeated signal/startup interruption | Unit and process checks | One close path; no listener opens after interruption and no later callback resurrects resources. |
 | Hung cleanup | Subprocess fixture with intentionally unresolved close hook | Watchdog terminates nonzero within 10s plus scheduling margin; child resources released by process exit. No test-runner force-exit can conceal a lingering API child. |
 | Real DB readiness failure and recovery | Test-only connection disruption/recovery using an owned DB client, then fresh HTTP probes | Live remains 200; ready becomes 503 within the inherited 6s DB budget plus HTTP scheduling margin, then 200 after recovery. Reuse Step 3A socket-termination technique; close admin client and API child. |
-| Actual service outage/restart | Controlled `database.sh stop test`, then matching `DOPPLER_CONFIG=test database.sh up test`, with API running against test | Ready 503 during outage, live 200, ready recovers after test startup. Test tmpfs loss is intentional; no test run may be concurrent. Do not stop/reset development. |
-| Correct target and process-test isolation | `DOPPLER_CONFIG=test tooling.sh run-db test pnpm test:api`; reject dev/mixed tuples | Dedicated suite passes only against `postgres_test/storage_minis_test`; test launcher/config both reject development before any connection. `pnpm check` remains offline. |
-| Doppler and precedence | Existing launch fixtures extended for the API callback; real missing-access/wrong-config checks when credentials exist | Mismatch/missing login/key/outage fail before payload; `.env`, ambient passwords/URLs and unrelated managed keys do not reach process. No fallback file created; special-character fixture password preserved by named injection. |
-| Publication | `API_HOST_PORT=3001 ./scripts/api.sh start dev` and Docker binding inspection | Only host `127.0.0.1:3001` maps to container 3000. Occupied host port fails before usable API; unrelated `run`/`run-db` commands publish none. Remove only owned invocation. |
-| Watcher handoff | `./scripts/api.sh dev dev`; temporary API and DB source edits from host | API development image runs the watchers. DB finite build precedes watchers; API edits reload; DB edits emit JS and reload the dependent API. Observe changed behavior/new generated PID, not just watcher output. Restore source byte for byte. |
+| Actual service outage/restart | Native `docker:stop:test`, then `database.sh up test`, with API running against test | Ready 503 during outage, live 200, ready recovers after test startup. Test tmpfs loss is intentional; no test run may be concurrent. Do not stop/reset development. |
+| Correct target and process-test isolation | `tooling.sh run-db test pnpm test:api`; reject dev/mixed tuples before fetch and in runner/config | Dedicated suite passes only against `postgres_test/storage_minis_test`; test launcher/config both reject development before any connection. `pnpm check` remains offline. |
+| Doppler and precedence | Existing launch fixtures extended for allowlisted API payloads; real missing-access/wrong-config checks when credentials exist | Mismatch/missing login/key/outage fail before payload; `.env`, ambient passwords/URLs and unrelated managed keys do not reach process. No fallback file created; special-character fixture password preserved by named injection. |
+| Publication | `API_HOST_PORT=3001 ./scripts/database.sh api-up dev` and Docker binding inspection | Only host `127.0.0.1:3001` maps to container 3000. Occupied host port fails before usable API; unrelated `run`/`run-db` commands publish none. Remove only owned invocation. |
+| Watcher handoff | `./scripts/database.sh api-dev dev`; temporary API and DB source edits from host | API development image runs the watchers. DB finite build precedes watchers; API edits reload; DB implementation and schema edits emit JS/declarations and reload the dependent API. Observe changed behavior/new generated PID, not just watcher output. Restore source byte for byte. |
 | Watcher limits | Temporary DB compile error, rapid successive valid edits, dev TERM/INT | Error visible and no mistaken claim current code passed; correction rebuilds/reloads. No restart kills a legitimate >5s drain before the API's 10s deadline. Children close on outer signal. Restore source and stop watchers. |
 | Turbo graph/caches | `pnpm check --dry=json`; forced build/check then unchanged repeat | Actual dependencies, no recursive orchestration or persistent finite prerequisite; cache reused for finite unchanged work. Live tests/start/dev stay uncached. |
 | Artifact/source invalidation | Remove generated `dist` only while watchers stopped; repeat build; temporary DB implementation/type edit | Cache restores both declared outputs; DB changes invalidate API build/typecheck/root unit tests and lint. Compiler error prevents dependent success; deleted source leaves no stale finite-build output. Restore fixtures. |
+
+**Shared-target scheduling:** `test:db` now includes a schema suite that drops
+and recreates `public` and migration history on the exact test database. Run it
+to completion before the API process suite, then smoke, then controlled outage
+checks; close each phase's clients/children before the next. Do not run separate
+commands concurrently against this target. `fileParallelism: false` only orders
+files within one Vitest run. Outage experiments require exclusive use of the
+test service because stopping it discards tmpfs. If exclusive use cannot be
+established, defer that experiment or use a separately configured disposable
+Compose project/ports; never reset a target to conceal interference. This plan
+requires sequential execution, not a new distributed lock or test infrastructure.
 
 Use 30s per process test and 10s hooks, with a 180s suite supervisor deadline and
 an additional bounded child-termination cleanup path. Run process tests serially;
@@ -538,22 +655,43 @@ and preserve development storage; do not claim a pass or reset data to hide it.
 
 ## Local verification delivered by Step 4
 
-These commands are part of the implementation's required README quickstart;
-they do not exist yet. Running Docker Desktop and the documented dedicated
-Doppler login/configs/passwords are prerequisites. Runtime build/start requires
-neither host Node/pnpm nor initialized tooling dependency volumes. From the root:
+The API commands in this section are the final planned Step 4 workflow. They
+become available incrementally under the
+[stage guide](step-4-fastify-implementation-stages-2026-10-28.md); each stage
+documents only its working subset until the full quickstart is complete.
+Existing Step 3 setup/DB commands already exist. Docker Desktop and the documented dedicated
+Doppler browser login/configs/passwords are prerequisites. Runtime image build/
+start needs neither host Node/pnpm nor tooling dependency volumes. Reuse existing
+`.env.compose`; on a new checkout run `./scripts/configure-local.sh` once to save
+a unique project and distinct available DB ports. Do not overwrite an initialized
+checkout's settings or export a replacement project name.
+
+Proposed package aliases follow Step 3's native lifecycle convention. The
+security-bearing exceptions call only the existing Doppler boundary:
+
+| Planned alias | Host command |
+| --- | --- |
+| `pnpm docker:api:build` | `docker compose --env-file .env.compose --file compose.yaml build api api-dev` |
+| `pnpm docker:api:up` | `./scripts/database.sh api-up dev` |
+| `pnpm docker:api:dev` | `./scripts/database.sh api-dev dev` |
+| `pnpm docker:api:logs` | `docker compose --env-file .env.compose --file compose.yaml logs --follow api` |
+| `pnpm docker:api:stop` | `docker compose --env-file .env.compose --file compose.yaml stop api api-dev` |
+| `pnpm docker:api:verify` | `./scripts/database.sh api-verify test` |
+
+These aliases and the new allowlisted helper operations are proposed concrete
+names, not implemented commands or a general lifecycle dispatcher. Existing
+`docker:ps`, `docker:stop` and `docker:prune` cover the API through full-profile
+selection; their project-wide stop/down commands must honor service grace periods.
+Use the raw commands above for Docker-only operation. The following quickstart
+also needs no host pnpm, no required Doppler/project exports and no secret file:
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-topeka
-export DOPPLER_PROJECT=storage-minis
-export DOPPLER_CONFIG=dev
-export TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler
-export API_HOST_PORT=3000
-unset DOPPLER_TOKEN
+# First checkout only; skip when .env.compose already exists:
+./scripts/configure-local.sh
 
-./scripts/api.sh build
+docker compose --env-file .env.compose --file compose.yaml build api api-dev
 ./scripts/database.sh up dev
-./scripts/api.sh start dev
+./scripts/database.sh api-up dev
 curl --fail --silent --show-error --max-time 8 \
   --write-out '\nHTTP %{http_code}\n' http://127.0.0.1:3000/health/live
 curl --fail --silent --show-error --max-time 8 \
@@ -570,78 +708,99 @@ HTTP 200
 HTTP 200
 ```
 
-The same URLs can be opened in a browser. If `API_HOST_PORT` changes, use that
-explicit port in the URLs. `api.sh start` reports readiness failure rather than
-treating a created container as success. `./scripts/api.sh logs` follows safe API
-logs; interrupting the log viewer leaves the API running.
+The same URLs work in a browser. Run
+`API_HOST_PORT=3001 ./scripts/database.sh api-up dev` to deliberately override
+publication for that invocation; use its explicit port in the URLs.
+Routine default startup needs no export. API settings are not
+added to the current three-key `.env.compose` schema. Doppler executable/config
+discovery follows Step 3; contradictory explicit configs and an ambient
+`DOPPLER_TOKEN` are rejected. Clear earlier experimental exports as documented
+in the existing setup reference.
 
-Automated proof uses the actual runtime image, with the separate test DB already
-started. It can run while the normal development API remains on port 3000:
+Native `up --wait` supplies the startup result. Follow safe API logs with
+`docker compose --env-file .env.compose --file compose.yaml logs --follow api`;
+interrupting the viewer leaves the service running. Startup and readiness do not
+apply migrations or prove schema currency. Keep `pnpm docker:migrate` as a
+separate owner action, with its existing Docker-only equivalent, after SQL review.
+No development migration application is required for diagnostic health.
+
+Automated proof uses the actual runtime image and exclusive use of the test DB.
+It may coexist with the normal development API on port 3000, but not a schema
+suite, another test consumer or a concurrent test-service outage:
 
 ```sh
-DOPPLER_CONFIG=test ./scripts/database.sh up test
-DOPPLER_CONFIG=test ./scripts/api.sh verify test
-./scripts/database.sh stop test
+./scripts/database.sh up test
+./scripts/database.sh api-verify test
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test
 ```
 
-`verify test` requires the exact test tuple and invokes `scripts/verify-api.sh`
-on the host. It launches a uniquely named container from the built runtime image
-on the same Compose network, with no source/dependency volumes. Without an
-explicit `API_VERIFY_HOST_PORT`, request a Docker-assigned loopback host
-port, discover it from that owned container, and assert its image ID and running
-state before probing. This intentional isolated port is not collision fallback.
-The script uses the existing host `/usr/bin/curl` (confirmed present; no host
-tool installation) with bounded requests and exact status/body assertions.
-An explicit `API_VERIFY_HOST_PORT` must fail on collision. The usual exported
-`API_HOST_PORT=3000` does not prevent an isolated smoke run alongside that API.
+The verifier receives the exact test tuple through Doppler and launches a unique
+one-off container from the canonical runtime service using native Compose run
+with `--no-deps`, explicit loopback publication, no build/pull and no source/
+dependency mounts. It overrides `NODE_ENV=test` and inspects that owned container's
+image ID/running state before host HTTP probes. If `API_VERIFY_HOST_PORT` is
+absent, deliberately request a Docker-assigned loopback port and discover it
+from that container; an explicit port fails on collision. `API_HOST_PORT` never
+selects the smoke port. The selected test password enters only named environment
+variables, never command arguments or output.
 
-Give readiness polling 30s, each HTTP request at most 8s, signal cleanup 10s plus
-5s Docker overhead, and the whole smoke operation at most 60s. Send SIGTERM,
-capture the exit outcome and remove the owned container in a trap on every
-success/failure/interruption path; use forced removal only after its cleanup
-deadline. No unrelated API or database is stopped. Print image/container
-identity and assertion results without environment contents. Exit 0 only after
-health and shutdown assertions pass; failure exits nonzero. This bounded
-health-only smoke is required in Step 4; Step 6 will extend it with tRPC checks.
+`scripts/verify-api.sh` uses the existing host `/usr/bin/curl`, bounded requests
+and exact status/body assertions. Give readiness polling 30s, each request at
+most 8s, application shutdown 10s plus 5s Docker overhead, and the whole smoke
+operation at most 60s. Capture the SIGTERM exit outcome and remove only the owned
+probe in a trap on success/failure/interruption; force removal only after its
+cleanup deadline. Print safe image/container identity and assertion results.
+Exit 0 only after health and shutdown assertions pass. This is a narrow
+verification harness; Step 6 extends it with tRPC checks.
 
-For live editing, stop the built API, initialize this checkout's tooling volumes
-and dependencies, then run the API development image:
+For live editing after the existing one-time tooling setup, stop built mode and
+run foreground development. The native build/init commands replace the retired
+helper operations; repeat init/install only when needed:
 
 ```sh
-./scripts/api.sh stop
-./scripts/tooling.sh build
-./scripts/tooling.sh init
+docker compose --env-file .env.compose --file compose.yaml stop api api-dev
+docker compose --env-file .env.compose --file compose.yaml build tooling
+docker compose --env-file .env.compose --file compose.yaml run --rm --no-deps tooling-init
 ./scripts/tooling.sh run pnpm install --frozen-lockfile
 ./scripts/tooling.sh run pnpm check
-./scripts/api.sh dev dev
+./scripts/database.sh api-dev dev
 ```
 
-Stop foreground dev before clean builds. For the complete process-test suite,
-after the volume/dependency setup and with test PostgreSQL available, use
-`DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm test:api`. The quick
-image smoke and the broader process suite are separate required evidence.
-`api.sh stop` stops/removes only this project's built API container, preserving
-both database storage and tooling volumes; a source edit requires rebuilding
-the runtime image before built-mode results represent the changed source.
+Stop foreground dev before clean builds. For the complete process suite, after
+DB/tooling setup and once the schema suite has finished, use
+`./scripts/tooling.sh run-db test pnpm test:api`. It is separate required evidence
+from the quick image smoke. Finish/clean it before smoke or outage checks. A
+source edit requires rebuilding the runtime image before built-mode results
+represent the changed source.
 
-Use distinct available `POSTGRES_PORT`/`POSTGRES_TEST_PORT` for this checkout if
-another project owns 5433/5434; inspect before startup. Do not arbitrarily reuse
-the historical `storage-minis-beijing` resources. Stop only resources started for
-verification, using the existing lifecycle commands; preserve development and
-tooling volumes. No global prune or destructive reset is part of Step 4.
+Use native API-only stop to preserve databases/tooling, and full-profile native
+stop/down when deliberately shutting down this project. Native down retains
+named volumes; confirmed volume deletion is reserved for disposable verification
+here. Stop only owned verification resources and preserve initialized checkout
+settings. No global prune or development data reset is part of Step 4.
 
 ## Handoff, documentation and approval
 
 Implementation would change API source/tests/configuration and manifest, root
 scripts/lockfile/Turbo, DB package build/dev/files settings, the selected-target
-host launcher, and add the API Dockerfile/Compose/ignore/lifecycle/smoke files.
-Keep the tooling Dockerfile, Compose DB definitions and DB runtime factory.
+host credential boundary and canonical Compose API profiles. Add the API
+Dockerfile/ignore/smoke files, native package aliases and service-aware project
+shutdown changes. Keep the tooling Dockerfile, DB service definitions, settings
+schema, migration chain and DB runtime factory. No general API dispatcher or
+second Compose file is added.
+
 Update README/local-development with actual commands, variable
 inventory, watch limitations, logs and failure cleanup. Update AGENTS.md's
 current-state/command guidance using its writing skill when that edit is made.
-Record approved choices in technical direction and observed results in a new
-`docs/technical/step-4-verification-<implementation-date>.md`; then update the
-guide's Step 4 row with the PR/evidence link and actual completion status.
+Record approved choices in technical direction. Start the cumulative
+`docs/technical/step-4-verification-<implementation-date>.md` during stage 4.1;
+write its initial in-progress checkpoint before implementation and update it
+throughout the session and at every completed or interrupted handoff. Save results,
+pending checks, current diff/resource state and the exact resume action. Completed
+stages include evidence in their local Conventional Commit after required checks
+pass. Update setup documentation incrementally, then complete the full
+quickstart and the foundation guide's Step 4 PR/evidence row at 4.11. Earlier
+stages remain partial Step 4 delivery, not completion of the whole plan.
 
 ### Verification of support for Steps 5 and 6
 
@@ -655,8 +814,8 @@ AC4-01–AC4-18 require actual evidence before handoff.
 | Step 5: request context uses the existing DB | Registration callback receives the one process-owned full DB handle; identity/order/cleanup tests prove that contract. | Build tRPC request context and request information using that handle, with no fabricated principal/Organization. |
 | Step 5: safe errors and bounded requests | Fastify body limit, receive timeout, safe logger/error boundary and existing framework-error tests. | Specify/verify tRPC envelopes, output-validation errors, batching and adapter-specific parser/error behavior; Fastify error handling alone does not prove these. |
 | Step 5: future browser type contract | ESM/declaration builds and `files: ["dist"]` package built modules as they are added. The same API image rebuild includes future router output. | Add the type-only router export and prove emitted browser JavaScript imports no server/DB runtime. Step 4 provides no router type yet. |
-| Step 6: built-process smoke and shutdown | API runtime image, exact health responses, direct Node CMD, guarded process suite and `api.sh verify test` with owned-container cleanup. | Extend the existing smoke with valid/invalid tRPC requests and final failure/redaction scenarios rather than inventing another server lifecycle. |
-| Step 6: isolated PostgreSQL tests | Explicit test tuple guards, separate process/unit commands and known 6s check/10s shutdown limits. | Consolidate cross-package integration evidence and any remaining cleanup/injection cases; real schema/business tests stay gated. |
+| Step 6: built-process smoke and shutdown | API runtime image, exact health responses, direct Node CMD, guarded process suite and `database.sh api-verify test` with owned-container cleanup. | Extend the existing smoke with valid/invalid tRPC requests and final failure/redaction scenarios rather than inventing another server lifecycle. |
+| Step 6: isolated PostgreSQL tests | Explicit test tuple guards, separate process/unit commands and known 6s check/10s shutdown limits. | Consolidate cross-package evidence in sequential shared-target phases. Inherit Step 3B schema/replay tests; business writers and their races remain deferred. |
 | Step 6: repeatable clean setup and caches | Image build/dependency packaging, documented local workflow, offline checks and declared finite/persistent task graph. | Reproduce the complete Steps 1–5 setup from a clean checkout and verify integrated cache/artifact restoration and failure propagation. |
 | Step 6: setup diagnostics and limitations | README local verification, logs/stop commands, image identity, acceptance results and explicit deferrals. | Publish final consolidated evidence and outstanding T06/business/operations limitations. |
 
@@ -666,22 +825,31 @@ this image, and Step 6 extends verification of that same application artifact.
 Neither successor must rebuild pool ownership, the listener, local startup or
 Docker packaging merely to begin its assigned work.
 
-Deferred acceptance remains explicit: Step 3B schema/replay, T01/T03 business
-integrity and concurrency, T02 authorization/bootstrap, T04 operations, and
-T06's global Product reuse/private-data rejection, atomic business rollback,
+Step 3B structural schema/replay/constraint evidence is delivered and inherited.
+Remaining deferred acceptance is T01/T03 business-writer integrity,
+reconciliation and operation-level concurrency, T02 authorization/bootstrap,
+T04 operations, and T06's global Product reuse/private-data rejection, atomic business rollback,
 funding/deletion races, frontend/browser and CI outputs. Health and process tests
 do not establish those requirements or justify closing #26.
 
-**Approval requested:** P4-01's limited prerequisite clarification and P4-02–P4-11
-as the concrete Step 4 implementation scope, incorporating the owner's API-image,
-acceptance and local-verification requirements. The repository's
-[approval rule](../../AGENTS.md#owner-approval-before-decisions) says, “Wait for
-explicit approval before installing, adopting, configuring, or implementing the
-proposed choice.” Planning is complete; implementation remains pending that
-approval and Docker runtime availability.
+**Approval state:** the owner approved the eight post-Step-3 review amendments
+on 2026-10-28; their scope and rationale are recorded above and in technical
+direction. P4-01 is retired. The later stage 4.1 approval covers P4-02, configuration
+and the finite-build/strict-check portions of P4-08/P4-09, delivered in `472e0a7`.
+Other P4 application, watch, process and packaging recommendations still need
+explicit implementation approval within the amended direction. The earlier
+planning update performed no installation or implementation; current delivered
+scope is stage 4.1 only. Preserve existing approved Step 3 behavior and obtain
+approval only for uncovered choices when implementation is requested.
 
-Planning validation: live issue/PR state and native #26 blockers were inspected;
-package metadata and pinned upstream watch/server implementations were read.
-Changed local links/anchors, Markdown fences/table delimiters, whitespace and
-`git diff --check` passed. No dependencies were installed, containers started,
-secrets fetched, tests run or application/configuration files changed.
+Planning validation: the original review inspected issue/PR state, package
+metadata and pinned upstream watch/server implementations. The post-merge review
+refreshed `origin/main`, inspected Step 3 code/approval records and reread live
+T06. This revision records the owner's eight accepted amendments, replaces
+obsolete commands/prerequisites and aligns acceptance/verification/handoff text.
+No dependencies, containers, secrets, migrations or application configuration
+were changed during the documentation update; runtime evidence remains pending.
+The owner's subsequent request and confirmed interview retain 11 sequential
+session stages with individual prompts, ongoing checkpoints, local completion
+commits and focused/milestone verification. These execution decisions are approved;
+technical approval scope and all 18 acceptance requirements are unchanged.

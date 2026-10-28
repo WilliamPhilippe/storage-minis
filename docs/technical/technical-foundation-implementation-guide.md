@@ -8,10 +8,19 @@ Assign one step to one agent, deliver one PR, and hand off before the next step.
 Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
 implemented. Step 3A supplies Drizzle connection/tooling; Step 3B now supplies
 the approved structural schema, migration chain and PostgreSQL constraint tests.
-Steps 4–6 and business writers remain pending. The
-[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) is proposed, awaiting
-approval; its original Step 3B sequencing concern is superseded by the structural
-implementation below. The owner approved the
+Step 4 is in progress: [stage 4.1 configuration and finite builds](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds)
+is complete in `472e0a7`; stages 4.2–4.11, Steps 5–6 and business writers remain
+pending. The
+[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) incorporates the owner's
+[approved post-Step-3 review amendments](technical-direction.md#step-4-review-decisions-after-step-3-2026-10-28).
+P4-01 is retired; stage 4.1 choices are approved and implemented. Remaining
+implementation recommendations await approval.
+The owner requested [11 sequential session stages](../plans/step-4-fastify-implementation-stages-2026-10-28.md)
+with [individual assignment prompts](../plans/step-4-fastify-stage-prompts-2026-10-28.md),
+ongoing checkpoints and local completion commits. Assign one internal stage at a
+time and stop at its handoff. Focused checks apply per stage; full aggregate
+milestones are 4.4, 4.8 and 4.11. These retain the Step 4 PR/acceptance boundary.
+The owner approved the
 [split Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 with its separate schema gate. The owner approved both earlier concrete
 plans and selected `storage-minis` naming. Step 1 PR #103 is merged. Step 2's
@@ -55,14 +64,18 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B S01–S10 approved 2026-10-25; [structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), with fresh replay and 29 PostgreSQL tests passing. First development application remains an explicit owner action. |
-| 4 | Fastify server foundation | Steps 1–3 | [Proposed plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md), awaiting owner approval. Implementation not started; Step 3B structural delivery is now available. |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B S01–S10 approved 2026-10-25; [structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), merged in [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106). [Final evidence](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): fresh replay, 27 unit and 30 PostgreSQL tests passing. First development application remains an explicit owner action. |
+| 4 | Fastify server foundation | Steps 1–3 | [Revised plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md); eight review amendments approved 2026-10-28. [Sequential stages 4.1–4.11 and checkpoints](../plans/step-4-fastify-implementation-stages-2026-10-28.md) bound each implementation session. P4-01 retired. Stage 4.1 complete in `472e0a7` with [configuration/build evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds); stages 4.2–4.11 pending. Remaining implementation recommendations await approval; full Step 4 acceptance is incomplete. |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |
 
 Begin the next assignment from the previous step's merged result, unless the
 owner explicitly approves another branch arrangement. Reinspect the repository
 and predecessor evidence rather than assuming this table proves readiness.
+For Step 4's internal stages, the owner explicitly selected
+`WilliamPhilippe/step-4-implementation-plan` for every stage. Each stage's agent
+executes its local Conventional Commit after required checks pass; no merge or
+new branch between internal stages is required.
 Update the assigned row with its approval/evidence reference and PR when handing
 off; describe partial completion and deferrals explicitly.
 
@@ -332,6 +345,16 @@ schema delivery inherits the reviewed migration workflow.
 
 ## Step 4 — Fastify server foundation
 
+**Execution:** copy one [stage-specific prompt](../plans/step-4-fastify-stage-prompts-2026-10-28.md)
+from the [sequential implementation guide](../plans/step-4-fastify-implementation-stages-2026-10-28.md)
+per session. Keep its fixed boundary, obtain uncovered approvals before its work,
+and checkpoint before implementation and throughout the session. After required
+checks pass, save evidence and a local Conventional Commit, then stop. Incomplete
+work resumes the same stage. Run focused checks per stage and full ordinary
+aggregate checks at 4.4, 4.8 and 4.11; live checks remain separate. The completion
+criteria below cover the full Step 4 delivery across all stages. Stage completion
+does not close acceptance criteria still awaiting later evidence.
+
 ### Why this step is necessary
 
 A testable API process connects configuration, the DB dependency and HTTP
@@ -552,6 +575,13 @@ Successful health queries and HTTP validation do not establish business atomicit
 Organization isolation, authorization or concurrency correctness.
 
 ## Prompt for assigning an agent
+
+For Step 4 implementation, use the
+[individual stage prompts](../plans/step-4-fastify-stage-prompts-2026-10-28.md),
+selecting only the assigned stage such as `4.1`. Each is also its resume prompt;
+the progress table supplies the existing evidence path. The general prompt below
+applies to whole-step planning; its implementation clause must not expand a Step 4 stage
+assignment into the complete plan.
 
 ```text
 Plan Step <number> of docs/technical-foundation-implementation-guide.md.

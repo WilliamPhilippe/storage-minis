@@ -134,3 +134,37 @@ none is declared complete by this stage. The full aggregate is scheduled at 4.4,
 4.8 and 4.11; live/process/image/watch/cache milestones remain pending by design.
 No required 4.1 checks remain. Next action: stop after the local completion commit;
 only an explicit next assignment starts 4.2.
+
+
+## Documentation follow-up (2026-10-28)
+
+The owner requested committing/pushing the four preserved planning-document
+changes and updating all stage prompts to always report status and commit when
+needed. The README, parent plan, technical direction and foundation guide now
+reflect stage 4.1 complete in `472e0a7`, with stages 4.2–4.11 pending and overall
+Step 4 in progress. Historical planning/approval records remain dated; pending
+technical choices are not approved by this documentation change.
+
+All eleven standalone prompts now require synchronization of affected current
+status/approval summaries, inclusion of necessary stage documentation in the
+verified completion commit, and an explicit final report of stage/overall status,
+checks, actual commit hash or why no new commit was made, remaining uncommitted
+files/reasons and next action. An unchanged completed stage reports its existing
+commit; failed checks or a blocked commit keep the stage in progress. The stage
+guide and technical-direction execution record carry the same rules.
+
+Validation on 2026-10-28: `git diff --check` passed. A local Python inspection of
+all seven affected Markdown files checked relative file links, heading anchors,
+paired fences and table column structure; all passed. It extracted all eleven
+`text` prompt blocks and verified their stage IDs and the new status,
+documentation and conditional-commit instructions. Application code, dependencies
+and task configuration are unchanged, so the passing 4.1 runtime/type/unit
+results above remain applicable; no application tests or live experiments were
+rerun for this documentation-only follow-up.
+
+Completion commit subject: `docs: sync Step 4 status and stage handoffs`; resolve
+its hash through Git history. Commit/push all seven affected documentation files
+on `WilliamPhilippe/step-4-implementation-plan` as explicitly requested, then
+verify remote branch identity and a clean working tree. No additional application
+stage or resource changes are part of this follow-up. Next application work
+remains stage 4.2 only when assigned.

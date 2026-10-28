@@ -617,13 +617,74 @@ Docker image. The API image is therefore part of Step 4 delivery rather than
 an optional later packaging task. This makes the running application artifact
 and its local verification available to the transport and integration steps.
 
-The revised plan proposes development/runtime Dockerfile targets, portable
-production dependencies, Compose/lifecycle commands, a bounded image smoke
-and 18 acceptance criteria. The original Step 3A/3B sequencing concern is
-superseded by the structural delivery now recorded in this document. The detailed Step 4 choices and dependency pins still await approval;
-the owner requirements do not approve all implementation recommendations.
-No API image, application code or runtime configuration has been implemented during planning. Existing
-schema, authorization, deployment and full T06 acceptance gates remain.
+The plan proposes development/runtime Dockerfile targets, portable production
+dependencies, a bounded image smoke and 18 acceptance criteria. The post-Step-3
+review decisions below amend its Compose, setup and verification direction.
+Remaining dependency, packaging and application recommendations await explicit
+implementation approval. No API image, application code or runtime configuration
+has been implemented during planning. Business writers, authorization, deployment
+and full T06 acceptance remain outside this diagnostic delivery.
+
+## Step 4 review decisions after Step 3 (2026-10-28)
+
+**Owner approval:** After the Step 3 merge and review of its divergence from the
+[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md), the owner accepted all
+eight recommendations and requested a plan update. This approves the following
+amendments; it does not request application implementation or approve every
+remaining dependency/packaging/application recommendation in that plan.
+
+| Review item | Approved outcome and rationale |
+| --- | --- |
+| 1 — Native Compose | Add profiled API services to canonical `compose.yaml`. Prefer native lifecycle commands/direct aliases; keep custom code limited to Doppler injection and bounded verification. This preserves the accepted standard tooling direction and one project inventory. |
+| 2 — Saved settings/security | Reuse `.env.compose` and existing automatic Doppler project/config/executable selection. Preserve selected-key injection, target matching, dedicated browser login, no fallback and ambient-secret rejection; routine startup needs no exports. The three-key nonsecret settings schema stays unchanged. |
+| 3 — Current commands | Replace retired tooling build/init and database stop calls with implemented native aliases/raw Compose equivalents. Local instructions must match the inherited setup. |
+| 4 — Delivered prerequisites | Retire P4-01 without reusing its ID. Inherit Step 3B structural schema/migrations/replay and retain first-development-application ownership plus named writer/business acceptance deferrals. No sequencing exception remains necessary. |
+| 5 — Shutdown | Honor per-service grace periods across API and full-project stop/down, including the guarded disposable volume-cleanup path. Remove global overrides that truncate the API's proposed 15s grace and test bounded in-flight draining against its 10s application deadline. |
+| 6 — Existing diagnostics | Reuse implemented payload stderr forwarding. Preserve detailed redacted DB CLI messages/causes/codes and keep the proposed HTTP log policy separate; extending injection must not hide command errors. |
+| 7 — Typed DB handoff | Include compiled schema runtime/declaration modules in build, package and reload proof. Readiness checks connection identity, not migration currency; API startup never migrates. |
+| 8 — Shared-target isolation | Run schema, API process, smoke and outage phases sequentially when sharing a test target. A schema reset or test-service stop must not race another consumer; use disposable resources for destructive evidence. |
+
+**Recorded outcome:** The plan, acceptance matrix, local command examples and
+handoff have been revised to these decisions. Narrow payload names and direct
+API package aliases are documented as proposed implementation details. Existing
+Compose files/scripts, dependencies, schema/migrations and running resources are
+unchanged by this documentation update. These amendments are approved inputs for
+later implementation, not runtime evidence or T06 completion.
+
+**Owner execution request, 2026-10-28:** The owner subsequently requested small
+sequential implementation assignments because an AI agent may run out of usage
+allowance mid-implementation. The
+[stage guide](../plans/step-4-fastify-implementation-stages-2026-10-28.md) divides
+the existing scope into 11 stages, each with checks, a stopping point and durable
+checkpoint/resume instructions. Assign one stage per session and preserve
+incomplete work with an exact next action when interrupted. The parent plan
+remains the acceptance/technical contract, and the Step 4 PR boundary is unchanged.
+This decomposes the delivery work without approving pending technical choices or
+starting implementation.
+
+## Step 4 execution interview decisions (2026-10-28)
+
+**Owner approval:** After the planning interview, the owner confirmed the shared
+execution agreement and authorized the documentation update. Retain the existing
+**11 stages**, with one [copyable prompt per stage](../plans/step-4-fastify-stage-prompts-2026-10-28.md)
+as its starting packet. An earlier option to subdivide further was considered;
+the final agreement keeps the prepared boundaries and resumes the same stage
+after interruption rather than automatically creating substages.
+
+| Execution decision | Approved outcome and rationale |
+| --- | --- |
+| Durable restart state | Write an initial in-progress checkpoint before implementation, then update after meaningful verified results, before live/temporary-fixture experiments and at handoff. Credit exhaustion must not leave the final chat response as the only restart record. |
+| Local completion commits | After a stage's required checks pass, its implementing agent stages the changes/evidence and executes `git commit` with a Conventional Commit message; it reports the actual hash instead of leaving the commit to the owner. Incomplete or commit-blocked work stays in progress. Record the commit subject before committing and resolve its hash through Git history; no self-referential evidence commit is needed. Existing push/PR authorization remains separate. |
+| Stage versus acceptance completion | A stage can finish its scoped checks while a criterion needing later proof stays partial. AC4-06 closes only with outage liveness in 4.9; AC4-13 waits for the runtime/development/smoke security paths by 4.8. A progress label is not acceptance evidence. |
+| Verification cost | Run meaningful focused tests and affected strict checks at each stage. Run full ordinary aggregate checks at 4.4, 4.8 and 4.11. Reuse earlier evidence only while its relevant inputs remain valid; changes, failures or gaps require affected reruns. This retains verification while avoiding unnecessary full-suite repetition for every stage. |
+| Approval timing | Identify and obtain uncovered technical approvals before their consuming stage work. Reuse existing scoped approvals without requesting them again. The starting prompt identifies decisions to inspect; assigning a stage does not approve pending P4 recommendations. |
+| Status reporting and documentation (owner follow-up) | On 2026-10-28 the owner requested an explicit status report at every stage handoff, synchronization of affected current documentation, and a commit when verified stage changes exist. Report stage/overall status, checks, actual commit hash or why no new commit was made, remaining files/reasons and next action. Verify Git status; an unchanged completed stage reports its existing commit without an empty commit. Incomplete or commit-blocked stages remain in progress. |
+| Session boundary | Assign one stage/prompt per session and stop after its handoff/local commit. The owner named `WilliamPhilippe/step-4-implementation-plan` as the unique branch for all stages; verify it before changes and create no branch/worktree per stage. Keep the same evidence path across sessions and record exact remaining work/resources when interrupted. The eleven-stage sequence and full Step 4 PR boundary remain intact. |
+
+The stage guide, parent plan and foundation guide apply these decisions. No API
+code, dependencies, containers or migrations were implemented during the interview
+or documentation update. Remaining technical recommendations still need their
+recorded approval before implementation.
 
 ## Step 4.1 configuration and finite-build approval (2026-10-28)
 
@@ -640,7 +701,9 @@ recommendations retain their existing approval gates.
 | Finite builds | Use the existing TypeScript compiler for API ESM, declarations and JavaScript source maps; retain strict NodeNext and no-emit-on-error. Remove only each package's own `dist` with native Node `fs.rmSync` before its finite build. This prevents stale output after deletion/rename without adding a package or changing DB output/schema. Stop watchers before clean builds. |
 | Strict checks and graph | Cover API source, tests, scripts and Vitest configurations in no-emit checking. Reuse existing build/typecheck/lint dependencies and `dist/**` outputs; add a DB build dependency to root unit tests, which now consume compiled DB exports. Add only declarations for existing commands; dev/start/process/image tasks wait for their stages. |
 
-Implementation and executed checks are tracked in the
+Stage 4.1 is implemented and verified in commit `472e0a7`; stages 4.2–4.11
+remain pending and full Step 4 is in progress. Implementation and executed checks
+are tracked in the
 [cumulative evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds).
 Stage 4.1 does not deliver an HTTP factory/listener or claim full Step 4/T06
 acceptance.

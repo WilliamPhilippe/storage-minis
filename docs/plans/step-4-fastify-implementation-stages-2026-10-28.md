@@ -48,13 +48,21 @@ Those prompts are the starting packets for fresh and resumed sessions.
    staging the stage's changes/evidence and executing `git commit` with a
    Conventional Commit message on the named branch. A suggested message or
    instruction for the owner to commit is not a completed handoff. Inspect the
-   diff first and exclude unrelated existing work. If committing is blocked,
+   diff first and exclude unrelated existing work. Synchronize affected current
+   status/approval summaries in the parent plan, foundation guide, README and
+   technical direction alongside progress/evidence; preserve dated history.
+   If an already completed stage needs no changes, verify/report its existing
+   commit instead of creating an empty commit. If committing is blocked,
    record why and leave the stage in progress. Record the intended commit subject
    in the evidence, resolve its hash
    through Git history, and report the resulting hash in the handoff. This avoids
    needing a second commit solely to record a commit's own hash. Pushing/PR work
    remains subject to the implementation assignment's existing authorization.
-   Then stop; do not start the next stage merely because allowance remains.
+   Verify `git status --short` after committing. Every handoff reports the assigned
+   stage state and overall Step 4 state, checks passed/failed/unrun, actual commit
+   hash or why no new commit was made, remaining uncommitted files with reasons,
+   and the exact next action. Then stop; do not start the next stage merely
+   because allowance remains.
 
 Stage sizes are bounded by deliverables, not promised token/credit amounts. If a
 stage cannot finish within the available allowance, save an **in progress**

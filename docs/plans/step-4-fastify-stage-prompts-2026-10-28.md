@@ -1,7 +1,8 @@
 # Step 4 — Prompts for individual implementation stages
 
 **Date:** 2026-10-28. **Status:** owner-approved execution instructions;
-implementation has not started. Copy only the prompt for the stage being assigned.
+stage 4.1 is complete; stages 4.2–4.11 remain pending. Copy only the prompt
+for the stage being assigned.
 Each prompt also resumes that same stage after an interruption; no placeholder
 stage number or evidence path needs replacing.
 
@@ -22,11 +23,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, that guide's execution/completion/checkpoint rules and 4.1 card.
 In docs/plans/step-4-fastify-plan-2026-10-28.md read inherited scope, proposed
@@ -67,11 +78,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, that guide's execution/completion/checkpoint rules and 4.2 card.
 In docs/plans/step-4-fastify-plan-2026-10-28.md read the application/HTTP contract,
@@ -110,11 +131,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, that guide's execution/completion/checkpoint rules and 4.3 card.
 In docs/plans/step-4-fastify-plan-2026-10-28.md read application/process contracts,
@@ -151,11 +182,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker/PostgreSQL/Drizzle guidance, the stage guide's
 execution/completion/checkpoint rules and 4.4 card. In the parent plan
@@ -197,11 +238,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker tooling, the stage guide's execution/completion/
 checkpoint rules and 4.5 card. In docs/plans/step-4-fastify-plan-2026-10-28.md
@@ -240,11 +291,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker/PostgreSQL guidance, approved setup/maintenance
 records, the stage guide's execution/completion/checkpoint rules and 4.6 card.
@@ -287,11 +348,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker/PostgreSQL guidance, the stage guide's execution/
 completion/checkpoint rules and 4.7 card. In the parent plan
@@ -332,11 +403,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker/PostgreSQL guidance, the stage guide's execution/
 completion/checkpoint rules and 4.8 card. In the parent plan
@@ -377,11 +458,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README PostgreSQL/Drizzle guidance, the stage guide's execution/
 completion/checkpoint rules and 4.9 card. In the parent plan
@@ -421,11 +512,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, README Docker/PostgreSQL/volume-reset guidance, the stage guide's
 execution/completion/checkpoint rules and 4.10 card. In the parent plan
@@ -465,11 +566,21 @@ Use only branch WilliamPhilippe/step-4-implementation-plan for every stage.
 Verify it with git branch --show-current before changing files. Preserve
 existing work; do not create another branch or worktree per stage.
 
-You are responsible for staging this stage's files and running git commit
-with a Conventional Commit message after required checks pass. Do not stop
-at a suggested message or leave the commit to the owner. Report the actual
-commit hash. If committing is blocked, record why and keep the stage
-in progress instead of claiming completion.
+Before completing the stage, synchronize its progress/evidence and the affected
+current status/approval summaries in the parent plan, foundation guide, README
+and technical direction; preserve dated historical records. Include necessary
+stage documentation with its code/tests in the commit, excluding unrelated work.
+After required checks pass, stage those changes and run git commit with a
+Conventional Commit message. Do not leave the commit to the owner. If the stage
+is already complete and no changes are needed, verify and report its existing
+commit; create no empty commit. If checks or committing are blocked, record why
+and keep the stage in progress without a stage-completion commit.
+
+Always end with an explicit status report: assigned stage state (not started,
+in progress or complete), overall Step 4 state, checks passed/failed/unrun,
+actual commit hash or why no new commit was made, remaining uncommitted files
+and why they remain, and the exact next action. Verify git status --short after
+committing. Stop at this stage; push/PR work requires existing authorization.
 
 Read AGENTS.md, that guide's execution/completion/checkpoint rules and 4.11 card.
 In docs/plans/step-4-fastify-plan-2026-10-28.md read task graph, all AC4-01-18,
