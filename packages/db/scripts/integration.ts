@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readDatabaseConfig, requireTestDatabase } from "../src/config.js";
+import { formatDatabaseError } from "../src/diagnostics.js";
 
 requireTestDatabase(readDatabaseConfig(process.env));
 const require = createRequire(import.meta.url);
@@ -49,10 +50,13 @@ process.once("SIGINT", () => {
 process.once("SIGTERM", () => {
   interrupt("SIGTERM");
 });
-child.once("error", () => {
+child.once("error", (error) => {
   clearTimeout(deadline);
   clearTimeout(killTimer);
-  console.error("Could not start database integration tests.");
+  console.error(
+    "Could not start database integration tests.",
+    formatDatabaseError(error),
+  );
   process.exitCode = 1;
 });
 child.once("exit", (code) => {

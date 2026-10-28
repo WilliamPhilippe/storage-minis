@@ -5,21 +5,23 @@ public stock catalog for 1/64 miniature sellers and collectors.
 
 This repository contains workspace tooling, local PostgreSQL services, and
 application specifications. The Drizzle connection package and its tests are
-implemented. Business tables, the API, the React frontend, and CI are pending.
-Application startup commands are not available.
+implemented, along with the approved structural schema and replayable migrations.
+Business operations, the API, the React frontend, and CI are pending.
+Docker lifecycle commands currently start PostgreSQL infrastructure only; API
+and frontend startup will follow their application implementation.
 
 ## Structure
 
 ```text
-apps/api/              Fastify and tRPC workspace package; configuration only
-packages/db/           Drizzle connection package, commands and tests
-docker/                Tooling image and volume initializer
-scripts/tooling.sh     Run workspace commands in Docker
-scripts/database.sh    Manage development and test PostgreSQL
-compose.yaml           Tooling services and volumes
-compose.postgres.yaml  PostgreSQL services
-docs/                  Requirements, models, plans, and technical decisions
-AGENTS.md              Agent instructions and approval rules
+apps/api/                 Fastify and tRPC workspace package; configuration only
+packages/db/              Drizzle schema, migrations, connection package and tests
+docker/                   Tooling image and volume initializer
+scripts/tooling.sh        Run workspace commands in Docker
+scripts/database.sh       Manage development and test PostgreSQL
+scripts/reset-volumes.sh  Confirmed project volume deletion
+compose.yaml              Development PostgreSQL, optional test/tools, and volumes
+docs/                     Requirements, models, plans, and technical decisions
+AGENTS.md                 Agent instructions and approval rules
 ```
 
 The root contains shared TypeScript, ESLint, Prettier, Vitest, and Turborepo
@@ -31,86 +33,143 @@ Use Docker Desktop with a running Linux engine and Docker Compose. Run the
 commands below from the repository root. Docker supplies Node.js 24.22.1 and
 pnpm 12.15.0.
 
+Docker Desktop includes `docker compose`; no separate `docker-compose`
+installation is needed. Verify availability with `docker compose version`.
+
 For an existing host installation, use the
 [host setup instructions](docs/technical/local-development.md#local-setup).
 Both fnm and nvm support [.nvmrc](.nvmrc).
 
 ### Docker tooling
 
-Set a unique project name for each checkout. Replace the example if another
-checkout uses this name.
+After completing the Doppler browser login below, run the one-time setup:
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-beijing
-./scripts/tooling.sh build
-./scripts/tooling.sh init
-./scripts/tooling.sh run pnpm install --frozen-lockfile
-./scripts/tooling.sh run pnpm list --recursive --depth -1
-./scripts/tooling.sh run pnpm typecheck
-./scripts/tooling.sh run pnpm lint
-./scripts/tooling.sh run pnpm format:check
+pnpm docker:setup
 ```
 
-Build before you initialize volumes. Run one dependency installation at a time
-per checkout. The workspace list must show three private packages.
+On first use, choose a unique Compose project name and development/test ports.
+For this existing checkout, choose `storage-minis-beijing`, `5433`, and `5434` to
+reuse its volumes. The command saves those three nonsecret values in Git-ignored
+`.env.compose`, builds the tooling image, pulls PostgreSQL, initializes dependency
+volumes, installs frozen dependencies, and starts/checks development PostgreSQL.
+Rerunning setup preserves the file and existing data. Run one setup/install at a
+time per checkout.
 
-Each command uses a temporary container. Dependencies and caches remain in
-checkout-specific volumes. Host editors cannot resolve dependencies in these
-volumes.
+For later startup, including after restarting your computer:
 
-For runtime checks, storage cleanup, and launcher settings, see the
+```sh
+pnpm docker:up
+```
+
+No environment exports are needed. Keep Docker Desktop running. Commands select
+Doppler project `storage-minis` and the target's `dev`/`test` config automatically.
+Doppler is discovered on PATH, then at the approved standalone location; version
+3.77.1 remains required. Passwords and browser credentials stay outside the checkout.
+Startup performs no build, dependency installation or migration application.
+
+After first-time setup, apply the committed schema with:
+
+```sh
+pnpm docker:migrate
+```
+
+The schema was approved on 2026-10-25. This explicit command applies only pending
+migrations; repeat runs skip applied migrations. Ordinary startup needs only
+`pnpm docker:up`, with the volume preserved. There are no business API/frontend
+services yet. See the [schema implementation and boundaries](docs/database/step-3b-implementation-2026-10-25.md).
+
+The package shortcuts require the pinned host Node/pnpm versions. For Docker-only
+setup and command expansions, see the
 [local development reference](docs/technical/local-development.md#docker-tooling).
+Workspace commands run in temporary containers, with dependencies/cache in
+checkout-specific Linux volumes. Host editors cannot resolve those dependencies.
 
 ### Doppler host setup and verification
 
-Database commands require Doppler CLI 3.77.1 on the host and a browser login.
-Use the [Doppler setup instructions](docs/technical/local-development.md#doppler-host-setup-and-verification)
-before you start PostgreSQL. Ordinary tooling commands do not require Doppler.
+Database commands require Doppler CLI 3.77.1 and a one-time browser login. Use the
+[Doppler setup instructions](docs/technical/local-development.md#doppler-host-setup-and-verification).
+The existing Homebrew installation is discovered without an executable export.
+An expired login requires signing in again, without repeating setup.
+Ordinary tooling commands do not require Doppler.
 
 ## Local PostgreSQL
 
-Complete the Doppler setup first. In Doppler project `storage-minis`, keep
-`POSTGRES_PASSWORD` in config `dev` and `POSTGRES_TEST_PASSWORD` in config `test`.
-Use different passwords. The launcher requires the config to match its target.
+In Doppler project `storage-minis`, keep `POSTGRES_PASSWORD` in config `dev` and
+`POSTGRES_TEST_PASSWORD` in config `test`. Use different passwords. After setup:
 
 ```sh
-export COMPOSE_PROJECT_NAME=storage-minis-beijing
-export DOPPLER_PROJECT=storage-minis
-export DOPPLER_CONFIG=dev
-export TOOLING_DOPPLER_BIN=/opt/homebrew/bin/doppler
-unset DOPPLER_TOKEN
-
-./scripts/database.sh pull
-./scripts/database.sh up dev
-DOPPLER_CONFIG=test ./scripts/database.sh up test
+pnpm docker:up
+pnpm docker:up:test
 ./scripts/database.sh check dev
-DOPPLER_CONFIG=test ./scripts/database.sh check test
+./scripts/database.sh check test
 ./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
 ```
 
-The Doppler executable setting above selects the existing Homebrew installation.
-For the standalone installation, omit that setting.
+Explicit contradictory `DOPPLER_PROJECT`/`DOPPLER_CONFIG` overrides are rejected;
+normal commands choose the correct config without them.
 
-| Target | Host address | Container address | Database |
+| Target | Default host address | Container address | Database |
 | --- | --- | --- | --- |
 | Development | `127.0.0.1:5433` | `postgres:5432` | `storage_minis_dev` |
 | Test | `127.0.0.1:5434` | `postgres_test:5432` | `storage_minis_test` |
 
 Both services use PostgreSQL 18.6, user `postgres`, and timezone `UTC`.
 Development data persists. Test data is deleted when its container stops.
-The databases contain no application tables. The DBML draft is not applied.
+Apply the approved schema separately with `pnpm docker:migrate`. Change only the
+three documented nonsecret settings
+in `.env.compose` deliberately; changing the project name selects different volumes.
+For logs, port conflicts, password changes, or target-specific data deletion, see
+the [database reference](docs/technical/local-development.md#local-postgresql).
 
-To stop the services:
+## Docker lifecycle commands
+
+The canonical `compose.yaml` defines development PostgreSQL by default. Test,
+tooling, and the SQL client use optional `test`, `tools`, and `db-tools` profiles.
+Run package scripts on the host from the repository root. In the table,
+`docker compose …` means
+`docker compose --env-file .env.compose --file compose.yaml`.
+
+| Host command | Raw equivalent | Behavior |
+| --- | --- | --- |
+| `pnpm docker:setup` | See the [setup expansion](docs/technical/local-development.md#docker-tooling) | Save settings once, build/pull, init, frozen install and start dev |
+| `pnpm docker:build` | `docker compose … build tooling` | Build the tooling image |
+| `pnpm docker:init` | `docker compose … run --rm --no-deps tooling-init` | Initialize dependency/cache volumes |
+| `pnpm docker:up` | `./scripts/database.sh up dev` | Start default services and verify database authentication |
+| `pnpm docker:up:test` | `./scripts/database.sh up test` | Start/check only test PostgreSQL |
+| `pnpm docker:migrate` | `./scripts/tooling.sh run-db dev pnpm db:migrate` | Apply pending committed migrations to development PostgreSQL |
+| `pnpm docker:stop` | `docker compose … --profile '*' stop --timeout 10` | Stop all services; retain containers and named volumes |
+| `pnpm docker:stop:test` | `docker compose … stop --timeout 10 postgres_test` | Stop only test PostgreSQL |
+| `pnpm docker:prune` | `docker compose … --profile '*' down --remove-orphans --timeout 10` | Remove project containers/network; preserve named volumes |
+| `pnpm docker:prune:volumes --confirm PROJECT` | `./scripts/reset-volumes.sh --confirm PROJECT` | Also erase development data, dependencies and caches |
+| `pnpm docker:ps` | `docker compose … --profile '*' ps --all` | List all service containers |
+| `pnpm docker:logs` | `docker compose … logs --follow postgres` | Follow development logs; use `postgres_test` for test logs |
+
+Native aliases use Docker on PATH and its normal context. All helpers locate the
+saved settings from the checkout, even when invoked from another directory.
+Plain `.env` files remain ignored. Raw Compose commands must retain the explicit
+`--env-file .env.compose --file compose.yaml` selection. If you previously exported
+project, port or Doppler selections, clear them once in that terminal; explicit
+environment overrides otherwise take precedence over the saved settings.
+
+Stop, teardown, status and logs need no Doppler. Ordinary teardown preserves data:
 
 ```sh
-./scripts/database.sh stop test
-./scripts/database.sh stop dev
-./scripts/database.sh down
+pnpm docker:prune
 ```
 
-Use `database.sh down` for project shutdown when databases have been started.
-For logs, port conflicts, password changes, or data deletion, see the
-[database reference](docs/technical/local-development.md#local-postgresql).
+Full volume deletion requires the exact project name from `.env.compose` and
+checks ownership before teardown. For this checkout:
+
+```sh
+pnpm docker:prune:volumes --confirm storage-minis-beijing
+```
+
+This erases development data and dependency/cache volumes. The saved settings file
+remains; rerun `pnpm docker:setup` to rebuild dependencies and start with fresh
+storage. See the [cleanup reference](docs/technical/local-development.md#shutdown-and-explicit-storage-removal)
+for narrower resets and the [technical record](docs/technical/technical-direction.md#one-time-local-setup-2026-10-25)
+for approval, command contracts and verification.
 
 ## Drizzle tooling
 
@@ -119,8 +178,8 @@ No host Drizzle installation is needed. After Docker dependency installation:
 ```sh
 ./scripts/tooling.sh run pnpm build
 ./scripts/tooling.sh run-db dev pnpm db:check
-DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm db:check
-DOPPLER_CONFIG=test ./scripts/tooling.sh run-db test pnpm test:db
+./scripts/tooling.sh run-db test pnpm db:check
+./scripts/tooling.sh run-db test pnpm test:db
 ```
 
 These commands reuse the project/Doppler settings above. `build` emits the DB
@@ -128,9 +187,17 @@ package; `db:check` verifies an authenticated query; `test:db` requires the test
 service and runs uncached integration tests. Stop test storage only after tests
 finish; it is discarded on stop.
 
-`pnpm db:generate` and `pnpm db:migrate` currently refuse with
-“Schema/migrations pending approval (Step 3B)” before connecting or creating files.
-The first business migration requires the separate schema reconciliation review.
+Generation and application are separate uncached commands:
+
+```sh
+./scripts/tooling.sh run pnpm db:generate
+pnpm docker:migrate
+```
+
+Generation compares the approved TypeScript schema with committed snapshots,
+without connecting. Review generated SQL/snapshots/journal before applying.
+Application validates the explicit local target, skips applied history, and has
+bounded connection/lock/statement/process waits. It runs no seed or import.
 See [Drizzle setup and lifecycle](docs/technical/local-development.md#drizzle-tooling).
 
 ## Development checks
@@ -189,18 +256,21 @@ new technical decisions. Use the existing
 
 Read approved update logs with the published requirements. Later approved
 decisions take precedence over conflicting text. Requirements, ownership, and
-database drafts still need consolidation.
+the versioned requirements baseline still needs consolidation; the database
+diagram now matches the approved structural schema.
 
 - [Requirements v0.7](docs/requirements/requirements-v0.7.md)
 - [Entity map v0.8](docs/entities/entity-map-v0.8.md)
 - [Approved updates and propagation status](docs/requirement-updates/README.md)
 - [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md)
 - [Shared PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md)
-- Database drafts: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [Step 3B schema review](docs/database/step-3b-schema-review-2026-10-25.md)
+- Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), [approved review](docs/database/step-3b-schema-review-2026-10-25.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
+- [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
+- [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review](docs/technical/technical-direction-review.md)
 

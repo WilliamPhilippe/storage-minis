@@ -6,3 +6,4 @@ export {
   validateDatabaseConfig,
 } from "./config.js";
 export type { DatabaseConfig } from "./config.js";
+export * as schema from "./schema/index.js";

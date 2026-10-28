@@ -1,19 +1,19 @@
-// storage-minis database design, draft 1 — reviewed 2026-10-23.
+// storage-minis structural database schema — approved and implemented 2026-10-25.
 // Sources: entity-map-v0.8.md and dated schema-review logs. Review guide: design.md.
-// This is a visual proposal, not an approved physical schema or a migration.
+// Diagram synchronized with Step 3B. Executable source/migrations: packages/db; see step-3b-implementation-2026-10-25.md.
 // Money uses integer BRL centavos; actual occurrence timestamps use timestamptz.
-// Key generation, column names, optionality beyond explicit requirements, and table boundaries
-// are proposals. All candidate table shapes were rejected and are absent.
+// S01-S10 approve representation, keys, scope and bounded structural delivery.
+// All candidate table shapes were rejected and are absent; business writers remain deferred.
 
-Project storage_minis_draft_1 {
+Project storage_minis {
   database_type: 'PostgreSQL'
   Note: '''
-    Visual schema draft with the 2026-10-23 owner field review applied; see design.md.
+    Approved structural schema, incorporating the 2026-10-25 S01-S10 review; see design.md.
     E-IDs in notes preserve traceability; see design.md for all 38 mapped entries.
     Product and User are global. Operational records belong to an Organization.
     Monetary values are integer BRL centavos. Integer keys are separate from readable unit IDs.
     Timestamp instants use timestamptz; reporting uses UTC and display is visitor-local.
-    Some older shapes still await October 22 propagation; see design.md.
+    Missing permission, public unit fields, Customer name and deletion-safe audit are propagated.
     Remaining role/transition/enforcement and T01/T02/T03/T05 contracts are unresolved.
     Partial uniqueness, aggregate reconciliation, authorization, history validation,
     and atomic/concurrent operations need enforcement beyond these diagram references.
@@ -91,40 +91,60 @@ Enum user_role {
 // Global User roles and Organization-scoped Membership roles are distinct.
 
 Table organizations [headercolor: #4B6B9E] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   name text [not null, note: 'Proposed display field for the Organization.']
-  created_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
 
   Note: 'E01 | REQ-004; ORG-001-002, ORG-008-009. One implicit collection through InventoryItem membership. No Product ownership.'
+
+  checks {
+    `"organizations"."id" > 0` [name: 'organizations_positive_id']
+  }
 }
 
 Table users [headercolor: #4B6B9E] {
-  id integer [pk, not null]
-  firebase_uid text [not null, note: 'External Google-only Firebase identity. Uniqueness remains required, with its supporting index deferred; T02 owns bootstrap and recovery.']
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
+  firebase_uid text [not null, note: 'External Google-only Firebase identity, unique. T02 owns bootstrap and recovery.']
   email text [note: 'Identity profile; no email uniqueness or first-login administrator rule is implied.']
   display_name text
   role user_role [not null, default: 'user', note: 'Global role. Capability mapping and bootstrap remain T02; this role alone does not grant Organization access.']
-  created_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+  can_edit_products boolean [not null, default: false, note: 'Global Product-edit permission; T02 bootstrap grants the initial administrator, without seeding here.']
 
   Note: 'E02 | ORG-003-005; TECH-001. Global application identity. Authentication tokens and session persistence are T02 implementation work.'
+
+  indexes {
+    (firebase_uid) [unique, name: 'users_key_1']
+  }
+
+  checks {
+    `"users"."id" > 0` [name: 'users_positive_id']
+  }
 }
 
 Table memberships [headercolor: #4B6B9E] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   user_id integer [not null]
   granted_at timestamptz [not null]
   role membership_role [not null, note: 'Organization role: owner, editor or viewer. Revocation deletes this Membership; preserve the action in shared audit.']
 
-  indexes { organization_id }
-
   Note: 'E03 | ORG-003-005, ORG-008. One current User-Organization association. Revocation deletes the row; prior grants/revocations remain in audit independently of that row. Role capabilities remain T02.'
+
+  indexes {
+    organization_id [name: 'memberships_organization_idx']
+    (organization_id, user_id) [unique, name: 'memberships_key_1']
+  }
+
+  checks {
+    `"memberships"."id" > 0` [name: 'memberships_positive_id']
+  }
 }
 
 // Global catalog values and Organization-owned physical units.
 
 Table products [headercolor: #387D70] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   name text [not null]
   sku text [not null, note: 'Required and deliberately NONUNIQUE. Not an automatic import/deduplication key.']
   brand text [not null, note: 'E43: embedded required brand value; no Brand entity.']
@@ -132,6 +152,7 @@ Table products [headercolor: #387D70] {
   images text[] [note: 'E42: list of image URL/storage-reference strings. Hosting and public presentation remain D04/T04.']
   is_chase boolean [not null, default: false, note: 'Shared Product variant attribute.']
   registration_event_id integer [not null, note: 'Global registration provenance; the event may retain Organization context without Product ownership.']
+  registration_scope integer [not null, note: 'Stored generated constant 0, requiring a global registration event; not Product ownership.']
 
   Note: '''
     E04 | PRO-001-013. Global Product: no organization_id, unit condition, price,
@@ -139,11 +160,15 @@ Table products [headercolor: #387D70] {
     Global edit authority/current historical labels are approved; enforcement remains D07/T01/T02.
     D04 defines the public field allowlist; internal sharing does not publish all fields.
   '''
+
+  checks {
+    `"products"."id" > 0` [name: 'products_positive_id']
+  }
 }
 
 Table inventory_items [headercolor: #387D70] {
-  id integer [pk, not null, note: 'Permanent internal Item key; never reused.']
-  inventoryId text [not null, note: 'Short readable box identifier assigned automatically at Purchase registration, including preorders. Immutable, Organization-unique and never reused; gaps allowed. Proposed compact format: uppercase base36, no prefix/padding (1, Z, 10). T01 must enforce uniqueness and concurrent generation.']
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY. Permanent internal Item key; never reused.']
+  inventoryId text [not null, note: 'Stored generated uppercase base36 of permanent id, using public.inventory_id_base36. Cannot be edited independently. Assigned at registration, including preorders; retained through soft removal and resale. No prefix/padding; gaps allowed.']
   organization_id integer [not null]
   product_id integer [not null]
   purchase_id integer [not null, note: 'Scope key constrained to the originating PurchaseItem, including marked opening Purchases.']
@@ -160,15 +185,11 @@ Table inventory_items [headercolor: #387D70] {
   first_sale_approval_event_id integer
   removed_event_id integer [note: 'Soft removal retains this row and identity. Ordinary removal requires Open Purchase, no receipt and zero allocated supplier payment.']
   acquisition_expense_completeness expense_completeness [not null, default: 'unknown', note: 'Completeness of applicable additional expenses. Full cost completeness also needs a known merchandise amount. Explicit complete/settled collection-unit finalization is approved independently of sale eligibility.']
-  finalized_acquisition_cost integer [note: 'E44: proposed embedded snapshot of authoritative acquisition sources, not a manually editable balance.']
+  finalized_acquisition_cost integer [note: 'E44: approved embedded snapshot of authoritative acquisition sources, not a manually editable balance.']
   cost_finalized_event_id integer [note: 'Permanent lock at first sale approval or explicit eligible collection-unit cost finalization; removing approval/membership never unlocks costs.']
   created_event_id integer [not null]
-
-  indexes { organization_id }
-
-  checks {
-    `((finalized_acquisition_cost IS NULL) = (cost_finalized_event_id IS NULL))` [name: 'cost_snapshot_has_event']
-  }
+  public_description text [note: 'Optional public unit description, separate from private_notes.']
+  public_images text[] [note: 'Optional public unit photo references, separate from global Product photos.']
 
   Note: '''
     E05; embedded E44 | REQ-009, REQ-012; INV-001-031; COL-001-009; PUR-023.
@@ -182,29 +203,52 @@ Table inventory_items [headercolor: #387D70] {
     Opening units use marked month/Supplier-grouped Purchases with reviewed evidence.
     Ordinary merchandise costs are required; missing legacy facts remain explicit.
   '''
+
+  indexes {
+    organization_id [name: 'inventory_items_organization_idx']
+    // Native partial UNIQUE one_collection_unit: (organization_id, product_id) WHERE sale_status = 'collection'
+    (organization_id, purchase_id, id) [unique, name: 'inventory_items_key_1']
+    (organization_id, id) [unique, name: 'inventory_items_key_2']
+    (organization_id, inventoryId) [unique, name: 'inventory_items_key_3']
+  }
+
+  checks {
+    `"inventory_items"."id" > 0` [name: 'inventory_items_positive_id']
+    `((finalized_acquisition_cost IS NULL) = (cost_finalized_event_id IS NULL))` [name: 'cost_snapshot_has_event']
+    `"inventory_items"."merchandise_cost" >= 0` [name: 'inventory_items_merchandise_cost_nonnegative']
+    `"inventory_items"."asking_price" >= 0` [name: 'inventory_items_asking_price_nonnegative']
+    `"inventory_items"."finalized_acquisition_cost" >= 0` [name: 'inventory_items_finalized_acquisition_cost_nonnegative']
+  }
 }
 
 // Purchasing, item-level funding, and actual supplier refunds.
 
 Table suppliers [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   name text [not null]
   phone text
   type supplier_type
-  is_unknown boolean [not null, default: false, note: 'Organization-owned placeholder used only when an imported unit has no known Supplier. T01 must enforce one placeholder per Organization; do not invent contact/type facts.']
+  is_unknown boolean [not null, default: false, note: 'Organization-owned placeholder used only when an imported unit has no known Supplier. A partial unique index enforces one placeholder per Organization; do not invent contact/type facts.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
+  Note: 'E06 | SUP-001-012. Known Suppliers require name/phone/type; the import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
+
+  indexes {
+    organization_id [name: 'suppliers_organization_idx']
+    // Native partial UNIQUE one_unknown_supplier: (organization_id) WHERE is_unknown
+    (organization_id, id) [unique, name: 'suppliers_key_1']
+  }
+
   checks {
+    `"suppliers"."id" > 0` [name: 'suppliers_positive_id']
     `(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))` [name: 'known_supplier_has_contact_and_type']
     `(NOT is_unknown OR (phone IS NULL AND type IS NULL))` [name: 'unknown_supplier_has_no_fabricated_details']
   }
-  Note: 'E06 | SUP-001-012. Known Suppliers require name/phone/type; the import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
 }
 
 Table purchases [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   supplier_id integer [not null]
   ordered_on timestamptz [not null, note: 'Actual occurrence for ordinary Purchases. For month-grouped openings, use the owner-approved convention: second day of opening_month, normalized to 00:00 UTC. This is a conventional import timestamp, not evidence of an actual historical day/time.']
@@ -220,18 +264,10 @@ Table purchases [headercolor: #97703C] {
   canceled_event_id integer
   created_event_id integer [not null]
 
-  indexes { organization_id }
-
-  checks {
-    `((opening_month IS NOT NULL) = is_opening)` [name: 'opening_purchase_has_month']
-    `(opening_month IS NULL OR (opening_month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$' AND left(opening_month, 4) <> '0000'))` [name: 'valid_opening_month']
-    `(NOT is_opening OR ordered_on = (opening_month || '-02T00:00:00Z')::timestamptz)` [name: 'opening_purchase_uses_second_day']
-  }
-
   Note: '''
     E07; E39 opening treatment | PUR-001-015, PUR-028-041, PUR-045-049.
     Opening groups use one known Supplier or the Organization's unknown Supplier.
-    T01 must enforce one opening group per Organization/Supplier/year-month under concurrency.
+    A partial unique index enforces one opening group per Organization/Supplier/year-month under concurrency.
     Second-day midnight-UTC occurrence is an approved import convention, not an actual-time claim.
     Historical funding/receipt evidence is reviewed under T05, never manufactured.
     Ordinary payment and receipt progress are derived per active unit, separately from lifecycle. Completion requires all
@@ -239,24 +275,47 @@ Table purchases [headercolor: #97703C] {
     Purchases reject ordinary edits. Any historical receipt forbids cancellation.
     Shared expenses have independent identities and settlement; never cascade-delete them.
   '''
+
+  indexes {
+    organization_id [name: 'purchases_organization_idx']
+    // Native partial UNIQUE one_opening_purchase: (organization_id, supplier_id, opening_month) WHERE is_opening
+    (organization_id, id) [unique, name: 'purchases_key_1']
+    (organization_id, supplier_id, id) [unique, name: 'purchases_key_2']
+  }
+
+  checks {
+    `"purchases"."id" > 0` [name: 'purchases_positive_id']
+    `((opening_month IS NOT NULL) = is_opening)` [name: 'opening_purchase_has_month']
+    `(opening_month IS NULL OR (opening_month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$' AND left(opening_month, 4) <> '0000'))` [name: 'valid_opening_month']
+    `(NOT is_opening OR ordered_on = (opening_month || '-02T00:00:00Z')::timestamptz)` [name: 'opening_purchase_uses_second_day']
+  }
 }
 
 Table purchase_items [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   purchase_id integer [not null]
   ordered_quantity integer [not null, note: 'Registered quantity with dated amendments preserved. Active quantity derives from retained InventoryItems.']
   merchandise_total integer [note: 'Source line total, required for ordinary Purchases by cross-record enforcement. Unknown opening costs remain null for T05 review. Deterministic shares use exact centavo allocation.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  checks { `ordered_quantity > 0` [name: 'positive_ordered_quantity'] }
-
   Note: 'E08 | PUR-002-007; INV-006. No product_id: reach one shared Product through all generated InventoryItems. Preserve removed identities and original line facts in shared history.'
+
+  indexes {
+    organization_id [name: 'purchase_items_organization_idx']
+    (organization_id, purchase_id, id) [unique, name: 'purchase_items_key_1']
+    (organization_id, id) [unique, name: 'purchase_items_key_2']
+  }
+
+  checks {
+    `"purchase_items"."id" > 0` [name: 'purchase_items_positive_id']
+    `ordered_quantity > 0` [name: 'positive_ordered_quantity']
+    `"purchase_items"."merchandise_total" >= 0` [name: 'purchase_items_merchandise_total_nonnegative']
+  }
 }
 
 Table supplier_payments [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   supplier_id integer [not null]
   amount integer [not null]
@@ -264,12 +323,22 @@ Table supplier_payments [headercolor: #97703C] {
   method text [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E09 | SUP-010-011; PUR-042-044. Actual outgoing merchandise cash. Fully allocated at entry to individual units of this Supplier, possibly across Purchases. Corrections preserve original cash and dated changes.'
+
+  indexes {
+    organization_id [name: 'supplier_payments_organization_idx']
+    (organization_id, supplier_id, id) [unique, name: 'supplier_payments_key_1']
+    (organization_id, id) [unique, name: 'supplier_payments_key_2']
+  }
+
+  checks {
+    `"supplier_payments"."id" > 0` [name: 'supplier_payments_positive_id']
+    `"supplier_payments"."amount" > 0` [name: 'supplier_payments_positive_amount']
+  }
 }
 
 Table supplier_payment_allocations [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   supplier_id integer [not null, note: 'Scope key matching both Payment and the originating Purchase.']
   supplier_payment_id integer [not null]
@@ -278,12 +347,21 @@ Table supplier_payment_allocations [headercolor: #97703C] {
   amount integer [not null, note: 'Preserved original allocation amount; dated release/reclassification consequences remain queryable.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E10 | PUR-034, PUR-042-044. Unit-level funding, not merely a PurchaseItem allocation. Effective funding derives from original allocations and dated resolutions/corrections; no cash is created by reassignment.'
+
+  indexes {
+    organization_id [name: 'supplier_payment_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'supplier_payment_allocations_key_1']
+  }
+
+  checks {
+    `"supplier_payment_allocations"."id" > 0` [name: 'supplier_payment_allocations_positive_id']
+    `"supplier_payment_allocations"."amount" > 0` [name: 'supplier_payment_allocations_positive_amount']
+  }
 }
 
 Table supplier_refunds [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   supplier_id integer [not null]
   settlement_id integer [not null, note: 'Approved supplier-side settlement; original funding portions are traced through its source allocations.']
@@ -293,14 +371,23 @@ Table supplier_refunds [headercolor: #97703C] {
   related_loss_id integer [note: 'Optional original Loss provenance for actual money received later; avoid duplicating its economic adjustment.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E11 | SUP-009, SUP-011-012; PUR-029-033. Actual cash received only. An expected refund is represented by the source-linked settlement obligation until received or explicitly resolved as Loss.'
+
+  indexes {
+    organization_id [name: 'supplier_refunds_organization_idx']
+    (organization_id, id) [unique, name: 'supplier_refunds_key_1']
+  }
+
+  checks {
+    `"supplier_refunds"."id" > 0` [name: 'supplier_refunds_positive_id']
+    `"supplier_refunds"."amount" > 0` [name: 'supplier_refunds_positive_amount']
+  }
 }
 
 // Expenses: one cost source, dated partial cash payments, and selected-unit cost allocations.
 
 Table purchase_expenses [headercolor: #A46D46] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   amount integer [not null, note: 'Expense value, whether paid or unpaid; count it once as an expense.']
   incurred_on timestamptz [not null]
@@ -311,13 +398,6 @@ Table purchase_expenses [headercolor: #A46D46] {
   settled_on timestamptz [note: 'Completion timestamp only: null until fully paid, then the actual time of the payment completing this expense. Each installment retains its own date/method below.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  checks {
-    `amount > 0` [name: 'positive_purchase_expense']
-    `(settled_amount >= 0 AND settled_amount <= amount)` [name: 'purchase_expense_payment_bounds']
-    `((settled_on IS NOT NULL) = (settled_amount = amount))` [name: 'purchase_expense_fully_paid_timestamp']
-  }
-
   Note: '''
     E13; linked E15 | PUR-016-024, PUR-035, PUR-047-049; FIN-001-002.
     One Organization-owned expense can concern several Purchases. Amount and cash
@@ -325,11 +405,22 @@ Table purchase_expenses [headercolor: #A46D46] {
     those units. No Purchase owner, header allocation, estimate, or automatic redistribution.
     Changes preserve completed-Purchase facts and finalized unit costs across all links.
   '''
+
+  indexes {
+    organization_id [name: 'purchase_expenses_organization_idx']
+    (organization_id, id) [unique, name: 'purchase_expenses_key_1']
+  }
+
+  checks {
+    `"purchase_expenses"."id" > 0` [name: 'purchase_expenses_positive_id']
+    `amount > 0` [name: 'positive_purchase_expense']
+    `(settled_amount >= 0 AND settled_amount <= amount)` [name: 'purchase_expense_payment_bounds']
+    `((settled_on IS NOT NULL) = (settled_amount = amount))` [name: 'purchase_expense_fully_paid_timestamp']
+  }
 }
 
-
 Table purchase_expense_payments [headercolor: #A46D46] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   purchase_expense_id integer [not null]
   amount integer [not null, note: 'Actual outgoing installment in integer centavos, counted once as cash. Not another expense or cost allocation.']
@@ -337,13 +428,21 @@ Table purchase_expense_payments [headercolor: #A46D46] {
   method text [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  checks { `amount > 0` [name: 'positive_purchase_expense_payment'] }
   Note: 'E15 purchase side | One expense may have many dated payments. T01 must atomically record payment/audit, reconcile settled_amount to authoritative payments, reject overpayment/cross-Organization references and serialize competing payments. Preserve every installment; never replace an earlier payment with a later cumulative value.'
+
+  indexes {
+    organization_id [name: 'purchase_expense_payments_organization_idx']
+    (organization_id, id) [unique, name: 'purchase_expense_payments_key_1']
+  }
+
+  checks {
+    `"purchase_expense_payments"."id" > 0` [name: 'purchase_expense_payments_positive_id']
+    `amount > 0` [name: 'positive_purchase_expense_payment']
+  }
 }
 
 Table acquisition_expense_allocations [headercolor: #A46D46] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   purchase_expense_id integer [not null]
   purchase_id integer [not null, note: 'Scope key constrained to the target Item acquisition. Derive PurchaseExpense-Purchase links exclusively from unit allocations.']
@@ -351,12 +450,22 @@ Table acquisition_expense_allocations [headercolor: #A46D46] {
   amount integer [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E14 | PUR-018-021, PUR-024, PUR-048-049; INV-011. One current cost allocation per expense/unit pair. Preserve prior amount/method/source versions in shared history. Sum selected unit allocations to the expense once, including deterministic T03 remainders.'
+
+  indexes {
+    organization_id [name: 'acquisition_expense_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'acquisition_expense_allocations_key_1']
+    (organization_id, purchase_expense_id, inventory_item_id) [unique, name: 'acquisition_expense_allocations_key_2']
+  }
+
+  checks {
+    `"acquisition_expense_allocations"."id" > 0` [name: 'acquisition_expense_allocations_positive_id']
+    `"acquisition_expense_allocations"."amount" >= 0` [name: 'acquisition_expense_allocations_amount_nonnegative']
+  }
 }
 
 Table sale_expenses [headercolor: #A46D46] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   sale_id integer [not null]
   amount integer [not null, note: 'Expense value, whether paid or unpaid; count it once as an expense.']
@@ -367,17 +476,23 @@ Table sale_expenses [headercolor: #A46D46] {
   settled_on timestamptz [note: 'Completion timestamp only: null until fully paid, then the actual time of the payment completing this expense. Each installment retains its own date/method below.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
+  Note: 'E45; linked E15 | FIN-002, FIN-004, FIN-009. One Sale owns the expense. Deduct once from Sale net profit; no allocation to models/units. Customer-paid shipping is excluded.'
+
+  indexes {
+    organization_id [name: 'sale_expenses_organization_idx']
+    (organization_id, id) [unique, name: 'sale_expenses_key_1']
+  }
+
   checks {
+    `"sale_expenses"."id" > 0` [name: 'sale_expenses_positive_id']
     `amount > 0` [name: 'positive_sale_expense']
     `(settled_amount >= 0 AND settled_amount <= amount)` [name: 'sale_expense_payment_bounds']
     `((settled_on IS NOT NULL) = (settled_amount = amount))` [name: 'sale_expense_fully_paid_timestamp']
   }
-  Note: 'E45; linked E15 | FIN-002, FIN-004, FIN-009. One Sale owns the expense. Deduct once from Sale net profit; no allocation to models/units. Customer-paid shipping is excluded.'
 }
 
 Table sale_expense_payments [headercolor: #A46D46] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   sale_expense_id integer [not null]
   amount integer [not null, note: 'Actual outgoing installment in integer centavos, counted once as cash. Not another expense or cost allocation.']
@@ -385,17 +500,25 @@ Table sale_expense_payments [headercolor: #A46D46] {
   method text [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  checks { `amount > 0` [name: 'positive_sale_expense_payment'] }
   Note: 'E15 sale side | One expense may have many dated payments. T01 must atomically record payment/audit, reconcile settled_amount to authoritative payments, reject overpayment/cross-Organization references and serialize competing payments. Preserve every installment; never replace an earlier payment with a later cumulative value.'
+
+  indexes {
+    organization_id [name: 'sale_expense_payments_organization_idx']
+    (organization_id, id) [unique, name: 'sale_expense_payments_key_1']
+  }
+
+  checks {
+    `"sale_expense_payments"."id" > 0` [name: 'sale_expense_payments_positive_id']
+    `amount > 0` [name: 'positive_sale_expense_payment']
+  }
 }
 
 // Customers, Sales, immutable physical identities, and Returns.
 
 Table customers [headercolor: #6A61A0] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
-  name text [note: 'Supported by CUS-002; mandatory name/phone rules are not specified as they are for Suppliers.']
+  name text [not null, note: 'Required nonblank Customer name (CUS-002); whitespace-only values fail.']
   phone text
   address_line_1 text
   address_line_2 text
@@ -407,12 +530,21 @@ Table customers [headercolor: #6A61A0] {
   notes text
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E16 | CUS-001-015; SAL-004. Address stays on Customer. All fields are private to the Organization. Debt and pending refunds are derived separately; no editable balance or customer wallet.'
+
+  indexes {
+    organization_id [name: 'customers_organization_idx']
+    (organization_id, id) [unique, name: 'customers_key_1']
+  }
+
+  checks {
+    `"customers"."id" > 0` [name: 'customers_positive_id']
+    `"customers"."name" ~ '[^[:space:]]'` [name: 'customer_nonblank_name']
+  }
 }
 
 Table sales [headercolor: #6A61A0] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   customer_id integer [not null]
   sold_on timestamptz [not null, note: 'Original Sale recognition date; payment timing does not change it.']
@@ -422,12 +554,6 @@ Table sales [headercolor: #6A61A0] {
   canceled_event_id integer [note: 'Ordinary cancellation is allowed only before dispatch.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  checks {
-    `((dispatched_on IS NULL) = (dispatch_event_id IS NULL))` [name: 'dispatch_has_date_and_event']
-    `(canceled_event_id IS NULL OR dispatch_event_id IS NULL)` [name: 'ordinary_cancellation_before_dispatch']
-  }
-
   Note: '''
     E18 | SAL-001-028, SAL-036-050. Exactly one Customer. Reserved and In Garage
     derive from debt and dispatch; returned state derives from original shipped lines
@@ -435,10 +561,22 @@ Table sales [headercolor: #6A61A0] {
     Item/price edits preserve original dated facts. Removing all lines cancels the
     Sale without erasing it. Ordinary editing locks after explicit whole-Sale dispatch.
   '''
+
+  indexes {
+    organization_id [name: 'sales_organization_idx']
+    (organization_id, id) [unique, name: 'sales_key_1']
+    (organization_id, customer_id, id) [unique, name: 'sales_key_2']
+  }
+
+  checks {
+    `"sales"."id" > 0` [name: 'sales_positive_id']
+    `((dispatched_on IS NULL) = (dispatch_event_id IS NULL))` [name: 'dispatch_has_date_and_event']
+    `(canceled_event_id IS NULL OR dispatch_event_id IS NULL)` [name: 'ordinary_cancellation_before_dispatch']
+  }
 }
 
 Table sale_items [headercolor: #6A61A0] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   sale_id integer [not null]
   inventory_item_id integer [not null]
@@ -447,25 +585,44 @@ Table sale_items [headercolor: #6A61A0] {
   released_event_id integer [note: 'Null means the commitment remains active, including after dispatch until a valid Return/release. History explains cancellation, removal or physical Return.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
-
   Note: 'E19 | SAL-001-008, SAL-019, SAL-038-043; INV-007; RET-004, RET-013; CALC-015. One physical unit per line. Many historical SaleItems per Item, at most one active commitment. No product_id, quantity-based substitution, or hard deletion for exchanges.'
+
+  indexes {
+    organization_id [name: 'sale_items_organization_idx']
+    // Native partial UNIQUE one_active_item_commitment: (organization_id, inventory_item_id) WHERE released_event_id IS NULL
+    (organization_id, sale_id, id) [unique, name: 'sale_items_key_1']
+  }
+
+  checks {
+    `"sale_items"."id" > 0` [name: 'sale_items_positive_id']
+    `"sale_items"."agreed_price" >= 0` [name: 'sale_items_agreed_price_nonnegative']
+    `"sale_items"."recognized_acquisition_cost" >= 0` [name: 'sale_items_recognized_acquisition_cost_nonnegative']
+  }
 }
 
 Table returns [headercolor: #6A61A0] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   sale_id integer [not null]
   received_on timestamptz [not null]
   reason text
   created_event_id integer [not null, note: 'Event records the authorizing administrator and all atomic physical/financial consequences.']
 
-  indexes { organization_id }
   Note: 'E25 | RET-001-003, RET-006-012. Physical receipt from exactly one originally shipped Sale. Partial Returns select specific original lines. An unshipped cancellation never creates a Return.'
+
+  indexes {
+    organization_id [name: 'returns_organization_idx']
+    (organization_id, sale_id, id) [unique, name: 'returns_key_1']
+    (organization_id, id) [unique, name: 'returns_key_2']
+  }
+
+  checks {
+    `"returns"."id" > 0` [name: 'returns_positive_id']
+  }
 }
 
 Table return_items [headercolor: #6A61A0] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   return_id integer [not null]
   sale_id integer [not null, note: 'Scope key matching both Return and original SaleItem.']
@@ -476,14 +633,23 @@ Table return_items [headercolor: #6A61A0] {
   approved_for_sale boolean [not null, note: 'Explicit Return-time decision. Damage alone never selects this value.']
   condition_notes text
 
-  indexes { organization_id }
   Note: 'E26 | RET-004-005, RET-008-009, RET-012-013; INV-028. Reaches persistent Item/Product through the original SaleItem. Returned quantity is derived from lines. Condition/eligibility are preserved Return facts and update current inventory atomically.'
+
+  indexes {
+    organization_id [name: 'return_items_organization_idx']
+    (organization_id, id) [unique, name: 'return_items_key_1']
+    (organization_id, sale_item_id) [unique, name: 'return_items_key_2']
+  }
+
+  checks {
+    `"return_items"."id" > 0` [name: 'return_items_positive_id']
+  }
 }
 
 // Actual customer cash, Sale/line allocations, and legitimately earned retention.
 
 Table customer_payments [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   customer_id integer [not null]
   amount integer [not null, note: 'Merchandise portion only; customer-paid shipping is entirely outside application records.']
@@ -491,12 +657,22 @@ Table customer_payments [headercolor: #497A91] {
   method text [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E20 | PAY-001-012, PAY-019, PAY-030; FIN-003. Actual incoming cash, fully allocated at entry to existing Sales/SaleItems of this Customer. No reusable unallocated balance.'
+
+  indexes {
+    organization_id [name: 'customer_payments_organization_idx']
+    (organization_id, customer_id, id) [unique, name: 'customer_payments_key_1']
+    (organization_id, id) [unique, name: 'customer_payments_key_2']
+  }
+
+  checks {
+    `"customer_payments"."id" > 0` [name: 'customer_payments_positive_id']
+    `"customer_payments"."amount" > 0` [name: 'customer_payments_positive_amount']
+  }
 }
 
 Table customer_payment_allocations [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   customer_id integer [not null, note: 'Scope key matching both original Payment and target Sale.']
   customer_payment_id integer [not null]
@@ -505,12 +681,21 @@ Table customer_payment_allocations [headercolor: #497A91] {
   amount integer [not null, note: 'Preserved allocation amount; effective funding includes dated releases/reclassifications.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E21 | PAY-002-020, PAY-030, PAY-037. Source Payment identity survives reassignment. Allocation limits apply to source, Sale and identified line, including concurrency. Refunds consume oldest original Payments first. Equal-time/non-refund source order remains design work.'
+
+  indexes {
+    organization_id [name: 'customer_payment_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'customer_payment_allocations_key_1']
+  }
+
+  checks {
+    `"customer_payment_allocations"."id" > 0` [name: 'customer_payment_allocations_positive_id']
+    `"customer_payment_allocations"."amount" > 0` [name: 'customer_payment_allocations_positive_amount']
+  }
 }
 
 Table customer_refunds [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   customer_id integer [not null]
   sale_id integer [not null]
@@ -520,12 +705,21 @@ Table customer_refunds [headercolor: #497A91] {
   method text [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E24 | PAY-021-029, PAY-033, PAY-036, PAY-038; CUS-011-012. Actual outgoing cash only. Pending refund amounts live in source-linked settlement obligations. Refund cash never reverses the same Sale profit again.'
+
+  indexes {
+    organization_id [name: 'customer_refunds_organization_idx']
+    (organization_id, id) [unique, name: 'customer_refunds_key_1']
+  }
+
+  checks {
+    `"customer_refunds"."id" > 0` [name: 'customer_refunds_positive_id']
+    `"customer_refunds"."amount" > 0` [name: 'customer_refunds_positive_amount']
+  }
 }
 
 Table retained_income [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   sale_id integer [not null]
   settlement_id integer [not null, note: 'Approved customer-side settlement; original funding portions are traced through its source allocations.']
@@ -534,12 +728,22 @@ Table retained_income [headercolor: #497A91] {
   reason text [not null, note: 'Explain why an amount actually received is legitimately earned and retained.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E27 | PAY-024, PAY-033-035; RET-011. Separate earned income after applicable edit/cancellation/Return; not a new cash receipt or automatic substitute for a refund. Original Sale economics are reversed independently.'
+
+  indexes {
+    organization_id [name: 'retained_income_organization_idx']
+    (organization_id, sale_id, id) [unique, name: 'retained_income_key_1']
+    (organization_id, id) [unique, name: 'retained_income_key_2']
+  }
+
+  checks {
+    `"retained_income"."id" > 0` [name: 'retained_income_positive_id']
+    `"retained_income"."amount" > 0` [name: 'retained_income_positive_amount']
+  }
 }
 
 Table retained_income_allocations [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   retained_income_id integer [not null]
   sale_id integer [not null, note: 'Scope key matching retained income and the affected SaleItem.']
@@ -547,14 +751,23 @@ Table retained_income_allocations [headercolor: #497A91] {
   amount integer [not null]
   created_event_id integer [not null]
 
-  indexes { organization_id }
-  Note: 'E28 | PAY-034; COL-020; CALC-015-016. Exact model attribution through SaleItem -> InventoryItem -> Product. Reconcile to the retained total. Header plus allocations is a proposed physical boundary; income lines could represent the same facts.'
+  Note: 'E28 | PAY-034; COL-020; CALC-015-016. Exact model attribution through SaleItem -> InventoryItem -> Product. Reconcile to the retained total. Header plus allocations is the approved physical boundary for retained-income/model attribution.'
+
+  indexes {
+    organization_id [name: 'retained_income_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'retained_income_allocations_key_1']
+  }
+
+  checks {
+    `"retained_income_allocations"."id" > 0` [name: 'retained_income_allocations_positive_id']
+    `"retained_income_allocations"."amount" > 0` [name: 'retained_income_allocations_positive_amount']
+  }
 }
 
 // Loss and shared domain history. No independent editable financial ledger.
 
 Table losses [headercolor: #96616D] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   inventory_item_id integer
   purchase_id integer
@@ -565,25 +778,31 @@ Table losses [headercolor: #96616D] {
   reversed_event_id integer [note: 'Dated full void/reversal provenance. Partial economic adjustments retain source-component links in shared history. D06 governs authority and stock consequences.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E29 | LOS-001-008; PUR-031-033. Context references may coexist but must describe the same loss. Lost funding retains typed original-allocation provenance through supplier settlement sources. One economic write-off with its stock effect. Actual later refunds use SupplierRefund, never LossRecovery.'
+
+  indexes {
+    organization_id [name: 'losses_organization_idx']
+    (organization_id, id) [unique, name: 'losses_key_1']
+  }
+
+  checks {
+    `"losses"."id" > 0` [name: 'losses_positive_id']
+    `"losses"."amount" >= 0` [name: 'losses_amount_nonnegative']
+  }
 }
 
 Table business_events [headercolor: #96616D] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   scope business_event_scope [not null]
   organization_id integer [note: 'Required for private operational actions; null for global Product actions.']
   context_organization_id integer [note: 'Optional global-action provenance; never Product ownership or access to this Organization\'s private records.']
   actor_user_id integer [not null]
   action_type text [not null, note: 'Proposed typed action discriminator. Action/payload contracts need review; existing Product maintenance remains D07.']
   occurred_at timestamptz [not null, note: 'Actual action occurrence instant, distinct from source occurrence and recorded_at. Convert timezone-aware input to UTC; no independent financial adjustment transaction.']
-  recorded_at timestamptz [not null]
+  recorded_at timestamptz [not null, default: `now()`]
   reason text
   reverses_event_id integer [note: 'Original action when applicable; component-level provenance is also preserved below.']
-
-  checks {
-    `((scope = 'organization' AND organization_id IS NOT NULL) OR (scope = 'global_product' AND organization_id IS NULL))` [name: 'business_event_scope_matches_owner']
-  }
+  scope_organization_id integer [not null, note: 'Stored generated coalesce(organization_id, 0). Positive Organization IDs reserve zero for global scope; enforces NULL-sensitive audit references.']
 
   Note: '''
     E32 and E35 | REQ-002-003, REQ-006-007, REQ-010-012; INV-026; FIN-011.
@@ -593,10 +812,21 @@ Table business_events [headercolor: #96616D] {
     A transaction must atomically commit sources, changes and consequences.
     This header alone neither enforces atomicity nor prescribes event sourcing.
   '''
+
+  indexes {
+    (scope_organization_id, id) [unique, name: 'business_events_key_1']
+    (organization_id, id) [unique, name: 'business_events_key_2']
+    (id, scope_organization_id) [unique, name: 'business_events_key_3']
+  }
+
+  checks {
+    `"business_events"."id" > 0` [name: 'business_events_positive_id']
+    `((scope = 'organization' AND organization_id IS NOT NULL) OR (scope = 'global_product' AND organization_id IS NULL))` [name: 'business_event_scope_matches_owner']
+  }
 }
 
 Table business_event_changes [headercolor: #96616D] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   business_event_id integer [not null]
   organization_id integer [note: 'Must match event and all operational subjects; null only for a global Product subject.']
   sequence integer [not null]
@@ -633,17 +863,12 @@ Table business_event_changes [headercolor: #96616D] {
   before_facts jsonb [note: 'Proposed typed, versioned business snapshot, not arbitrary log text. Preserve original amounts, dates, allocations, state and collection membership as applicable.']
   after_facts jsonb [note: 'Validated against change_kind and the referenced source. Historical projections must query these preserved facts reliably.']
   reverses_change_id integer [note: 'Original source component for a full/partial adjustment. Amounts and affected facts are explicit in the typed snapshots; D06 policy remains open.']
-
-  checks {
-    `num_nonnulls(product_id, membership_user_id, inventory_item_id, supplier_id, purchase_id, purchase_item_id, supplier_payment_id, supplier_payment_allocation_id, supplier_refund_id, purchase_expense_id, purchase_expense_payment_id, acquisition_expense_allocation_id, customer_id, sale_id, sale_item_id, sale_expense_id, sale_expense_payment_id, customer_payment_id, customer_payment_allocation_id, customer_refund_id, return_id, return_item_id, retained_income_id, retained_income_allocation_id, loss_id, customer_settlement_id, customer_settlement_source_allocation_id, supplier_settlement_id, supplier_settlement_source_allocation_id) = 1` [name: 'one_typed_business_subject']
-    `((organization_id IS NULL AND product_id IS NOT NULL) OR (organization_id IS NOT NULL AND product_id IS NULL))` [name: 'change_subject_matches_scope']
-    `(before_facts IS NOT NULL OR after_facts IS NOT NULL)` [name: 'preserved_business_facts']
-    `sequence > 0` [name: 'positive_change_sequence']
-  }
+  scope_organization_id integer [not null, note: 'Stored generated coalesce(organization_id, 0). Positive Organization IDs reserve zero for global scope; enforces NULL-sensitive audit references.']
 
   Note: '''
     Proposed typed detail storage for E32/E35, not a new standalone audit domain.
-    Exactly one FK-backed subject per change; an action may change many sources.
+    Exactly one typed subject per change; Sale/SaleItem subjects retain IDs without live FKs.
+    An action may change many sources; validate and snapshot deleted subjects transactionally.
     Related Item links derive through typed subjects; create explicit Item changes
     for receipt, condition, approval, hold, membership, commitment and disposition.
     E33 timeline and E34 financial reports derive from original source facts plus
@@ -651,25 +876,48 @@ Table business_event_changes [headercolor: #96616D] {
     JSON payload shapes, versioning and reporting queries remain T01/T06 design work;
     unvalidated generic audit JSON would not satisfy the historical requirements.
   '''
+
+  indexes {
+    (scope_organization_id, id) [unique, name: 'business_event_changes_key_1']
+    (business_event_id, sequence) [unique, name: 'business_event_changes_key_2']
+  }
+
+  checks {
+    `"business_event_changes"."id" > 0` [name: 'business_event_changes_positive_id']
+    `num_nonnulls(product_id, membership_user_id, inventory_item_id, supplier_id, purchase_id, purchase_item_id, supplier_payment_id, supplier_payment_allocation_id, supplier_refund_id, purchase_expense_id, purchase_expense_payment_id, acquisition_expense_allocation_id, customer_id, sale_id, sale_item_id, sale_expense_id, sale_expense_payment_id, customer_payment_id, customer_payment_allocation_id, customer_refund_id, return_id, return_item_id, retained_income_id, retained_income_allocation_id, loss_id, customer_settlement_id, customer_settlement_source_allocation_id, supplier_settlement_id, supplier_settlement_source_allocation_id) = 1` [name: 'one_typed_business_subject']
+    `((organization_id IS NULL AND product_id IS NOT NULL) OR (organization_id IS NOT NULL AND product_id IS NULL))` [name: 'change_subject_matches_scope']
+    `(before_facts IS NOT NULL OR after_facts IS NOT NULL)` [name: 'preserved_business_facts']
+    `sequence > 0` [name: 'positive_change_sequence']
+  }
 }
 
 // Approved customer/supplier settlement storage (Q61). The rejected mixed candidates
 // and persistent import-row candidates are absent.
 
 Table customer_settlements [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   customer_id integer [not null]
   sale_id integer [not null]
   return_id integer [note: 'Optional Return from this same Sale; a pre-dispatch correction/cancellation has no Return.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E36 customer side | Approved dedicated settlement header. Resolves released funding for this Customer/Sale. Completeness derives from source portions and outcomes; pending refunds are obligations, never cash or a reusable wallet.'
+
+  indexes {
+    organization_id [name: 'customer_settlements_organization_idx']
+    (organization_id, id) [unique, name: 'customer_settlements_key_1']
+    (organization_id, customer_id, sale_id, id) [unique, name: 'customer_settlements_key_2']
+    (organization_id, sale_id, id) [unique, name: 'customer_settlements_key_3']
+  }
+
+  checks {
+    `"customer_settlements"."id" > 0` [name: 'customer_settlements_positive_id']
+  }
 }
 
 Table customer_settlement_source_allocations [headercolor: #497A91] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   settlement_id integer [not null]
   source_customer_payment_allocation_id integer [not null]
@@ -680,27 +928,42 @@ Table customer_settlement_source_allocations [headercolor: #497A91] {
   retained_income_id integer
   created_event_id integer [not null]
 
-  indexes { organization_id }
+  Note: 'E37 customer side | Several original funding portions may explain one actual Refund or RetainedIncome. Preserve dated paid/pending history. T01 must enforce matching Customer/Organization, original Payment, settlement/Sale context, limits and exact reconciliation under concurrency. Reassignment creates no cash.'
+
+  indexes {
+    organization_id [name: 'customer_settlement_source_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'customer_settlement_source_allocations_key_1']
+  }
+
   checks {
+    `"customer_settlement_source_allocations"."id" > 0` [name: 'customer_settlement_source_allocations_positive_id']
     `amount > 0` [name: 'positive_customer_settlement_portion']
     `((outcome = 'refund' AND target_customer_payment_allocation_id IS NULL AND retained_income_id IS NULL) OR (outcome = 'reassignment' AND target_customer_payment_allocation_id IS NOT NULL AND customer_refund_id IS NULL AND retained_income_id IS NULL) OR (outcome = 'retained_income' AND retained_income_id IS NOT NULL AND customer_refund_id IS NULL AND target_customer_payment_allocation_id IS NULL))` [name: 'one_customer_settlement_outcome']
   }
-  Note: 'E37 customer side | Several original funding portions may explain one actual Refund or RetainedIncome. Preserve dated paid/pending history. T01 must enforce matching Customer/Organization, original Payment, settlement/Sale context, limits and exact reconciliation under concurrency. Reassignment creates no cash.'
 }
 
 Table supplier_settlements [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   supplier_id integer [not null]
   purchase_id integer [note: 'Optional context. Source portions may span several Purchases of this same Supplier.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
   Note: 'E36 supplier side | Approved dedicated settlement header. Resolves funding of this Supplier\'s units, preserving original Purchases through allocations. A pending refund is an obligation, not cash received or reusable supplier credit.'
+
+  indexes {
+    organization_id [name: 'supplier_settlements_organization_idx']
+    (organization_id, id) [unique, name: 'supplier_settlements_key_1']
+    (organization_id, supplier_id, id) [unique, name: 'supplier_settlements_key_2']
+  }
+
+  checks {
+    `"supplier_settlements"."id" > 0` [name: 'supplier_settlements_positive_id']
+  }
 }
 
 Table supplier_settlement_source_allocations [headercolor: #97703C] {
-  id integer [pk, not null]
+  id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   organization_id integer [not null]
   settlement_id integer [not null]
   source_supplier_payment_allocation_id integer [not null]
@@ -712,19 +975,24 @@ Table supplier_settlement_source_allocations [headercolor: #97703C] {
   related_prior_loss_id integer [note: 'Original write-off context for money actually received later; do not count the same funding recovery twice.']
   created_event_id integer [not null]
 
-  indexes { organization_id }
+  Note: 'E37 supplier side | Preserve original Payment/allocation and Purchase/unit provenance. T01 must enforce Supplier/Organization/context matching, limits and exact reconciliation under concurrency. Refund FIFO is approved; equal-time/non-refund ordering and exceptional D06 disposition remain open.'
+
+  indexes {
+    organization_id [name: 'supplier_settlement_source_allocations_organization_idx']
+    (organization_id, id) [unique, name: 'supplier_settlement_source_allocations_key_1']
+  }
+
   checks {
+    `"supplier_settlement_source_allocations"."id" > 0` [name: 'supplier_settlement_source_allocations_positive_id']
     `amount > 0` [name: 'positive_supplier_settlement_portion']
     `((outcome = 'refund' AND target_supplier_payment_allocation_id IS NULL AND loss_id IS NULL) OR (outcome = 'reassignment' AND target_supplier_payment_allocation_id IS NOT NULL AND supplier_refund_id IS NULL AND loss_id IS NULL) OR (outcome = 'loss' AND loss_id IS NOT NULL AND supplier_refund_id IS NULL AND target_supplier_payment_allocation_id IS NULL))` [name: 'one_supplier_settlement_outcome']
   }
-  Note: 'E37 supplier side | Preserve original Payment/allocation and Purchase/unit provenance. T01 must enforce Supplier/Organization/context matching, limits and exact reconciliation under concurrency. Refund FIFO is approved; equal-time/non-refund ordering and exceptional D06 disposition remain open.'
 }
 
-
-
-// Conceptual references. Composite ownership/context paths express scope requirements.
-// Deferred scoped target keys must be designed before executable FKs. All removals preserve sources; no cascade-delete policy is introduced.
-// Nullable composite paths and cross-row aggregates still need the checks in design.md.
+// Structural references and their scoped unique targets are implemented in Drizzle.
+// All deletes are restrictive except the two historical audit subject references removed under S07.
+// Generated nonnullable audit scope closes NULL-sensitive event/reversal paths.
+// Settlement portion party/original-payment attribution and aggregates remain writer obligations.
 Ref owner_memberships: memberships.organization_id > organizations.id [delete: restrict]
 Ref owner_inventory_items: inventory_items.organization_id > organizations.id [delete: restrict]
 Ref owner_suppliers: suppliers.organization_id > organizations.id [delete: restrict]
@@ -752,6 +1020,7 @@ Ref owner_business_event_changes: business_event_changes.organization_id > organ
 Ref membership_user: memberships.user_id > users.id [delete: restrict]
 Ref unit_global_product: inventory_items.product_id > products.id [delete: restrict]
 Ref product_registration: products.registration_event_id > business_events.id [delete: restrict]
+Ref product_registration_global_scope: products.(registration_event_id, registration_scope) > business_events.(id, scope_organization_id) [delete: restrict]
 Ref unit_purchase: inventory_items.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
 Ref unit_purchase_line: inventory_items.(organization_id, purchase_id, purchase_item_id) > purchase_items.(organization_id, purchase_id, id) [delete: restrict]
 Ref purchase_supplier: purchases.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
@@ -785,13 +1054,13 @@ Ref loss_sale: losses.(organization_id, sale_id) > sales.(organization_id, id) [
 Ref event_actor: business_events.actor_user_id > users.id [delete: restrict]
 Ref event_context: business_events.context_organization_id > organizations.id [delete: restrict]
 Ref event_reversal_identity: business_events.reverses_event_id > business_events.id [delete: restrict]
-Ref event_reversal_owner: business_events.(organization_id, reverses_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref event_reversal_owner: business_events.(scope_organization_id, reverses_event_id) > business_events.(scope_organization_id, id) [delete: restrict]
 Ref change_event_identity: business_event_changes.business_event_id > business_events.id [delete: restrict]
-Ref change_event_owner: business_event_changes.(organization_id, business_event_id) > business_events.(organization_id, id) [delete: restrict]
+Ref change_event_owner: business_event_changes.(scope_organization_id, business_event_id) > business_events.(scope_organization_id, id) [delete: restrict]
 Ref change_global_product: business_event_changes.product_id > products.id [delete: restrict]
 Ref change_membership_user: business_event_changes.membership_user_id > users.id [delete: restrict]
 Ref change_reversal_identity: business_event_changes.reverses_change_id > business_event_changes.id [delete: restrict]
-Ref change_reversal_owner: business_event_changes.(organization_id, reverses_change_id) > business_event_changes.(organization_id, id) [delete: restrict]
+Ref change_reversal_owner: business_event_changes.(scope_organization_id, reverses_change_id) > business_event_changes.(scope_organization_id, id) [delete: restrict]
 Ref change_inventory_item: business_event_changes.(organization_id, inventory_item_id) > inventory_items.(organization_id, id) [delete: restrict]
 Ref change_supplier: business_event_changes.(organization_id, supplier_id) > suppliers.(organization_id, id) [delete: restrict]
 Ref change_purchase: business_event_changes.(organization_id, purchase_id) > purchases.(organization_id, id) [delete: restrict]
@@ -802,8 +1071,8 @@ Ref change_supplier_refund: business_event_changes.(organization_id, supplier_re
 Ref change_purchase_expense: business_event_changes.(organization_id, purchase_expense_id) > purchase_expenses.(organization_id, id) [delete: restrict]
 Ref change_acquisition_expense_allocation: business_event_changes.(organization_id, acquisition_expense_allocation_id) > acquisition_expense_allocations.(organization_id, id) [delete: restrict]
 Ref change_customer: business_event_changes.(organization_id, customer_id) > customers.(organization_id, id) [delete: restrict]
-Ref change_sale: business_event_changes.(organization_id, sale_id) > sales.(organization_id, id) [delete: restrict]
-Ref change_sale_item: business_event_changes.(organization_id, sale_item_id) > sale_items.(organization_id, id) [delete: restrict]
+// S07: change_sale is a retained historical subject ID, validated/snapshotted by the deletion writer.
+// S07: change_sale_item is a retained historical subject ID, validated/snapshotted by the deletion writer.
 Ref change_sale_expense: business_event_changes.(organization_id, sale_expense_id) > sale_expenses.(organization_id, id) [delete: restrict]
 Ref change_customer_payment: business_event_changes.(organization_id, customer_payment_id) > customer_payments.(organization_id, id) [delete: restrict]
 Ref change_customer_payment_allocation: business_event_changes.(organization_id, customer_payment_allocation_id) > customer_payment_allocations.(organization_id, id) [delete: restrict]
@@ -942,18 +1211,17 @@ TableGroup losses_and_shared_history [color: #96616D] {
   business_event_changes
 }
 
-
 Note review_status {
   '''
-    DRAFT 1 — visual review before the first migration.
+    APPROVED STRUCTURAL SCHEMA — Step 3B, 2026-10-25.
     Apply v0.7 with entity map v0.8 and the dated October 22/23 review decisions.
     Sale status is mutually exclusive; opening Purchase dates use the approved second-day convention.
     Money is integer centavos; occurrence timestamps are timestamptz.
     This review is not executable migration evidence.
-    All explicit secondary indexes are standalone Organization lookups.
-    Primary keys remain; BusinessEvent/detail indexes are still deferred.
-    Required scoped keys, readable-ID/collection uniqueness and concurrency enforcement
-    remain T01 obligations; conceptual composite references are not executable FKs yet.
+    Scoped unique targets, invariant keys and row checks are implemented.
+    Four native partial UNIQUE predicates are documented in table index comments;
+    DBML does not encode those predicates. Use the executable Drizzle/SQL definitions.
+    Aggregate reconciliation, permanent locks and business writers remain T01 obligations.
     All candidate table shapes are rejected and absent; remaining storage work is in design.md.
   '''
 }

@@ -6,16 +6,34 @@ Assign one step to one agent, deliver one PR, and hand off before the next step.
 
 **Current status, 2026-10-25:** Workspace tooling, Turborepo checks, Step 1's
 Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
-implemented. Step 3A now supplies Drizzle connection/tooling and tests; Step 3B
-base migration and Steps 4–6 remain pending. The owner approved the
+implemented. Step 3A supplies Drizzle connection/tooling; Step 3B now supplies
+the approved structural schema, migration chain and PostgreSQL constraint tests.
+Steps 4–6 and business writers remain pending. The owner approved the
 [split Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 with its separate schema gate. The owner approved both earlier concrete
 plans and selected `storage-minis` naming. Step 1 PR #103 is merged. Step 2's
 [approved plan](../plans/step-2-postgresql-plan-2026-10-24.md) and
 [verification record](technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
-cover local database infrastructure only; the DBML has not been applied.
+cover local database infrastructure only. Step 3B replay uses disposable test
+storage; first development application is an explicit owner action.
 Later implementation choices follow the approval process
 in [AGENTS.md](../../AGENTS.md#owner-approval-before-decisions).
+
+**Lifecycle follow-up, 2026-10-25:** The owner approved the
+[application-container and lifecycle plan](../plans/docker-application-lifecycle-plan-2026-10-25.md).
+Its first stage supplies host `docker:*` commands for existing infrastructure and
+guarded project cleanup. API/frontend Compose services follow their runnable
+application deliveries; this does not change Step 3B or later-step prerequisites.
+The owner subsequently approved replacing the general wrapper with standard
+Compose commands; use the [maintenance plan](../plans/standard-compose-maintenance-plan-2026-10-25.md)
+for the implemented canonical configuration, direct package aliases and retained
+Doppler/confirmed-deletion helpers. Current verification is recorded in
+[technical direction](technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25),
+separately from the earlier lifecycle evidence. The owner then approved the
+[one-time setup amendment](technical-direction.md#one-time-local-setup-2026-10-25):
+saved nonsecret checkout settings, automatic Doppler target selection, setup/start
+commands and a separate migration command. The subsequent 2026-10-25 schema
+approval lifts the physical-schema gate; see the Step 3 progress row.
 
 This guide owns the step sequence, planning instructions and completion criteria.
 [Technical direction](technical-direction.md) owns approved technical outcomes;
@@ -34,7 +52,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [draft PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), awaiting review. 3B remains gated on physical-schema review. |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B S01–S10 approved 2026-10-25; [structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), with fresh replay and 29 PostgreSQL tests passing. First development application remains an explicit owner action. |
 | 4 | Fastify server foundation | Steps 1–3 | Not started |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |

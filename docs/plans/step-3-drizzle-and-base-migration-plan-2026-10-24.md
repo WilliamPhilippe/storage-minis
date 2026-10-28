@@ -1,5 +1,12 @@
 # Step 3 — Drizzle installation and base migration
 
+**Step 3B follow-up, 2026-10-25:** The owner approved S01–S10 in the
+[schema review packet](../database/step-3b-schema-review-2026-10-25.md).
+See the [implementation and explicit writer deferrals](../database/step-3b-implementation-2026-10-25.md)
+for the delivered schema/migration chain and validation. The original planning
+and approval sequence below is preserved; first development application remains
+a separate owner action after SQL/test review.
+
 **Date:** 2026-10-24. **Status:** Owner approved the plan and instructed implementation
 on 2026-10-24. Step 3A is implemented on `chore/step-3-drizzle`; the separate 3B
 physical-schema approval gate remains. See [implementation and evidence](../technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25).
