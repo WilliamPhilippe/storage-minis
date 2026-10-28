@@ -1,7 +1,7 @@
 # Step 4 — Sequential implementation stages
 
 **Date:** 2026-10-28. **Status:** execution rules approved by the owner;
-stage 4.1 is complete; stages 4.2–4.11 remain pending. The
+stages 4.1–4.2 are complete; stages 4.3–4.11 remain pending. The
 [Step 4 plan](step-4-fastify-plan-2026-10-28.md) remains authoritative for technical
 contracts, approved amendments, pending choices and AC4-01–AC4-18.
 
@@ -107,7 +107,7 @@ completion owner below can mark the whole criterion complete.
 | Stage | Deliverable | Prompt | State | Handoff / evidence |
 | --- | --- | --- | --- | --- |
 | [4.1](#41--configuration-and-finite-builds) | Validated configuration and compiled workspace builds | [Copy 4.1](step-4-fastify-stage-prompts-2026-10-28.md#prompt-41--configuration-and-finite-builds) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds) |
-| [4.2](#42--http-factory-health-and-safe-logs) | Testable HTTP factory, health and safe logs | [Copy 4.2](step-4-fastify-stage-prompts-2026-10-28.md#prompt-42--http-factory-health-and-safe-logs) | Not started | — |
+| [4.2](#42--http-factory-health-and-safe-logs) | Testable HTTP factory, health and safe logs | [Copy 4.2](step-4-fastify-stage-prompts-2026-10-28.md#prompt-42--http-factory-health-and-safe-logs) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs) |
 | [4.3](#43--process-lifecycle-and-entry-point) | One DB owner, route extension and process entry | [Copy 4.3](step-4-fastify-stage-prompts-2026-10-28.md#prompt-43--process-lifecycle-and-entry-point) | Not started | — |
 | [4.4](#44--guarded-built-process-tests) | Real-DB process tests and basic signal proof | [Copy 4.4](step-4-fastify-stage-prompts-2026-10-28.md#prompt-44--guarded-built-process-tests) | Not started | — |
 | [4.5](#45--self-contained-runtime-image) | Portable API runtime image | [Copy 4.5](step-4-fastify-stage-prompts-2026-10-28.md#prompt-45--self-contained-runtime-image) | Not started | — |

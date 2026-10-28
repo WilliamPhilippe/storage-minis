@@ -6,14 +6,15 @@ public stock catalog for 1/64 miniature sellers and collectors.
 This repository contains workspace tooling, local PostgreSQL services, and
 application specifications. The Drizzle connection package and its tests are
 implemented, along with the approved structural schema and replayable migrations.
-Business operations, the API, the React frontend, and CI are pending.
+API configuration and the injectable HTTP factory are implemented; process
+startup, business operations, the React frontend and CI remain pending.
 Docker lifecycle commands currently start PostgreSQL infrastructure only; API
 and frontend startup will follow their application implementation.
 
 ## Structure
 
 ```text
-apps/api/                 Validated configuration, unit tests and finite build
+apps/api/                 Configuration, injectable HTTP factory, tests and build
 packages/db/              Drizzle schema, migrations, connection package and tests
 docker/                   Tooling image and volume initializer
 scripts/tooling.sh        Run workspace commands in Docker
@@ -216,10 +217,14 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 | `pnpm check` | Run type, lint, format, and unit-test checks |
 
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
-unit tests. `pnpm build` emits API configuration ESM/declarations/source maps and
+unit tests. `pnpm build` emits API configuration/factory ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. API HTTP startup remains pending. See the
-[stage 4.1 evidence](docs/technical/step-4-verification-2026-10-28.md).
+finite builds. API HTTP startup remains pending. Stage 4.2 is complete; its factory uses
+explicit HTTP configuration and injected DB-check/closing capabilities. Injection
+tests cover exact health/error bodies and allowlisted logs. Run
+`./scripts/tooling.sh run pnpm exec vitest run --project api-unit` for the focused
+API suite; it requires no database or Doppler. See the
+[cumulative evidence](docs/technical/step-4-verification-2026-10-28.md).
 Integration tests run separately with `pnpm test:db` and require PostgreSQL. Empty suites still fail; do not use `--passWithNoTests` as evidence.
 
 ### Turborepo checks and cache
@@ -272,7 +277,7 @@ diagram now matches the approved structural schema.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-- [Step 4 Fastify plan — stage 4.1 complete; remaining stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+- [Step 4 Fastify plan — stages 4.1–4.2 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
 - [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 - [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)

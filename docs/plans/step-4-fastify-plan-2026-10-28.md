@@ -1,12 +1,13 @@
 # Step 4 — Fastify server implementation plan
 
 **Date:** 2026-10-28. **Status:** Step 4 in progress. Stage 4.1 is approved,
-implemented and verified in commit `472e0a7`; stages 4.2–4.11 remain pending.
+implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented and
+verified; stages 4.3–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 This plans Step 4 of the [implementation guide](../technical/technical-foundation-implementation-guide.md#step-4--fastify-server-foundation).
-It does not authorize dependency installation, runtime configuration changes,
+This plan alone does not authorize dependency installation, runtime configuration changes,
 implementation or database startup. Step 3B's structural delivery is inherited.
 
 **Owner refinement, 2026-10-28:** Step 4 must supply explicit acceptance criteria,
@@ -122,6 +123,9 @@ The dedicated API image and local verification are owner requirements. The eight
 amendments above are approved. P4-02, the configuration contract and stage 4.1's
 finite-build/strict-check portions of P4-08/P4-09 were subsequently approved and
 implemented; see [technical direction](../technical/technical-direction.md#step-41-configuration-and-finite-build-approval-2026-10-28).
+P4-03/P4-05/P4-06 and the factory/HTTP/logging contract were approved for stage
+4.2 on 2026-10-28; implementation and focused checks are complete. See its
+[approval record](../technical/technical-direction.md#step-42-factory-http-and-logging-approval-2026-10-28).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -149,8 +153,12 @@ compatibility evidence remains pending.
 ## Step 4 acceptance criteria
 
 Every item below must be implemented and demonstrated before marking Step 4
-complete. These are planned acceptance criteria, not checked delivery evidence.
+complete. Check an item only after all its required scenarios have passing evidence;
+stage-scoped or later-stage evidence remains explicitly partial.
 The detailed scenarios and resource cleanup are in the verification matrix.
+AC4-03/AC4-10 have [stage 4.2 evidence](../technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
+AC4-06/AC4-07 have injected health proof only; real HTTP/DB failure, bounds and
+outage/recovery remain partial for later stages.
 
 - [ ] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
@@ -159,7 +167,7 @@ The detailed scenarios and resource cleanup are in the verification matrix.
 - [ ] **AC4-02 — Development image:** API development runs in the API Dockerfile's
   development target. API edits reload; DB edits rebuild compiled exports and
   reload the API. Dependency volumes stay isolated from host and other projects.
-- [ ] **AC4-03 — Application factory:** importing or constructing the app reads
+- [x] **AC4-03 — Application factory:** importing or constructing the app reads
   no environment, opens no listener/pool and installs no process handlers. Tests
   can use normal Fastify injection and close their own app.
 - [ ] **AC4-04 — Step 5 extension:** one process-owned DB instance is passed to an
@@ -182,7 +190,7 @@ The detailed scenarios and resource cleanup are in the verification matrix.
   unready, drain HTTP and close the one pool within the 10s total process bound.
   Native API and project stop/down paths honor the 15s API service grace period,
   including during a bounded in-flight request; no global 10s override cuts it short.
-- [ ] **AC4-10 — Safe HTTP/logging:** route, framework and unexpected failures
+- [x] **AC4-10 — Safe HTTP/logging:** route, framework and unexpected failures
   preserve documented safe status/body behavior; tests prove logs/responses omit
   credentials, raw queries/bodies, stacks, causes and untrusted request IDs.
 - [ ] **AC4-11 — Build contract:** NodeNext runtime/type exports work, finite
@@ -225,7 +233,7 @@ The detailed scenarios and resource cleanup are in the verification matrix.
 
 ## Application and process contract
 
-Proposed source responsibilities:
+Source responsibilities (only assigned and verified stages are delivered):
 
 | File | Responsibility |
 | --- | --- |
@@ -270,6 +278,10 @@ never as a silently selected configured runtime port.
 | Database recovers | Next successful readiness check returns 200 without restarting API. |
 | Startup DB/configuration/listen failure | Sanitized fixed category, nonzero exit, no remaining API-owned listener/pool. |
 | Unknown route | 404, `{"error":"not_found"}`; never reflect requested URL/query. |
+| Malformed/empty JSON, invalid content length or malformed URL | 400, `{"error":"bad_request"}`. |
+| Oversized body | 413, `{"error":"payload_too_large"}`. |
+| Unsupported content type | 415, `{"error":"unsupported_media_type"}`. |
+| Other client failure | Preserve the 4xx status with `{"error":"request_error"}`; omit exception messages/headers. |
 | Unexpected handler failure | 500, `{"error":"internal_error"}`; no stack/cause/input in response or log. |
 | Shutdown begins | Mark closing first; readiness uses unavailable while still routed, then stop accepting connections. Already closing connections may receive Fastify's safe 503 or a transport closure. Do not promise an HTTP response after the listener closes. |
 
@@ -598,7 +610,9 @@ starts no implementation and approves no additional technical choices.
 
 ## Verification matrix
 
-All commands below are future implementation checks. None ran during this plan.
+The matrix defines required checks. None ran during the original planning update;
+current stage results are recorded in the
+[cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Existing Step 1–3B evidence is inherited as historical evidence, not a fresh pass.
 The API process suite validates the exact test tuple before creating clients,
 starting children or performing any cleanup. It uses no business tables, resets,
@@ -836,10 +850,11 @@ do not establish those requirements or justify closing #26.
 on 2026-10-28; their scope and rationale are recorded above and in technical
 direction. P4-01 is retired. The later stage 4.1 approval covers P4-02, configuration
 and the finite-build/strict-check portions of P4-08/P4-09, delivered in `472e0a7`.
-Other P4 application, watch, process and packaging recommendations still need
-explicit implementation approval within the amended direction. The earlier
+The owner subsequently approved P4-03/P4-05/P4-06 for stage 4.2; that factory,
+HTTP and logging work is complete with passing injection/strict/build checks. Other P4 watch, process and packaging
+recommendations still need explicit implementation approval within the amended direction. The earlier
 planning update performed no installation or implementation; current delivered
-scope is stage 4.1 only. Preserve existing approved Step 3 behavior and obtain
+scope is stages 4.1–4.2. Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.
 
 Planning validation: the original review inspected issue/PR state, package

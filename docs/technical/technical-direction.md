@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below; no application implementation exists yet.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.2 complete; process startup and later stages remain pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -701,12 +701,32 @@ recommendations retain their existing approval gates.
 | Finite builds | Use the existing TypeScript compiler for API ESM, declarations and JavaScript source maps; retain strict NodeNext and no-emit-on-error. Remove only each package's own `dist` with native Node `fs.rmSync` before its finite build. This prevents stale output after deletion/rename without adding a package or changing DB output/schema. Stop watchers before clean builds. |
 | Strict checks and graph | Cover API source, tests, scripts and Vitest configurations in no-emit checking. Reuse existing build/typecheck/lint dependencies and `dist/**` outputs; add a DB build dependency to root unit tests, which now consume compiled DB exports. Add only declarations for existing commands; dev/start/process/image tasks wait for their stages. |
 
-Stage 4.1 is implemented and verified in commit `472e0a7`; stages 4.2–4.11
-remain pending and full Step 4 is in progress. Implementation and executed checks
+At the stage 4.1 handoff, it was implemented and verified in commit `472e0a7`,
+with stages 4.2–4.11 pending and full Step 4 in progress. See the later stage 4.2
+record below for current progress. Implementation and executed checks
 are tracked in the
 [cumulative evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds).
 Stage 4.1 does not deliver an HTTP factory/listener or claim full Step 4/T06
 acceptance.
+
+## Step 4.2 factory, HTTP and logging approval (2026-10-28)
+
+**Owner approval:** In the stage 4.2 session, the owner explicitly approved
+P4-03/P4-05/P4-06 and the application/HTTP contracts in the
+[parent plan](../plans/step-4-fastify-plan-2026-10-28.md#application-and-process-contract).
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Construction | `buildApp(httpConfig, { database, isClosing })` returns an unlistening Fastify instance. Type readiness as `Pick<Database, "check">`; read no application environment and own no pool or process handlers. Explicit dependencies isolate tests and leave ownership with stage 4.3; a resource-owning singleton would couple construction and cleanup. |
+| HTTP | Fixed live/ready/not-found/internal-error responses, fresh existing bounded DB checks, closing-aware readiness, 16 KiB bodies, 10s receive timeout, `forceCloseConnections: "idle"` and `trustProxy: false`. Preserve safe framework statuses including malformed JSON 400 and oversized payload 413. A combined/cached probe would obscure dependency loss or recovery. |
+| Logs | Fastify's existing JSON logger, generated request IDs with `requestIdHeader: false`, disabled default request logging, fixed failure categories and only method/matched-template/status/elapsed request metadata. Safe serializers and authorization/cookie redaction provide defense in depth; redaction-only default logging still exposes URLs and exception messages. No additional logger dependency. |
+
+Stage 4.2 is complete with AC4-03/AC4-10 and injected health evidence;
+implementation/checks are tracked in the
+[same cumulative evidence](step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
+This approval covers only the assigned factory/tests and necessary documentation;
+process lifecycle, real HTTP/DB/outage proof and later-stage recommendations retain
+their existing gates. No production or business acceptance is implied.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
