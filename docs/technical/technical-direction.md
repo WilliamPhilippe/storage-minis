@@ -415,6 +415,24 @@ ports 5433/5434. The final evidence and remaining schema work are recorded in th
 [Step 3A handoff](step-3a-verification-2026-10-25.md). These checks do not establish
 business atomicity, Organization authorization, schema constraints or T06 completion.
 
+## Step 4 planning refinements (2026-10-28)
+
+**Owner requirements:** During review of the
+[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md), the owner required
+verification of the Step 5/6 handoff, an explicit acceptance-criteria list, a
+working local verification path, and Fastify inside this repository's API
+Docker image. The API image is therefore part of Step 4 delivery rather than
+an optional later packaging task. This makes the running application artifact
+and its local verification available to the transport and integration steps.
+
+The revised plan proposes development/runtime Dockerfile targets, portable
+production dependencies, Compose/lifecycle commands, a bounded image smoke
+and 18 acceptance criteria. These detailed choices, dependency pins and the
+Step 3A/3B sequencing clarification still await approval; the owner requirements
+do not approve all implementation recommendations. No API image, application
+code or runtime configuration has been implemented during planning. Existing
+schema, authorization, deployment and full T06 acceptance gates remain.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or

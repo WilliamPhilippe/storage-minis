@@ -4,10 +4,13 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Current status, 2026-10-25:** Workspace tooling, Turborepo checks, Step 1's
+**Current status, 2026-10-28:** Workspace tooling, Turborepo checks, Step 1's
 Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
-implemented. Step 3A now supplies Drizzle connection/tooling and tests; Step 3B
-base migration and Steps 4–6 remain pending. The owner approved the
+implemented. Step 3A supplies Drizzle connection/tooling and tests through merged
+PR #105. Step 3B base migration and Steps 4–6 remain pending. The
+[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) is proposed, awaiting
+approval, including its clarification of the Step 3A/3B dependency boundary.
+The owner approved the
 [split Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
 with its separate schema gate. The owner approved both earlier concrete
 plans and selected `storage-minis` naming. Step 1 PR #103 is merged. Step 2's
@@ -34,8 +37,8 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [draft PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), awaiting review. 3B remains gated on physical-schema review. |
-| 4 | Fastify server foundation | Steps 1–3 | Not started |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B remains gated on physical-schema review. |
+| 4 | Fastify server foundation | Steps 1–3; proposed 3A/3B clarification awaits approval | [Proposed plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md), awaiting owner approval. Implementation not started. |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |
 
@@ -319,11 +322,16 @@ testable without giving every test control of global process resources.
 
 ### Expected result and completion criteria
 
-`apps/api` supplies an application factory, process entry and working
-development/build/start commands. Completion requires evidence that:
+`apps/api` supplies an application factory, process entry, a dedicated API Docker
+image and working development/build/start/local-verification commands. The
+owner explicitly required the API image and local verification on 2026-10-28;
+the [Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) contains the proposed
+implementation and its [acceptance checklist](../plans/step-4-fastify-plan-2026-10-28.md#step-4-acceptance-criteria).
+Completion requires evidence that:
 
-- The built application starts through plain Node inside Docker and resolves the
-  DB package without assistance from the development runner.
+- Fastify, compiled API/DB code and runtime dependencies are contained in the
+  repository's API runtime image. Plain Node starts it without a development
+  runner, source/dependency mounts or installation at startup.
 - Liveness and readiness have distinct documented responses. Database outage and
   recovery affect readiness as specified, with bounded failures and safe logs.
 - Configuration errors, invalid credentials and occupied ports fail cleanly;
@@ -332,6 +340,12 @@ development/build/start commands. Completion requires evidence that:
   DB package trigger the required rebuild and API reload during development.
 - The API workspace dependency, emitted files and Turbo ordering/outputs are
   explicit; persistent tasks are outside finite task prerequisites.
+- Local setup documents image build/start, browser/curl URLs with exact expected
+  responses, logs and stop commands. A bounded automated smoke command verifies
+  the actual API image's health/shutdown and cleans up its owned container on
+  success and failure; this delivery does not wait for Step 6.
+- Route registration before listen can receive the already-owned DB instance,
+  giving Step 5 a tested extension point without another pool or process owner.
 
 ### Research and planning focus
 
@@ -345,6 +359,10 @@ and the DB handoff. Concentrate on:
 - Watch behavior across compiled workspace dependencies, Docker bind mounts,
   signal forwarding and the distinction between container bind address and host
   loopback publication.
+- Dedicated API Dockerfile/build context, development versus self-contained
+  runtime targets, production dependency packaging and image verification that
+  does not rely on tooling volumes. New concrete packaging choices require
+  approval within the owner-required API-image scope.
 - Doppler injection before startup, validated environment and redaction,
   signal forwarding through any Doppler wrapper, and pool ownership when startup
   fails partway through resource creation. Specify restart behavior when Doppler
@@ -361,10 +379,16 @@ bypasses are not a scaffold prerequisite. tRPC integration belongs to Step 5.
 
 ### How this helps the other steps
 
-Step 5 gains a functioning HTTP host and injected dependencies. Step 6 gains a
-built entry point, health contracts and shutdown behavior that a process smoke
-harness can exercise. Future authorization and workflow modules can reuse the
-factory without conflating them with process startup.
+| Consumer | Step 4 handoff | Work left to the consumer |
+| --- | --- | --- |
+| Step 5 | Testable Fastify host, route-registration extension using the owned DB, safe HTTP boundaries and the API image/build path. | Add tRPC adapter, diagnostic schemas/context, adapter-specific errors and type-only router export; rebuild the same application image. |
+| Step 6 | Working local image smoke, exact health/exit contracts, isolated process-test command, task graph and setup/log/stop instructions. | Extend verification with tRPC success/failure, clean-checkout reproduction and final cache/integration evidence. |
+
+The [detailed successor coverage](../plans/step-4-fastify-plan-2026-10-28.md#verification-of-support-for-steps-5-and-6)
+maps these outputs to both steps' completion criteria. Step 4 owns proof of its
+image, local health verification and resource lifecycle. Later steps extend
+those deliveries. Future authorization/workflow modules can reuse the factory
+without taking over process startup.
 
 ## Step 5 — tRPC and Zod integration
 

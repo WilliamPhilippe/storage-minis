@@ -201,6 +201,7 @@ database drafts still need consolidation.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
+- [Step 4 Fastify plan and dependency review — approval pending](docs/plans/step-4-fastify-plan-2026-10-28.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)
 - [Technical direction review](docs/technical/technical-direction-review.md)
 
