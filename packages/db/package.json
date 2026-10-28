@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "db:check": "tsx scripts/check.ts",
     "db:generate": "tsx scripts/generate.ts",
     "db:migrate": "tsx scripts/migrate.ts",

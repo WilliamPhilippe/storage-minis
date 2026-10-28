@@ -13,7 +13,7 @@ and frontend startup will follow their application implementation.
 ## Structure
 
 ```text
-apps/api/                 Fastify and tRPC workspace package; configuration only
+apps/api/                 Validated configuration, unit tests and finite build
 packages/db/              Drizzle schema, migrations, connection package and tests
 docker/                   Tooling image and volume initializer
 scripts/tooling.sh        Run workspace commands in Docker
@@ -182,8 +182,8 @@ No host Drizzle installation is needed. After Docker dependency installation:
 ./scripts/tooling.sh run-db test pnpm test:db
 ```
 
-These commands reuse the project/Doppler settings above. `build` emits the DB
-package; `db:check` verifies an authenticated query; `test:db` requires the test
+These commands reuse the project/Doppler settings above. `build` emits API
+configuration and the DB package; `db:check` verifies an authenticated query; `test:db` requires the test
 service and runs uncached integration tests. Stop test storage only after tests
 finish; it is discarded on stop.
 
@@ -215,9 +215,12 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 | `pnpm test:watch` | Run unit tests in watch mode |
 | `pnpm check` | Run type, lint, format, and unit-test checks |
 
-`pnpm check` builds the DB package and checks types, lint, formatting and meaningful
-DB unit tests. Integration tests run separately with `pnpm test:db` and require
-PostgreSQL. Empty suites still fail; do not use `--passWithNoTests` as evidence.
+`pnpm check` builds the DB package and checks types, lint, formatting and API/DB
+unit tests. `pnpm build` emits API configuration ESM/declarations/source maps and
+DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
+finite builds. API HTTP startup remains pending. See the
+[stage 4.1 evidence](docs/technical/step-4-verification-2026-10-28.md).
+Integration tests run separately with `pnpm test:db` and require PostgreSQL. Empty suites still fail; do not use `--passWithNoTests` as evidence.
 
 ### Turborepo checks and cache
 

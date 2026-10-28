@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "dependencies": {
+    "@storage-minis/db": "workspace:*",
+    "fastify": "5.12.7",
+    "zod": "4.6.7"
   }
 }

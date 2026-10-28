@@ -625,6 +625,26 @@ the owner requirements do not approve all implementation recommendations.
 No API image, application code or runtime configuration has been implemented during planning. Existing
 schema, authorization, deployment and full T06 acceptance gates remain.
 
+## Step 4.1 configuration and finite-build approval (2026-10-28)
+
+**Owner approval:** In the stage 4.1 implementation session, the owner explicitly
+approved the pending configuration, dependency and finite-build choices below.
+This covers P4-02 and only the stage 4.1 portions of P4-08/P4-09 in the
+[parent plan](../plans/step-4-fastify-plan-2026-10-28.md). Remaining Step 4
+recommendations retain their existing approval gates.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| API runtime dependencies | Pin Fastify 5.12.7 and Zod 4.6.7; link `@storage-minis/db` with `workspace:*` using container pnpm and the shared lockfile. Fastify supplies its own types/logger/injection support, and Zod matches the DB pin. Alternative patches need compatibility research; no extra logger, bundler, cleanup package or tRPC dependency is needed here. |
+| Configuration | Implement `readApiConfig(environment)` returning separate HTTP and DB configuration. Apply the parent plan's absent-only defaults, exact host/port/level/environment validation, ignored unknown keys and secret-free failures. Delegate DB component/URL validation to the existing compiled DB package. Explicit input keeps imports free of environment reads and resource acquisition. |
+| Finite builds | Use the existing TypeScript compiler for API ESM, declarations and JavaScript source maps; retain strict NodeNext and no-emit-on-error. Remove only each package's own `dist` with native Node `fs.rmSync` before its finite build. This prevents stale output after deletion/rename without adding a package or changing DB output/schema. Stop watchers before clean builds. |
+| Strict checks and graph | Cover API source, tests, scripts and Vitest configurations in no-emit checking. Reuse existing build/typecheck/lint dependencies and `dist/**` outputs; add a DB build dependency to root unit tests, which now consume compiled DB exports. Add only declarations for existing commands; dev/start/process/image tasks wait for their stages. |
+
+Implementation and executed checks are tracked in the
+[cumulative evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds).
+Stage 4.1 does not deliver an HTTP factory/listener or claim full Step 4/T06
+acceptance.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or

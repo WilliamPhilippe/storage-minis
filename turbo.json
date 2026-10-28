@@ -30,6 +30,7 @@
       "outputs": []
     },
     "//#test": {
+      "dependsOn": ["@storage-minis/db#build"],
       "outputs": [],
       "env": ["NODE_ENV", "TZ"]
     },
