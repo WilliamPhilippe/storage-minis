@@ -38,6 +38,25 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
+    "@storage-minis/api#start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL",
+        "HOST",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "TZ"
+      ]
+    },
     "@storage-minis/db#typecheck": {
       "dependsOn": ["build"],
       "outputs": []

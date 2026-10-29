@@ -702,7 +702,7 @@ recommendations retain their existing approval gates.
 | Strict checks and graph | Cover API source, tests, scripts and Vitest configurations in no-emit checking. Reuse existing build/typecheck/lint dependencies and `dist/**` outputs; add a DB build dependency to root unit tests, which now consume compiled DB exports. Add only declarations for existing commands; dev/start/process/image tasks wait for their stages. |
 
 At the stage 4.1 handoff, it was implemented and verified in commit `472e0a7`,
-with stages 4.2–4.11 pending and full Step 4 in progress. See the later stage 4.2
+with stages 4.2–4.11 pending and full Step 4 in progress. See the later stage 4.2/4.3
 record below for current progress. Implementation and executed checks
 are tracked in the
 [cumulative evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds).
@@ -724,9 +724,34 @@ P4-03/P4-05/P4-06 and the application/HTTP contracts in the
 Stage 4.2 is complete with AC4-03/AC4-10 and injected health evidence;
 implementation/checks are tracked in the
 [same cumulative evidence](step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
-This approval covers only the assigned factory/tests and necessary documentation;
-process lifecycle, real HTTP/DB/outage proof and later-stage recommendations retain
-their existing gates. No production or business acceptance is implied.
+At its handoff, this approval covered only the assigned factory/tests and necessary
+documentation; process lifecycle, real HTTP/DB/outage proof and later-stage
+recommendations retained their gates. The separate 4.3 approval follows below.
+No production or business acceptance is implied.
+
+## Step 4.3 lifecycle, process and start-task approval (2026-10-28)
+
+**Owner approval:** In the stage 4.3 session, the owner explicitly approved the
+presented P4-04 process/lifecycle contract and only the stage 4.3 start portions
+of P4-08/P4-09. This follows the same
+[parent contract](../plans/step-4-fastify-plan-2026-10-28.md#application-and-process-contract).
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Ownership and extension | One lifecycle owns one full DB handle and one app, with injectable factories/process hooks for focused unit fixtures. An optional async callback receives those same instances before app readiness, DB check and listen. A second pool or resource-owning singleton duplicates ownership. |
+| Early cancellation | Install SIGINT/SIGTERM handlers before configuration/acquisition. Signals mark closing and prevent subsequent listen; pending startup settles before completed cleanup removes handlers, so late acquired resources remain owned. Repeated signals share the first close promise. |
+| Deadlines and exits | Retain the 17s overall startup/failure watchdog and a single 10s total shutdown bound. Drain HTTP, then close DB even if HTTP close fails. On deadline destroy HTTP connections and force exit 1. Successful SIGINT/SIGTERM cleanup uses 130/143; startup/cleanup/deadline failures use 1. Separate budgets or listening before DB validation change the approved fail-fast contract. |
+| Diagnostics | Fixed safe categories only; no raw exception, configuration or registration input. No additional logger dependency. |
+| Built start | API `node --enable-source-maps dist/server.js`; root filtered Turbo start; API start is uncached/persistent, depends on its finite build and passes through only the parent-listed runtime variables. Direct built Node remains available without a loader. Dev/process/image tasks wait for their stages. |
+
+Stage 4.3 is complete with AC4-04 and 52 passing API tests (29 lifecycle tests),
+finite builds, affected strict checks and start-task/compiled-entry inspection. Its
+[checkpoint and evidence](step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point)
+record the local completion commit subject and exact commands. Cleanup rejection
+attempts both closes, destroys HTTP connections and forces exit 1 because it
+cannot certify release. OS signals, actual listener/pool release and DB process
+proof remain with 4.4/4.10; mocks do not establish those results. Later-stage
+recommendations retain their approval gates.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

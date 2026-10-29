@@ -5,6 +5,229 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.3 — Process lifecycle and entry point
+
+**State: complete.** All required stage checks passed before the local completion
+commit. Completion commit subject: `feat(api): add bounded process lifecycle and built entry`.
+Resolve its hash with
+`git log -1 --format=%H --grep="^feat(api): add bounded process lifecycle and built entry$"`.
+
+### Initial checkpoint (2026-10-28, America/Maceio)
+
+Saved in progress before implementation; the following snapshot is historical.
+Current results and next action are in the completed handoff below.
+
+- Checkout: `/Users/william/Documents/code/storage-minis`; verified branch
+  `WilliamPhilippe/step-4-implementation-plan`; base
+  `29509a3ca2cb4211af1cbb8275c53cad2e4de07a`. Initial Git status was clean.
+- Prerequisites: stages 4.1 (`472e0a7`) and 4.2 (`29509a3`) are complete;
+  their source/configuration/lockfile inputs match their recorded evidence.
+  Read the stage card, execution/checkpoint rules, parent process/start/task
+  contracts, approval records and live T06 #26 (open, no comments; unchanged
+  #21/#22/#23 dependencies). No business acceptance is introduced.
+- Approval: owner explicitly approved the presented P4-04 lifecycle/process
+  contract and stage 4.3 start-task portions of P4-08/P4-09 in this session.
+  This includes injectable factories/process hooks, early handlers, callback
+  identity/order, cancellation, 17s startup/failure and 10s total shutdown bounds,
+  HTTP-then-DB cleanup, forced deadline exit 1, successful signal exits 130/143,
+  fixed safe diagnostics and the planned built-Node/Turbo start declarations.
+- Implemented so far: checkpoint only; no code or task changes yet.
+- Checks: branch/status/history and predecessor evidence inspected. Live issue
+  read passed after the restricted-network attempt failed. Docker socket access
+  requires the existing escalation; no build/test has run in this stage yet.
+- Resources: saved Beijing project/ports 5433/5434 retained. No stage-owned
+  container, pool, listener, watcher, temporary source fixture or Doppler fetch.
+  Inspect actual Docker resource state before checks; do not start DB services.
+- Remaining checks: focused lifecycle/API unit tests, finite builds, affected
+  type/lint/format checks, start task/compiled-entry inspection, documentation
+  consistency/links and Git diff checks. Real OS/DB process proof belongs to 4.4;
+  aggregate milestones remain 4.4/4.8/4.11. No image/startup helper is in scope.
+- Acceptance: AC4-04 pending lifecycle/route proof; AC4-08/AC4-09 process proof
+  remains pending. Existing completed/partial criteria retain their state.
+- Next action: record approval in technical direction, implement lifecycle,
+  thin entry/start tasks and focused failure/cancellation/cleanup tests; verify
+  before synchronizing completion summaries and making the local commit.
+
+### Checkpoint history
+
+- 2026-10-28: documentation validation passed for seven changed Markdown files,
+  230 relative links/anchors, paired fences/consistent tables, all 18 distinct
+  acceptance IDs and the exact completed set AC4-03/AC4-04/AC4-10. Current
+  summaries/approval links agree: 4.3 complete, 4.4 not started, Step 4 in progress.
+  Final Docker inspection confirms both original DB containers stopped and no
+  running Beijing project container. `git diff --check` passed. Diff/branch
+  reviewed; only the 13 stage code/test/task/documentation files will be staged.
+  Next execute the local completion commit and verify Git status/hash, then stop.
+- 2026-10-28: final API suite passed: 52 tests in 3 files, including 29 lifecycle
+  cases. Finite build passed (2 tasks, unchanged DB build cache reused), strict
+  typecheck passed (4 tasks), lint and formatting passed. Plain-Node inspection
+  verified all 12 emitted API artifacts, compiled syntax/import without acquired
+  resources and the exact start commands/Turbo dependencies/environment boundary.
+  No API process/DB check ran. Completion summaries are being synchronized;
+  next validate Markdown/links/acceptance state, inspect/stage the scoped diff,
+  commit locally and verify Git status. Both existing DB containers remain stopped.
+- 2026-10-28: focused API suite passed (50 tests, including 27 lifecycle tests),
+  strict typecheck passed (4 tasks, 2 unchanged DB cache hits), lint passed.
+  Narrow fake timers to lifecycle setTimeout/clearTimeout; real Node HTTP's
+  unref'ed maintenance interval and injection stream immediates remain native.
+  This resolves the timer fixture without suppressing lifecycle timer checks.
+  HTTP/DB cleanup rejection now attempts both owners and forces exit 1 afterward,
+  since rejection cannot certify resource release. Two further cancellation
+  cases are being added before final checks. No live resources were acquired;
+  next verify final focused/strict checks, finite builds and start-task graph,
+  then complete documentation validation/staging/commit.
+- 2026-10-28: Docker 29.9.2 and existing tooling image
+  `sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`
+  inspected; both pre-existing Beijing PostgreSQL containers remain stopped.
+  Lifecycle/entry, actual start tasks and 27 focused lifecycle fixtures written.
+  Initial API unit run: 49/50 passed; one fixture retained light-my-request's
+  deferred request-destruction immediate. Initial typecheck found fixture user,
+  overloaded Fastify method/factory types; lint found one unsafe matcher value.
+  These are being corrected without relaxing checks. Installed dependency
+  inspection used grep after confirming rg is absent inside the tooling image.
+  No live DB/HTTP/OS-signal proof has run. Next rerun focused units/type/lint,
+  then finite build, task/compiled-entry inspection and documentation checks.
+
+### Completed handoff (2026-10-28)
+
+Implemented `apps/api/src/lifecycle.ts`, `src/server.ts`, 29 focused lifecycle
+tests and real API/root start declarations with the API-specific Turbo task.
+The owner approved P4-04, process deadlines/exit behavior and only the start
+portions of P4-08/P4-09; see the
+[approval record](technical-direction.md#step-43-lifecycle-process-and-start-task-approval-2026-10-28).
+No package/version, lockfile, DB implementation/schema/migration, launcher,
+Compose, image, watcher or process-test command changed.
+
+`startLifecycle(readConfig, options)` is inert on import. It installs both
+signal handlers before lazy configuration and acquires one DB and one app.
+It calls async `registerRoutes(app, database)` once with the same full owned
+handle, awaits app readiness, the existing bounded DB identity check, then
+listen. `server.ts` supplies `readApiConfig(process.env)` at that explicit entry.
+The only delivered routes remain live/ready. A test-owned Fastify route proves
+full DB/Drizzle identity and uses the same check capability through injection;
+it adds no tRPC, identity, business query or second pool.
+
+Cancellation marks closing immediately, skips later startup operations and
+waits for pending acquisition/registration/readiness/listen to settle before
+claiming cleanup or removing handlers. Repeated/mixed signals and manual close
+calls share one close promise. Startup/failure cleanup has a referenced 17s
+watchdog; signals or failure start a single referenced 10s cleanup deadline.
+Successful listen removes the startup timer. HTTP drain precedes DB close,
+with DB close in `finally` even if HTTP close rejects. Completed cleanup removes
+both handlers/timers. Clean signal cleanup sets 130/143, startup failure sets 1;
+later signals cannot replace the first result. Any close rejection attempts
+both owners, destroys HTTP connections and forces exit 1 because release is
+uncertain. A deadline likewise destroys HTTP connections and forces exit 1;
+process termination closes remaining DB sockets. Runtime tests intercept exit
+and signals and use virtual timeout advancement; they prove orchestration,
+not OS termination or real pool/socket release.
+
+Fixtures cover synchronous and async acquisition failure, construction,
+registration, app readiness, DB readiness and listen failure; identity/order;
+optional registration; cancellation before config and during each async phase;
+late acquisition/rejection; repeated signals and first-result preservation;
+HTTP/DB/both close rejection; stuck registration/startup cleanup; cancellation
+during stuck acquisition; blocked HTTP/DB cleanup and the single total 10s
+budget. Every fixture releases its timers/handlers and closes its real
+injection-only app. Native Node HTTP maintenance/stream timers stay real while
+only lifecycle timeout APIs are faked.
+
+API `start` is `node --enable-source-maps dist/server.js`. Root `start` filters
+Turbo to the API. The uncached persistent task depends on its own finite build,
+which depends on DB build. Only the parent-listed 12 runtime variables pass
+through; build/check tasks receive no new runtime environment or live resources.
+Finite API output is exactly `app`, `config`, `lifecycle`, `server`, each with
+`.js`, `.d.ts`, `.js.map`; tests are excluded. Direct built Node needs no loader.
+
+All commands below ran from the repository root on 2026-10-28 with existing
+`storage-minis-beijing-tooling:step1` image
+`sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`,
+pinned Node 24.22.1/pnpm 12.15.0, TypeScript 6.0.3, Turbo 2.11.10 and the
+unchanged lockfile. Final results:
+
+| Actual command | Result |
+| --- | --- |
+| `./scripts/tooling.sh run pnpm exec prettier --write apps/api/src/lifecycle.ts apps/api/src/server.ts apps/api/src/lifecycle.test.ts apps/api/package.json package.json turbo.json` | Passed; corrected source/test files also formatted with the same command on the affected paths. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project api-unit` | Passed: 52 tests in 3 files; 29 lifecycle, 14 factory and 9 configuration. |
+| `./scripts/tooling.sh run pnpm build` | Passed: 2 tasks, API compiled, unchanged DB build cache reused. Emits the real lifecycle/server entry. |
+| `./scripts/tooling.sh run pnpm typecheck` | Passed: 4 tasks; 2 unchanged DB build/typecheck cache hits, root/API checks executed. |
+| `./scripts/tooling.sh run pnpm lint` | Passed with zero warnings after the final fixture additions. |
+| `./scripts/tooling.sh run pnpm format:check` | Passed; all matched source/configuration files formatted. |
+| `./scripts/tooling.sh run node --input-type=module` with the exact stdin probe below | Passed: emitted artifact/syntax/import and actual start/task declarations, with no server process started. |
+| `git diff --check` and `python3 /private/tmp/storage-minis-validate-stage-4.3-docs.py` | Passed: changed Markdown links/anchors, fences/tables, stage progress/approval consistency and only AC4-03/AC4-04/AC4-10 checked. |
+
+Exact compiled-output/start-task inspection (no source fixture):
+
+```sh
+./scripts/tooling.sh run node --input-type=module <<'NODE'
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
+import { Server, Socket } from "node:net";
+const files = readdirSync("apps/api/dist").sort();
+assert.deepEqual(files, ["app", "config", "lifecycle", "server"].flatMap(name => [`${name}.d.ts`, `${name}.js`, `${name}.js.map`]).sort());
+for (const name of ["lifecycle", "server"]) execFileSync(process.execPath, ["--check", `apps/api/dist/${name}.js`]);
+const api = JSON.parse(readFileSync("apps/api/package.json", "utf8"));
+const root = JSON.parse(readFileSync("package.json", "utf8"));
+assert.equal(api.scripts.start, "node --enable-source-maps dist/server.js");
+assert.equal(root.scripts.start, "turbo run start --filter=@storage-minis/api");
+const graph = JSON.parse(execFileSync("pnpm", ["exec", "turbo", "run", "start", "--filter=@storage-minis/api", "--dry=json"], { encoding: "utf8" }));
+assert.deepEqual(graph.tasks.map(task => task.taskId).sort(), ["@storage-minis/api#build", "@storage-minis/api#start", "@storage-minis/db#build"]);
+const task = graph.tasks.find(task => task.taskId === "@storage-minis/api#start");
+assert.deepEqual(task.dependencies, ["@storage-minis/api#build"]);
+assert.equal(task.command, api.scripts.start);
+assert.equal(task.resolvedTaskDefinition.cache, false);
+assert.equal(task.resolvedTaskDefinition.persistent, true);
+assert.deepEqual(task.resolvedTaskDefinition.passThroughEnv.sort(), ["DB_TARGET", "PGHOST", "PGPORT", "PGDATABASE", "PGUSER", "PGPASSWORD", "DATABASE_URL", "HOST", "PORT", "LOG_LEVEL", "NODE_ENV", "TZ"].sort());
+const originalOn = process.on;
+const originalListen = Server.prototype.listen;
+const originalConnect = Socket.prototype.connect;
+try {
+  process.on = () => { throw new Error("Unexpected process handler during import"); };
+  Server.prototype.listen = () => { throw new Error("Unexpected listener during import"); };
+  Socket.prototype.connect = () => { throw new Error("Unexpected connection during import"); };
+  const lifecycle = await import("./apps/api/dist/lifecycle.js");
+  assert.equal(typeof lifecycle.startLifecycle, "function");
+  assert.deepEqual(lifecycle.lifecycleLimits, { startupMs: 17000, shutdownMs: 10000 });
+} finally {
+  process.on = originalOn;
+  Server.prototype.listen = originalListen;
+  Socket.prototype.connect = originalConnect;
+}
+console.log("Passed: 12 emitted API artifacts, compiled syntax/import without resource acquisition, plain-Node start, finite build prerequisites, persistent uncached task and exact runtime environment passthrough. No server process started.");
+NODE
+```
+
+Initial fixture/type/lint failures are retained above and resolved; no required
+stage check remains failed or unrun. Frozen dependency installation, DB/schema
+compiled consumers and dist-cleaning evidence from 4.1 remains current because
+their source/lockfile/compiler/build-script inputs did not change. The actual
+API build and affected strict checks were rerun. Full ordinary aggregate remains
+scheduled for 4.4/4.8/4.11. Real OS/DB/config/listen/signal proof, API image,
+watching, outage/recovery and Compose shutdown checks are unrun here by design.
+
+Acceptance: **AC4-04 complete**, alongside inherited AC4-03/AC4-10. AC4-08 and
+AC4-09 have partial lifecycle evidence only; 4.4/4.10 must prove actual built
+process failure, signal/termination deadlines, socket/pool release and project
+shutdown paths. AC4-12 has start-task inspection only; its final cache evidence
+remains with 4.11. Other partial criteria and business/T06 deferrals are unchanged.
+Overall Step 4 remains **in progress**; stages 4.4–4.11 are not started.
+
+Resources: saved Beijing project/ports 5433/5434 retained. Both pre-existing
+PostgreSQL containers remain stopped. No migration, Doppler fetch, live DB
+client/pool, listening API, child server process, watcher or image probe ran.
+One-off tooling containers self-removed. No temporary repository fixture or
+unrelated uncommitted work remains; ignored dist/cache output is retained.
+Necessary code/tests/tasks and seven current guidance/evidence documents are
+included in the local completion commit. Its hash is resolved from the subject
+above; final Git status is checked after committing.
+
+Next action: stop after the stage 4.3 local commit and Git-status verification.
+On a new assignment, begin **4.4** from its stage prompt: obtain uncovered
+guarded-runner/process-test approvals, validate the exclusive exact test target,
+implement the runner/tests and run the application-foundation aggregate.
+No push/PR or automatic next-stage work is authorized by this assignment.
+
 ## Stage 4.1 — Configuration and finite builds
 
 **State: complete.** Initial in-progress checkpoint was saved before coding;

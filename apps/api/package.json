@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "start": "node --enable-source-maps dist/server.js"
   },
   "dependencies": {
     "@storage-minis/db": "workspace:*",

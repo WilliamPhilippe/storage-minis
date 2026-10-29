@@ -2,7 +2,8 @@
 
 **Date:** 2026-10-28. **Status:** Step 4 in progress. Stage 4.1 is approved,
 implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented and
-verified; stages 4.3–4.11 remain pending.
+verified in `29509a3`; stage 4.3 lifecycle/entry/start tasks are approved,
+implemented and verified; stages 4.4–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -126,6 +127,9 @@ implemented; see [technical direction](../technical/technical-direction.md#step-
 P4-03/P4-05/P4-06 and the factory/HTTP/logging contract were approved for stage
 4.2 on 2026-10-28; implementation and focused checks are complete. See its
 [approval record](../technical/technical-direction.md#step-42-factory-http-and-logging-approval-2026-10-28).
+P4-04, the process/deadline/exit contract and stage 4.3 start-task portions of
+P4-08/P4-09 were approved on 2026-10-28; implementation and offline checks are
+complete. See the [stage 4.3 approval](../technical/technical-direction.md#step-43-lifecycle-process-and-start-task-approval-2026-10-28).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -157,6 +161,9 @@ complete. Check an item only after all its required scenarios have passing evide
 stage-scoped or later-stage evidence remains explicitly partial.
 The detailed scenarios and resource cleanup are in the verification matrix.
 AC4-03/AC4-10 have [stage 4.2 evidence](../technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
+AC4-04 has [stage 4.3 lifecycle/route evidence](../technical/step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point).
+Startup/signal/deadline unit fixtures support AC4-08/AC4-09 only partially;
+real process/DB/project shutdown proof remains with 4.4/4.10.
 AC4-06/AC4-07 have injected health proof only; real HTTP/DB failure, bounds and
 outage/recovery remain partial for later stages.
 
@@ -170,7 +177,7 @@ outage/recovery remain partial for later stages.
 - [x] **AC4-03 — Application factory:** importing or constructing the app reads
   no environment, opens no listener/pool and installs no process handlers. Tests
   can use normal Fastify injection and close their own app.
-- [ ] **AC4-04 — Step 5 extension:** one process-owned DB instance is passed to an
+- [x] **AC4-04 — Step 5 extension:** one process-owned DB instance is passed to an
   async route-registration callback before readiness/listen. A test route proves
   access to that same instance and registration failure triggers cleanup. No
   tRPC dependency, dummy identity or second pool is introduced.
@@ -321,6 +328,11 @@ reports 1. Repeated signals share the same close promise; they cannot start a
 second pool close. A signal received during DB startup must prevent subsequent
 `listen()`. Remove handlers/timers on completed cleanup without leaving a window
 where unfinished startup can acquire an unowned resource.
+Stage 4.3 implements this with handlers before configuration/acquisition and
+cleanup waiting for pending startup to settle. If either resource close rejects,
+it still attempts the other resource, destroys HTTP connections and forces exit
+1 after both attempts; a rejected close cannot certify release. Only successful
+cleanup uses natural exit with the documented signal code.
 Assert these application/container outcomes separately from the Compose client's
 native exit semantics. Ordinary Compose stop retains stopped service containers;
 only the smoke harness must remove its one-off probe on every outcome.

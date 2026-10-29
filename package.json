@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "build": "turbo run build",
+    "start": "turbo run start --filter=@storage-minis/api",
     "db:check": "turbo run db:check",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
