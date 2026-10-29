@@ -7,8 +7,9 @@ This repository contains workspace tooling, local PostgreSQL services, and
 application specifications. The Drizzle connection package and its tests are
 implemented, along with the approved structural schema and replayable migrations.
 API configuration, the injectable HTTP factory, process lifecycle and built entry
-are implemented and verified with guarded real-DB process tests. Image/Compose integration,
-business operations, the React frontend and CI remain pending.
+are implemented and verified with guarded real-DB process tests. Stage 4.5 adds
+a verified portable API runtime image; overall Step 4 remains in progress.
+Compose integration, business operations, the React frontend and CI remain pending.
 Docker lifecycle commands currently start PostgreSQL infrastructure only; API
 and frontend startup will follow their application implementation.
 
@@ -17,7 +18,7 @@ and frontend startup will follow their application implementation.
 ```text
 apps/api/                 Configuration, HTTP factory, lifecycle, entry and tests
 packages/db/              Drizzle schema, migrations, connection package and tests
-docker/                   Tooling image and volume initializer
+docker/                   Tooling/API images and volume initializer
 scripts/tooling.sh        Run workspace commands in Docker
 scripts/database.sh       Manage development and test PostgreSQL
 scripts/reset-volumes.sh  Confirmed project volume deletion
@@ -86,6 +87,29 @@ setup and command expansions, see the
 [local development reference](docs/technical/local-development.md#docker-tooling).
 Workspace commands run in temporary containers, with dependencies/cache in
 checkout-specific Linux volumes. Host editors cannot resolve those dependencies.
+
+### API runtime image
+
+Stage 4.5 supplies the self-contained production package using the
+[approved packaging](docs/technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
+From the repository root, build it without PostgreSQL or Doppler access:
+
+```sh
+docker build --file docker/Dockerfile.api --target runtime --tag storage-minis-api:stage4.5 .
+```
+
+The pinned Node/pnpm build compiles API/DB, then pnpm deploy packages production
+dependencies and their dist files. The fresh Node runtime uses user `node`,
+`/app` and `node --enable-source-maps dist/server.js`, with container bind
+`0.0.0.0:3000`. It requires no source/dependency mounts or startup installation.
+Local environment/credential files, host dependencies and generated output are
+excluded from the build context. Image inspection proves compiled schema/type
+files and portable internal links; see the
+[commands, identities and evidence](docs/technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image).
+
+Authenticated image startup and canonical Compose registration remain stage 4.6;
+the development target remains 4.7. The existing tooling image/context and
+PostgreSQL-only lifecycle commands are unchanged.
 
 ### Doppler host setup and verification
 
@@ -220,7 +244,7 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.4 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.5 are complete. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,

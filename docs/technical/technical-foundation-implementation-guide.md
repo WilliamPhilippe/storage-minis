@@ -4,7 +4,7 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Current status, 2026-10-28:** Workspace tooling, Turborepo checks, Step 1's
+**Current status, 2026-10-29:** Workspace tooling, Turborepo checks, Step 1's
 Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
 implemented. Step 3A supplies Drizzle connection/tooling; Step 3B now supplies
 the approved structural schema, migration chain and PostgreSQL constraint tests.
@@ -15,13 +15,17 @@ is complete with AC4-04 evidence. Stage 4.4 is complete with
 [guarded process evidence](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests)
 for AC4-05/AC4-08 and basic signals; its choices are
 [approved](technical-direction.md#step-44-guarded-process-test-approval-2026-10-28).
-Stages 4.5–4.11,
+Stage 4.5 is complete with
+[portable runtime-image evidence](step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image)
+for AC4-11 and [approved packaging](technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
+Stages 4.6–4.11,
 Steps 5–6 and business writers remain pending. The
 [Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) incorporates the owner's
 [approved post-Step-3 review amendments](technical-direction.md#step-4-review-decisions-after-step-3-2026-10-28).
 P4-01 is retired; stage 4.1 choices are approved and implemented. Stage 4.2
 P4-03/P4-05/P4-06 and stage 4.3's P4-04/process/start-task contract are approved
-and implemented; stage 4.4's runner/task/test contract is approved. Remaining
+and implemented; stage 4.4's runner/task/test contract and stage 4.5's
+build/package/runtime subset of P4-11 are approved and implemented. Remaining
 implementation recommendations await approval.
 The owner requested [11 sequential session stages](../plans/step-4-fastify-implementation-stages-2026-10-28.md)
 with [individual assignment prompts](../plans/step-4-fastify-stage-prompts-2026-10-28.md),
@@ -73,7 +77,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
 | 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B S01–S10 approved 2026-10-25; [structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), merged in [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106). [Final evidence](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): fresh replay, 27 unit and 30 PostgreSQL tests passing. First development application remains an explicit owner action. |
-| 4 | Fastify server foundation | Steps 1–3 | [Revised plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md); eight review amendments approved 2026-10-28. [Sequential stages 4.1–4.11 and checkpoints](../plans/step-4-fastify-implementation-stages-2026-10-28.md) bound each implementation session. P4-01 retired. Stage 4.1 complete in `472e0a7` with [configuration/build evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds); [Stage 4.2 factory/HTTP/logging](step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs) complete in `29509a3` with AC4-03/AC4-10; [stage 4.3 lifecycle/entry/start](step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point) complete with AC4-04 and offline lifecycle evidence. [Stage 4.4 guarded process tests](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests) are complete with AC4-05/AC4-08, basic real signals and the 85-test aggregate; stages 4.5–4.11 remain pending. Remaining implementation recommendations await approval; full Step 4 acceptance is incomplete. |
+| 4 | Fastify server foundation | Steps 1–3 | [Revised plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md); eight review amendments approved 2026-10-28. [Sequential stages 4.1–4.11 and checkpoints](../plans/step-4-fastify-implementation-stages-2026-10-28.md) bound each implementation session. P4-01 retired. Stage 4.1 complete in `472e0a7` with [configuration/build evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds); [Stage 4.2 factory/HTTP/logging](step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs) complete in `29509a3` with AC4-03/AC4-10; [stage 4.3 lifecycle/entry/start](step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point) complete with AC4-04 and offline lifecycle evidence. [Stage 4.4 guarded process tests](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests) are complete with AC4-05/AC4-08, basic real signals and the 85-test aggregate; [stage 4.5 runtime packaging](step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image) is complete with AC4-11 and approved P4-11 packaging. Stages 4.6–4.11 remain pending; authenticated image startup is 4.6. Remaining implementation recommendations await approval; full Step 4 acceptance is incomplete. |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |
 

@@ -5,6 +5,279 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.5 — Self-contained runtime image
+
+**State: complete.** Required runtime packaging and affected build/strict checks
+passed across 2026-10-28–29 (America/Maceio). Overall Step 4 remains in progress;
+stages 4.6–4.11 are not started. Completion commit subject:
+`build(api): package portable nonroot runtime image`. Resolve its hash with
+`git log -1 --format=%H --grep="^build(api): package portable nonroot runtime image$"`.
+
+### Initial checkpoint (2026-10-28, America/Maceio)
+
+Historical snapshot saved in progress before implementation.
+
+- Checkout: `/Users/william/Documents/code/storage-minis`; branch verified as
+  `WilliamPhilippe/step-4-implementation-plan`; base
+  `2510bddfc07b81991a8782f39ba1d5c874f415ab`. Initial status/diff clean.
+- Predecessors: 4.1 `472e0a7`, 4.2 `29509a3`, 4.3 `230a348`, 4.4 `2510bdd`
+  are complete. Current source/lockfile/build inputs match their handoffs.
+  Reuse their configuration, compiled exports, lifecycle, 85-unit-test aggregate
+  and real process/basic-signal evidence; rerun affected build/strict checks.
+- Read AGENTS, README Docker tooling, stage execution/completion/checkpoint
+  rules and 4.5 card, parent P4-11/image/package/compiled-export contract and
+  foundation guide. Live T06/#26 and T04/#23 remain open with no comments;
+  business writers, authorization and production operations remain deferred.
+  Official pnpm deploy and Docker context/multi-stage documentation reviewed.
+- Approval pending: recommended exact pinned Node/pnpm build/package/runtime
+  stages, frozen install/build/pnpm deploy, API/DB `files: ["dist"]`, explicit
+  copied inputs and local-file exclusions, node-owned `/app`, plain Node command
+  and `HOST=0.0.0.0`, `PORT=3000`, `NODE_ENV=production`. No implementation
+  before owner approval; development/Compose registration remain later stages.
+- Resources: existing tooling image
+  `sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`;
+  existing Beijing PostgreSQL containers both stopped, ports 5433/5434 retained.
+  Docker inspection succeeded after sandbox escalation. No stage image, probe,
+  listener, watcher, DB/Doppler access or temporary fixture exists.
+- Required checks pending: root-context runtime build, image configuration and
+  production graph/compiled schema/declarations/internal-link inspection,
+  environment/credential exclusion proof, affected build/type/lint/format,
+  documentation/diff review and local Conventional Commit. AC4-11 is partial;
+  authenticated image startup and AC4-01 remain 4.6.
+- Next action: await scoped packaging approval; meanwhile inspect existing
+  predecessor identities and prepare verification commands. Then record approval,
+  implement only 4.5 and checkpoint before build/temporary probes. No push/PR.
+
+### Checkpoint history
+
+- 2026-10-28: owner approved the recommended packaging in this session;
+  [scope and rationale](technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28)
+  recorded before implementation. Added only the three Dockerfile targets,
+  root exclusions and API/DB dist file lists. Tooling/Compose/lockfile/source
+  unchanged. Before first image build: no temporary fixture, probe or new image;
+  both PostgreSQL containers remain stopped. Next: root-context runtime build,
+  offline image assertions and affected strict/build checks.
+
+- 2026-10-28: first runtime build and existing-tooling finite DB/API build
+  passed. pnpm 12.15.0 deployed 64 production packages without injection changes;
+  runtime tag `storage-minis-api:stage4.5`, image/index
+  `sha256:2c5830766572d41d1da886ad3a60a80cff80a6dc3af080826bcad6835d4c429a`,
+  linux/arm64. Metadata confirms node `/app`, exact plain-Node CMD/defaults,
+  port 3000 and no volumes. First metadata template assumed an optional Volumes
+  field existed; corrected inspection passed without changing the image.
+- Before exclusion fixtures/offline probes: create only known nonsecret sentinel
+  files under root/API source (environment/credential patterns); rebuild runtime
+  and expose the cached build target for inspection, then remove those exact
+  fixtures. Preserve every original file. Probes use `--network none`, no mount,
+  no port, no credentials and `--rm`; they import packaged modules and inspect
+  files, without starting the API/DB. Both original DB containers stay stopped.
+  Required next actions: offline assertions, fixture cleanup, strict check
+  results, current-summary synchronization and completion commit.
+
+- 2026-10-28: build-target exclusion assertions passed with all five nonsecret
+  sentinels absent, including files inside the explicitly copied API source
+  directory. All exact fixtures were removed afterward. Initial affected types
+  and lint passed; formatting requested expansion of the two manifest file
+  arrays. Applied existing Prettier, rebuilt the runtime from final inputs and
+  reran build/type/lint/format successfully.
+- Final offline runtime probe passed: UID 1000, 64 production packages, 141 links
+  wholly inside `/app`, 4 API modules, 14 DB modules, their full declarations and
+  33 imported schema tables. Metadata/layer assertions passed. An optional base
+  inspection initially assumed BuildKit's base was registered as a local image;
+  it was not. The corrected comparison uses the existing tooling image's shared
+  pinned-base layers and requires exactly two additional runtime filesystem
+  layers. Neither metadata harness correction required an application change.
+- Current summaries and approval references synchronized; AC4-11 complete,
+  AC4-01 still partial. Temporary build-image tag removed, runtime retained;
+  both original PostgreSQL containers stopped and one-off probes self-removed.
+  Final documentation/diff validation and local commit are the only handoff work.
+- 2026-10-29: documentation validation passed for seven changed Markdown files,
+  253 relative links/anchors, fences/tables and 18 distinct acceptance IDs.
+  Current summaries agree on 4.1–4.5 complete, 4.6–4.11 not started and six
+  complete criteria; AC4-01 remains partial. Final diff review is limited to
+  eleven stage files. Next: stage those files, check the staged diff, execute
+  the completion commit, verify hash/status and stop.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Implemented the [approved stage 4.5 packaging](technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28)
+in `docker/Dockerfile.api`, root `.dockerignore` and API/DB package `files`.
+The existing Node digest and pnpm 12.15.0 are unchanged. Build copies explicit
+workspace/compiler/task/source inputs, installs the frozen shared lockfile and
+runs finite DB → API builds. Package uses
+`pnpm --filter=@storage-minis/api --prod deploy /out`, without changing workspace
+injection policy. Runtime copies only that output onto the fresh pinned Node
+base; files belong to `node` and plain Node executes `dist/server.js` from `/app`.
+Container defaults are production, `0.0.0.0`, port 3000. The inherited official
+entrypoint execs the command. Base npm/Yarn remain inherited; pnpm/Turbo/tsx/
+TypeScript/test/lint tools and the build store are absent from runtime.
+
+Runtime inspection covered every expected compiler output: 4 API ESM modules,
+their declarations and source maps (12 files), and 14 DB ESM modules with their
+declarations (28 files), including every schema module. Plain Node imported
+Fastify 5.12.7, Zod 4.6.7, DB exports and its 33-table schema plus API factory,
+lifecycle and configuration. pg 8.23.1 and Drizzle 0.45.4 resolve from the DB
+package. All 141 symlinks resolve, with no dangling or escaping links; all 64
+production package directories are internal. DB resolves at
+`/app/node_modules/.pnpm/@storage-minis+db@file++++workspace+packages+db/node_modules/@storage-minis/db/dist/index.js`.
+The workspace deployment rewrites its link into the portable pnpm package tree.
+No API/DB source, tests, scripts, migration data or compiler configuration is
+packaged. The application never runs an install or migration at startup.
+
+Local environment/credential patterns and host dependencies/dist/caches/logs
+are excluded. Five known nonsecret fixtures tested root `.env.stage45`, API
+source `.env.stage45`, `.npmrc`, `stage45-credentials.json` and
+`.doppler/stage45-sentinel`. The copied-source layers stayed cached; build-target
+inspection asserted all absent, along with `.env.compose`, Git history and
+source tests. Runtime inspection scanned all 5,824 physical files and checked
+local environment/credential names, production-tool exclusions, node-owned
+package files and resolved links. No real credential was inspected or copied.
+Fixtures were deleted only after confirming their exact sentinel bytes; no
+original file was overwritten. All probes had network disabled, no mounts,
+no published port, no DB/Doppler settings and automatic container removal.
+
+Identity of final tested inputs: SHA256
+`6681612f6d842b10b855a03e329d0853ae1ef39f18cb5e1bd270a3aa62d35cb7`.
+This hashes sorted path + NUL + bytes + NUL for 38 files: Dockerfile/ignore,
+root package/lock/workspace/Node pin, copied root compiler/task/check configuration,
+API/DB manifests/compiler configuration and all non-test API/DB source modules.
+Exact path inventory is also retained for this session at
+`/private/tmp/storage-minis-stage45-inputs.json`. Unchanged lockfile SHA256:
+`811388817ef6b9a342fd07dd4b2b6ef0659386bad5a917809c4f39c9743657f9`.
+Final runtime tag `storage-minis-api:stage4.5`, linux/arm64:
+
+- Image/index: `sha256:2f4d52f5f1d63184f7f17c627387924722004431a01c3a144ea3665b32aca344`.
+- Platform manifest: `sha256:32d21ec2409e7915afe6287874323bab76121806393e9d568b3e00c340d12e57`.
+- Image config: `sha256:4306892f035958b94055d3cc389370e036987697c4a09630718ed03a87d2d8af`.
+- Base: `node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205`.
+- Existing tooling: `sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`.
+
+Commands ran from the repository root across 2026-10-28–29 with both DB services
+stopped. Build registry access is needed; DB/Doppler access is not.
+
+| Exact command | Final result |
+| --- | --- |
+| `docker build --file docker/Dockerfile.api --target runtime --tag storage-minis-api:stage4.5 .` | Passed initially, with exclusion fixtures, and after final manifest formatting. Frozen install uses pnpm 12.15.0; 2 finite build tasks pass; deploy includes 64 production packages. |
+| `docker build --file docker/Dockerfile.api --target build --tag storage-minis-api-build:stage4.5 .` | Passed, reusing cached source/build layers while exclusion fixtures existed. Offline build-target assertions passed; temporary tag later removed. |
+| `./scripts/tooling.sh run pnpm build` | Passed DB/API finite builds; repeated after manifest formatting. |
+| `./scripts/tooling.sh run sh -c 'pnpm typecheck && pnpm lint && pnpm format:check'` | Initial type/lint pass; only manifest formatting failed, corrected below. |
+| `./scripts/tooling.sh run pnpm exec prettier --write apps/api/package.json packages/db/package.json` | Passed; expanded `files` arrays using existing configuration. |
+| `./scripts/tooling.sh run sh -c 'pnpm build && pnpm typecheck && pnpm lint && pnpm format:check'` | Final pass: 2 finite builds, 4 type tasks, zero-warning lint and all matched formatting. |
+| `docker run --rm --network none --interactive --entrypoint node storage-minis-api:stage4.5 --input-type=module < /private/tmp/storage-minis-verify-stage45-image.mjs` | Passed all compiler inventory/runtime/production graph/link/file assertions. Exact probe below; SHA256 `5c3f939556dc663b3dcc5b0478ae7a3bdc1be61d4566919d25c56fbb99c7bd7f`. |
+| `docker image inspect storage-minis-api:stage4.5 --format '{{.Id}} {{json .Config}} {{.Os}}/{{.Architecture}}'` and `docker history storage-minis-api:stage4.5 --no-trunc --format '{{.CreatedBy}}'` | Confirmed node user, `/app`, exact Node command/defaults/port, no volume declaration or credential configuration; runtime has only WORKDIR and deployed-tree filesystem layers above the shared pinned base. Host Python assertions against parsed image inspection also passed. |
+| `docker image rm storage-minis-api-build:stage4.5` and `docker ps -a --format '{{.Names}} {{.Status}}'` | Temporary build tag removed; only original stopped development/test containers remain. Runtime retained for 4.6. |
+| `git diff --check` and `python3 /private/tmp/storage-minis-validate-stage-4.5-docs.py` | Passed links/anchors/fences/tables and current summary/approval/stage/acceptance consistency; six criteria complete, including AC4-11. |
+
+<details>
+<summary>Exact offline runtime probe (save to the temporary command path above)</summary>
+
+```js
+import assert from "node:assert/strict";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+const expected = {"api": ["app", "config", "lifecycle", "server"], "db": ["client", "config", "diagnostics", "index", "migrations", "schema/acquisition-and-selling-expenses", "schema/catalog-and-inventory", "schema/customer-funding-and-retention", "schema/enums", "schema/identity-and-access", "schema/index", "schema/losses-and-shared-history", "schema/purchasing-and-supplier-funding", "schema/sales-and-returns"]};
+assert.equal(process.version, "v24.22.1");
+assert.equal(process.getuid(), 1000);
+assert.equal(process.cwd(), "/app");
+assert.equal(process.env.HOST, "0.0.0.0");
+assert.equal(process.env.PORT, "3000");
+assert.equal(process.env.NODE_ENV, "production");
+assert(!Object.keys(process.env).some(key => /^(PG|DB_TARGET|DATABASE_URL|DOPPLER)/.test(key)));
+for (const path of ["/workspace", "/out", "/pnpm", "/usr/local/bin/pnpm", "/usr/local/bin/tsc", "/usr/local/bin/tsx", "/usr/local/bin/turbo", "/usr/local/bin/doppler"]) assert(!existsSync(path), path);
+const dbEntry = fileURLToPath(import.meta.resolve("@storage-minis/db"));
+const dbRoot = dirname(dirname(dbEntry));
+assert(realpathSync(dbRoot).startsWith("/app/"));
+for (const [kind, root] of [["api", "/app"], ["db", dbRoot]]) {
+  const manifest = JSON.parse(readFileSync(join(root, "package.json")));
+  assert.deepEqual(manifest.files, ["dist"]);
+  const actual = readdirSync(join(root, "dist"), { recursive: true }).filter(path => statSync(join(root, "dist", path)).isFile()).sort();
+  const suffixes = kind === "api" ? [".js", ".d.ts", ".js.map"] : [".js", ".d.ts"];
+  assert.deepEqual(actual, expected[kind].flatMap(stem => suffixes.map(suffix => stem + suffix)).sort());
+  for (const path of ["src", "tests", "scripts", "drizzle", "tsconfig.json", "tsconfig.build.json"]) assert(!existsSync(join(root, path)), root + "/" + path);
+  assert.equal(statSync(join(root, "package.json")).uid, 1000);
+}
+const apiRequire = createRequire("/app/package.json");
+const dbRequire = createRequire(dbEntry);
+for (const [requireAt, name, version] of [[apiRequire, "fastify", "5.12.7"], [apiRequire, "zod", "4.6.7"], [dbRequire, "pg", "8.23.1"], [dbRequire, "drizzle-orm", "0.45.4"]]) {
+  let root = dirname(requireAt.resolve(name));
+  while (!existsSync(join(root, "package.json")) || JSON.parse(readFileSync(join(root, "package.json"))).name !== name) {
+    const parent = dirname(root);
+    assert.notEqual(parent, root);
+    root = parent;
+  }
+  assert.equal(JSON.parse(readFileSync(join(root, "package.json"))).version, version);
+  assert(realpathSync(root).startsWith("/app/"));
+}
+const manifests = [];
+let links = 0, files = 0;
+function walk(root) {
+  for (const name of readdirSync(root)) {
+    const path = join(root, name), stat = lstatSync(path);
+    assert(!/^\.env(?:$|\.)|^\.(?:git|context|doppler|aws|ssh|npmrc|netrc)$|credentials.*\.json$/.test(name), relative("/app", path));
+    if (stat.isSymbolicLink()) {
+      links++;
+      assert(realpathSync(path).startsWith("/app/"), path);
+    } else if (stat.isDirectory()) walk(path);
+    else {
+      files++;
+      if (name === "package.json") manifests.push(JSON.parse(readFileSync(path)));
+    }
+  }
+}
+walk("/app");
+for (const name of ["pnpm", "turbo", "typescript", "tsx", "vitest", "eslint", "prettier", "drizzle-kit", "vite", "esbuild"]) assert(!manifests.some(pkg => pkg.name === name), name);
+const productionPackages = readdirSync("/app/node_modules/.pnpm").filter(name => name !== "node_modules" && lstatSync(join("/app/node_modules/.pnpm", name)).isDirectory()).length;
+assert.equal(productionPackages, 64);
+const db = await import("@storage-minis/db");
+const tables = Object.values(db.schema).filter(value => value && typeof value === "object" && Symbol.for("drizzle:Name") in value);
+assert.equal(tables.length, 33);
+assert.equal(typeof db.createDatabase, "function");
+assert.equal(typeof (await import("fastify")).default, "function");
+assert.equal(typeof (await import("zod")).z.object, "function");
+assert.equal(typeof (await import("./dist/app.js")).buildApp, "function");
+assert.equal(typeof (await import("./dist/lifecycle.js")).startLifecycle, "function");
+await import("./dist/config.js");
+console.log(JSON.stringify({ result: "passed", node: process.version, uid: process.getuid(), productionPackages, internalLinks: links, files, apiModules: expected.api.length, dbModules: expected.db.length, schemaTables: tables.length, dbEntry }));
+```
+
+</details>
+
+The initial metadata-template/BuildKit-base inspection issues and manifest
+format failure above were verification/setup issues; the documentation validator
+also needed to recognize technical direction’s own approval heading rather than
+requiring it to link to itself. Its corrected assertions pass; all final required checks
+pass. No required stage check remains failed or unrun. Previous 85-unit-test
+aggregate, real process/basic-signal and compiled-export/stale-file-removal
+proof remain applicable: runtime source, dependencies, toolchain, DB public
+exports and build commands are unchanged. This stage verifies the changed
+production package/image directly. The ordinary full aggregate is next required
+at 4.8; authenticated image startup, Compose, development reload, smoke, outage
+and remaining shutdown/cache evidence intentionally await their assigned stages.
+
+Acceptance: **AC4-11 complete** using prior NodeNext/type/stale-output proof and
+current full packaged-file/import/link proof. AC4-01 remains **partial**: plain
+Node/nonroot portable image is proven, but authenticated container startup is
+required in 4.6. AC4-13 has DB/Doppler-free-build and local-file-exclusion proof;
+remaining runtime credential paths are later stages. Other criteria retain their
+previous state; no full Step 4/T06/business or production operational acceptance.
+
+Resources: runtime tag above retained; stage-owned build tag removed. Docker
+build cache and existing ignored workspace dist/dependency/cache volumes remain.
+Both original Beijing DB containers are stopped, ports/settings unchanged;
+development data untouched. Every one-off probe/tooling container self-removed;
+no listener, watcher, DB client, published port or mounted probe. Five exact
+sentinel fixtures removed; probe/inventory/validation scripts remain only in
+`/private/tmp`. No unrelated pre-existing diff existed. Only the Dockerfile,
+ignore/manifests and seven affected current guidance/evidence files are included
+in the stage commit. Dated predecessor/approval history is preserved.
+
+Next action: make the local Conventional Commit with the subject above, verify
+its actual hash and `git status --short`, then stop. Only a new assignment starts
+4.6, which must obtain any uncovered Compose/credential-launch choices before
+implementation and prove authenticated runtime startup. No push/PR is authorized.
+
 ## Stage 4.4 — Guarded built-process tests
 
 **State: complete.** Required guarded, strict and aggregate checks passed on

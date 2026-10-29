@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.4 complete, including guarded process proof; overall Step 4 remains in progress, with stages 4.5–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.5 complete, including guarded process proof and portable runtime packaging; overall Step 4 remains in progress, with stages 4.6–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -775,6 +775,29 @@ The existing 17s startup/failure and 10s shutdown contracts remain unchanged.
 Both original DB services are stopped; development was preserved. No dependency,
 runtime source, schema/migration or Compose change was needed. Later-stage
 choices retain their approval gates; overall Step 4 is in progress.
+
+## Step 4.5 runtime-image packaging approval (2026-10-28)
+
+**Owner approval:** In the stage 4.5 session, the owner explicitly approved the
+recommended packaging approach before implementation. This approves P4-11's
+build/package/runtime subset and API/DB package boundaries; development and
+Compose registration remain stages 4.7 and 4.6 respectively.
+
+| Area | Approved choice and rationale |
+| --- | --- |
+| Build | Root context, `docker/Dockerfile.api` with `build`, `package`, `runtime`; exact existing Node 24.22.1 Bookworm slim digest and pnpm 12.15.0. Explicit input copies, frozen installation and finite `pnpm build`; no DB/Doppler/secret build input. Reuse the selected toolchain rather than introducing a bundler or another base. |
+| Package | API/DB `files: ["dist"]`; `pnpm --filter=@storage-minis/api --prod deploy /out`. Keep workspace injection policy unchanged. pnpm packages production dependencies and workspace files portably; copying workspace node_modules risks external links and retains build tooling. |
+| Runtime | Fresh pinned Node base; copy only `/out` into node-owned `/app`, `USER node`, `CMD ["node", "--enable-source-maps", "dist/server.js"]`, `HOST=0.0.0.0`, `PORT=3000`, `NODE_ENV=production`. No install, compiler, source/dependency mount or tooling-volume prerequisite at startup. |
+| Context | Root `.dockerignore` excludes local environment/credential files, history/agent state, dependencies, generated output, caches, logs and test fixtures. Explicit required-input copies provide an additional boundary. Preserve the tooling Dockerfile and its existing `docker/` context. |
+| Proof | Build the runtime from root; inspect production graph, compiled API/DB/schema/declarations, internal workspace links, nonroot/plain-Node defaults and local-file exclusion without networking, mounts or DB credentials. Authenticated runtime startup and AC4-01 completion remain 4.6. |
+
+Implementation status and exact evidence are maintained in the
+[stage 4.5 checkpoint](step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image).
+The approved subset is implemented and verified: AC4-11 complete, including
+all compiled schema/declaration files and internal production links. AC4-01
+remains partial until authenticated startup in 4.6. Build needs no DB/Doppler;
+tooling/Compose, dependency versions and workspace injection policy are unchanged.
+Production hosting, release operations and T04 acceptance remain open.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

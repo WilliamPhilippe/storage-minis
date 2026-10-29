@@ -4,7 +4,8 @@
 implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented and
 verified in `29509a3`; stage 4.3 lifecycle/entry/start tasks are approved,
 implemented and verified in `230a348`; stage 4.4 guarded process tests are approved,
-implemented and verified; stages 4.5–4.11 remain pending.
+implemented and verified in `2510bdd`; stage 4.5 runtime packaging is approved,
+implemented and verified; stages 4.6–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -134,6 +135,9 @@ complete. See the [stage 4.3 approval](../technical/technical-direction.md#step-
 Stage 4.4 P4-09/P4-10 runner/task/test choices were approved on 2026-10-28;
 implementation and guarded/aggregate checks are complete. See the
 [4.4 approval](../technical/technical-direction.md#step-44-guarded-process-test-approval-2026-10-28).
+Stage 4.5's P4-11 build/package/runtime and dist-only package boundaries were
+approved on 2026-10-28; implementation and packaging checks are complete. See the
+[4.5 approval](../technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -149,12 +153,12 @@ decisions. P4-01 remains retired.
 | P4-08 — Emit/watch | Use TypeScript for finite builds, compiled DB exports, a DB `tsc --watch` task and native Node watch with the already installed tsx loader for API source. Clean each package's own `dist` before finite builds. | `tsx watch` is the original candidate but has a 5s child-kill timer, shorter than the proposed API shutdown budget. Source DB exports break the agreed compiled boundary; bundling adds tooling. |
 | P4-09 — Task graph | Declare actual API dependencies, cached finite builds/checks and uncached persistent dev/start tasks. Add a separate uncached API process-test command; keep live resources outside ordinary checks. | Putting live checks into `pnpm check` adds DB/Doppler prerequisites to offline work. Making a persistent watcher a build prerequisite prevents finite completion. |
 | P4-10 — Evidence | Test the factory/configuration offline; test built Node processes and current DB behavior against the explicit test target. Approved amendments require shared-target serialization and project-wide shutdown proof. Add only the harness needed to prove Step 4. | Injection tests alone cannot prove bind failures, ESM exports, signal forwarding or released process resources. Deferring all process tests to Step 6 leaves Step 4 incomplete. |
-| P4-11 — API image | Approved layout: profiled API services in canonical `compose.yaml`. Recommend `docker/Dockerfile.api`, root `.dockerignore`, the existing pinned Node base, development/runtime targets and portable compiled API/DB production dependencies. | A second Compose model fragments lifecycle/cleanup inventory. One image containing all build tools enlarges runtime scope; host pnpm links or tooling volumes make it incomplete. |
+| P4-11 — API image | Approved layout: profiled API services in canonical `compose.yaml`. Stage 4.5 approves/implements `docker/Dockerfile.api` build/package/runtime, root `.dockerignore`, the existing pinned Node base, pnpm deploy and dist-only API/DB production packaging. Development target and Compose registration remain later stages. | A second Compose model fragments lifecycle/cleanup inventory. One image containing all build tools enlarges runtime scope; host pnpm links or tooling volumes make it incomplete. |
 
 Published exact manifests were inspected without installing packages. At research
 time Fastify 5.12.7 and Zod 4.6.7 were the registry's current stable releases.
-Installation and strict compilation passed for stage 4.1; later runtime/image
-compatibility evidence remains pending.
+Installation and strict compilation passed for stage 4.1; stage 4.5 proves
+portable image packaging/imports. Authenticated image startup remains stage 4.6.
 [Fastify manifest](https://registry.npmjs.org/fastify/5.12.7),
 [Zod manifest](https://registry.npmjs.org/zod/4.6.7).
 
@@ -171,6 +175,9 @@ including real startup failures, safe diagnostics and listener/pool cleanup.
 AC4-09 has basic real SIGINT/SIGTERM proof; shutdown edge/project paths remain
 with 4.10. AC4-06/AC4-07 have real healthy HTTP/authenticated-check proof, but
 service-outage liveness/readiness bounds/recovery remain partial until 4.9.
+AC4-11 has [stage 4.5 packaging evidence](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image):
+all compiled files/declarations and portable production links. AC4-01 remains
+partial until 4.6 proves authenticated container startup.
 
 - [ ] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
@@ -205,7 +212,7 @@ service-outage liveness/readiness bounds/recovery remain partial until 4.9.
 - [x] **AC4-10 — Safe HTTP/logging:** route, framework and unexpected failures
   preserve documented safe status/body behavior; tests prove logs/responses omit
   credentials, raw queries/bodies, stacks, causes and untrusted request IDs.
-- [ ] **AC4-11 — Build contract:** NodeNext runtime/type exports work, finite
+- [x] **AC4-11 — Build contract:** NodeNext runtime/type exports work, finite
   builds remove stale emitted files, and API imports only compiled DB exports.
   Packaged workspace links resolve wholly within the API runtime image, including
   all compiled schema modules and declarations.
@@ -348,15 +355,20 @@ only the smoke harness must remove its one-off probe on every outcome.
 
 ### Dedicated API image
 
-The repository currently has only `docker/Dockerfile.tooling`; Step 4 creates
-`docker/Dockerfile.api` using the repository root as its build context. Reuse
+Stage 4.5 implements `docker/Dockerfile.api` build/package/runtime targets and
+root `.dockerignore`, with the repository root as build context. Its
+[approval](../technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28)
+and [verification](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image)
+cover portable production packaging. The development target remains for 4.7;
+Compose/authenticated startup remains 4.6. Reuse
 this exact base rather than choosing another Node distribution/version:
 
 ```text
 node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205
 ```
 
-Propose these named stages:
+The named-stage contract below is implemented for build/package/runtime;
+development remains a later-stage recommendation:
 
 1. `build`: provision pnpm 12.15.0, copy explicit workspace manifests, lockfile,
    compiler/task configuration and API/DB source, run frozen installation and
@@ -366,27 +378,28 @@ Propose these named stages:
    existing five project-scoped dependency/store/cache volumes for live editing.
    Require the documented volume init/frozen install before using that overlay.
 3. `package`: from `build`, run
-   `pnpm --filter=@storage-minis/api --prod deploy /out`. Add `files: ["dist"]`
-   to API/DB manifests so deployment includes their built files. Verify the
-   deploy output contains Fastify, Zod, the compiled DB and transitive runtime
-   dependencies, with no links escaping `/out`.
+   `pnpm --filter=@storage-minis/api --prod deploy /out`. API/DB manifests use
+   `files: ["dist"]` so deployment includes their built files. Verification
+   proves the output contains Fastify, Zod, the compiled DB and transitive runtime
+   dependencies, with no links escaping the deployed tree.
 4. `runtime`: start again from the pinned Node image, copy only `/out` to `/app`
    with `node` ownership, set `USER node`, and execute
-   `CMD ["node", "--enable-source-maps", "dist/server.js"]`. Use port 3000 and
-   container bind `0.0.0.0`. No pnpm/Turbo/tsx/compiler or repository bind mount
-   is required to start this image.
+   `CMD ["node", "--enable-source-maps", "dist/server.js"]`. Set `NODE_ENV=production`,
+   port 3000 and container bind `0.0.0.0`. No pnpm/Turbo/tsx/compiler or repository
+   bind mount is required to start this image.
 
 The production dependency graph is packaged by pnpm rather than copying host
 `node_modules` or workspace symlinks. The pnpm documentation says deploy includes
 workspace dependencies in portable output and no longer requires injected
 workspace dependencies since 12.2.0; retain 12.15.0 without changing workspace
-injection policy. Prove its actual output during implementation before claiming
-the image is self-contained. Multi-stage packaging keeps build tools out of the
-final application stage. [pnpm deploy](https://pnpm.io/cli/deploy),
+injection policy. Stage 4.5 proves 64 production packages, compiled API/DB/schema
+files/declarations and all 141 links resolving within `/app`. Multi-stage
+packaging keeps build tools out of the final application stage.
+[pnpm deploy](https://pnpm.io/cli/deploy),
 [Docker multi-stage builds](https://docs.docker.com/build/building/multi-stage/).
 
-Add root `.dockerignore` exclusions for `.git`, `.context`, host dependencies,
-generated `dist`, Turbo/test caches, logs, and local environment files including
+Implemented root `.dockerignore` exclusions cover `.git`, `.context`, host
+dependencies, generated `dist`, Turbo/test caches, logs, and local environment files including
 `.env.compose`. Copy only required workspace inputs explicitly. Never copy the
 host Doppler directory or credentials into any stage. The tooling Dockerfile
 retains its existing `docker/` context and responsibilities.

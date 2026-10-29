@@ -1,0 +1,33 @@
+# Local history, agent state and credentials never enter the root build context.
+**/.git
+**/.context
+**/.codex
+**/.agents
+**/.env
+**/.env.*
+**/.doppler
+**/.config
+**/.aws
+**/.ssh
+**/.npmrc
+**/.netrc
+**/*.pem
+**/*.key
+**/*credentials*.json
+
+# Build from source with container dependencies and fresh compiler output.
+**/node_modules
+**/dist
+**/.pnpm-store
+**/.turbo
+**/.cache
+**/coverage
+**/.nyc_output
+**/.vite
+**/.vitest
+**/*.tsbuildinfo
+**/logs
+**/*.log
+**/*.tgz
+**/*.test.ts
+**/tests
