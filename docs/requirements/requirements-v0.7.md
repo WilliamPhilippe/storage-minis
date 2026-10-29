@@ -12,13 +12,13 @@
 
 **Historical source:** [GitHub issue #2 — storage-minis v0.5 requirements baseline](https://github.com/WilliamPhilippe/storage-minis-be/issues/2).
 
-**Decision baseline:** User-confirmed modeling, Product-scope and shared-PurchaseExpense decisions recorded on 2026-10-21; [accepted decisions](model-review.md).
+**Decision baseline:** User-confirmed modeling, Product-scope and shared-PurchaseExpense decisions recorded on 2026-10-21; [accepted decisions](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/entities/model-review.md).
 
 **Repository edition:** 2026-10-21.
 
 **Current baseline tracker:** [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82).
 
-**Related documents:** [Entity and relationship map v0.7](entity-map-v0.7.md); [accepted entity-model decisions](model-review.md).
+**Related documents:** [Entity and relationship map v0.7](entity-map-v0.7.md); [accepted entity-model decisions](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/entities/model-review.md).
 
 > **Current consolidated baseline:** This edition supersedes the single-Purchase expense ownership in v0.6. Historical v0.5/v0.6 files and their baseline issues remain unchanged. Eight business decisions in Section 14 still require explicit outcomes. Acceptance scenarios are requirements, not evidence of implemented behavior.
 

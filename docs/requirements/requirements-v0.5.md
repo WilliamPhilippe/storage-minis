@@ -16,7 +16,7 @@
 
 **Repository edition:** 2026-10-21.
 
-**Related documents:** [Entity and relationship map v0.5](entity-map-v0.5.md); [accepted entity-model decisions](model-review.md).
+**Related documents:** [Entity and relationship map v0.5](entity-map-v0.5.md); [accepted entity-model decisions](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/entities/model-review.md).
 
 > **Historical baseline:** This document preserves the v0.5 requirements from issue #2. Later approved decisions in the entity-model review take precedence over conflicting baseline rules, including the original supplier/customer credit policies. Read the baseline together with those decisions for the current agreed model. The six open decisions in Section 14 remain open.
 

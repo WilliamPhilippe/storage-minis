@@ -1,7 +1,7 @@
 # Step 3B — approved structural schema
 
 **Owner:** WilliamPhilippe. **Approval date:** 2026-10-25. **Source:** the owner
-reviewed the [schema packet](step-3b-schema-review-2026-10-25.md) and stated,
+reviewed the [schema packet](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/database/step-3b-schema-review-2026-10-25.md) and stated,
 “Schema is approved. Implement it.” This approves S01–S10, including the bounded
 structural delivery and its workflow deferrals. It supersedes the Step 3A
 approval gate for schema generation. Existing issue ownership remains unchanged.

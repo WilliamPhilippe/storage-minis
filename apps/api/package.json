@@ -3,7 +3,19 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "typecheck": "tsc --noEmit --project tsconfig.json"
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "start": "node --enable-source-maps dist/server.js",
+    "test:process": "tsx scripts/process-tests.ts",
+    "dev": "node --watch --watch-preserve-output --import tsx src/server.ts"
+  },
+  "dependencies": {
+    "@storage-minis/db": "workspace:*",
+    "fastify": "5.12.7",
+    "zod": "4.6.7"
   }
 }

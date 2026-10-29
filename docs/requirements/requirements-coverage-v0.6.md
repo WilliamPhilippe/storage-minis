@@ -2,7 +2,7 @@
 
 **Version:** 0.6. **Published:** 2026-10-21.
 
-**Current baseline:** [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78). [Specification](requirements-v0.6.md) · [Entity map](entity-map-v0.6.md) · [Publication record](global-product-impact-v0.6.md#9-publication-record).
+**Current baseline:** [#78](https://github.com/WilliamPhilippe/storage-minis-be/issues/78). [Specification](requirements-v0.6.md) · [Entity map](entity-map-v0.6.md) · [Publication record](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/requirements/global-product-impact-v0.6.md#9-publication-record).
 
 Every active requirement has one primary delivery owner. Other tickets may share the same requirement as an integration constraint. Ownership is planning traceability; implementation evidence is pending. Retired outcomes are withdrawn, not delivered.
 

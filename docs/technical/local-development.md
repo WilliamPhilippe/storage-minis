@@ -162,11 +162,11 @@ The host editor cannot resolve dependencies stored only in Docker volumes;
 container editor support or a host install requires a separate decision.
 Git stays on the host. Turbo hashing works without Git in the image; Git-history
 filters are outside this runner's contract. Ordinary edits and atomic saves were
-observed by a directory watcher on the macOS bind mount; later API watchers still
-need their own verification.
+observed by a directory watcher on the macOS bind mount; API/compiled-DB reload
+is verified through the [canonical development service](#api-development).
 
 Run any [development check](#development-checks) by prefixing it with
-`./scripts/tooling.sh run`. `pnpm check` now includes meaningful DB unit tests.
+`./scripts/tooling.sh run`. `pnpm check` includes meaningful API/DB unit tests.
 Use `run-db test` for live integration tests; it selects Doppler config `test`;
 ordinary `run` does not inject database credentials.
 
@@ -257,7 +257,8 @@ Docker must be on PATH. They follow normal Docker context behavior and use
 The remaining helpers select the canonical file/project explicitly, ignore
 ambient file/profile overrides, and locate the checkout from their own path.
 
-`docker:stop` stops services without removing containers or named volumes;
+`docker:stop` honors each service grace (API 15s, others 10s) and stops services
+without removing containers or named volumes;
 `docker:stop:test` affects only test PostgreSQL. Test tmpfs is discarded on stop.
 `docker:prune` removes the project's containers (including orphans) and network,
 preserving all named volumes and images. These operations, status, and logs work
@@ -275,7 +276,7 @@ The volume helper obtains declared keys from `docker compose config --volumes`,
 prints their project-scoped names, and checks each existing volume's Compose project/logical-volume labels before changing any resources.
 Missing/wrong confirmation, failed inventory/inspection, or an ownership mismatch
 refuses teardown. Correct confirmation delegates removal to native full-profile
-`down --volumes --remove-orphans --timeout 10`, covering the owned
+`down --volumes --remove-orphans`, covering the owned
 `dependencies`, `api-dependencies`, `db-dependencies`,
 `pnpm-store`, `turbo`, and `pgdata` volumes. Other projects and images are retained.
 The supported local model has no external/custom-named volumes; adopting those
@@ -294,6 +295,14 @@ Never use global pruning for checkout cleanup. Ordinary lifecycle commands
 preserve development storage; full volume deletion is a separate operation.
 See the [approval and verification record](../../docs/technical/technical-direction.md#step-1-docker-tooling-2026-10-24)
 for actual evidence and remaining limits.
+
+For the optional diagnostic runtime API, use the
+[README build/start/health/log/stop instructions](../../README.md#api-runtime-image).
+Default startup still selects only PostgreSQL. For development reload use the
+[development instructions](../../README.md#api-development-and-reload); for bounded
+exact-test-only runtime-image smoke use the
+[automated verification instructions](../../README.md#automated-api-image-smoke).
+Finish other test consumers first; the verifier removes only its owned probe.
 
 ## Local PostgreSQL
 
@@ -378,7 +387,7 @@ docker compose --env-file .env.compose --file compose.yaml logs --follow postgre
 docker compose --env-file .env.compose --file compose.yaml logs --follow postgres_test
 docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test      # Discards test data
 docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres       # Preserves development data
-docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans --timeout 10           # Stops project; preserves named volumes
+docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans           # Stops project; preserves named volumes
 ```
 
 Development storage is `<COMPOSE_PROJECT_NAME>_pgdata`, mounted at
@@ -525,13 +534,98 @@ its tmpfs is discarded. Aggregate reconciliation, permanent locks, authorized
 transitions, typed snapshot contracts and actual deletion-versus-funding races
 remain T01/T06 business-operation acceptance work.
 
+## API runtime settings and failures
+
+The [README runtime quickstart](../../README.md#api-runtime-image) supplies exact
+image build, startup, browser/curl health, logs and native stop commands. Use the
+[Docker-only setup](#docker-tooling) for a new checkout; runtime image build/start
+itself needs no tooling volume or host Node/pnpm. API development needs initialized
+tooling volumes and frozen dependencies. Build both API targets after source or
+lockfile changes; a source reload does not rebuild the runtime image.
+
+| Input | Contract |
+| --- | --- |
+| `.env.compose` | Exactly saved `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, `POSTGRES_TEST_PORT`; explicit validated overrides take precedence. Plain `.env` is ignored. |
+| `API_HOST_PORT` | Optional invocation-only host loopback port, default 3000; integer 1–65535 without leading zeros. Applies to runtime/dev. |
+| `API_VERIFY_HOST_PORT` | Optional smoke-only explicit loopback port with the same bounds; absent means Docker-assigned port. Does not inherit `API_HOST_PORT`. |
+| `LOG_LEVEL` | Optional invocation-only `fatal/error/warn/info/debug/trace/silent`, default `info`; invalid/blank values fail before launch. |
+| `HOST`, `PORT` | Direct Node defaults `127.0.0.1`, `3000`; accepted hosts `127.0.0.1`/`0.0.0.0`, port 1–65535. Compose fixes container `0.0.0.0:3000`; host publication is separate. |
+| `NODE_ENV`, `TZ` | Direct Node defaults to `development`; allowed environment names `development/test/production`. Compose runtime uses `production`, dev `development`, smoke `test`, all with `TZ=UTC`. This selects no production hosting. |
+| `DB_TARGET`, `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | Existing launcher selects exact dev/test tuple and only the matching managed Doppler password. Ambient values cannot redirect it; never put a password in an argument or file. |
+| `DATABASE_URL`, `DOPPLER_TOKEN` | Unsupported/rejected in the validated direct-Node or host credential boundary respectively. They are not credential fallback paths. |
+
+[Doppler host settings](#doppler-host-setup-and-verification) cover executable,
+login-directory and project/config overrides. Secrets are fetched once before
+startup, with 10s request timeout, one attempt and no fallback. Relaunch the outer
+command after changes. Password rotation alone does not update initialized
+PostgreSQL storage; use the [database credential procedure](#local-postgresql).
+
+| Failure or limit | Diagnosis and recovery |
+| --- | --- |
+| Missing/expired Doppler login, wrong config, missing key or fetch outage | Payload does not start. Renew the dedicated browser login/check managed target key and retry; never supply secrets through chat or ambient PG settings. |
+| Missing image, occupied API port or startup failure | Build the image explicitly; inspect native `ps --all` and `logs api` (or `api-dev`). Choose an explicit free port for a collision. Stop only the owned API; stopped containers may remain for diagnosis and can be removed with native `rm --force api` after stopping. |
+| Live 200, ready 503 | DB identity/availability failed; exact body is `{"status":"unavailable"}`. Check the matching DB via `database.sh check TARGET`; restore test service with `database.sh up test` after an interrupted outage. Readiness recovers without API restart and proves no schema currency. |
+| Bounds and shutdown | DB check 6s; startup/failure cleanup 17s; one total application shutdown deadline 10s, native API grace 15s. Receive timeout 10s limits request reception, not handler execution; body limit 16 KiB. Runtime TERM/INT success returns 143/130, cleanup failure 1. Compose client status is separate. |
+| Development compiler/child failure | See [development recovery](#api-development). Last valid output can keep serving; correct source, verify fresh readiness and run finite checks. Stop watchers before builds/output deletion. |
+| Interrupted smoke or Docker unavailable during cleanup | Smoke normally removes only its owned probe, including on failure/INT/TERM. If absence cannot be verified, it fails with the probe name; restore Docker access and inspect/remove that exact owned container. Preserve other services/volumes. |
+
+HTTP logs allow only generated request ID, method, matched route/fixed unmatched
+label, status, elapsed time and fixed categories; raw URLs, bodies, headers,
+causes/stacks and secrets are omitted. DB CLI diagnostics retain actual redacted
+messages/causes/codes. Interrupting a log viewer leaves its service running.
+Ordinary native stop/down preserves named volumes; confirmed deletion is reserved
+for deliberately selected disposable storage.
+
+Run test consumers sequentially: schema suite → API process suite → image smoke
+→ controlled outage. `test:db` drops disposable test schemas and stopping the test
+service loses tmpfs; close every phase before the next. Never use development for
+these probes. [Automated smoke commands and bounds](../../README.md#automated-api-image-smoke)
+and [process suite](../../README.md#development-checks) are separate from offline
+`pnpm check`. Do not repeat unchanged outage/drain cases only to refresh a date;
+rerun affected cases when their source/image/configuration/environment changes.
+
+## API development
+
+Use the [README development workflow](../../README.md#api-development-and-reload)
+after the existing volume init/frozen install. Build both actual API targets with
+`docker compose --env-file .env.compose --file compose.yaml build api api-dev`,
+stop built mode, start/check development PostgreSQL with `./scripts/database.sh up dev`,
+and run `./scripts/database.sh api-dev dev` in the foreground. The development
+image runs as `node`, uses the checkout bind plus the existing five nocopy tooling
+volumes, and publishes only loopback port 3000 (`API_HOST_PORT` can override it).
+No host dependency tree or extra volume is used. No migration/reset is involved.
+
+Root `pnpm dev` runs Turbo's persistent uncached API/DB watchers after one finite
+DB build. API uses native Node watch with tsx; DB uses TypeScript watch and
+compiled exports, including schema JS/declarations. Actual API/DB/schema changes,
+compiler error/correction, rapid saves and a 6.5s restart drain are verified.
+Only the API task receives selected DB credentials; compilers and finite builds
+receive none. Reload keeps the injected environment; Doppler rotation requires
+relaunching the outer command. The test target remains available only with its
+matching config and exclusive ownership; ordinary development uses `dev`.
+
+Ctrl+C stops the foreground service. The approved development-only native SIGINT
+stop setting prevents duplicate TERM forwarding through pinned pnpm/Turbo;
+both outer TERM and INT drained a 6.5s response with container exit 0 and client
+143/130. Use the canonical Compose path for that shutdown guarantee. Runtime
+retains TERM. Follow safe logs with native `logs --follow api-dev`; API-only
+`stop api api-dev` preserves PostgreSQL. Stopped service containers may remain.
+
+A compiler error retains previous generated files and can leave the last valid
+API serving; correct it and confirm fresh HTTP readiness. A failed API child can
+leave Node watch waiting for an edit. For DB source additions/deletions/renames,
+stop development, run `./scripts/tooling.sh run pnpm build`, then restart. Stop
+watchers before all finite clean builds/checks that build DB to avoid two writers
+for `dist`. Watch mode does not remove stale emitted files. See the
+[actual reload/security/signal evidence](technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29).
+
 ## Development checks
 
 Run from the root, prefixed with `./scripts/tooling.sh run` for Docker:
 
 | Command | Purpose |
 | --- | --- |
-| `pnpm build` | Build the DB package's runtime and declarations. |
+| `pnpm build` | Clean each package’s own dist and emit API/DB runtime, declarations and API source maps. |
 | `pnpm typecheck` | Build required DB exports, then check root and package source/configuration types. |
 | `pnpm check` | Run build prerequisites, typechecks, lint, formatting and unit tests. |
 | `pnpm lint` / `pnpm lint:fix` | Typed ESLint checks / automatic fixes; warnings fail. |
@@ -544,16 +638,17 @@ after Drizzle's published declarations failed full library checking; source use
 of its types remains checked. See the [Step 3A record](technical-direction.md#step-3a-drizzle-implementation-2026-10-25).
 
 Unit tests live beside source as `src/**/*.test.ts`; import Vitest APIs explicitly.
-The `api-unit` and `db-unit` projects exclude integration files. The API has no
-tests yet; the root suite now passes because the DB has meaningful tests. An
-explicit empty suite still fails. Playwright, coverage thresholds and CI remain
+The `api-unit` and `db-unit` projects exclude integration files. The current suite has 109 tests across 12 files, including API configuration,
+factory, lifecycle and guarded-runner tests plus DB/tooling/smoke fixtures.
+An explicit empty suite still fails. Playwright, coverage thresholds and CI remain
 future work. Passing infrastructure tests does not deliver business workflows.
 
 ### Turborepo checks and cache
 
-`build` caches `dist/**`; DB typechecks and root typed lint depend on that build.
-Consumer builds/typechecks depend on dependency builds when a real workspace
-edge exists. Root unit tests remain independent of database availability.
+`build` caches each package’s `dist/**`; API build/typecheck and root typed
+lint/unit tests depend on the compiled DB build. DB typecheck also depends on its
+own finite build. Root configuration typecheck and format checks are independent.
+Root unit tests require no live database. No finite task depends on a watcher.
 
 Inspect the graph and verify cache reuse with:
 
@@ -568,7 +663,18 @@ Unchanged second runs reuse successful build/check results. Summaries live in
 Default package inputs include source/tests/configuration; broad root inputs
 include documentation, so documentation changes may invalidate root checks.
 
-`db:check`, `db:generate`, `db:migrate` and `test:integration` always execute and
-never cache results. Secret-bearing tasks allow only named DB environment values
+`db:check`, `db:generate`, `db:migrate`, `test:integration` and API `test:process`
+always execute and never cache results. API start/dev and DB dev are persistent
+and uncached; their prerequisites are finite builds. Secret-bearing tasks allow only named DB environment values
 through strict Turbo filtering; those values are not added to cache hashes.
-Unit tests retain `NODE_ENV` / `TZ` hashing. API startup/watch tasks remain pending.
+Unit tests retain `NODE_ENV` / `TZ` hashing. API runtime tasks pass only the
+named settings: `DB_TARGET`, `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`,
+`PGPASSWORD`, `DATABASE_URL` (for explicit rejection), `HOST`, `PORT`, `LOG_LEVEL`,
+`NODE_ENV` and `TZ`. DB compilers receive no DB credentials. Builds/checks do not
+fetch Doppler values or consume runtime settings.
+
+Stage 4.11 verifies forced/repeated finite work, deletion/restoration of all 40
+API/DB output files, DB source invalidation of API build/typecheck and root
+lint/tests, and compiler-failure propagation. Restore temporary source bytes and
+stop watchers before these checks. [Final evidence and successor boundaries](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29)
+distinguish current Step 4 proof from Step 6’s future clean-checkout/tRPC coverage.

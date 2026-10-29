@@ -131,6 +131,7 @@ it("uses the canonical checkout model despite ambient overrides and another cwd"
   expect(calls()).toContain(`--project-name ${project}`);
   expect(calls()).toContain("--env-file /dev/null");
   expect(calls()).toContain("--profile *");
+  expect(calls()).not.toContain("--timeout");
   expect(calls()).not.toContain("untrusted");
 });
 

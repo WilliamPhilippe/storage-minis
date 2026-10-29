@@ -48,4 +48,4 @@ while IFS= read -r logical; do
 done <<< "$logical_volumes"
 
 # All existing candidates have passed inspection before native Compose teardown.
-exec "${compose[@]}" down --volumes --remove-orphans --timeout 10
+exec "${compose[@]}" down --volumes --remove-orphans

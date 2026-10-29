@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   copyFileSync,
@@ -13,7 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const sourceRoot = fileURLToPath(new URL("../../..", import.meta.url));
 let root: string;
@@ -44,7 +44,9 @@ beforeEach(() => {
     doppler,
     `#!/bin/bash
 set -eu
+printf '%s\\n' invoked >> "$FIXTURE_DIRECTORY/fetches"
 if [[ \${1:-} == --version ]]; then echo v3.77.1; exit 0; fi
+printf '%s\\n' "$*" >> "$FIXTURE_DIRECTORY/fetch-arguments"
 selected=""; secret=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -56,8 +58,12 @@ while [[ $# -gt 0 ]]; do
 done
 [[ ($selected == test && $secret == POSTGRES_TEST_PASSWORD) || ($selected == dev && $secret == POSTGRES_PASSWORD) ]] || exit 8
 [[ -z \${POSTGRES_PASSWORD:-} && -z \${POSTGRES_TEST_PASSWORD:-} && -z \${PGPASSWORD:-} ]] || exit 9
+if [[ \${FIXTURE_FETCH_FAILURE:-} == 1 ]]; then
+  echo 'fixture-fetch-secret' >&2
+  exit 19
+fi
 [[ \${FIXTURE_MISSING_KEY:-} != 1 ]] || exec "$@"
-export "$secret=fixture-$selected"
+export "$secret=\${FIXTURE_PASSWORD:-fixture-$selected}"
 exec "$@"
 `,
   );
@@ -72,6 +78,18 @@ fi
 [[ -z \${COMPOSE_FILE:-} && -z \${COMPOSE_PROFILES:-} && -z \${COMPOSE_ENV_FILES:-} ]] || exit 13
 [[ $* != *compose.postgres.yaml* ]] || exit 14
 [[ $* == *"--file "*compose.yaml* ]] || exit 15
+if [[ \${FIXTURE_API_TARGET:-} != '' ]]; then
+  target=$FIXTURE_API_TARGET
+  host=postgres; [[ $target != test ]] || host=postgres_test
+  [[ \${DB_TARGET:-} == "$target" && \${PGHOST:-} == "$host" && \${PGDATABASE:-} == "storage_minis_$target" ]] || exit 20
+  [[ \${PGUSER:-} == postgres && \${PGPORT:-} == 5432 && \${PGPASSWORD:-} == "$FIXTURE_PASSWORD" ]] || exit 21
+  [[ -z \${POSTGRES_PASSWORD:-} && -z \${POSTGRES_TEST_PASSWORD:-} && -z \${DATABASE_URL:-} && -z \${PGOPTIONS:-} && -z \${PGSERVICE:-} && -z \${PGSSLMODE:-} ]] || exit 22
+  [[ \${API_HOST_PORT:-} == "$FIXTURE_PORT" && \${LOG_LEVEL:-} == "$FIXTURE_LEVEL" ]] || exit 23
+  printf '%s\\n' "$*" >> "$FIXTURE_DIRECTORY/calls"
+  echo 'safe API stdout diagnostic'
+  echo 'safe API stderr diagnostic' >&2
+  exit "\${FIXTURE_UP_STATUS:-0}"
+fi
 if [[ \${FIXTURE_STARTUP:-} == 1 ]]; then
   printf '%s\\n' "$*" >> "$FIXTURE_DIRECTORY/calls"
   if [[ $* == *" up "* ]]; then exit "\${FIXTURE_UP_STATUS:-0}"; fi
@@ -143,19 +161,25 @@ it("allows approved migrations through the selected test-target injection", () =
 });
 
 it("refuses development integration tests before credentials", () => {
-  for (const command of ["test:db", "test:integration"]) {
+  for (const command of [
+    "test:db",
+    "test:integration",
+    "test:api",
+    "test:process",
+  ]) {
     expect(() =>
       execFileSync(
         "/bin/bash",
         [join(root, "scripts/tooling.sh"), "run-db", "dev", "pnpm", command],
         {
-          env: { COMPOSE_PROJECT_NAME: "storage-minis-fixture" },
+          env: { ...environment, DOPPLER_CONFIG: "dev" },
           stdio: "pipe",
           timeout: 5_000,
         },
       ),
     ).toThrow("explicit test target");
   }
+  expect(existsSync(join(directory, "fetches"))).toBe(false);
 });
 
 function startup(target: string) {
@@ -206,4 +230,185 @@ it("retains the SQL container name for EXIT cleanup after command failure on Bas
   const name = /--name (\S+)/.exec(calls)?.[1];
   expect(name).toMatch(/^storage-minis-launcher-fixture-sql-\d+-\d+$/);
   expect(calls).toContain(`rm --force --volumes ${name ?? ""}\n`);
+});
+
+describe.each(["api-up", "api-dev"])("%s credential boundary", (operation) => {
+  function apiUp(target = "test", extra: string[] = []) {
+    return spawnSync(
+      "/bin/bash",
+      [join(root, "scripts/database.sh"), operation, target, ...extra],
+      { env: environment, encoding: "utf8", timeout: 5_000 },
+    );
+  }
+
+  it("rejects API arguments, target, port, level, token and config before fetching", () => {
+    const original = { ...environment };
+    for (const overrides of [
+      { API_HOST_PORT: "" },
+      { API_HOST_PORT: "0" },
+      { API_HOST_PORT: "03000" },
+      { API_HOST_PORT: "65536" },
+      { API_HOST_PORT: "3000;sentinel" },
+      { LOG_LEVEL: "" },
+      { LOG_LEVEL: "invalid-secret-level" },
+      { DOPPLER_TOKEN: "token-secret-sentinel" },
+      { DOPPLER_CONFIG: "dev" },
+      { DOPPLER_PROJECT: "other-project" },
+    ]) {
+      environment = { ...original, ...overrides };
+      const result = apiUp();
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).not.toMatch(/secret|sentinel/);
+      expect(existsSync(join(directory, "fetches"))).toBe(false);
+      expect(existsSync(join(directory, "calls"))).toBe(false);
+    }
+    environment = original;
+    expect(apiUp("production").status).not.toBe(0);
+    expect(apiUp("test", ["arbitrary-command"]).status).not.toBe(0);
+    expect(existsSync(join(directory, "fetches"))).toBe(false);
+  });
+
+  it("uses saved settings and selected API credentials with native startup and visible safe diagnostics", () => {
+    writeFileSync(
+      join(root, ".env.compose"),
+      "COMPOSE_PROJECT_NAME=saved-api-project\nPOSTGRES_PORT=6433\nPOSTGRES_TEST_PORT=6434\n",
+    );
+    delete environment.COMPOSE_PROJECT_NAME;
+    environment.FIXTURE_PASSWORD = "selected p@ss'$\\;&=secret";
+    environment.PGSERVICE = "ambient-service";
+    environment.PGSSLMODE = "ambient-tls";
+    environment.DB_TARGET = "ambient-target";
+    for (const target of ["test", "dev"]) {
+      environment.DOPPLER_CONFIG = target;
+      environment.FIXTURE_API_TARGET = target;
+      environment.FIXTURE_PORT = target === "test" ? "3000" : "65535";
+      environment.FIXTURE_LEVEL = target === "test" ? "info" : "warn";
+      if (target === "dev") {
+        environment.API_HOST_PORT = "65535";
+        environment.LOG_LEVEL = "warn";
+      }
+      const result = apiUp(target);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("safe API stdout diagnostic");
+      expect(result.stdout).toContain("safe API stderr diagnostic");
+      expect(result.stderr).toBe("");
+      expect(result.stdout).not.toContain(environment.FIXTURE_PASSWORD);
+    }
+    const calls = readFileSync(join(directory, "calls"), "utf8");
+    expect(calls).toContain("--project-name saved-api-project");
+    expect(calls).toContain(`--env-file ${join(root, ".env.compose")}`);
+    expect(calls).toContain(
+      operation === "api-up"
+        ? "up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api\n"
+        : "up --no-deps --no-build --pull never api-dev\n",
+    );
+    expect(calls).not.toMatch(/secret|ambient|tooling|migrate/);
+    const fetches = readFileSync(join(directory, "fetch-arguments"), "utf8");
+    expect(fetches).toContain(
+      "--no-fallback --forward-signals --no-liveness-ping --only-secrets POSTGRES_TEST_PASSWORD",
+    );
+    expect(fetches).toContain("--only-secrets POSTGRES_PASSWORD");
+    expect(fetches).toContain("--timeout 10s --attempts 1");
+  });
+
+  it("refuses missing managed API keys and fetch failures despite ambient passwords, without Docker", () => {
+    for (const failure of ["FIXTURE_MISSING_KEY", "FIXTURE_FETCH_FAILURE"]) {
+      environment[failure] = "1";
+      const result = apiUp();
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("Database command failed");
+      expect(result.stdout + result.stderr).not.toMatch(
+        /fixture-fetch-secret|ambient-/,
+      );
+      expect(existsSync(join(directory, "calls"))).toBe(false);
+      delete environment[failure];
+    }
+  });
+
+  it("preserves native API failure and its diagnostics without printing credentials", () => {
+    environment.FIXTURE_API_TARGET = "test";
+    environment.FIXTURE_PASSWORD = "fixture-test";
+    environment.FIXTURE_PORT = "3000";
+    environment.FIXTURE_LEVEL = "info";
+    environment.FIXTURE_UP_STATUS = "17";
+    const result = apiUp();
+    expect(result.status).toBe(17);
+    expect(result.stdout).toContain("safe API stderr diagnostic");
+    expect(result.stdout + result.stderr).not.toContain("fixture-test");
+  });
+});
+
+// Smoke injects into its narrow verifier, never the tooling dispatcher.
+describe("api-verify injection", () => {
+  function verify(target = "test", extra: string[] = []) {
+    return spawnSync(
+      "/bin/bash",
+      [join(root, "scripts/database.sh"), "api-verify", target, ...extra],
+      {
+        env: environment,
+        encoding: "utf8",
+        timeout: 5_000,
+      },
+    );
+  }
+  it("rejects non-test targets, invalid verifier ports, config/token/log values and callbacks before fetch", () => {
+    for (const target of ["dev", "production", ""])
+      expect(verify(target).status).not.toBe(0);
+    expect(verify("test", ["callback"]).status).not.toBe(0);
+    const original = { ...environment };
+    for (const overrides of [
+      { API_VERIFY_HOST_PORT: "" },
+      { API_VERIFY_HOST_PORT: "0" },
+      { API_VERIFY_HOST_PORT: "03000" },
+      { API_VERIFY_HOST_PORT: "65536" },
+      { API_VERIFY_HOST_PORT: "secret-sentinel" },
+      { LOG_LEVEL: "secret-sentinel" },
+      { DOPPLER_CONFIG: "dev" },
+      { DOPPLER_TOKEN: "secret-sentinel" },
+    ]) {
+      environment = { ...original, ...overrides };
+      const result = verify();
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).not.toContain("secret-sentinel");
+    }
+    expect(existsSync(join(directory, "fetches"))).toBe(false);
+  });
+  it("injects only the selected special-character test password, ignoring ordinary API port and ambient PG inputs", () => {
+    environment.FIXTURE_PASSWORD = "selected p@ss'$\\;&=secret";
+    environment.API_HOST_PORT = "invalid-ignored";
+    environment.PGSERVICE = "ambient-service";
+    environment.PGSSLMODE = "ambient-tls";
+    writeFileSync(
+      join(root, "scripts/verify-api.sh"),
+      `#!/bin/bash
+set -eu
+[[ $DB_TARGET == test && $PGHOST == postgres_test && $PGDATABASE == storage_minis_test && $PGPORT == 5432 && $PGUSER == postgres ]] || exit 21
+[[ $PGPASSWORD == "$FIXTURE_PASSWORD" && -z \${POSTGRES_PASSWORD:-} && -z \${POSTGRES_TEST_PASSWORD:-} && -z \${DATABASE_URL:-} && -z \${PGSERVICE:-} && -z \${PGSSLMODE:-} ]] || exit 22
+printf '%s\\n' 'safe verifier payload'
+`,
+    );
+    chmodSync(join(root, "scripts/verify-api.sh"), 0o700);
+    const result = verify();
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("safe verifier payload");
+    expect(result.stdout + result.stderr).not.toContain(
+      environment.FIXTURE_PASSWORD,
+    );
+    expect(readFileSync(join(directory, "fetch-arguments"), "utf8")).toContain(
+      "--only-secrets POSTGRES_TEST_PASSWORD",
+    );
+    expect(existsSync(join(directory, "calls"))).toBe(false);
+  });
+  it("refuses missing keys/network despite ambient passwords without entering the verifier", () => {
+    for (const failure of ["FIXTURE_MISSING_KEY", "FIXTURE_FETCH_FAILURE"]) {
+      environment[failure] = "1";
+      const result = verify();
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).not.toMatch(
+        /fixture-fetch-secret|ambient-/,
+      );
+      expect(existsSync(join(directory, "calls"))).toBe(false);
+      delete environment[failure];
+    }
+  });
 });

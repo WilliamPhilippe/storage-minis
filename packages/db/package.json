@@ -3,13 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "db:check": "tsx scripts/check.ts",
     "db:generate": "tsx scripts/generate.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "test:integration": "tsx scripts/integration.ts"
+    "test:integration": "tsx scripts/integration.ts",
+    "dev": "tsc --project tsconfig.build.json --watch --preserveWatchOutput"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",

@@ -30,12 +30,32 @@
       "outputs": []
     },
     "//#test": {
+      "dependsOn": ["@storage-minis/db#build"],
       "outputs": [],
       "env": ["NODE_ENV", "TZ"]
     },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
+    },
+    "@storage-minis/api#start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL",
+        "HOST",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "TZ"
+      ]
     },
     "@storage-minis/db#typecheck": {
       "dependsOn": ["build"],
@@ -69,6 +89,25 @@
         "DATABASE_URL"
       ]
     },
+    "@storage-minis/api#test:process": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "outputs": [],
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL",
+        "HOST",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "TZ"
+      ]
+    },
     "test:integration": {
       "dependsOn": ["build"],
       "cache": false,
@@ -82,6 +121,30 @@
         "DATABASE_URL"
       ],
       "env": ["NODE_ENV", "TZ"]
+    },
+    "@storage-minis/api#dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL",
+        "HOST",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "TZ"
+      ]
+    },
+    "@storage-minis/db#dev": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
     }
   }
 }

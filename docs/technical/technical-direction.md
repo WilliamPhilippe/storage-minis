@@ -1,8 +1,8 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below; no application implementation exists yet.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.11 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; Step 4 is complete with all eighteen criteria and authorized implementation evidence on PR #107. Steps 5/6 and full T06/business/production acceptance remain pending.
 
-This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
+This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [current entity map](../entities/entity-map-v0.8.md), [approved updates](../requirement-updates/README.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) govern domain invariants.
 
 ## Workspace bootstrap progress (2026-10-23)
 
@@ -218,7 +218,7 @@ record.
 ## Step 1 Docker tooling (2026-10-24)
 
 **Owner approval:** The owner explicitly requested implementation of the
-[Step 1 plan](../plans/step-1-tooling-plan-2026-10-24.md), preferred Docker Official
+[Step 1 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-1-tooling-plan-2026-10-24.md), preferred Docker Official
 Images, confirmed the application/package/tooling name `storage-minis`, disposable
 containers with persistent volumes, and accepted the documented host-editor limitation. The owner chose Doppler project
 `storage-minis` with the proposed development config `dev`, and installed CLI
@@ -283,7 +283,7 @@ to that config on 2026-10-24. Secret values were not fetched during planning;
 successful injection remains to be verified during implementation.
 
 **Implementation approval:** On 2026-10-24, the owner approved the concrete
-[Step 2 implementation plan](../plans/step-2-postgresql-plan-2026-10-24.md) with
+[Step 2 implementation plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-2-postgresql-plan-2026-10-24.md) with
 “Approved. Implement it”. This authorizes its exact image pin, optional Compose
 file, loopback ports, persistent development/disposable test storage, scoped host
 Doppler launcher, SQL utilities, readiness/reset commands and verification.
@@ -355,7 +355,7 @@ during Step 3 planning. The merge does not approve Step 3's implementation choic
 
 ## Step 3 planning direction (2026-10-24)
 
-The owner requested a [two-part Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md):
+The owner requested a [two-part Step 3 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md):
 Drizzle installation/connection tooling, followed by base migration creation from
 the existing DBML. The owner explicitly approved reconciliation with current
 requirements before migration generation, then approved running Drizzle and its
@@ -383,7 +383,7 @@ mutation was performed during planning.
 ## Step 3A Drizzle implementation (2026-10-25)
 
 **Owner approval:** On 2026-10-24 the owner approved the
-[two-part plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md),
+[two-part plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md),
 requested a new branch from `main`, and instructed implementation. Branch
 `chore/step-3-drizzle` starts at merged `origin/main` commit `acb9f05` and preserves
 the planning documents. This delivers 3A; the plan's physical-schema review and
@@ -412,13 +412,13 @@ The esbuild allowlist is version-specific; future builds require review.
 No host tool was installed or upgraded. The setup documentation now explains the
 separate Doppler configs, internal port 5432 on distinct containers, and host
 ports 5433/5434. The final evidence and remaining schema work are recorded in the
-[Step 3A handoff](step-3a-verification-2026-10-25.md). These checks do not establish
+[Step 3A handoff](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-3a-verification-2026-10-25.md). These checks do not establish
 business atomicity, Organization authorization, schema constraints or T06 completion.
 
 ## Docker lifecycle commands (2026-10-25)
 
 **Owner approval:** The owner approved phase 1 and the staged approach in the
-[application-container and lifecycle plan](../plans/docker-application-lifecycle-plan-2026-10-25.md),
+[application-container and lifecycle plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/docker-application-lifecycle-plan-2026-10-25.md),
 then asked whether Docker Compose needs local installation. Docker Desktop
 already supplies Compose 5.6.1 with Docker client/Engine 29.9.2; no installation,
 dependency/image-pin change, or shell-profile change was needed.
@@ -468,7 +468,7 @@ to avoid custom infrastructure code where standard tools provide the behavior.
 Rationale: easier maintenance, deployment reuse and familiarity for developers.
 
 The owner requested implementation of the concrete
-[standard Compose maintenance plan](../plans/standard-compose-maintenance-plan-2026-10-25.md)
+[standard Compose maintenance plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 on 2026-10-25. This approves its canonical layout, native aliases and narrow
 exceptions; the earlier lifecycle evidence above remains historical.
 
@@ -606,6 +606,402 @@ This remains T06 local foundation work, with API/frontend services, production
 operations and business acceptance outside this change. The preceding standard
 Compose evidence records the earlier revision; this section owns the updated
 saved-settings workflow.
+
+## Step 4 planning refinements (2026-10-28)
+
+**Owner requirements:** During review of the
+[Step 4 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md), the owner required
+verification of the Step 5/6 handoff, an explicit acceptance-criteria list, a
+working local verification path, and Fastify inside this repository's API
+Docker image. The API image is therefore part of Step 4 delivery rather than
+an optional later packaging task. This makes the running application artifact
+and its local verification available to the transport and integration steps.
+
+The plan proposes development/runtime Dockerfile targets, portable production
+dependencies, a bounded image smoke and 18 acceptance criteria. The post-Step-3
+review decisions below amend its Compose, setup and verification direction.
+Remaining dependency, packaging and application recommendations await explicit
+implementation approval. No API image, application code or runtime configuration
+has been implemented during planning. Business writers, authorization, deployment
+and full T06 acceptance remain outside this diagnostic delivery.
+
+## Step 4 review decisions after Step 3 (2026-10-28)
+
+**Owner approval:** After the Step 3 merge and review of its divergence from the
+[Step 4 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md), the owner accepted all
+eight recommendations and requested a plan update. This approves the following
+amendments; it does not request application implementation or approve every
+remaining dependency/packaging/application recommendation in that plan.
+
+| Review item | Approved outcome and rationale |
+| --- | --- |
+| 1 — Native Compose | Add profiled API services to canonical `compose.yaml`. Prefer native lifecycle commands/direct aliases; keep custom code limited to Doppler injection and bounded verification. This preserves the accepted standard tooling direction and one project inventory. |
+| 2 — Saved settings/security | Reuse `.env.compose` and existing automatic Doppler project/config/executable selection. Preserve selected-key injection, target matching, dedicated browser login, no fallback and ambient-secret rejection; routine startup needs no exports. The three-key nonsecret settings schema stays unchanged. |
+| 3 — Current commands | Replace retired tooling build/init and database stop calls with implemented native aliases/raw Compose equivalents. Local instructions must match the inherited setup. |
+| 4 — Delivered prerequisites | Retire P4-01 without reusing its ID. Inherit Step 3B structural schema/migrations/replay and retain first-development-application ownership plus named writer/business acceptance deferrals. No sequencing exception remains necessary. |
+| 5 — Shutdown | Honor per-service grace periods across API and full-project stop/down, including the guarded disposable volume-cleanup path. Remove global overrides that truncate the API's proposed 15s grace and test bounded in-flight draining against its 10s application deadline. |
+| 6 — Existing diagnostics | Reuse implemented payload stderr forwarding. Preserve detailed redacted DB CLI messages/causes/codes and keep the proposed HTTP log policy separate; extending injection must not hide command errors. |
+| 7 — Typed DB handoff | Include compiled schema runtime/declaration modules in build, package and reload proof. Readiness checks connection identity, not migration currency; API startup never migrates. |
+| 8 — Shared-target isolation | Run schema, API process, smoke and outage phases sequentially when sharing a test target. A schema reset or test-service stop must not race another consumer; use disposable resources for destructive evidence. |
+
+**Recorded outcome:** The plan, acceptance matrix, local command examples and
+handoff have been revised to these decisions. Narrow payload names and direct
+API package aliases are documented as proposed implementation details. Existing
+Compose files/scripts, dependencies, schema/migrations and running resources are
+unchanged by this documentation update. These amendments are approved inputs for
+later implementation, not runtime evidence or T06 completion.
+
+**Owner execution request, 2026-10-28:** The owner subsequently requested small
+sequential implementation assignments because an AI agent may run out of usage
+allowance mid-implementation. The
+[stage guide](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) divides
+the existing scope into 11 stages, each with checks, a stopping point and durable
+checkpoint/resume instructions. Assign one stage per session and preserve
+incomplete work with an exact next action when interrupted. The parent plan
+remains the acceptance/technical contract, and the Step 4 PR boundary is unchanged.
+This decomposes the delivery work without approving pending technical choices or
+starting implementation.
+
+## Step 4 execution interview decisions (2026-10-28)
+
+**Owner approval:** After the planning interview, the owner confirmed the shared
+execution agreement and authorized the documentation update. Retain the existing
+**11 stages**, with one [copyable prompt per stage](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+as its starting packet. An earlier option to subdivide further was considered;
+the final agreement keeps the prepared boundaries and resumes the same stage
+after interruption rather than automatically creating substages.
+
+| Execution decision | Approved outcome and rationale |
+| --- | --- |
+| Durable restart state | Write an initial in-progress checkpoint before implementation, then update after meaningful verified results, before live/temporary-fixture experiments and at handoff. Credit exhaustion must not leave the final chat response as the only restart record. |
+| Local completion commits | After a stage's required checks pass, its implementing agent stages the changes/evidence and executes `git commit` with a Conventional Commit message; it reports the actual hash instead of leaving the commit to the owner. Incomplete or commit-blocked work stays in progress. Record the commit subject before committing and resolve its hash through Git history; no self-referential evidence commit is needed. Existing push/PR authorization remains separate. |
+| Stage versus acceptance completion | A stage can finish its scoped checks while a criterion needing later proof stays partial. AC4-06 closes only with outage liveness in 4.9; AC4-13 waits for the runtime/development/smoke security paths by 4.8. A progress label is not acceptance evidence. |
+| Verification cost | Run meaningful focused tests and affected strict checks at each stage. Run full ordinary aggregate checks at 4.4, 4.8 and 4.11. Reuse earlier evidence only while its relevant inputs remain valid; changes, failures or gaps require affected reruns. This retains verification while avoiding unnecessary full-suite repetition for every stage. |
+| Approval timing | Identify and obtain uncovered technical approvals before their consuming stage work. Reuse existing scoped approvals without requesting them again. The starting prompt identifies decisions to inspect; assigning a stage does not approve pending P4 recommendations. |
+| Status reporting and documentation (owner follow-up) | On 2026-10-28 the owner requested an explicit status report at every stage handoff, synchronization of affected current documentation, and a commit when verified stage changes exist. Report stage/overall status, checks, actual commit hash or why no new commit was made, remaining files/reasons and next action. Verify Git status; an unchanged completed stage reports its existing commit without an empty commit. Incomplete or commit-blocked stages remain in progress. |
+| Session boundary | Assign one stage/prompt per session and stop after its handoff/local commit. The owner named `WilliamPhilippe/step-4-implementation-plan` as the unique branch for all stages; verify it before changes and create no branch/worktree per stage. Keep the same evidence path across sessions and record exact remaining work/resources when interrupted. The eleven-stage sequence and full Step 4 PR boundary remain intact. |
+
+The stage guide, parent plan and foundation guide apply these decisions. No API
+code, dependencies, containers or migrations were implemented during the interview
+or documentation update. Remaining technical recommendations still need their
+recorded approval before implementation.
+
+## Step 4.1 configuration and finite-build approval (2026-10-28)
+
+**Owner approval:** In the stage 4.1 implementation session, the owner explicitly
+approved the pending configuration, dependency and finite-build choices below.
+This covers P4-02 and only the stage 4.1 portions of P4-08/P4-09 in the
+[parent plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md). Remaining Step 4
+recommendations retain their existing approval gates.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| API runtime dependencies | Pin Fastify 5.12.7 and Zod 4.6.7; link `@storage-minis/db` with `workspace:*` using container pnpm and the shared lockfile. Fastify supplies its own types/logger/injection support, and Zod matches the DB pin. Alternative patches need compatibility research; no extra logger, bundler, cleanup package or tRPC dependency is needed here. |
+| Configuration | Implement `readApiConfig(environment)` returning separate HTTP and DB configuration. Apply the parent plan's absent-only defaults, exact host/port/level/environment validation, ignored unknown keys and secret-free failures. Delegate DB component/URL validation to the existing compiled DB package. Explicit input keeps imports free of environment reads and resource acquisition. |
+| Finite builds | Use the existing TypeScript compiler for API ESM, declarations and JavaScript source maps; retain strict NodeNext and no-emit-on-error. Remove only each package's own `dist` with native Node `fs.rmSync` before its finite build. This prevents stale output after deletion/rename without adding a package or changing DB output/schema. Stop watchers before clean builds. |
+| Strict checks and graph | Cover API source, tests, scripts and Vitest configurations in no-emit checking. Reuse existing build/typecheck/lint dependencies and `dist/**` outputs; add a DB build dependency to root unit tests, which now consume compiled DB exports. Add only declarations for existing commands; dev/start/process/image tasks wait for their stages. |
+
+At the stage 4.1 handoff, it was implemented and verified in commit `472e0a7`,
+with stages 4.2–4.11 pending and full Step 4 in progress. See the later stage 4.2/4.3
+record below for current progress. Implementation and executed checks
+are tracked in the
+[cumulative evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds).
+Stage 4.1 does not deliver an HTTP factory/listener or claim full Step 4/T06
+acceptance.
+
+## Step 4.2 factory, HTTP and logging approval (2026-10-28)
+
+**Owner approval:** In the stage 4.2 session, the owner explicitly approved
+P4-03/P4-05/P4-06 and the application/HTTP contracts in the
+[parent plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md#application-and-process-contract).
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Construction | `buildApp(httpConfig, { database, isClosing })` returns an unlistening Fastify instance. Type readiness as `Pick<Database, "check">`; read no application environment and own no pool or process handlers. Explicit dependencies isolate tests and leave ownership with stage 4.3; a resource-owning singleton would couple construction and cleanup. |
+| HTTP | Fixed live/ready/not-found/internal-error responses, fresh existing bounded DB checks, closing-aware readiness, 16 KiB bodies, 10s receive timeout, `forceCloseConnections: "idle"` and `trustProxy: false`. Preserve safe framework statuses including malformed JSON 400 and oversized payload 413. A combined/cached probe would obscure dependency loss or recovery. |
+| Logs | Fastify's existing JSON logger, generated request IDs with `requestIdHeader: false`, disabled default request logging, fixed failure categories and only method/matched-template/status/elapsed request metadata. Safe serializers and authorization/cookie redaction provide defense in depth; redaction-only default logging still exposes URLs and exception messages. No additional logger dependency. |
+
+Stage 4.2 is complete with AC4-03/AC4-10 and injected health evidence;
+implementation/checks are tracked in the
+[same cumulative evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
+At its handoff, this approval covered only the assigned factory/tests and necessary
+documentation; process lifecycle, real HTTP/DB/outage proof and later-stage
+recommendations retained their gates. The separate 4.3 approval follows below.
+No production or business acceptance is implied.
+
+## Step 4.3 lifecycle, process and start-task approval (2026-10-28)
+
+**Owner approval:** In the stage 4.3 session, the owner explicitly approved the
+presented P4-04 process/lifecycle contract and only the stage 4.3 start portions
+of P4-08/P4-09. This follows the same
+[parent contract](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md#application-and-process-contract).
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Ownership and extension | One lifecycle owns one full DB handle and one app, with injectable factories/process hooks for focused unit fixtures. An optional async callback receives those same instances before app readiness, DB check and listen. A second pool or resource-owning singleton duplicates ownership. |
+| Early cancellation | Install SIGINT/SIGTERM handlers before configuration/acquisition. Signals mark closing and prevent subsequent listen; pending startup settles before completed cleanup removes handlers, so late acquired resources remain owned. Repeated signals share the first close promise. |
+| Deadlines and exits | Retain the 17s overall startup/failure watchdog and a single 10s total shutdown bound. Drain HTTP, then close DB even if HTTP close fails. On deadline destroy HTTP connections and force exit 1. Successful SIGINT/SIGTERM cleanup uses 130/143; startup/cleanup/deadline failures use 1. Separate budgets or listening before DB validation change the approved fail-fast contract. |
+| Diagnostics | Fixed safe categories only; no raw exception, configuration or registration input. No additional logger dependency. |
+| Built start | API `node --enable-source-maps dist/server.js`; root filtered Turbo start; API start is uncached/persistent, depends on its finite build and passes through only the parent-listed runtime variables. Direct built Node remains available without a loader. Dev/process/image tasks wait for their stages. |
+
+Stage 4.3 is complete with AC4-04 and 52 passing API tests (29 lifecycle tests),
+finite builds, affected strict checks and start-task/compiled-entry inspection. Its
+[checkpoint and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point)
+record the local completion commit subject and exact commands. Cleanup rejection
+attempts both closes, destroys HTTP connections and forces exit 1 because it
+cannot certify release. OS signals, actual listener/pool release and DB process
+proof remain with 4.4/4.10; mocks do not establish those results. Later-stage
+recommendations retain their approval gates.
+
+## Step 4.4 guarded process-test approval (2026-10-28)
+
+**Owner approval:** The owner explicitly approved the scoped recommendation in
+the 4.4 session, covering the consuming P4-09/P4-10 details below. Later-stage
+recommendations retain their approval gates.
+
+| Choice | Approved scope and rationale |
+| --- | --- |
+| Commands/graph | API `test:process` uses existing tsx to run a dedicated Vitest supervisor; root `test:api` selects only that task. Its own finite build orders compiled DB/API output; live execution is uncached and outside ordinary `pnpm check`. Both names join the prefetch test-only guard. Injection alone cannot prove OS startup/shutdown; another runner package adds no needed capability. |
+| Ownership | Serial 30s tests, 10s hooks, 180s suite supervisor, then at most 10s termination plus a 1s pipe fallback. Bounded in-memory output, process-group cancellation, distinct reserved ports, child listening marker before HTTP, and existing DB-pool activity inspection establish resource ownership. No new dependency or business/schema fixture is needed. |
+| Unavailable startup | A test-only Node preload resolves only `postgres_test` to an owned loopback TCP refusal fixture. This exercises real socket/startup failure while retaining the exact validated test tuple and leaving shared PostgreSQL running. Stopping the actual test service with an already running API remains 4.9's separate outage proof. |
+
+Stage 4.4 is **complete**; see its
+[checkpoint and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests).
+Fifteen real process tests and the 85-test offline foundation aggregate passed,
+along with the sequential 30-test schema phase and independent zero-backend
+cleanup checks. AC4-05/AC4-08 are complete. AC4-06/07 remain partial until 4.9's
+real service outage; AC4-09 has basic signals only until later shutdown proof.
+The existing 17s startup/failure and 10s shutdown contracts remain unchanged.
+Both original DB services are stopped; development was preserved. No dependency,
+runtime source, schema/migration or Compose change was needed. Later-stage
+choices retain their approval gates; overall Step 4 is in progress.
+
+## Step 4.5 runtime-image packaging approval (2026-10-28)
+
+**Owner approval:** In the stage 4.5 session, the owner explicitly approved the
+recommended packaging approach before implementation. This approves P4-11's
+build/package/runtime subset and API/DB package boundaries; development and
+Compose registration remain stages 4.7 and 4.6 respectively.
+
+| Area | Approved choice and rationale |
+| --- | --- |
+| Build | Root context, `docker/Dockerfile.api` with `build`, `package`, `runtime`; exact existing Node 24.22.1 Bookworm slim digest and pnpm 12.15.0. Explicit input copies, frozen installation and finite `pnpm build`; no DB/Doppler/secret build input. Reuse the selected toolchain rather than introducing a bundler or another base. |
+| Package | API/DB `files: ["dist"]`; `pnpm --filter=@storage-minis/api --prod deploy /out`. Keep workspace injection policy unchanged. pnpm packages production dependencies and workspace files portably; copying workspace node_modules risks external links and retains build tooling. |
+| Runtime | Fresh pinned Node base; copy only `/out` into node-owned `/app`, `USER node`, `CMD ["node", "--enable-source-maps", "dist/server.js"]`, `HOST=0.0.0.0`, `PORT=3000`, `NODE_ENV=production`. No install, compiler, source/dependency mount or tooling-volume prerequisite at startup. |
+| Context | Root `.dockerignore` excludes local environment/credential files, history/agent state, dependencies, generated output, caches, logs and test fixtures. Explicit required-input copies provide an additional boundary. Preserve the tooling Dockerfile and its existing `docker/` context. |
+| Proof | Build the runtime from root; inspect production graph, compiled API/DB/schema/declarations, internal workspace links, nonroot/plain-Node defaults and local-file exclusion without networking, mounts or DB credentials. Authenticated runtime startup and AC4-01 completion remain 4.6. |
+
+Implementation status and exact evidence are maintained in the
+[stage 4.5 checkpoint](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image).
+The approved subset is implemented and verified: AC4-11 complete, including
+all compiled schema/declaration files and internal production links. AC4-01
+remains partial until authenticated startup in 4.6. Build needs no DB/Doppler;
+tooling/Compose, dependency versions and workspace injection policy are unchanged.
+Production hosting, release operations and T04 acceptance remain open.
+
+## Step 4.6 Compose runtime and startup approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended 4.6 scope in
+this session. This covers only the runtime P4-07/P4-11 subset below. Development,
+automated image smoke and remaining task choices keep their later-stage gates.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Runtime service | Only `api`, profile `api`, in canonical Compose; project-scoped `-api:step4` tag, existing runtime build target, no mounts, `init: true`, no restart, 15s grace. Retain the default PostgreSQL selection and all six volume identities. |
+| Publication/health | Loopback host port 3000 by default with a validated invocation override. Node readiness healthcheck uses 7s HTTP abort, 8s Docker timeout, 2s interval, 5s start and three retries. Native Compose waits up to 30s; no custom polling policy. |
+| Credential operation | Only `api-up dev\|test`, with validated port/log level, cleared ambient DB inputs and the inherited selected-key Doppler/no-fallback/diagnostic boundary. Execute native `up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api`; runtime retains production mode and container `0.0.0.0:3000`. No migration or secret change. |
+| Native aliases/grace | Add build/up/log/stop aliases for runtime only; reuse `docker:ps`. Remove project-wide 10s overrides from stop/down/confirmed volume cleanup so per-service grace applies; retain DB-only 10s bounds. |
+| Verification | Extend inherited fixture security/diagnostic tests and affected strict checks. Native build, model/volume/default-selection checks, real test-target startup/exact HTTP/collision/native stop and fresh-environment settings proof. Keep AC4-13 partial until 4.7–4.8 and full project drain proof for 4.10. |
+
+**Implemented and verified:** Native Compose builds and starts the profiled runtime
+with selected test credentials; exact host HTTP health, image/user/command/mount
+inspection, collision refusal, idempotent fresh-environment startup and native
+exit/listener cleanup passed. Focused launcher/security and strict checks passed.
+AC4-01 is complete; AC4-13 remains partial through 4.7–4.8 and full project drain
+proof remains 4.10. No development migration, secret edit or dependency change.
+
+This preserves native lifecycle ownership and needs no dependency, dispatcher or
+extra settings/model file. Manual startup would lose the short guarded launch;
+custom polling/dispatch would add maintenance. Implementation evidence is tracked
+in the [4.6 checkpoint](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
+
+## Step 4.7 development image and reload approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the concrete 4.7 recommendation
+in this session, before implementation. The scope is P4-08/P4-09 watchers and
+P4-07/P4-11 development service/injection only. No dependency or pin changes.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Watchers | API `node --watch --watch-preserve-output --import tsx src/server.ts`; DB `tsc --project tsconfig.build.json --watch --preserveWatchOutput`; root `turbo run dev`. Preserve compiled DB exports. Native Node waits for child exit on restart; tsx watch's 5s kill limit is shorter than the 10s application cleanup budget. |
+| Task graph | Persistent uncached API `dev` depends on `^build`; DB `dev` depends on its finite `build`. Both share that prerequisite; no persistent task is a finite prerequisite. Only API gets the existing named runtime allowlist; DB compiler/builds get no DB credentials. |
+| Development image/service | Nonroot `development` inherits the pinned build stage, runs `pnpm dev` in `/workspace`. Optional canonical `api-dev` uses the checkout bind and existing five tooling volumes with nocopy, `init`, no restart, 15s grace and loopback publication. Existing init/frozen install remains prerequisite. No host dependencies or extra storage. |
+| Launcher/aliases | Extend existing selected-key/no-fallback boundary with `api-dev dev\|test`, native foreground `up --no-deps --no-build --pull never api-dev`. Extend native build/stop to both actual services and add the dev alias. One model and one credential boundary avoid duplicated maintenance. |
+| Verification | Bounded live `./scripts/database.sh api-dev dev` with temporary API/DB/schema, error/rapid-edit and >5s drain fixtures, restored byte for byte; inspect PIDs, compiled outputs, environment and cleanup. Focused security/graph and affected strict finite checks after watchers stop. No migration/reset or managed-secret changes. |
+
+**Implemented and verified:** Development image, compiled DB reload, compiler
+error/correction, rapid edits, >5s restart drain, compiler secret isolation and
+canonical in-flight TERM/INT passed; see the
+[4.7 evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-47--development-image-and-reload).
+AC4-02 is complete and AC4-13 remains partial until the 4.8 smoke path also passes.
+Source exports, a new watcher package or a separate launcher/model would change
+the compiled boundary or add maintenance and are not selected.
+
+**Approved amendment (same date):** After actual in-flight outer TERM failed,
+the owner approved `stop_signal: SIGINT` on `api-dev` only, retaining 15s grace.
+The secret-free minimal worker drained in 6.6s under direct Node watch, pnpm and
+direct Turbo; pnpm wrapping Turbo under TERM force-stopped immediately. The
+pinned Turbo wrapper forwards TERM, and combined forwarding triggers native
+Turbo's repeated-signal force-stop path. SIGINT through the same pnpm/Turbo chain
+drained in 6.6s. Native Compose's service stop signal avoids a custom wrapper or
+bypassing pnpm. Runtime `api` retains default TERM. The full canonical foreground
+TERM/INT path subsequently passed, draining in 6.63s/6.65s with container exit 0
+and native client statuses 143/130 respectively. See
+[Turbo's pinned wrapper](https://github.com/vercel/turborepo/blob/v2.11.10/packages/turbo/bin/turbo)
+and [Compose stop_signal](https://docs.docker.com/reference/compose-file/services/#stop_signal).
+
+## Step 4.8 bounded image smoke approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the concrete recommendation
+before implementation in the 4.8 session. This covers only the narrow smoke
+helper, exact-test injection/alias and its verification; no new dependencies.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Harness | Bash `scripts/verify-api.sh`, canonical runtime `compose run` with unique owned name/label, no dependencies/build/pull/mounts, `NODE_ENV=test`. Native Compose keeps image/service configuration authoritative. No extra service/file or lifecycle dispatcher. |
+| Boundary | `database.sh api-verify test` validates before fetch, reuses selected-key Doppler injection and exact tuple; direct `docker:api:verify` alias stays outside Turbo. Reject ambient overrides; named password injection only. |
+| Proof/bounds | Docker-assigned loopback port by default, validated explicit port/collision refusal; exact host HTTP bodies/status, image/container identity and SIGTERM exit. Requests 8s, readiness 30s, shutdown/cleanup 15s and total 60s. Install ownership/deadlines/interruption cleanup first; suppress raw Docker/curl streams and print allowlisted diagnostics. |
+| Tests | Existing Vitest launcher fixtures plus bounded temporary host scenarios for repeat uncached success, bad injected credentials without managed edits, collisions, interruption and deadlines. Restore owned resources; serialize shared-test consumers; run container integration `pnpm check`. |
+
+A Node harness adds another host runtime; another Compose service duplicates
+configuration. The narrow shell exception supplies exact assertions/owned cleanup
+that ordinary native startup does not. **Implemented and verified:** repeated
+actual image smoke, dynamic/explicit loopback publication, collision/bad-password
+refusal, real outer TERM/INT cleanup and sanitized streams passed. The inherited
+runtime TERM status is 143; the verifier returns 0 after assertions/removal.
+Requests use an 8s bound, readiness 30s and a 45s work watchdog reserves final
+cleanup within the absolute 60s operation. Cleanup has a 15s phase budget with
+reserved bounded force-removal/absence proof; failed inventory cannot certify
+absence. The final milestone passed 109 tests and all strict checks.
+[Checkpoint and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke)
+close AC4-13/15 with current runtime/development/smoke evidence. Overall Step 4
+remains in progress; service outages and native project drain remain later stages.
+
+## Step 4.10 shutdown fixture approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended shutdown
+fixtures in the 4.10 session before coding or disposable resource creation.
+Use a test-only entry importing the compiled lifecycle and real test DB, through
+the existing owned-process supervisor: finite/pending startup, repeated signals,
+6s in-flight HTTP drain, failed/hung closes and actual 10s/17s watchdog timing.
+No diagnostic delay endpoint enters application source, dist or runtime images.
+
+For native API stop, full-profile stop/down and confirmed volume teardown, use
+a distinct disposable canonical Compose project. Copy the test entry only into
+stopped API containers' writable layers, then start them. Keep another disposable
+project/container with attached storage as an isolation sentinel. Record resource
+identity, bounds and cleanup before each experiment; remove all owned probes,
+volumes and temporary image tags afterward. Preserve original images, canonical
+configuration, Beijing containers/data/settings and unrelated resources. A fixture
+image rebuild adds restoration/build work; unit-only fixtures cannot establish
+actual process/container drain. Existing 10s total process budget, 15s API service
+grace and exact-confirmation/ownership guard remain unchanged.
+
+Stage 4.10 is **complete**; see its
+[shutdown and isolation evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths).
+No new dependency, runtime policy, infrastructure service or later-stage choice
+is selected. AC4-09/17 are complete: 25 real process cases, six-second requests
+through native API/full-project stop/down and confirmed deletion, real 10s/17s
+watchdogs, separate application/container/client exits and preserved peer/owner
+storage. Strict checks also pass without prior API dist; fixtures execute compiled
+modules and use source-only type references. The container fixture retains its
+original test path and a temporary importing entry; neither enters the image.
+
+## Step 4.9 DB failure, recovery and isolation approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended socket and
+native-service fixtures in the 4.9 session before implementation. This covers
+only test/evidence work within P4-10; inherited runtime/deadline/target contracts
+remain unchanged.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Socket fixture | Extend the guarded process suite with an owned loopback TCP gate using the existing child-only DNS preload. Forward real PostgreSQL traffic, terminate the observed API backend with `pg_terminate_backend`, refuse reconnects for exact 503 probes, then restore forwarding. A single idle termination may reconnect before HTTP sees failure; repeated termination would be timing-sensitive. No mocked PostgreSQL replies or new dependency. |
+| Native service fixture | Temporary host harness uses existing `api-up test`, native `stop --timeout 10 postgres_test` and `database.sh up test`. Exact HTTP and unchanged container/PID/start/restart identity prove recovery. Another Compose project adds unnecessary setup when this disposable target is exclusive. |
+| Isolation/restoration | Reuse unchanged schema evidence; process → image smoke → outage, all exclusive and sequential. Close SQL/probes/clients between phases. Record ownership/restoration before stop; preserve development/six volumes/settings; return test to its initially stopped state and remove only the newly owned API. No lock/infrastructure/schema change. |
+| Bounds | Existing 30s tests/10s hooks/180s process supervisor; requests abort at 8s and assert below DB 6s + 1s scheduling margin. Native test stop 10s + 5s overhead, startup outer 90s, API startup 45s, recovery polling 30s. |
+
+**Implemented and verified:** 58 focused unit tests and API strict checks passed;
+16 guarded process tests passed, including real socket failure (ready 503 in 2ms)
+and recovery with the same PID. Current runtime image smoke passed. Native test
+stop produced exact ready 503 in 2005.9ms while live stayed 200; native restart
+restored exact ready 200 with the same API container/PID/start time/restart count.
+Authenticated test identity and zero public/drizzle tables before/after API
+startup/recovery prove diagnostic readiness without migrations. Final independent
+inventory/port checks closed cleanup after the host harness's immediate bind hit
+TCP TIME_WAIT; no listener or owned API/probe/client remains. Both original DBs
+are stopped, development and six volumes preserved.
+[Checkpoint and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation)
+close AC4-06/AC4-07/AC4-14. Overall Step 4 remains in progress; 4.10–4.11 remain
+pending. Dated earlier-stage statements retain their historical scope.
+
+## Step 4.11 final verification and handoff (2026-10-29)
+
+The owner assigned only stage 4.11 on the existing branch, requiring real task
+cache/restoration/invalidation proof, the final ordinary aggregate, current
+setup/approval summaries, all eighteen criteria and the Step 5/6 handoff.
+This executes existing approved P4-08/P4-09/P4-10 contracts; no package/version,
+runtime configuration, infrastructure or business policy changed. Native
+Turbo/Node temporary output/source fixtures use finally restoration; live phases
+remain sequential on test only. Earlier dated approval/results keep their scope.
+
+The [stage checkpoint and final reconciliation](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff)
+record results and current delivery state. README/local-development now describe
+implemented API/DB builds/tests/watchers, exact commands/variables, health/log/
+failure cleanup limits and successor extensions. AGENTS.md points agents to the
+current verification and future change triggers. Actual runtime/image/source
+identity governs reuse of earlier evidence, not the date alone.
+
+After local checks and the concrete PR draft were ready, the owner explicitly
+approved pushing this stage on the existing branch and updating PR #107 on
+2026-10-29: “Approve push and PR update (Recommended).” The PR now records
+implementation evidence with the title `feat(api): deliver Fastify server
+foundation`; fetched title/body/branch match the reviewed draft. This completes
+AC4-18 alongside AC4-12/16’s cache/setup evidence. Stage 4.11 and Step 4 are
+complete; no merge, issue closure or successor implementation is included.
+Business writers, Firebase/bootstrap, tRPC, frontend, CI, production and full T06
+acceptance remain deferred.
+
+### Recorded acceptance and successor contracts
+
+All AC4-01–AC4-18 passed on 2026-10-29 for implementation commit
+`8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8`. These are recorded results, not a
+new run against later changes.
+
+| Criteria | Recorded evidence |
+| --- | --- |
+| AC4-01–AC4-05 | Portable runtime, API/compiled-DB reload, inert injectable factory, one owned DB for route registration, and validated configuration. |
+| AC4-06–AC4-10 | Exact health through DB loss/recovery, bounded startup failures, repeated-signal cleanup, real 10s/17s watchdogs, safe HTTP errors and log exclusion tests. |
+| AC4-11–AC4-12 | Compiled ESM/schema/declarations and portable package links. Seven unchanged aggregate tasks reused cache. Both builds restored all 40 output file hashes; DB edits invalidated API consumers, and a deliberate TS2322 blocked API build. |
+| AC4-13–AC4-15 | Selected-target Doppler/security checks, 109 unit tests across 12 files, 25 guarded real-PostgreSQL API process cases, empty-suite refusal and bounded image smoke. Step 3B's 30 schema/replay tests are inherited evidence. Live checks execute uncached and sequentially. |
+| AC4-16–AC4-18 | Verified setup/failure/cleanup instructions, loopback collision and project/storage isolation, complete handoff and owner-authorized evidence on PR #107. |
+
+The final image verifier observed exact live/ready 200, SIGTERM 143 and confirmed
+owned-container removal. The runtime image was
+`sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`;
+the development image was
+`sha256:fc2c235b087810fb2fa8909d3747e2e7b7b8c4721c82cb43bf4925958eb26ca0`.
+All 40 runtime compiled-file hashes matched the source builds. Full original
+commands, identities, failed attempts and final results remain in the
+[historical verification](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
+
+Step 5 extends `startLifecycle`'s async `registerRoutes(app, database)` callback
+with the real tRPC adapter/context and a type-only router export. It reuses the
+single owned DB and existing image. Step 6 extends the same image verifier with
+valid/invalid tRPC HTTP requests, reproduces clean setup and rechecks affected
+cache/integration proof. Read the [current guide](technical-foundation-implementation-guide.md#step-4--fastify-server-foundation)
+for these inherited contracts. Rerun affected proof after source/task/image changes;
+shared test consumers remain exclusive and sequential.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
@@ -870,7 +1266,7 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 
 ## Step 3B structural schema (2026-10-25)
 
-The owner approved the [S01–S10 schema review](../database/step-3b-schema-review-2026-10-25.md)
+The owner approved the [S01–S10 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/database/step-3b-schema-review-2026-10-25.md)
 on 2026-10-25: “Schema is approved. Implement it.” The resulting
 [implementation/reconciliation record](../database/step-3b-implementation-2026-10-25.md)
 is authoritative for the structural delivery and named writer deferrals. This
@@ -957,8 +1353,18 @@ artifacts and dependency versions are unchanged.
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
-| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Complete API/framework integration, application authorization/isolation, representative business transactions/races, CI and full setup acceptance. |
+| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Step 4 diagnostic API/image/cache/lifecycle is delivered. Complete Step 5 tRPC, Step 6 consolidated setup/verification, application authorization/isolation, representative business transactions/races and CI. |
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
-Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no production infrastructure has been provisioned. Workspace/tooling checks and structural PostgreSQL tests are implemented as recorded above; API/frontend builds, business workflows and their acceptance evidence remain pending.
+Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no production infrastructure has been provisioned. Workspace/tooling checks and structural PostgreSQL tests are implemented as recorded above; the Step 4 API build/runtime foundation is delivered; frontend, later API integration, business workflows and their acceptance evidence remain pending.
+
+## Documentation cleanup (2026-10-29)
+
+The owner selected A1–A8 and B1–B6 from the documentation map for deletion:
+completed/replaced plans and prompts, completed reviews and verification records.
+The six C baseline files remain. Current commands, approvals, implemented
+contracts, summarized acceptance and pending Steps 5/6 remain in this repository.
+Historical citations use immutable links to commit
+`8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8`; completed stage instructions do not
+apply to future assignments. This cleanup changes no technical or business policy.
