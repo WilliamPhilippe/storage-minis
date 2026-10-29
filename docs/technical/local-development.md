@@ -298,8 +298,11 @@ for actual evidence and remaining limits.
 
 For the optional diagnostic runtime API, use the
 [README build/start/health/log/stop instructions](../../README.md#api-runtime-image).
-Default startup still selects only PostgreSQL; development reload and automated
-API image smoke remain later stages.
+Default startup still selects only PostgreSQL. For development reload use the
+[development instructions](../../README.md#api-development-and-reload); for bounded
+exact-test-only runtime-image smoke use the
+[automated verification instructions](../../README.md#automated-api-image-smoke).
+Finish other test consumers first; the verifier removes only its owned probe.
 
 ## Local PostgreSQL
 

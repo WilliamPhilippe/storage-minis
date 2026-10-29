@@ -337,3 +337,78 @@ describe.each(["api-up", "api-dev"])("%s credential boundary", (operation) => {
     expect(result.stdout + result.stderr).not.toContain("fixture-test");
   });
 });
+
+// Smoke injects into its narrow verifier, never the tooling dispatcher.
+describe("api-verify injection", () => {
+  function verify(target = "test", extra: string[] = []) {
+    return spawnSync(
+      "/bin/bash",
+      [join(root, "scripts/database.sh"), "api-verify", target, ...extra],
+      {
+        env: environment,
+        encoding: "utf8",
+        timeout: 5_000,
+      },
+    );
+  }
+  it("rejects non-test targets, invalid verifier ports, config/token/log values and callbacks before fetch", () => {
+    for (const target of ["dev", "production", ""])
+      expect(verify(target).status).not.toBe(0);
+    expect(verify("test", ["callback"]).status).not.toBe(0);
+    const original = { ...environment };
+    for (const overrides of [
+      { API_VERIFY_HOST_PORT: "" },
+      { API_VERIFY_HOST_PORT: "0" },
+      { API_VERIFY_HOST_PORT: "03000" },
+      { API_VERIFY_HOST_PORT: "65536" },
+      { API_VERIFY_HOST_PORT: "secret-sentinel" },
+      { LOG_LEVEL: "secret-sentinel" },
+      { DOPPLER_CONFIG: "dev" },
+      { DOPPLER_TOKEN: "secret-sentinel" },
+    ]) {
+      environment = { ...original, ...overrides };
+      const result = verify();
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).not.toContain("secret-sentinel");
+    }
+    expect(existsSync(join(directory, "fetches"))).toBe(false);
+  });
+  it("injects only the selected special-character test password, ignoring ordinary API port and ambient PG inputs", () => {
+    environment.FIXTURE_PASSWORD = "selected p@ss'$\\;&=secret";
+    environment.API_HOST_PORT = "invalid-ignored";
+    environment.PGSERVICE = "ambient-service";
+    environment.PGSSLMODE = "ambient-tls";
+    writeFileSync(
+      join(root, "scripts/verify-api.sh"),
+      `#!/bin/bash
+set -eu
+[[ $DB_TARGET == test && $PGHOST == postgres_test && $PGDATABASE == storage_minis_test && $PGPORT == 5432 && $PGUSER == postgres ]] || exit 21
+[[ $PGPASSWORD == "$FIXTURE_PASSWORD" && -z \${POSTGRES_PASSWORD:-} && -z \${POSTGRES_TEST_PASSWORD:-} && -z \${DATABASE_URL:-} && -z \${PGSERVICE:-} && -z \${PGSSLMODE:-} ]] || exit 22
+printf '%s\\n' 'safe verifier payload'
+`,
+    );
+    chmodSync(join(root, "scripts/verify-api.sh"), 0o700);
+    const result = verify();
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("safe verifier payload");
+    expect(result.stdout + result.stderr).not.toContain(
+      environment.FIXTURE_PASSWORD,
+    );
+    expect(readFileSync(join(directory, "fetch-arguments"), "utf8")).toContain(
+      "--only-secrets POSTGRES_TEST_PASSWORD",
+    );
+    expect(existsSync(join(directory, "calls"))).toBe(false);
+  });
+  it("refuses missing keys/network despite ambient passwords without entering the verifier", () => {
+    for (const failure of ["FIXTURE_MISSING_KEY", "FIXTURE_FETCH_FAILURE"]) {
+      environment[failure] = "1";
+      const result = verify();
+      expect(result.status).not.toBe(0);
+      expect(result.stdout + result.stderr).not.toMatch(
+        /fixture-fetch-secret|ambient-/,
+      );
+      expect(existsSync(join(directory, "calls"))).toBe(false);
+      delete environment[failure];
+    }
+  });
+});

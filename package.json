@@ -42,7 +42,8 @@
     "docker:setup": "./scripts/configure-local.sh && pnpm docker:build && docker compose --env-file .env.compose --file compose.yaml pull postgres && pnpm docker:init && ./scripts/tooling.sh run pnpm install --frozen-lockfile && pnpm docker:up",
     "docker:migrate": "./scripts/tooling.sh run-db dev pnpm db:migrate",
     "dev": "turbo run dev",
-    "docker:api:dev": "./scripts/database.sh api-dev dev"
+    "docker:api:dev": "./scripts/database.sh api-dev dev",
+    "docker:api:verify": "./scripts/database.sh api-verify test"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

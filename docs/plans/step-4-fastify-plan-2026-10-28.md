@@ -7,7 +7,8 @@ implemented and verified in `230a348`; stage 4.4 guarded process tests are appro
 implemented and verified in `2510bdd`; stage 4.5 runtime packaging is approved,
 implemented and verified in `4fd7856`; stage 4.6 canonical runtime/startup is
 approved, implemented and verified in `f92a8ed`; stage 4.7 development/reload is
-approved, implemented and verified; stages 4.8–4.11 remain pending.
+approved, implemented and verified; stage 4.8 bounded runtime-image smoke is
+approved, implemented and verified; stages 4.9–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -146,6 +147,8 @@ on 2026-10-29 and is implemented with native Compose/test-target evidence. See t
 Stage 4.7 P4-08/P4-09 watchers and P4-07/P4-11 development/injection details,
 including native SIGINT stop after a verified TERM-chain drain failure, are
 approved and implemented; see the [4.7 approval](../technical/technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29).
+Stage 4.8's narrow verifier, exact-test injection/alias and bounded fixture choices
+are approved; see the [4.8 approval](../technical/technical-direction.md#step-48-bounded-image-smoke-approval-2026-10-29).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -157,7 +160,7 @@ decisions. P4-01 remains retired.
 | P4-04 — Lifecycle | A lifecycle module owns exactly one `Database`, one app and one idempotent close operation. Accept an optional async route-registration callback receiving that app and owned DB, before readiness/listen. A thin process entry validates configuration and installs signal handlers. Close resources on every partial-startup failure. | Listening while initially unready changes fail-fast behavior. Constructing another pool in Step 5 would duplicate ownership; the registration callback supplies an explicit extension point. |
 | P4-05 — HTTP | Use the live/ready contracts below, 16 KiB body limit, 10s request-receive timeout, `forceCloseConnections: "idle"`, and `trustProxy: false`. Each readiness request uses a current bounded DB check. | One health route loses the process/dependency distinction. Cached readiness reduces queries but needs freshness and recovery policies. |
 | P4-06 — Errors/logs | Use Fastify's JSON logger, server-generated request IDs, fixed failure categories and allowlisted request metadata. Disable default request logging, which includes raw URLs; never log environment objects, bodies, headers, raw errors or causes. | Header redaction alone leaves query strings and exception messages exposed. A second logging package is unnecessary. |
-| P4-07 — Configuration/launch | Approved direction: reuse `.env.compose`, native Compose commands and existing Doppler injection. Stage 4.6 implements approved `api-up` in `database.sh` for runtime injection; stage 4.7 implements foreground `api-dev`; bounded `verify-api.sh` remains pending; ordinary build/logs/stop use Compose directly. Ordinary tooling/DB commands remain port-free. | A general API dispatcher or duplicated secret-fetch implementation adds maintenance and diverges from the accepted standard Compose direction. |
+| P4-07 — Configuration/launch | Approved direction: reuse `.env.compose`, native Compose commands and existing Doppler injection. Stage 4.6 implements approved `api-up` in `database.sh` for runtime injection; stage 4.7 implements foreground `api-dev`; stage 4.8 implements bounded `verify-api.sh` and exact-test injection; ordinary build/logs/stop use Compose directly. Ordinary tooling/DB commands remain port-free. | A general API dispatcher or duplicated secret-fetch implementation adds maintenance and diverges from the accepted standard Compose direction. |
 | P4-08 — Emit/watch | Approved/implemented through 4.7: use TypeScript for finite builds, compiled DB exports, a DB `tsc --watch` task and native Node watch with the already installed tsx loader for API source. Clean each package's own `dist` before finite builds. | `tsx watch` is the original candidate but has a 5s child-kill timer, shorter than the proposed API shutdown budget. Source DB exports break the agreed compiled boundary; bundling adds tooling. |
 | P4-09 — Task graph | Approved/implemented tasks through 4.7 declare actual API dependencies, cached finite builds/checks and uncached persistent dev/start tasks. Add a separate uncached API process-test command; keep live resources outside ordinary checks. | Putting live checks into `pnpm check` adds DB/Doppler prerequisites to offline work. Making a persistent watcher a build prerequisite prevents finite completion. |
 | P4-10 — Evidence | Test the factory/configuration offline; test built Node processes and current DB behavior against the explicit test target. Approved amendments require shared-target serialization and project-wide shutdown proof. Add only the harness needed to prove Step 4. | Injection tests alone cannot prove bind failures, ESM exports, signal forwarding or released process resources. Deferring all process tests to Step 6 leaves Step 4 incomplete. |
@@ -188,8 +191,9 @@ AC4-11 has [stage 4.5 packaging evidence](../technical/step-4-verification-2026-
 all compiled files/declarations and portable production links. AC4-01 now has
 [4.6 native Compose/authenticated runtime evidence](../technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
 AC4-02 has [4.7 development/reload evidence](../technical/step-4-verification-2026-10-28.md#stage-47--development-image-and-reload), including compiler isolation/recovery and in-flight foreground interruption.
-AC4-13 has runtime/development proof and remains partial until the 4.8 smoke
-credential path passes; project drain proof stays with 4.10.
+AC4-13 and AC4-15 are complete with [4.8 smoke/security/deadline evidence](../technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke),
+current runtime/development credential proof and final container integration checks.
+Project drain proof stays with 4.10.
 
 - [x] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
@@ -232,7 +236,7 @@ credential path passes; project drain proof stays with 4.10.
   `dist/**` outputs are declared. Finite work restores/reuses valid cache entries;
   source changes invalidate consumers. Persistent/live work is uncached and no
   finite task depends on a persistent watcher.
-- [ ] **AC4-13 — Environment boundary:** matching Doppler dev/test configs supply
+- [x] **AC4-13 — Environment boundary:** matching Doppler dev/test configs supply
   only the selected password at runtime. Missing access/config/key, stale ambient
   values and fallback attempts cannot run an unintended target or leak secrets.
   Reuse saved nonsecret settings without required exports, ignore plain `.env`,
@@ -243,7 +247,7 @@ credential path passes; project drain proof stays with 4.10.
   secret fetching/connecting. Schema resets, API tests, smoke and outages sharing
   a test target run sequentially. Normal empty suites still fail; unit checks
   require no live DB.
-- [ ] **AC4-15 — Automated local proof:** `./scripts/database.sh api-verify test` exercises
+- [x] **AC4-15 — Automated local proof:** `./scripts/database.sh api-verify test` exercises
   the built API image over host HTTP, checks exact health responses, signals
   shutdown and removes every owned probe container on success/failure. It exits
   0 only after all assertions pass and reports bounded, sanitized failures.
@@ -471,7 +475,7 @@ owner's development project. Normal stop/down preserves named volumes.
 in `scripts/database.sh`. Recommend narrowly allowlisted operations
 `api-up TARGET`, `api-dev TARGET` and `api-verify test`: map them only to the corresponding
 native Compose payload or verifier, not arbitrary host callbacks. `api-up` is
-implemented in 4.6; `api-dev` is implemented in 4.7; `api-verify` remains proposed for 4.8. Built startup
+implemented in 4.6; `api-dev` is implemented in 4.7; `api-verify` is implemented in 4.8. Built startup
 executes the image's Node CMD, never `tooling.sh _run-db` or root `pnpm start`.
 Keep the tooling runner for checks/dependency maintenance and process tests.
 
@@ -742,7 +746,7 @@ security-bearing exceptions call only the existing Doppler boundary:
 Runtime is implemented in 4.6 and development in 4.7: build/stop select both real
 services, `api-up`/`api-dev` select the explicit target, logs select `api` (use
 native `logs --follow api-dev` for development), and existing `docker:ps` supplies
-status. Only `api-verify` and its alias remain unavailable until 4.8. Current usable commands are in the
+status. Stage 4.8 adds exact-test-only `api-verify` and its direct host alias. Current usable commands are in the
 [README](../../README.md#api-runtime-image). There is no general dispatcher. Existing
 `docker:ps`, `docker:stop` and `docker:prune` cover the API through full-profile
 selection; their project-wide stop/down commands must honor service grace periods.
@@ -811,10 +815,13 @@ variables, never command arguments or output.
 `scripts/verify-api.sh` uses the existing host `/usr/bin/curl`, bounded requests
 and exact status/body assertions. Give readiness polling 30s, each request at
 most 8s, application shutdown 10s plus 5s Docker overhead, and the whole smoke
-operation at most 60s. Capture the SIGTERM exit outcome and remove only the owned
+operation at most 60s. Assert the inherited successful SIGTERM exit 143 and remove only the owned
 probe in a trap on success/failure/interruption; force removal only after its
 cleanup deadline. Print safe image/container identity and assertion results.
-Exit 0 only after health and shutdown assertions pass. This is a narrow
+The verifier exits 0 only after health, shutdown and confirmed removal assertions pass.
+Its 45s work watchdog reserves the remaining 15s for owned cleanup; per-client
+bounds also respect the absolute 60s deadline. Ownership labels protect unrelated
+containers, and exact-name inventory failure cannot certify probe absence. This is a narrow
 verification harness; Step 6 extends it with tRPC checks.
 
 For live editing after the existing one-time tooling setup, stop built mode and
@@ -907,8 +914,8 @@ choices are also approved and implemented with offline and real process evidence
 Stage 4.5 P4-11 runtime packaging and stage 4.6 P4-07/P4-11 runtime Compose,
 health, launcher and native aliases are also approved and implemented. Stage 4.7
 watch/development/tasks/injection and its native SIGINT stop amendment are approved
-and implemented. Later smoke recommendations retain their approval gates. Current
-delivered scope is stages 4.1–4.7; the original planning update remains a dated
+and implemented. Stage 4.8 smoke/helper/test choices are also approved; its
+verification is complete. Current delivered scope is stages 4.1–4.8; the original planning update remains a dated
 record of no installation or implementation.
 Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.

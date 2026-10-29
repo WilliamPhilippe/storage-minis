@@ -5,6 +5,504 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.8 — Bounded runtime-image smoke
+
+**State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
+Overall Step 4 remains in progress; stages 4.9–4.11 have not started.
+Completion commit subject: `test(api): add bounded runtime image smoke verification`.
+Resolve its hash with `git log -1 --format=%H --grep="^test(api): add bounded runtime image smoke verification$"`.
+
+The following initial checkpoint/history preserves the session's earlier states.
+
+### Initial checkpoint (2026-10-29, America/Maceio)
+
+- Branch verified: `WilliamPhilippe/step-4-implementation-plan`; initial tree
+  clean, HEAD `0ac5a74`. Completed 4.1–4.7 commits/evidence present. Current
+  application/schema/lockfile/image inputs match the 4.7 handoff; inspect/recheck
+  changed launcher paths rather than rerunning unrelated historical fixtures.
+- Read AGENTS, README Docker/PostgreSQL/lifecycle, stage execution/completion/
+  checkpoint rules and 4.8 card, parent local verification/bounds/credential/
+  isolation matrix, foundation and standard Compose/one-time setup records.
+  Live T06 #26 is open with no comments; prerequisites/business scope unchanged.
+- Owner explicitly approved the concrete Bash/Compose verifier, direct alias,
+  allowlisted diagnostics, bounded ownership/cleanup and focused/live fixture
+  recommendation in this session. No dependency/pin/model/migration change.
+- Docker inspection required sandbox escalation and passed: only original stopped
+  development `7d69a3e26bab` and test `dde80d86c88f` containers; no active test
+  consumers, API/watchers or owned fixture. Saved project `storage-minis-beijing`,
+  ports 5433/5434. No secret fetched or source fixture applied.
+- Pending: implement resource protection from the first version; focused security/
+  shell/strict checks; repeat actual image smoke uncached, failure/collision/
+  interruption/deadline fixtures; inspect identity/mounts/ports/secret boundaries;
+  `./scripts/tooling.sh run pnpm check`; docs validation and local commit.
+- Live plan: exclusively start/authenticate test PostgreSQL, no schema reset or
+  migration; no concurrent schema/API/outage consumer. Probes get unique owned
+  names and Docker-assigned loopback ports (explicit collision fixture separately).
+  Requests <=8s, readiness <=30s, shutdown/cleanup <=15s, operation <=60s.
+  Temporary host fixtures stay under `/private/tmp`; no managed Doppler edit.
+  Stop only stage-owned probes/clients and return test DB to initial stopped state;
+  preserve development container/data, six volumes and saved settings.
+- Exact next action: record scoped approval and implement only 4.8, then focused
+  tests. Checkpoint with exact fixture ownership/ports/deadlines/cleanup before
+  every live scenario. AC4-13/15 stay open until all current evidence passes.
+
+### Checkpoint history
+
+- First focused attempt found a TypeScript template escaping error in the new
+  fixture only; corrected before live work. Focused final command
+  `./scripts/tooling.sh run pnpm exec vitest run --project db-unit src/verify-api.test.ts src/launcher.test.ts src/docker-launcher.test.ts src/local-setup.test.ts src/diagnostics.test.ts`
+  passed **41 tests / five files** (18.42s). Includes exact tuple/pre-fetch guards,
+  special-character selected password, missing key/network/config/token refusal,
+  stream sentinels, owned/foreign cleanup, zero-mount refusal, exact bodies,
+  request/overall watchdog cancellation and TERM/INT. Bash syntax passed.
+- Pre-live checkpoint: no active test consumer or watcher; original test container
+  `dde80d86c88f` and development `7d69a3e26bab` stopped. Current image tag/index
+  `storage-minis-beijing-api:step4` / `sha256:5d920420abf84e5114c6e757665f011a0445c842015e16ea17b25fa43f66ad9c`
+  matches final 4.7 packaging evidence. `git diff 2510bdd..HEAD -- apps/api/src packages/db/src/client.ts packages/db/src/schema pnpm-lock.yaml`
+  is empty: inherited process/schema behavior still current. Live T04 #23 open,
+  no comments, no changed operations decision. Next: `database.sh up test`
+  (90s outer bound), then first `database.sh api-verify test` (65s outer bound).
+  Unique label/name, deliberate dynamic loopback port; 8s request/30s readiness/
+  15s cleanup/60s overall bounds installed. Helper removes only its owned probe;
+  final harness stops only test DB back to initial state. No source fixture,
+  managed-secret edit, migration, reset or development startup.
+
+- First actual smoke authenticated and proved exact HTTP, image/mount/user/service
+  and dynamic loopback publication: container
+  `325a1df9f63f496114bcbc180a117b272e440f9805fcdd0d18729c91010fa149`, port 55000.
+  Shutdown assertion failed; owned probe removed. Added strictly typed safe
+  shutdown metadata to identify the observed failure; no acceptance claimed.
+  Before next live probe: same exclusive running test DB, no surviving probe or
+  source fixture, unchanged image. Rerun only smoke under the same bounds/cleanup
+  to inspect numeric exit/running/OOM facts, never raw logs or environment.
+
+- Second smoke identified `false 143 false` (stopped, conventional SIGTERM
+  status, no OOM), container
+  `a2b5b7587cbe0af49d00cae8cb7324a1c5863fdbe919bc4bc66523c8c48f8257`, port 55001,
+  then removed it. Initial verifier/test expected 0 incorrectly; corrected to
+  existing approved parent lifecycle contract/4.6 evidence: clean TERM is **143**.
+  This changes no application behavior or decision. Before repeat success fixtures:
+  test DB remains exclusively running, no owned probes; same image and deadlines.
+  Next run two unchanged actual smoke commands sequentially and record both.
+
+- Before live fixture **bad**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified bad: exit 1, 1.86s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-87963-15820-13303
+Runtime image: sha256:5d920420abf84e5114c6e757665f011a0445c842015e16ea17b25fa43f66ad9c
+Container: 4e4bb83cc6098f28dd3faed7c587ad08fcb1e98a404859d9767f05b75d435c9a
+Loopback port: 55004
+Probe exited before readiness (configuration or database authentication).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **collision**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Collision listener owned by host harness PID 87950, loopback port 62434; it remains open through launch refusal. No HTTP readiness accepted from it. Cleanup closes this socket only.
+
+- Verified collision: exit 1, 0.84s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-88048-6193-22842
+Probe launch failed (image, Docker or port collision).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **SIGTERM**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGTERM probe inspected in memory: `storage-minis-beijing-api-verify-88096-12070-6745`, container `033d13f3b66f4121b4dfa97e06872918070a5e646b754f66edee571818c9cd6b`, image `sha256:5d920420abf84e5114c6e757665f011a0445c842015e16ea17b25fa43f66ad9c`, loopback 55005, host launcher PID 88081. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGTERM to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGTERM: exit 143, 3.16s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-88096-12070-6745
+Owned probe removed.
+
+```
+
+- Before live fixture **SIGINT**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGINT probe inspected in memory: `storage-minis-beijing-api-verify-88153-6560-14454`, container `a65d7f9eee311aa915fdd7af772c9d55fd9699a07f42b4903591af8158a5fb54`, image `sha256:5d920420abf84e5114c6e757665f011a0445c842015e16ea17b25fa43f66ad9c`, loopback 55006, host launcher PID 88144. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGINT to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGINT: exit 130, 3.07s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-88153-6560-14454
+Owned probe removed.
+
+```
+
+- Live harness final resource inventory: no owned probe containers. Test DB remains running exclusively pending subsequent bounded deadline/check scenarios; development DB untouched/stopped. No source fixture exists.
+
+- Two corrected unchanged actual commands passed with clean TERM **143** and
+  helper exit 0: `be1b285f587c1807e0a189668f7745bca9fb156bb15b57cedafb0b1ed6cf347c`
+  / 55002 and `07e15e91db0be346d9ad3d6ec768c39d87a5573e3c73551825220973b80566d9`
+  / 55003. Both removed their owned probes. First milestone `pnpm check` passed
+  105 tests/12 files, all seven tasks (20.282s); later cleanup/test strengthening
+  requires affected rerun before completion.
+- Strengthened final cleanup: exact-name inventory must succeed and show absence;
+  Docker unavailability cannot masquerade as absence. A cancelled launch gets a
+  bounded settle check; per-client deadlines are capped by the absolute operation
+  budget. Added cleanup-inventory failure/force-after-deadline/explicit-port tests.
+  No new architecture, runtime policy or credential boundary.
+- Before final image build/live fixtures: the root alias changes a Docker build
+  input even though runtime application/dependencies are unchanged. Test files
+  themselves are excluded by `.dockerignore`. Rebuild
+  canonical runtime `docker compose --env-file .env.compose --file compose.yaml build api`
+  without DB/Doppler inputs, outer 600s bound; record final identity, then rerun
+  success twice and failure/interruption paths against it. Test DB remains running
+  exclusively; development stays stopped, no probe/watcher/source fixture. No
+  pull/build occurs inside the verifier itself.
+
+- Final secret-free native runtime rebuild passed frozen install, finite API/DB
+  build and portable 64-package production deployment. Image index
+  `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`,
+  config `sha256:8b7a7d6fc7eb7f4aa2d6f3f2790f3986423b0972a361c6061fd87df3601a9320`.
+  No dependency/pin/compiled application changes. Native `compose run --help`
+  confirms no `--no-build` flag; explicit image preinspection, omitted `--build`
+  and `--pull never` guarantee use of the existing local runtime.
+  Next rerun all final live smoke paths under the strengthened cleanup guard;
+  harness checkpoints every scenario with exact ownership/ports/cleanup.
+
+- Before live fixture **success1**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified success1: exit 0, 2.15s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89558-7433-12879
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: 0fa3b6ff8c3a4d4f2c8a3b6420de2db61b0055f7c41be81a55db5f52f1950636
+Loopback port: 55007
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **success2**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified success2: exit 0, 1.54s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89646-31482-23767
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: 06e140fdd6c6d19c39378b672a9476a2ef747896a5e83d82996e77d22cdd2de9
+Loopback port: 55008
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **explicit**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Explicit free loopback port selected for this invocation: 63013; no listener retained. Collision would fail before HTTP.
+
+- Verified explicit: exit 0, 1.88s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89733-22763-1887
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: 8eeaf7fc5785898be004d9245301bbb85a621abc48012ce5c113d05549949ca2
+Loopback port: 63013
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **bad**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified bad: exit 1, 1.34s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89820-14045-12774
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: ae9e3ab77c481d6fb4c15c3e3c2ff844e6066a7e0320aaebeac498ee043ef43e
+Loopback port: 55009
+Probe exited before readiness (configuration or database authentication).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **collision**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Collision listener owned by host harness PID 89545, loopback port 63028; it remains open through launch refusal. No HTTP readiness accepted from it. Cleanup closes this socket only.
+
+- Verified collision: exit 1, 0.90s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89900-1691-18265
+Probe launch failed (image, Docker or port collision).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **SIGTERM**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGTERM probe inspected in memory: `storage-minis-beijing-api-verify-89955-27133-23275`, container `0cba2a3541f3eb8e58d49f22e9a856acf3df9662e70c22d5db77f3b156892b54`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, loopback 55010, host launcher PID 89940. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGTERM to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGTERM: exit 143, 3.17s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-89955-27133-23275
+Owned probe removed.
+
+```
+
+- Before live fixture **SIGINT**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGINT probe inspected in memory: `storage-minis-beijing-api-verify-90017-7511-17972`, container `0e75b4905cb8692f3781ae1927e189facea430845675b48a22041010fa91d2e7`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, loopback 55011, host launcher PID 90008. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGINT to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGINT: exit 130, 3.17s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90017-7511-17972
+Owned probe removed.
+
+```
+
+- Live harness final resource inventory: no owned probe containers. Test DB remains running exclusively pending subsequent bounded deadline/check scenarios; development DB untouched/stopped. No source fixture exists.
+
+- Strengthened focused suite passed **44 tests / five files**, 20.77s. Added
+  actual (unaccelerated) 30s readiness-deadline proof for the final milestone;
+  earlier watchdog fixtures accelerate only timer scheduling, retaining real
+  cancellation/cleanup paths and the real configured constants.
+- Before host request-deadline fixture: `/usr/bin/curl` targets only an owned
+  loopback TCP peer that accepts HTTP and deliberately withholds its response;
+  no API/image/source/DB modification. Host harness selects a dynamic port,
+  request flags match the verifier (`--disable --silent --noproxy '*' --max-time 8
+  --max-filesize 1024`), outer process deadline 10s. Finally close accepted/listening
+  sockets and join the peer thread. Expected curl 28 in approximately 8s.
+
+- Initial host socket creation was sandbox-denied before any resource existed; escalated the same authorized fixture. Actual host curl deadline passed: exit 28, 8.02s, owned loopback port 63047; no response body printed. Accepted/listening sockets closed and peer joined.
+
+- Final cleanup review caps every client by its phase deadline: 15s total,
+  with the final three seconds reserved for force removal/verified absence after
+  the graceful-cleanup deadline. This prevents cancelled-launch settle time from
+  extending total cleanup. Ownership is checked before removal; unavailable
+  exact-name inventory makes the command fail. No changed application contract.
+  Before final rerun: same exclusive test DB, final rebuilt runtime image, no
+  probe/host socket/source fixture; `/private/tmp/storage-minis-stage48-live.py`
+  records each live fixture separately. Next final live run, required milestone,
+  then stop test DB and prove original resources/settings/volumes preserved.
+
+- Before live fixture **success1**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified success1: exit 0, 1.46s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90289-14432-25282
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: 5378553be5e7725738326278ce9907f4bd1fdec376469fd552d2b33ae2b03fac
+Loopback port: 55012
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **success2**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified success2: exit 0, 1.88s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90381-24369-23159
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: c68424213643442b5d370a433655cd9ab4d0bc8b11338c2825b8986b9c2665d3
+Loopback port: 55013
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **explicit**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Explicit free loopback port selected for this invocation: 63099; no listener retained. Collision would fail before HTTP.
+
+- Verified explicit: exit 0, 2.13s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90466-14741-32698
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: fed552e56c6270062960da9103448cd819ccebed1666234b6164fc3de17a30c3
+Loopback port: 63099
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+
+```
+
+- Before live fixture **bad**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Verified bad: exit 1, 2.53s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90600-10991-26140
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: a3dc5a51c57f12e2161bad3c2a631707c2fb9e2df672c624cdfb518d0485bc08
+Loopback port: 55014
+Probe exited before readiness (configuration or database authentication).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **collision**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Collision listener owned by host harness PID 90276, loopback port 63123; it remains open through launch refusal. No HTTP readiness accepted from it. Cleanup closes this socket only.
+
+- Verified collision: exit 1, 1.00s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90704-26379-32112
+Probe launch failed (image, Docker or port collision).
+Owned probe removed.
+Database command failed. Check target, Doppler login/config/key/network, Docker and retained-volume credentials.
+```
+
+- Before live fixture **SIGTERM**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGTERM probe inspected in memory: `storage-minis-beijing-api-verify-90761-19961-5703`, container `f3bffa4141a57983adcaff2dcbd006d5f677fcf46343f94be00aa44f17a8d1fa`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, loopback 55015, host launcher PID 90752. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGTERM to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGTERM: exit 143, 3.21s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90761-19961-5703
+Owned probe removed.
+
+```
+
+- Before live fixture **SIGINT**: exclusive test DB `dde80d86c88f` running; no other consumer/probe. Host harness `/private/tmp/storage-minis-stage48-live.py`, wrapper changes only the selected process environment or delays one metadata read. No source/image/managed-Doppler changes. Unique probe ownership and dynamic loopback port, except collision with a harness-owned host socket. Helper request/readiness/cleanup/overall bounds 8/30/15/60s; harness outer 65s (signal path 20s after delivery). Finally verify no probe, close owned socket; preserve test DB until all smoke fixtures finish, then return it to stopped state. Next execute this fixture only.
+
+- Fixture SIGINT probe inspected in memory: `storage-minis-beijing-api-verify-90823-17177-17458`, container `175a5d0a16177af99c1a5071cce5fec05adb30e75bc01d85cf7ba672f97e2f09`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, loopback 55016, host launcher PID 90814. Exact test tuple/`NODE_ENV=test`, selected password only, nonroot/plain Node, zero mounts; no Doppler/raw managed keys. Deliver SIGINT to outer launcher now; cleanup owns only this probe.
+
+- Verified SIGINT: exit 130, 3.18s, no owned probe; stdout/stderr sentinel absent. Safe helper transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-90823-17177-17458
+Owned probe removed.
+
+```
+
+- Live harness final resource inventory: no owned probe containers. Test DB remains running exclusively pending subsequent bounded deadline/check scenarios; development DB untouched/stopped. No source fixture exists.
+
+- Before final credential-refusal check `api-up test` / wrong-config: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-up test` wrong-config: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-up test` / token: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-up test` token: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-up test` / missing-login: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-up test` missing-login: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-dev test` / wrong-config: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-dev test` wrong-config: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-dev test` / token: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-dev test` token: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-dev test` / missing-login: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-dev test` missing-login: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-verify test` / wrong-config: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-verify test` wrong-config: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-verify test` / token: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-verify test` token: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final credential-refusal check `api-verify test` / missing-login: no new resource expected, existing exclusive test DB only. Fresh base HOME/PATH; deliberate nonsecret override selects failure. Deadline 15s; no managed edit/fallback, no API startup or cleanup action permitted.
+
+- Verified `api-verify test` missing-login: nonzero, sanitized refusal, no probe or payload created.
+
+- Before final fresh-environment smoke: `env -i HOME="$HOME" PATH="$PATH" ./scripts/database.sh api-verify test`; exact existing saved project/settings and dedicated managed login, no required exports/ambient PG or API settings. Exclusive test DB, dynamic loopback port, standard 8/30/15/60s bounds, outer 65s. Helper removes owned probe. Finally stop only original test service, verify original DB identities, six volumes, no probe/listener/source fixture.
+
+- Final fresh-environment smoke passed; published listener refused after verified probe removal. Transcript:
+
+```text
+API verification probe: storage-minis-beijing-api-verify-91008-16520-6560
+Runtime image: sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0
+Container: 09e2e5a90b25f7d0539bc631c036a9b67b2ac6a564470e1f4289a290aae13327
+Loopback port: 55017
+Exact host HTTP 200 live/ready bodies passed.
+SIGTERM exit 143 passed.
+Owned probe removed.
+```
+
+- Final native `docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test` passed. Original development `7d69a3e26bab` and test `dde80d86c88f` both stopped; only those two project containers remain. All six expected volumes and saved settings preserved; no owned probe, API/dev watcher/client/peer/listener/source fixture remains. Test tmpfs loss on stop is intentional; no schema reset, migration, business-table write or managed secret change. Remaining work: final aggregate result, synchronized completion summaries/docs validation, local stage commit and post-commit status; no 4.9/push/PR.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Implemented the [approved narrow smoke helper and tests](technical-direction.md#step-48-bounded-image-smoke-approval-2026-10-29).
+`scripts/verify-api.sh` owns one unique labelled canonical runtime probe; it
+checks the exact injected test tuple, existing image identity, nonroot/zero-mount
+container identity, explicit dynamic loopback binding, exact host HTTP status/body
+and inherited clean SIGTERM **143**. The helper exits **0** only after those
+assertions and confirmed probe removal. `database.sh api-verify test` reuses the
+single selected-key/no-fallback Doppler boundary; `pnpm docker:api:verify` calls it
+directly outside Turbo. No Compose service/file/volume, dependency, pin, schema,
+migration, business endpoint or lifecycle dispatcher was added.
+
+| Check / exact command | Final result |
+| --- | --- |
+| `git branch --show-current`; `git status --short`; `git log -12 --oneline` | Required shared branch, initially clean tree, 4.1–4.7 complete through `0ac5a74`; no other branch/worktree. |
+| `gh issue view 26 --repo WilliamPhilippe/storage-minis-be --json number,title,state,body,comments`; same for `23` | Open, no comments; technical/business/production prerequisites preserved. No backlog mutation. |
+| `bash -n scripts/database.sh scripts/verify-api.sh`; `git diff --check` | Passed. Host Bash 3.2 actual smoke and container Bash fixture paths both exercised. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project db-unit src/verify-api.test.ts src/launcher.test.ts src/docker-launcher.test.ts src/local-setup.test.ts src/diagnostics.test.ts` | Focused 44 tests/five files passed after cleanup strengthening; final additional readiness test passes in the aggregate below. Missing key/fetch/config/token refusal, special-character password, runtime/dev/smoke boundaries and safe diagnostic fixtures remain current. |
+| Fresh `HOME`/`PATH` only native `docker compose --env-file .env.compose --file compose.yaml build api` via Python `subprocess.run(..., timeout=600)` | Frozen install, finite API/DB builds and portable production package passed without DB/Doppler credentials. Final image index `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, config `sha256:8b7a7d6fc7eb7f4aa2d6f3f2790f3986423b0972a361c6061fd87df3601a9320`. |
+| `./scripts/database.sh up test`; sequential `./scripts/database.sh api-verify test` twice unchanged; `/private/tmp/storage-minis-stage48-live.py` | Final helper/image passed repeat success (1.46s/1.88s), explicit free port (2.13s), bad injected password (nonzero, 2.53s), collision (nonzero, 1.00s), outer TERM (143, 3.21s) and INT (130, 3.18s). Each scenario's probe IDs/ports/transcript/cleanup are checkpointed above; no cache/build/pull/dependency or schema consumer overlaps. |
+| In-memory inspection of real interrupted probes | Actual expected image, plain Node/nonroot, `NODE_ENV=test`, exact test tuple, selected password only, no Doppler/raw managed keys or URL, zero source/dependency mounts and one host-loopback publication. Raw stdout/stderr password sentinels injected by the wrapper never reached either verifier stream. |
+| Host `/usr/bin/curl` against owned nonresponding loopback peer | Actual request timeout exit 28 in 8.02s; peer/socket/thread cleaned. Unit scenarios exercise request-child cancellation, overall watchdog cancellation, foreign ownership refusal, force only after graceful-cleanup deadline, failed-inventory nonzero and explicit-port mismatch. Actual 30s readiness test passed in 30.095s. |
+| `python3 /private/tmp/storage-minis-stage48-final.py` | Real wrong-config/token/missing-login refusals passed for runtime, dev and smoke. Fresh HOME/PATH-only smoke passed with saved settings, authenticated health, image/port/exit/removal and listener release. Original DB identities, six volumes and saved settings preserved. |
+| `./scripts/tooling.sh run pnpm check` (final implementation) | **109 tests / 12 files passed**, all **seven tasks successful**, zero cached tasks, 54.651s. Strict API/DB/root types, ESLint, Prettier and DB finite build passed. No live DB/Doppler prerequisite for ordinary checks. |
+
+AC4-13 and AC4-15 are complete: unchanged 4.5 packaging and 4.6/4.7 runtime/dev
+proof remains applicable, both credential paths were rechecked, and the new smoke
+path now has complete current security/image/HTTP/signal/cleanup/deadline evidence.
+Initial template parsing and wrong zero-exit expectation failures were corrected
+and rerun; none is deferred. AC4-06/07/14 outage/serialization completion remains
+4.9, AC4-09/17 project drain remains 4.10, finite cache/final handoff remains 4.11.
+Schema/process suites were not rerun: their application/schema/lockfile inputs
+remain unchanged and predecessor evidence is current; this stage's test consumers
+were exclusive and sequential. No new service-outage experiment was started.
+
+All owned probes, API/dev workers, clients and host sockets are gone. Only original
+stopped development/test DB containers remain; all six volumes and `.env.compose`
+are preserved. Temporary nonsecret harness scripts remain under `/private/tmp`,
+outside Git; they contain no managed credentials. No repository source fixture
+was needed. Ignored finite outputs/cache remain as normal tooling artifacts.
+
+Current status/approval summaries are synchronized in parent/stage plans,
+foundation guide, README, technical direction, local-development and AGENTS;
+dated predecessor records are preserved. Commit scope is exactly this stage's
+helper/injection/direct alias, focused tests and those necessary documents.
+Exact next action: finish documentation/diff validation, stage these files and
+execute the recorded local Conventional Commit, resolve its hash, verify
+`git status --short`, then stop. Stage 4.9 requires a new assignment; no push/PR
+is authorized or performed.
+
+- Final documentation/diff gate passed: `python3 /private/tmp/storage-minis-validate-stage48-docs.py`
+  checked eight Markdown files, 30 changed relative links/anchors, 61 tables,
+  paired fences, stage/approval summaries and all 18 acceptance IDs, exactly ten
+  complete including AC4-13/15. `bash -n scripts/database.sh scripts/verify-api.sh`
+  and `git diff --check` passed. Final diff scope is the 13 stage files below;
+  initial tree was clean, no unrelated work exists. All required checks are
+  complete, no live resources remain. Next stage exact files, inspect staged
+  whitespace/stat, execute `test(api): add bounded runtime image smoke verification`,
+  resolve actual hash and verify post-commit status; then stop.
+
 ## Stage 4.7 — Development image and reload
 
 **State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).

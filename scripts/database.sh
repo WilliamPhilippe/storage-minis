@@ -7,7 +7,7 @@ fail() {
 }
 usage() {
   printf '%s\n' \
-    'Usage: database.sh {up TARGET|api-up TARGET|api-dev TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|reset TARGET --confirm PROJECT}' \
+    'Usage: database.sh {up TARGET|api-up TARGET|api-dev TARGET|api-verify test|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|reset TARGET --confirm PROJECT}' \
     'TARGET is dev or test. psql is noninteractive; use -c SQL.'
 }
 
@@ -57,7 +57,7 @@ operation=$1; shift
 target=""
 case "$operation" in
   -h|--help) usage; exit 0 ;;
-  up|api-up|api-dev|check|psql|reset|run)
+  up|api-up|api-dev|api-verify|check|psql|reset|run)
     [[ $# -ge 1 ]] || { usage >&2; exit 2; }
     target=$1; shift
     [[ $target == dev || $target == test ]] || fail 'Target must be dev or test.'
@@ -69,8 +69,17 @@ case "$operation" in
     esac ;;
   *) usage >&2; exit 2 ;;
 esac
-if [[ $operation == api-up || $operation == api-dev ]]; then
-  export API_HOST_PORT=${API_HOST_PORT-3000} LOG_LEVEL=${LOG_LEVEL-info}
+if [[ $operation == api-verify ]]; then
+  [[ $target == test ]] || fail 'API verification requires the explicit test target.'
+  if [[ ${API_VERIFY_HOST_PORT+x} ]]; then
+    [[ $API_VERIFY_HOST_PORT =~ ^[1-9][0-9]{0,4}$ ]] && ((API_VERIFY_HOST_PORT <= 65535)) ||
+      fail 'API_VERIFY_HOST_PORT must be an integer in 1–65535 without leading zeros.'
+  fi
+  unset API_HOST_PORT
+fi
+if [[ $operation == api-up || $operation == api-dev || $operation == api-verify ]]; then
+  export LOG_LEVEL=${LOG_LEVEL-info}
+  export API_HOST_PORT=${API_HOST_PORT-3000}
   [[ $API_HOST_PORT =~ ^[1-9][0-9]{0,4}$ ]] && ((API_HOST_PORT <= 65535)) ||
     fail 'API_HOST_PORT must be an integer in 1–65535 without leading zeros.'
   case "$LOG_LEVEL" in
@@ -121,7 +130,7 @@ fi
 # Only DB-bearing commands fetch secrets. Remove ambient values before Doppler
 # runs so a missing managed key cannot inherit an old password.
 case "$operation" in
-  up|api-up|api-dev|check|psql|run)
+  up|api-up|api-dev|api-verify|check|psql|run)
     if [[ $injected -eq 0 ]]; then
       [[ -z ${DOPPLER_TOKEN:-} ]] || fail 'Unset DOPPLER_TOKEN; checkout-scoped browser login is required.'
       [[ ${DOPPLER_PROJECT:-storage-minis} == storage-minis && ${DOPPLER_CONFIG:-$target} == "$target" ]] ||
@@ -199,13 +208,16 @@ case "$operation" in
     printf '%s\n' "$target database authentication and identity passed."
     ;;
   psql) sql_client "$@" ;;
-  run|api-up|api-dev)
+  run|api-up|api-dev|api-verify)
     password=${!secret_key}
     for key in ${!PG@}; do unset "$key"; done
     unset DATABASE_URL POSTGRES_PASSWORD POSTGRES_TEST_PASSWORD
     export DB_TARGET=$target PGHOST=$service PGPORT=5432 PGDATABASE=$database PGUSER=postgres
     export PGPASSWORD=$password
     unset password
+    if [[ $operation == api-verify ]]; then
+      exec "$checkout/scripts/verify-api.sh"
+    fi
     if [[ $operation == api-up ]]; then
       exec "${compose[@]}" up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api 2>&1
     fi

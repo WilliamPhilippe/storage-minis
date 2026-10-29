@@ -1,7 +1,7 @@
 # Step 4 — Sequential implementation stages
 
 **Date:** 2026-10-28. **Status:** execution rules approved by the owner;
-stages 4.1–4.7 are complete; stages 4.8–4.11 remain pending. The
+stages 4.1–4.8 are complete; stages 4.9–4.11 remain pending. The
 [Step 4 plan](step-4-fastify-plan-2026-10-28.md) remains authoritative for technical
 contracts, approved amendments, pending choices and AC4-01–AC4-18.
 
@@ -113,7 +113,7 @@ completion owner below can mark the whole criterion complete.
 | [4.5](#45--self-contained-runtime-image) | Portable API runtime image | [Copy 4.5](step-4-fastify-stage-prompts-2026-10-28.md#prompt-45--self-contained-runtime-image) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image) |
 | [4.6](#46--canonical-compose-and-doppler-startup) | Profiled runtime service and secure native startup | [Copy 4.6](step-4-fastify-stage-prompts-2026-10-28.md#prompt-46--canonical-compose-and-doppler-startup) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup) |
 | [4.7](#47--development-image-and-reload) | Development service and API/DB reload | [Copy 4.7](step-4-fastify-stage-prompts-2026-10-28.md#prompt-47--development-image-and-reload) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-47--development-image-and-reload) |
-| [4.8](#48--bounded-runtime-image-smoke) | Automated host HTTP/image/shutdown smoke | [Copy 4.8](step-4-fastify-stage-prompts-2026-10-28.md#prompt-48--bounded-runtime-image-smoke) | Not started | — |
+| [4.8](#48--bounded-runtime-image-smoke) | Automated host HTTP/image/shutdown smoke | [Copy 4.8](step-4-fastify-stage-prompts-2026-10-28.md#prompt-48--bounded-runtime-image-smoke) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke) |
 | [4.9](#49--database-failure-recovery-and-test-isolation) | Real outage/recovery and shared-target sequencing | [Copy 4.9](step-4-fastify-stage-prompts-2026-10-28.md#prompt-49--database-failure-recovery-and-test-isolation) | Not started | — |
 | [4.10](#410--shutdown-through-all-project-paths) | Native project shutdown and cleanup proof | [Copy 4.10](step-4-fastify-stage-prompts-2026-10-28.md#prompt-410--shutdown-through-all-project-paths) | Not started | — |
 | [4.11](#411--cache-verification-documentation-and-final-handoff) | Cache evidence, complete documentation and delivery handoff | [Copy 4.11](step-4-fastify-stage-prompts-2026-10-28.md#prompt-411--cache-verification-documentation-and-final-handoff) | Not started | — |

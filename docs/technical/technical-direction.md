@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.7 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup and development reload with verified in-flight foreground shutdown; overall Step 4 remains in progress, with stages 4.8–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.8 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup development reload with verified in-flight foreground shutdown and bounded automated runtime-image smoke; overall Step 4 remains in progress, with stages 4.9–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -859,6 +859,33 @@ TERM/INT path subsequently passed, draining in 6.63s/6.65s with container exit 0
 and native client statuses 143/130 respectively. See
 [Turbo's pinned wrapper](https://github.com/vercel/turborepo/blob/v2.11.10/packages/turbo/bin/turbo)
 and [Compose stop_signal](https://docs.docker.com/reference/compose-file/services/#stop_signal).
+
+## Step 4.8 bounded image smoke approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the concrete recommendation
+before implementation in the 4.8 session. This covers only the narrow smoke
+helper, exact-test injection/alias and its verification; no new dependencies.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Harness | Bash `scripts/verify-api.sh`, canonical runtime `compose run` with unique owned name/label, no dependencies/build/pull/mounts, `NODE_ENV=test`. Native Compose keeps image/service configuration authoritative. No extra service/file or lifecycle dispatcher. |
+| Boundary | `database.sh api-verify test` validates before fetch, reuses selected-key Doppler injection and exact tuple; direct `docker:api:verify` alias stays outside Turbo. Reject ambient overrides; named password injection only. |
+| Proof/bounds | Docker-assigned loopback port by default, validated explicit port/collision refusal; exact host HTTP bodies/status, image/container identity and SIGTERM exit. Requests 8s, readiness 30s, shutdown/cleanup 15s and total 60s. Install ownership/deadlines/interruption cleanup first; suppress raw Docker/curl streams and print allowlisted diagnostics. |
+| Tests | Existing Vitest launcher fixtures plus bounded temporary host scenarios for repeat uncached success, bad injected credentials without managed edits, collisions, interruption and deadlines. Restore owned resources; serialize shared-test consumers; run container integration `pnpm check`. |
+
+A Node harness adds another host runtime; another Compose service duplicates
+configuration. The narrow shell exception supplies exact assertions/owned cleanup
+that ordinary native startup does not. **Implemented and verified:** repeated
+actual image smoke, dynamic/explicit loopback publication, collision/bad-password
+refusal, real outer TERM/INT cleanup and sanitized streams passed. The inherited
+runtime TERM status is 143; the verifier returns 0 after assertions/removal.
+Requests use an 8s bound, readiness 30s and a 45s work watchdog reserves final
+cleanup within the absolute 60s operation. Cleanup has a 15s phase budget with
+reserved bounded force-removal/absence proof; failed inventory cannot certify
+absence. The final milestone passed 109 tests and all strict checks.
+[Checkpoint and evidence](step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke)
+close AC4-13/15 with current runtime/development/smoke evidence. Overall Step 4
+remains in progress; service outages and native project drain remain later stages.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

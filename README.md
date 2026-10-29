@@ -11,7 +11,8 @@ are implemented and verified with guarded real-DB process tests. Stage 4.5 adds
 a verified portable API runtime image; overall Step 4 remains in progress.
 Stage 4.6 adds optional Compose runtime startup with matching Doppler credentials.
 Stage 4.7 adds the development image and verified API/compiled-DB reload.
-Business operations, the React frontend, automated image smoke and CI remain pending.
+Stage 4.8 adds bounded automated runtime-image smoke with owned-probe cleanup.
+Business operations, the React frontend and CI remain pending.
 Default Docker startup still selects only PostgreSQL.
 
 ## Structure
@@ -142,8 +143,46 @@ Host aliases are `pnpm docker:api:build`, `pnpm docker:api:up` (dev target),
 `pnpm docker:api:logs`, `pnpm docker:api:stop` and existing `pnpm docker:ps`.
 The API gets 15s native stop grace around its 10s application cleanup deadline;
 project-wide commands honor service grace. Full project drain proof remains 4.10.
-Automated smoke remains 4.8; `api-verify` is not available yet. See the
+Automated smoke is available below. See the
 [runtime startup evidence](docs/technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
+
+### Automated API image smoke
+
+Build the runtime image above and finish other test-target consumers first:
+
+```sh
+./scripts/database.sh up test
+./scripts/database.sh api-verify test
+# Repeat unchanged to run a new probe, without a cache:
+./scripts/database.sh api-verify test
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test
+```
+
+The direct host alias is `pnpm docker:api:verify`. This command accepts only
+`test`; it reuses saved settings and the matching managed Doppler password.
+It runs the canonical runtime service as a unique owned one-off container with
+`NODE_ENV=test`, no build/pull/dependencies or source/dependency mounts. No
+migration runs. Keep schema/API tests and outage experiments sequential on this
+shared target. Stop test storage only after all consumers finish.
+
+Docker deliberately selects a dynamic `127.0.0.1` port; the verifier inspects its
+own container and prints the port, image ID and container ID before host HTTP.
+`API_HOST_PORT` does not select it. Use
+`API_VERIFY_HOST_PORT=3001 ./scripts/database.sh api-verify test` to select an
+explicit port; an occupied port fails before HTTP probing. Normal development
+API/DB resources remain independent.
+
+Success requires HTTP 200 and exact bodies `{"status":"ok"}` / `{"status":"ready"}`,
+then the existing successful SIGTERM cleanup code **143** (not OOM/SIGKILL), and
+confirmed removal of the owned probe; the verifier itself exits **0**. Failures
+and TERM/INT also clean up only that probe. Requests take at most 8s, readiness
+polling 30s, shutdown/cleanup 15s, and the whole verifier 60s including cleanup.
+The 45s work watchdog reserves the final 15s for cleanup. Docker/curl raw streams,
+response data, logs and credentials are suppressed; fixed diagnostics identify
+failed assertions. Missing images require an explicit rebuild. On a Docker
+failure that prevents verified removal, the command fails and reports the probe
+name for native inspection; restore Docker access and remove only that owned
+probe. See the [4.8 evidence](docs/technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke).
 
 ### API development and reload
 
