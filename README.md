@@ -14,6 +14,8 @@ Stage 4.7 adds the development image and verified API/compiled-DB reload.
 Stage 4.8 adds bounded automated runtime-image smoke with owned-probe cleanup.
 Stage 4.9 verifies live DB socket/service failure and recovery without API restart,
 authenticated unmigrated readiness and exclusive sequential test-target use.
+Stage 4.10 verifies startup interruption, repeated signals, failed/hung cleanup,
+real watchdog deadlines and native project shutdown with owned-only deletion.
 Business operations, the React frontend and CI remain pending.
 Default Docker startup still selects only PostgreSQL.
 
@@ -144,7 +146,11 @@ Readiness checks authenticated DB identity, independently of migration currency.
 Host aliases are `pnpm docker:api:build`, `pnpm docker:api:up` (dev target),
 `pnpm docker:api:logs`, `pnpm docker:api:stop` and existing `pnpm docker:ps`.
 The API gets 15s native stop grace around its 10s application cleanup deadline;
-project-wide commands honor service grace. Full project drain proof remains 4.10.
+project-wide commands honor service grace. [Verified shutdown/isolation](docs/technical/step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths)
+covers API stop, full-profile stop/down and guarded disposable volume deletion
+with a 6s in-flight request. Ordinary stop/down preserves named volumes. Successful
+runtime signal cleanup returns container 143; failed/hung cleanup returns 1 even
+when the native Compose client returns 0. Check container exit separately.
 Automated smoke is available below. See the
 [runtime startup evidence](docs/technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
 
@@ -363,7 +369,7 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.9 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.10 are complete. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,
@@ -388,14 +394,18 @@ fetch; runner/config guards also reject dev/mixed tuples. Tests own their
 children, reserved loopback ports and controller pool, and preserve schema and
 business data. Tests/hooks allow 30s/10s; the suite has a 180s supervisor plus
 10s termination and a 1s pipe fallback, with bounded in-memory output. No other
-schema/process/smoke/outage consumer may overlap. The 16 process cases include
+schema/process/smoke/outage consumer may overlap. The 25 process cases include
 an owned real DB socket disruption: live stays 200, ready returns bounded 503,
 then 200 with the same API PID. Stage 4.9 also proved native test-service stop/up
 with the same API container and authenticated unmigrated readiness; startup never
 migrates. Test stop discards tmpfs. Close every phase before the next; if interrupted
 after test stop, restore with `./scripts/database.sh up test`. See the
 [evidence, exact commands and cleanup record](docs/technical/step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation).
-Full Step 4 remains in progress; project shutdown and final integration are pending.
+The shutdown cases also prove late startup cancellation without listen, repeated
+INT/TERM request drain with one close, rejected cleanup and real 10s/17s watchdogs;
+API fixture children use a 25s outer bound. Test-only routes are excluded from
+production output/images. Full Step 4 remains in progress; final integration and
+handoff remain stage 4.11.
 
 With an explicitly supplied, validated runtime environment, root `pnpm start`
 builds DB/API through Turbo and runs the API's
@@ -458,7 +468,7 @@ diagram now matches the approved structural schema.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-- [Step 4 Fastify plan — stages 4.1–4.7 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+- [Step 4 Fastify plan — stages 4.1–4.10 complete; final integration pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
 - [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 - [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)

@@ -130,6 +130,7 @@ async function startChild(
   overrides: NodeJS.ProcessEnv = {},
   preload = false,
   occupied?: Awaited<ReturnType<typeof reservePort>>,
+  fixture?: string,
 ) {
   const reservation = occupied ?? (await reservePort());
   // The actual entry requires 1..65535. Transfer a reserved port, then require
@@ -141,7 +142,9 @@ async function startChild(
       ...(preload
         ? ["--import", "./tests/fixtures/unavailable-database.ts"]
         : []),
-      "dist/server.js",
+      ...(fixture
+        ? ["tests/fixtures/shutdown.ts", fixture]
+        : ["dist/server.js"]),
     ],
     {
       cwd,
@@ -159,7 +162,7 @@ async function startChild(
         TZ: "UTC",
         ...overrides,
       },
-      deadlineMs: 20_000,
+      deadlineMs: fixture ? 25_000 : 20_000,
       killAfterMs: 1_000,
     },
   );
@@ -215,6 +218,147 @@ async function health(port: number, path: string, body: string, status = 200) {
   assert.ok(elapsed < 7_000, "Health exceeded 6s plus 1s scheduling margin.");
   return elapsed;
 }
+
+function onceClosed(child: OwnedProcess, marker: string) {
+  assert.equal(child.output.split(`Shutdown fixture: ${marker}.`).length, 2);
+}
+
+it("cancels pending startup, owns the late completion and never listens", async () => {
+  const { child, port } = await startChild(
+    {},
+    false,
+    undefined,
+    "startup-finite",
+  );
+  await child.waitForOutput("Shutdown fixture: startup_pending.");
+  const start = performance.now();
+  child.child.kill("SIGTERM");
+  await delay(50);
+  child.child.kill("SIGINT");
+  await exited(child, 143);
+  assert.ok(performance.now() - start < 10_000);
+  onceClosed(child, "startup_settled");
+  onceClosed(child, "database_close");
+  onceClosed(child, "database_closed");
+  assert.equal(child.output.includes("API lifecycle: listening."), false);
+  await releasedPort(port);
+});
+
+it.each(["SIGINT", "SIGTERM"] as const)(
+  "drains an in-flight request with repeated %s and shares one pool close",
+  async (signal) => {
+    const { child, port } = await startChild({}, false, undefined, "drain");
+    await child.waitForOutput("API lifecycle: listening.");
+    const response = fetch(`http://127.0.0.1:${port}/fixture/drain`, {
+      signal: AbortSignal.timeout(8_000),
+      headers: { Connection: "close" },
+    });
+    // Attach rejection ownership before any assertion can fail.
+    const result = response.then(async (value) => ({
+      status: value.status,
+      body: await value.text(),
+    }));
+    void result.catch(() => {});
+    await child.waitForOutput("Shutdown fixture: request_started.");
+    const start = performance.now();
+    child.child.kill(signal);
+    await delay(50);
+    child.child.kill(signal === "SIGINT" ? "SIGTERM" : "SIGINT");
+    await delay(50);
+    child.child.kill(signal);
+    assert.deepEqual(await result, { status: 200, body: '{"drained":true}' });
+    await exited(child, signal === "SIGINT" ? 130 : 143);
+    const elapsed = performance.now() - start;
+    assert.ok(elapsed >= 5_000 && elapsed < 10_000);
+    onceClosed(child, "http_close");
+    onceClosed(child, "database_close");
+    onceClosed(child, "database_closed");
+    console.info(`Repeated ${signal}: drained in ${Math.round(elapsed)}ms.`);
+    await releasedPort(port);
+  },
+);
+
+it.each(["fail-http", "fail-database"])(
+  "forces failure after attempting both owners for %s",
+  async (mode) => {
+    const { child, port } = await startChild({}, false, undefined, mode);
+    await child.waitForOutput("API lifecycle: listening.");
+    const start = performance.now();
+    child.child.kill("SIGTERM");
+    await exited(child, 1);
+    assert.ok(performance.now() - start < 10_000);
+    onceClosed(child, "http_close");
+    onceClosed(child, "database_close");
+    assert.ok(
+      child.output.includes(
+        `API lifecycle: ${mode === "fail-http" ? "http" : "database"}_close_failed.`,
+      ),
+    );
+    if (mode === "fail-http") onceClosed(child, "database_closed");
+    await releasedPort(port);
+  },
+);
+
+it.each(["hang-http", "hang-database", "startup-hang"])(
+  "enforces one real 10s shutdown watchdog for %s",
+  async (mode) => {
+    const { child, port } = await startChild({}, false, undefined, mode);
+    await child.waitForOutput(
+      mode === "startup-hang"
+        ? "Shutdown fixture: startup_pending."
+        : "API lifecycle: listening.",
+    );
+    // Spending 6s draining HTTP before the hung DB close proves that DB does
+    // not receive a fresh 10s budget after HTTP has consumed part of it.
+    let request: Promise<void> | undefined;
+    if (mode === "hang-database") {
+      request = health(port, "/fixture/drain", '{"drained":true}').then(
+        () => {},
+      );
+      void request.catch(() => {});
+      await child.waitForOutput("Shutdown fixture: request_started.");
+    }
+    const start = performance.now();
+    child.child.kill("SIGTERM");
+    await exited(child, 1);
+    await request;
+    const elapsed = performance.now() - start;
+    assert.ok(elapsed >= 9_900 && elapsed < 11_000);
+    assert.ok(child.output.includes("API lifecycle: shutdown_timeout."));
+    if (mode === "hang-database") onceClosed(child, "database_close");
+    else
+      assert.equal(
+        child.output.includes("Shutdown fixture: database_close."),
+        false,
+      );
+    if (mode === "startup-hang")
+      assert.equal(child.output.includes("API lifecycle: listening."), false);
+    console.info(
+      `${mode}: application watchdog exited 1 in ${Math.round(elapsed)}ms.`,
+    );
+    await releasedPort(port);
+  },
+);
+
+it("enforces the real 17s startup watchdog without a harness kill", async () => {
+  const start = performance.now();
+  const { child, port } = await startChild(
+    {},
+    false,
+    undefined,
+    "startup-watchdog",
+  );
+  await child.waitForOutput("Shutdown fixture: startup_pending.");
+  await exited(child, 1);
+  const elapsed = performance.now() - start;
+  assert.ok(elapsed >= 16_900 && elapsed < 18_000);
+  assert.ok(child.output.includes("API lifecycle: startup_timeout."));
+  assert.equal(child.output.includes("API lifecycle: listening."), false);
+  console.info(
+    `Startup watchdog: application exited 1 in ${Math.round(elapsed)}ms.`,
+  );
+  await releasedPort(port);
+});
 
 it("recovers exact HTTP readiness after an owned real DB socket disruption", async () => {
   // The existing child-only DNS preload routes the exact validated test host to

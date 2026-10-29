@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.9 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; overall Step 4 remains in progress, with stages 4.10–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.10 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; overall Step 4 remains in progress, with stage 4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -886,6 +886,36 @@ absence. The final milestone passed 109 tests and all strict checks.
 [Checkpoint and evidence](step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke)
 close AC4-13/15 with current runtime/development/smoke evidence. Overall Step 4
 remains in progress; service outages and native project drain remain later stages.
+
+## Step 4.10 shutdown fixture approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended shutdown
+fixtures in the 4.10 session before coding or disposable resource creation.
+Use a test-only entry importing the compiled lifecycle and real test DB, through
+the existing owned-process supervisor: finite/pending startup, repeated signals,
+6s in-flight HTTP drain, failed/hung closes and actual 10s/17s watchdog timing.
+No diagnostic delay endpoint enters application source, dist or runtime images.
+
+For native API stop, full-profile stop/down and confirmed volume teardown, use
+a distinct disposable canonical Compose project. Copy the test entry only into
+stopped API containers' writable layers, then start them. Keep another disposable
+project/container with attached storage as an isolation sentinel. Record resource
+identity, bounds and cleanup before each experiment; remove all owned probes,
+volumes and temporary image tags afterward. Preserve original images, canonical
+configuration, Beijing containers/data/settings and unrelated resources. A fixture
+image rebuild adds restoration/build work; unit-only fixtures cannot establish
+actual process/container drain. Existing 10s total process budget, 15s API service
+grace and exact-confirmation/ownership guard remain unchanged.
+
+Stage 4.10 is **complete**; see its
+[shutdown and isolation evidence](step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths).
+No new dependency, runtime policy, infrastructure service or later-stage choice
+is selected. AC4-09/17 are complete: 25 real process cases, six-second requests
+through native API/full-project stop/down and confirmed deletion, real 10s/17s
+watchdogs, separate application/container/client exits and preserved peer/owner
+storage. Strict checks also pass without prior API dist; fixtures execute compiled
+modules and use source-only type references. The container fixture retains its
+original test path and a temporary importing entry; neither enters the image.
 
 ## Step 4.9 DB failure, recovery and isolation approval (2026-10-29)
 

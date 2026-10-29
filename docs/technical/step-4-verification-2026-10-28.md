@@ -5,6 +5,360 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.10 — Shutdown through all project paths
+
+**State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
+Overall Step 4 remains in progress; 4.11 is not started.
+Completion commit subject: `test(api): verify bounded shutdown and project isolation`.
+Resolve its hash with
+`git log -1 --format=%H --grep="^test(api): verify bounded shutdown and project isolation$"`.
+
+### Initial checkpoint (historical; state was in progress)
+
+- Verified `git branch --show-current`: `WilliamPhilippe/step-4-implementation-plan`.
+  Initial status/diff clean at `b2a4a81` (4.9 completion). Earlier stage commits:
+  4.1 `472e0a7`, 4.2 `29509a3`, 4.3 `230a348`, 4.4 `2510bdd`,
+  4.5 `4fd7856`, 4.6 `f92a8ed`, 4.7 `0ac5a74`, 4.8 `78078f6`.
+  Their cumulative handoffs are present. Runtime/schema/lockfile and Compose
+  inputs remain unchanged; inspect affected diffs before reusing their checks.
+- Read AGENTS, README Docker/PostgreSQL/deletion guidance, stage execution and
+  completion/checkpoint rules and 4.10 card, parent deadlines/grace/shutdown and
+  isolation matrix, foundation guide, standard Compose maintenance and one-time
+  setup amendment. Live T06 #26 remains open with no comments; no backlog change.
+- Existing approval covers one owner, early handlers, idempotent cleanup,
+  17s startup/10s total shutdown, failure 1 and signal 130/143, native 15s API
+  grace, project-wide commands without global timeout and the volume guard.
+  Concrete new shutdown child/container fixture choices await owner approval.
+  No fixture code or live disruption has run.
+- Initial Docker inventory (read-only, sandbox socket escalation succeeded):
+  original `storage-minis-beijing-postgres-1` `7d69a3e26bab` and test
+  `dde80d86c88f` both stopped; no running containers. All six Beijing volumes
+  and default network remain, plus pre-existing anonymous volume
+  `c6d7cdbbb7f749f9e264250206f404600ef6a2b6a8bc16d52a0379dfdd8e4807`.
+  Runtime image `48aa5486d3e6`, dev `fc2c235b0878`, tooling `9654ab9e6cd6`.
+  Saved settings/ports 5433/5434 unchanged. No stage-owned resource exists.
+- Pending: approve fixtures; implement guarded startup/repeated-signal/failed and
+  hung-cleanup/watchdog cases; run focused/strict/process checks sequentially;
+  disposable API-only/full stop/down/guarded deletion and peer preservation;
+  fixture cleanup and current-summary synchronization. AC4-09/17 remain partial.
+- Exact next action: present concrete fixture choices with alternatives and
+  obtain explicit owner approval before coding or creating disposable resources.
+  No completion commit until required checks pass; no push/PR or 4.11 work.
+
+### Checkpoint history
+
+- Owner explicitly approved the recommended child/container fixtures in this
+  session, before implementation/resource creation; recorded in technical
+  direction. Added test-only `tests/fixtures/shutdown.ts` and process cases using
+  the existing real-DB/port/child/pool ownership, unchanged suite supervisor and
+  deadlines. Fixture imports compiled production modules; runtime source, images,
+  schema, dependencies, Compose and reset guard are unchanged.
+- Before focused checks: no live fixture, watcher or DB is running. Next format,
+  strict-check and run focused shutdown/guard/unit tests through existing tooling;
+  then checkpoint before starting exclusive test PostgreSQL/process verification.
+  All original resources remain as inventoried. No temporary source edit exists.
+
+- Initial strict API typecheck and two-file ESLint passed; Prettier applied to
+  test sources. Unit/guard suite is finishing (owned one-off tooling only).
+  Before real process experiments: start only Beijing `postgres_test` through
+  `./scripts/database.sh up test` (90s outer); no schema/smoke/outage consumer may
+  overlap. Run `./scripts/tooling.sh run-db test pnpm test:api` sequentially, with
+  30s tests/10s hooks/180s suite supervisor; shutdown fixture children have 25s
+  outer deadlines and 1s emergency kill. Their actual watchdogs remain 10s/17s.
+  Owners register before spawn/listen/connect; after each case verify no pool or
+  listener, after suite zero clients/schema identity. Finally stop only test
+  with native 10s service grace, restoring its original stopped state. Development
+  stays stopped and all storage/settings/images are preserved. Native teardown
+  experiments follow only after the process phase fully releases this target.
+
+- Focused checks passed: 109 API/DB unit tests (including seven reset-guard
+  tests); strict API typecheck and two-file lint. Guarded real-DB process suite
+  passed all 25 cases in 67.70s, with finite API build and uncached live task.
+  Repeated INT/TERM drained at 6056/6044ms with 130/143, each close once; finite
+  startup cancellation closed its late completion without listen. HTTP/DB close
+  rejection exited 1 with both owners attempted. Hung HTTP/DB/startup cancellation
+  exited 1 at 10038/10038/10040ms via application watchdog, no harness kill; the
+  DB-hang case first drained 6s within the same total deadline. Startup watchdog
+  exited 1 at 17304ms. Existing 16 startup/health/outage/basic-signal cases passed
+  again; no pool/listener/schema leak. No application fix was required.
+- Native host harness prepared under `/private/tmp`; initial syntax-only parse
+  caught one unmatched parenthesis before execution, corrected and parse passed.
+  No disposable resource or live native experiment yet. Next independent SQL
+  inventory, stop only test back to initial state, then run native harness. It
+  records exact resources/bounds before each experiment and cleans its projects
+  even on failure; original images/application/source/config remain unchanged.
+
+- Before disposable resources: native harness `/private/tmp/storage-minis-stage410-native.py`; project `storage-minis-stage410-20261029`, peer `storage-minis-stage410-20261029-peer`, reserved host ports `63729, 63730, 63731, 63732, 63733, 63734` (bind collision fails closed), fixture-only password in memory. Create temporary runtime/tooling tags from original images; canonical peer postgres owns its own pgdata sentinel. No managed credentials, image rebuild, fixture source edit or original project mutation. Each scenario checkpoints before shutdown; finally exact-confirmed guard cleans both projects and removes only new image tags. Never global prune/reset.
+
+- Canonical model passed: default only postgres, both APIs 15s, api-dev SIGINT, all three real stop/down aliases and guard have no global timeout. Peer `3e3c048cae8196cea24496238c0d0838561e72d41285964302eb70fef701524a`, volume `storage-minis-stage410-20261029-peer_pgdata`, native identity/start captured and file sentinel installed; original Beijing services remain stopped. Next five native scenarios sequentially, restoring disposable project between cases.
+
+- Before native **api-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy only test entry imports into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Actual missing/wrong guard confirmation refused with nonzero exit before teardown; same running disposable API `029708b895836922e274c13d3d5c8b4c8aedecd4502a074fc13ff8d66fd72be6` and container inventory. Seven offline guard tests cover every-candidate ownership/inspection refusal and native failure propagation.
+
+- Native **api-stop** in-flight: API `029708b895836922e274c13d3d5c8b4c8aedecd4502a074fc13ff8d66fd72be6`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63731`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **api-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 stop api api-dev` client exit 0; separate docker-wait/die event API exit 143 in 6.022s, no OOM/SIGKILL. All six volumes preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **full-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy only test entry imports into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **full-stop** in-flight: API `6b75029ef1b4a1421dfdd2d536ad257c5706e6859f765ffa946007785a5d6053`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63731`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **full-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile * stop` client exit 0; separate docker-wait/die event API exit 143 in 6.015s, no OOM/SIGKILL. All six volumes preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **full-down**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy only test entry imports into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **full-down** in-flight: API `54d6487013091d266f122fa344791986f9c3fef32ba6d90c5a876baaa288f615`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63731`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **full-down PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile * down --remove-orphans` client exit 0; separate docker-wait/die event API exit 143 in 6.112s, no OOM/SIGKILL. All six volumes preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **guard-down**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy only test entry imports into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **guard-down** in-flight: API `9c06b5d686cea1d322db14e3534cee64edd75dfa00a18729a1f61c1586ef9f2b`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63731`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **guard-down PASS**: exact `200 {"drained":true}` survived; command `./scripts/reset-volumes.sh --confirm storage-minis-stage410-20261029` client exit 0; separate docker-wait/die event API exit 143 in 6.092s, no OOM/SIGKILL. Only disposable owned six volumes/containers/network deleted. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **hung-api-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy only test entry imports into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **hung-api-stop** in-flight: API `538ebfd2a44e54ab5ed5380cd5ab148c5caba424e897ce16f02b780415891a65`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63731`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **hung-api-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 stop api api-dev` client exit 0; separate docker-wait/die event API exit 1 in 10.225s, no OOM/SIGKILL. All six volumes preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Native final cleanup: both disposable projects have zero containers/volumes; exact-confirmed native guards succeeded, temporary image tags removed, original runtime image unchanged. Only original stopped Beijing DBs/settings/six volumes and unrelated anonymous volume remain. No watcher, API, SQL client, event/wait subscriber, host request or source fixture survives. Temporary copied entry is only under `/private/tmp/storage-minis-stage410`; no production delay route ships.
+
+- All five first native runs passed, with disposable and peer resources fully
+  removed. Final fixture review identified a clean-checkout typing dependency:
+  static imports from API dist would require prior API build for no-emit checks.
+  Within the approved test-entry scope, change to source-only type references
+  and computed compiled-module runtime URLs. Native copy now retains the exact
+  test path in the stopped container and a disposable JS entry imports that TS
+  fixture via native Node, avoiding path rewriting. No production/config/task
+  change. Before temporary ignored-output experiment: no watcher/resource is
+  running; move only `apps/api/dist` to `.context/stage410-api-dist`, run API
+  typecheck, and restore with shell EXIT trap. Never alter DB output or source.
+  Rerun strict checks, process suite and native fixtures on final fixture inputs.
+
+- Final source-typed/compiled-runtime fixture passes strict API typecheck with
+  API dist absent; EXIT restoration succeeded, `.context` removed. Two-file lint
+  passed again. Before reruns, both original DBs stopped, disposable resources
+  absent. Native harness will also retain all six volume creation/ownership facts
+  and a disposable pgdata file sentinel across ordinary stop/down; peer's separate
+  data sentinel remains checked on every case. This strengthens preservation
+  evidence without touching owner data. Next repeat process suite exclusively,
+  independent SQL/stop, then final native fixture and image audit.
+
+- Final fixture-input process rerun passed all 25 cases / 67.57s. Repeated
+  INT/TERM each drained at 6047ms; HTTP/DB/startup-hang shutdown watchdogs exited
+  1 at 10039/10037/10044ms; startup watchdog at 17331ms. No harness termination,
+  schema/client/listener leak. Independent SQL again returned zero tables/other
+  clients. Native test-only stop restored both original DBs to stopped state.
+  Next final native rerun with exact-path typed fixture and volume data sentinel;
+  existing 109 unit tests remain current (their inputs unchanged).
+
+- Before disposable resources: native harness `/private/tmp/storage-minis-stage410-native.py`; project `storage-minis-stage410-20261029`, peer `storage-minis-stage410-20261029-peer`, reserved host ports `63860, 63861, 63862, 63863, 63864, 63865` (bind collision fails closed), fixture-only password in memory, disposable pgdata file sentinel for ordinary preservation proof. Create temporary runtime/tooling tags from original images; canonical peer postgres owns its own pgdata sentinel. No managed credentials, image rebuild, fixture source edit or original project mutation. Each scenario checkpoints before shutdown; finally exact-confirmed guard cleans both projects and removes only new image tags. Never global prune/reset.
+
+- Canonical model passed: default only postgres, both APIs 15s, api-dev SIGINT, all three real stop/down aliases and guard have no global timeout. Peer `21aa75daf8e2ad1173fa5694d86bf84e477f5d6a121d8c4fd022ab68fabec956`, volume `storage-minis-stage410-20261029-peer_pgdata`, native identity/start captured and file sentinel installed; original Beijing services remain stopped. Next five native scenarios sequentially, restoring disposable project between cases.
+
+- Before native **api-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy test fixture at its original path plus an importing entry into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Actual missing/wrong guard confirmation refused with nonzero exit before teardown; same running disposable API `6730ac1ef47a3da5dfb340bbf1b03d6948248654504850e934e4b1da878978d2` and container inventory. Seven offline guard tests cover every-candidate ownership/inspection refusal and native failure propagation.
+
+- Native **api-stop** in-flight: API `6730ac1ef47a3da5dfb340bbf1b03d6948248654504850e934e4b1da878978d2`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63862`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **api-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 stop api api-dev` client exit 0; separate docker-wait/die event API exit 143 in 6.018s, no OOM/SIGKILL. All six volume names/creation times/labels and pgdata file sentinel preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **full-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy test fixture at its original path plus an importing entry into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Before final read-only image audit: use only new named
+  `storage-minis-stage410-image-audit` with `--rm --network none --read-only`,
+  original runtime image, Node/fs assertions and 20s outer bound. No ports,
+  mounts, credentials, DB query or source edits; exit removes that owned probe.
+  Assert original server has no fixture route/import and image has no tests or
+  shutdown output. Final formatting runs offline through existing tooling.
+
+- Native **full-stop** in-flight: API `e3530fc5d544ee52bf26c5183d6260a80a8192868510556f0aae68c19c7ba48c`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63862`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **full-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile * stop` client exit 0; separate docker-wait/die event API exit 143 in 5.998s, no OOM/SIGKILL. All six volume names/creation times/labels and pgdata file sentinel preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **full-down**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy test fixture at its original path plus an importing entry into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **full-down** in-flight: API `a90dfb57f942e876591c4834f3a9ea8e1541a32c02ab21158175906da0761b03`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63862`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **full-down PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile * down --remove-orphans` client exit 0; separate docker-wait/die event API exit 143 in 6.109s, no OOM/SIGKILL. All six volume names/creation times/labels and pgdata file sentinel preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **guard-down**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy test fixture at its original path plus an importing entry into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **guard-down** in-flight: API `dca06f10bea930aa84840bb7b6d104ff966fe63068f17451eca872a274f42e27`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63862`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **guard-down PASS**: exact `200 {"drained":true}` survived; command `./scripts/reset-volumes.sh --confirm storage-minis-stage410-20261029` client exit 0; separate docker-wait/die event API exit 143 in 6.121s, no OOM/SIGKILL. Only disposable owned six volumes/containers/network deleted. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Before native **hung-api-stop**: disposable project `storage-minis-stage410-20261029` owns six volumes; peer `storage-minis-stage410-20261029-peer` is running with its own pgdata sentinel. Exact bounds: startup 40s, host request 8s, native stop/down/guard 30s outer, API process 10s/service grace 15s. Next canonical create, copy test fixture at its original path plus an importing entry into stopped API writable layer, start, require exact health/owned request marker before shutdown. Finally native stop/down and existing exact-confirmed guard remove only owned disposable resources; original images/settings and Beijing data preserved. No source edits.
+
+- Native **hung-api-stop** in-flight: API `10ac7a40c993e57fb8ce761f6fc997139e74bc4d64ebdf541d630be2d8f7a4c4`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, port `63862`, declared StopTimeout 15, no mounts; request marker observed. Owned docker-wait/events subscribers installed before shutdown; check their exit event separately from Compose client. Peer and original-resource identities verified. Execute selected native path now.
+
+- Native **hung-api-stop PASS**: exact `200 {"drained":true}` survived; command `docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 stop api api-dev` client exit 0; separate docker-wait/die event API exit 1 in 10.203s, no OOM/SIGKILL. All six volume names/creation times/labels and pgdata file sentinel preserved. Peer container/PID/start/storage sentinel and original stopped Beijing DBs/six volumes/settings unchanged. API-only stop left test DB running; full paths included all profiles as selected. Port refuses connections.
+
+- Native final cleanup: both disposable projects have zero containers/volumes; exact-confirmed native guards succeeded, temporary image tags removed, original runtime image unchanged. Only original stopped Beijing DBs/settings/six volumes and unrelated anonymous volume remain. No watcher, API, SQL client, event/wait subscriber, host request or source fixture survives. Temporary copied entry is only under `/private/tmp/storage-minis-stage410`; no production delay route ships.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Implemented only the [approved stage 4.10 fixtures](technical-direction.md#step-410-shutdown-fixture-approval-2026-10-29).
+Nine new real-process cases extend the inherited 16 cases. The existing owned
+supervisor, output limits, exact test guard, real controller/pool inspection,
+serial tests and reserved listener ownership are retained. Fixture children have
+a 25s outer bound; the actual application watchdogs remain 10s shutdown and 17s
+startup, with no accelerated timers or harness force-exit accepted as evidence.
+Source-only type references keep no-emit checking independent of prior API output;
+computed module URLs execute the compiled production config/factory/lifecycle.
+The fixture uses the one owned DB; its delayed startup, handler and close hooks
+are test-only and excluded from finite output/package/image.
+
+| Exact command / check | Final result |
+| --- | --- |
+| `git branch --show-current`; initial status; predecessor history/diff | Required branch; clean start at `b2a4a81`; current completed 4.1–4.9 inputs/evidence verified. No new branch/worktree. |
+| `gh issue view 26 --repo WilliamPhilippe/storage-minis-be --json number,title,state,body,comments` | Open, no comments; existing business/auth/operations boundaries preserved. |
+| `./scripts/tooling.sh run pnpm exec prettier --write apps/api/tests/fixtures/shutdown.ts apps/api/tests/process.integration.test.ts` | Passed; final fixture-only format unchanged. |
+| `./scripts/tooling.sh run pnpm --filter @storage-minis/api typecheck` | Passed. Repeated with API dist temporarily absent: passed; original dist restored with EXIT trap and `.context` removed. |
+| `./scripts/tooling.sh run pnpm exec eslint apps/api/tests/process.integration.test.ts apps/api/tests/fixtures/shutdown.ts` | Passed twice, including final type-reference correction. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project api-unit --project db-unit` | 109 tests / 12 files passed, including 29 lifecycle, six process-owner/target and seven confirmed-volume-guard cases. |
+| `./scripts/database.sh up test` | Authenticated exact test target; development stayed stopped. Startup bounded by 90s outer. |
+| `./scripts/tooling.sh run-db test pnpm test:api` | Final 25 cases / 67.57s passed; uncached live task, finite API build. Earlier 25-case run also passed before fixture type-reference correction. |
+| Independent `psql test -At -c` inventory below, after each process phase | Zero public/drizzle tables and zero other client backends; no shared-target consumer survived. |
+| Native `stop --timeout 10 postgres_test` | Passed after each phase; test returned to initial stopped state before disposable native phases. |
+| `python3 /private/tmp/storage-minis-stage410-native.py` | Final five native scenarios passed; detailed commands/identities/timing below. Initial five runs passed before exact-path fixture correction; all were repeated on final fixture inputs. |
+| `./scripts/tooling.sh run pnpm format:check` | Passed on final source/configuration. |
+| Original runtime read-only/network-disabled Node audit | Passed: original production entry, no fixture route/import, no tests directory or shutdown output. Owned `storage-minis-stage410-image-audit` self-removed. |
+| Independent Docker/Git resource and source audit | Original two stopped DBs, six volumes, network, images and unrelated anonymous volume preserved; no disposable/peer/probe resource/tag. Runtime/schema/Compose/reset guard/lockfile diff empty. |
+
+Final process results: finite registration cancellation settled late, closed the
+pool once and never listened; repeated mixed INT/TERM signals drained exact
+`200 {"drained":true}` at 6047ms each and kept the first signal's 130/143 result.
+Both close-rejection cases attempted HTTP and DB cleanup then forced exit 1.
+Hung HTTP, hung DB after a 6s HTTP drain, and canceled hung startup forced exit 1
+at 10039/10037/10044ms through the application shutdown watchdog. This demonstrates
+one total deadline across HTTP and DB, including waiting for pending startup.
+Unsignaled hung startup forced exit 1 at 17331ms. PID disappearance, port rebind,
+zero API backends and controller pool release were verified; harness failure/signal
+were absent. The inherited built-entry/startup/health/socket recovery cases passed
+again. Existing injection/lifecycle checks establish closing readiness behavior.
+
+Independent SQL command (no business/schema writes):
+
+```sh
+./scripts/database.sh psql test -At -c "SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('public','drizzle'); SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid();"
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test
+```
+
+Final native project: `storage-minis-stage410-20261029`, loopback API port **63862**;
+DB port reservations 63860/63861, peer 63863/63864, unused peer API reservation
+63865. Fixture credentials were confined to disposable project environments;
+no managed Doppler value changed or fetched for native probes. All fixtures used
+canonical `compose.yaml`, original runtime image
+`sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`
+and temporary project-scoped runtime/tooling tags. Both API services declare 15s;
+actual runtime containers had `Config.StopTimeout = 15`, no mounts and exactly
+`127.0.0.1:63862 -> 3000`. Default service selection remained only PostgreSQL.
+All three native shutdown aliases and the reset helper have no global timeout.
+
+Before each native experiment the harness saved ownership, request marker,
+resources, bounds and restoration in checkpoints above. It created the API
+stopped, copied `tests/fixtures/shutdown.ts` to the same path in its writable layer
+and set only that container's `dist/server.js` to
+`import "../tests/fixtures/shutdown.ts";`. No original image/source/configuration
+was edited. Exact live/ready 200 preceded the 6s request. `docker wait` and filtered
+Docker events subscribed before native shutdown, so container exit was observed
+even after native down removed it. Host requests had an 8s bound; native startup
+40s, shutdown/guard 30s outer. The 15s service deadline encloses the real 10s
+application deadline. All phases were sequential and fully cleaned between cases.
+
+| Native shutdown path (all final runs) | API container ID prefix | Compose/helper client | Separate API wait/die exit | Elapsed from native call |
+| --- | --- | --- | --- | --- |
+| API-only `stop api api-dev` | `6730ac1ef47a` | 0 | 143 | 6.018s |
+| Full-profile `stop` | `e3530fc5d544` | 0 | 143 | 5.998s |
+| Full-profile `down --remove-orphans` | `a90dfb57f942` | 0 | 143 | 6.109s |
+| Guarded `--confirm storage-minis-stage410-20261029` | `dca06f10bea9` | 0 | 143 | 6.121s |
+| API-only stop, deliberately hung DB close after 6s request | `10ac7a40c993` | 0 | 1 | 10.203s |
+
+Every native request returned exact `200 {"drained":true}`. No OOM, signal 9,
+137 exit or premature termination appeared in Docker events. Retained containers
+also matched stopped state/exit/OOM inspection and one DB-close marker. The hung
+case additionally logged `shutdown_timeout`; its Compose client 0 did not mask
+application/container failure 1. API-only stop kept its disposable test DB running;
+full stop included every service; down removed containers/network. Ordinary paths
+preserved all six volume names, creation times, ownership labels and a file
+sentinel in disposable pgdata. Guarded deletion removed all six owned volumes;
+missing/wrong actual confirmations refused before teardown with the same API
+container/inventory. The seven offline guard cases also verify ownership and
+inspection refusal before mutation, exact candidates and native error propagation;
+unchanged earlier real ownership-mismatch evidence remains applicable.
+
+Exact native shutdown commands, from the root with disposable project/port
+settings (no global timeout):
+
+```sh
+docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 stop api api-dev
+docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile '*' stop
+docker compose --env-file .env.compose --file compose.yaml --project-name storage-minis-stage410-20261029 --profile '*' down --remove-orphans
+COMPOSE_PROJECT_NAME=storage-minis-stage410-20261029 POSTGRES_PORT=63860 POSTGRES_TEST_PORT=63861 ./scripts/reset-volumes.sh --confirm storage-minis-stage410-20261029
+```
+
+Canonical preflight used `config --format json`/`config --services` (only safe
+assertions printed); temporary tags used native `docker tag`. Volume initialization
+used canonical `run --rm --no-deps tooling-init` plus `create --no-build postgres`.
+The pgdata sentinel was written only by a disposable canonical one-off shell and
+read back through a network-disabled, read-only-volume container. API preparation
+used canonical `create --no-build api`, `docker cp` while stopped and
+`start --wait --wait-timeout 30 api`. Disposable test startup used native
+`up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 postgres_test`.
+No new infrastructure command/service/dispatcher was introduced.
+
+Isolation peer `storage-minis-stage410-20261029-peer` had running PostgreSQL
+`21aa75daf8e2ad1173fa5694d86bf84e477f5d6a121d8c4fd022ab68fabec956` and its
+own `pgdata` file sentinel. Its container/start/restart identity, running state,
+volume and stored sentinel survived every primary project's native stop/down/
+confirmed deletion. Only afterward was this stage-owned peer removed with its own
+exact-confirmed guard. Both projects ended with zero containers/volumes/networks;
+all temporary runtime/tooling tags and event/wait/HTTP/volume/image probes were
+removed. API port 63862 refused connections. No temporary application source edit,
+watcher or client remains; only nonsecret harness/copied fixture files under
+`/private/tmp` and normal ignored build/cache output remain outside this commit.
+
+Independent final Docker inventory equals the initial resources: original stopped
+Beijing development `7d69a3e26bab`, stopped test `dde80d86c88f`, six project volumes,
+`storage-minis-beijing_default`, original images and unrelated anonymous volume
+`c6d7cdbbb7f749f9e264250206f404600ef6a2b6a8bc16d52a0379dfdd8e4807`.
+Development never started/reset; no migration, business write, global prune or
+owner storage deletion occurred. `.env.compose` bytes and resource identities
+were preserved. The final original-image audit and empty runtime-source diff
+prove no diagnostic endpoint ships.
+
+**AC4-09 and AC4-17 complete.** Overall Step 4 remains in progress: only 4.11's
+AC4-12/AC4-16/AC4-18 final integration/handoff gate remains. No business/T06 or
+production acceptance is claimed. No required stage check remains failed/unrun.
+The pre-execution temporary Python syntax failure was corrected before resources;
+all live checks passed. The fixture type-reference issue was corrected and every
+affected process/native path repeated. Full aggregate, fresh schema replay, image
+rebuild, dev reload and smoke were unrun here: their relevant production inputs
+are unchanged, the 109 unit checks are current, earlier evidence remains valid
+and the final aggregate belongs to 4.11. No application fix invalidated those paths.
+
+Current status/approval summaries are synchronized in the parent/stage plans,
+foundation guide, README and technical direction, preserving dated history.
+Commit scope: only the two test files and six necessary stage documents.
+Exact next action: finish documentation/diff gate, stage those eight files and
+run the recorded local Conventional Commit, resolve its hash and verify
+`git status --short`; stop and await a separate stage 4.11 assignment. No push/PR.
+
+- Final completion gate passed: six changed Markdown documents, 25 changed
+  relative links/anchors, 58 tables/fences and all 18 acceptance IDs (15 complete;
+  only AC4-12/16/18 remain). `git diff --check` passed. Final source/test/docs diff
+  reviewed: exactly eight stage files including the new test fixture; no unrelated
+  work. Required branch reverified. Final formatting/image/resource audits passed;
+  no required check remains failed/unrun and no temporary application/resource
+  restoration remains. Next stage these exact files, execute
+  `test(api): verify bounded shutdown and project isolation`, resolve actual hash
+  and verify clean `git status --short`; stop without push/PR or 4.11 work.
+
 ## Stage 4.9 — Database failure, recovery and test isolation
 
 **State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
