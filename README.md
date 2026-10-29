@@ -12,6 +12,8 @@ a verified portable API runtime image; overall Step 4 remains in progress.
 Stage 4.6 adds optional Compose runtime startup with matching Doppler credentials.
 Stage 4.7 adds the development image and verified API/compiled-DB reload.
 Stage 4.8 adds bounded automated runtime-image smoke with owned-probe cleanup.
+Stage 4.9 verifies live DB socket/service failure and recovery without API restart,
+authenticated unmigrated readiness and exclusive sequential test-target use.
 Business operations, the React frontend and CI remain pending.
 Default Docker startup still selects only PostgreSQL.
 
@@ -361,7 +363,7 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.7 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.9 are complete. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,
@@ -386,9 +388,14 @@ fetch; runner/config guards also reject dev/mixed tuples. Tests own their
 children, reserved loopback ports and controller pool, and preserve schema and
 business data. Tests/hooks allow 30s/10s; the suite has a 180s supervisor plus
 10s termination and a 1s pipe fallback, with bounded in-memory output. No other
-schema/process/smoke/outage consumer may overlap. The 15 process cases and
-foundation aggregate passed; real service-outage proof remains stage 4.9.
-See the [evidence and cleanup record](docs/technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests).
+schema/process/smoke/outage consumer may overlap. The 16 process cases include
+an owned real DB socket disruption: live stays 200, ready returns bounded 503,
+then 200 with the same API PID. Stage 4.9 also proved native test-service stop/up
+with the same API container and authenticated unmigrated readiness; startup never
+migrates. Test stop discards tmpfs. Close every phase before the next; if interrupted
+after test stop, restore with `./scripts/database.sh up test`. See the
+[evidence, exact commands and cleanup record](docs/technical/step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation).
+Full Step 4 remains in progress; project shutdown and final integration are pending.
 
 With an explicitly supplied, validated runtime environment, root `pnpm start`
 builds DB/API through Turbo and runs the API's

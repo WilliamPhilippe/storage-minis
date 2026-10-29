@@ -1,7 +1,7 @@
 import dns from "node:dns";
 import { syncBuiltinESMExports } from "node:module";
 
-// Only the unavailable-startup child loads this native-Node test fixture.
+// Only socket-failure test children load this native-Node DNS fixture.
 // Delegate overload/callback handling to the actual resolver; change only DNS.
 const lookup = dns.lookup;
 dns.lookup = ((hostname, ...args) =>

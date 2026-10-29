@@ -5,6 +5,242 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.9 — Database failure, recovery and test isolation
+
+**State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
+Overall Step 4 remains in progress; 4.10–4.11 are not started.
+Completion commit subject: `test(api): verify database outage and recovery`.
+Resolve its hash with `git log -1 --format=%H --grep="^test(api): verify database outage and recovery$"`.
+
+### Initial checkpoint (historical; state was in progress)
+
+- Branch verified before edits: `WilliamPhilippe/step-4-implementation-plan`;
+  clean tree at `78078f6`. Completed 4.1–4.8 commits and evidence present:
+  `472e0a7`, `29509a3`, `230a348`, `2510bdd`, `4fd7856`, `f92a8ed`,
+  `0ac5a74`, `78078f6`. Preserve this checkout and branch.
+- Read AGENTS, README PostgreSQL/Drizzle/lifecycle guidance, foundation guide,
+  stage execution/completion/checkpoints and 4.9 card, parent readiness,
+  unmigrated-DB and shared-target/outage matrix, standard Compose/setup records.
+  Live T06 #26 remains open, no comments; business prerequisites unchanged.
+- Inspected Step 3B `freshSchema()`: drops/recreates `public`, drops `drizzle`,
+  then applies committed migrations. Its afterAll truncates business tables and
+  closes its pool. Never overlap that suite with process/smoke/outage consumers.
+  Current schema/runtime/lockfile inputs retain predecessor evidence; no schema
+  replay is needed unless those inputs change. New process tests require rerun,
+  then unchanged image smoke, then actual outage, sequentially and uncached.
+- Docker initial inventory: saved project `storage-minis-beijing`, ports
+  5433/5434. Only original stopped development `7d69a3e26bab` and test
+  `dde80d86c88f`; no running consumer/API/watcher/probe. Docker read required
+  sandbox escalation, then passed. No service started or secret fetched.
+- Pending owner approval: deterministic test-only TCP gate around real traffic
+  using the existing DNS preload and backend termination; temporary host native
+  API/test-service outage harness. Recommendation/alternatives presented in
+  chat. No fixture implementation or disruption before explicit approval.
+- Planned ownership/restoration: guarded suite owns controller, API child,
+  loopback gate/ports/sockets before failures; closes them between phases.
+  Native outage harness owns only a newly created canonical test-target API,
+  with an explicit free loopback port. Close SQL probes before test stop.
+  Preserve original DB identities, development storage, six volumes and saved
+  settings. Test tmpfs loss is intentional. Restart test immediately after outage;
+  finish by removing only the newly owned API and restoring test to stopped.
+- Bounds: inherited 30s tests/10s hooks/180s suite supervisor; DB check 6s plus
+  1s HTTP scheduling margin, request abort 8s; API child cleanup 10s. Native test
+  stop 10s plus 5s overhead; test up outer 90s; API up 45s; recovery polling 30s.
+  A failed restoration leaves exact `./scripts/database.sh up test` as next action.
+- Exact next action: await fixture approval; record it, implement only 4.9 tests,
+  run focused/affected strict checks, then checkpoint before each live phase.
+  AC4-06/07/14 remain open. No stage-completion commit until all checks pass.
+
+### Checkpoint history
+
+- Owner explicitly approved both recommended fixture choices in this session
+  on 2026-10-29, before implementation. Extend only the guarded test and use a
+  temporary host native-service harness; no new dependencies or infrastructure.
+- Implemented one process case: owned loopback gate forwards real authenticated
+  PostgreSQL traffic using the existing child-only DNS preload; controller
+  terminates the one observed API backend, gate refuses reconnects, two fresh
+  readiness probes must return exact bounded 503 while live remains exact 200.
+  Restore forwarding, require ready 200 with a new backend and the same API PID/
+  one listening marker; close child/controller/gate/sockets via existing owners.
+- Runtime/schema/lockfile diff since `2510bdd` is empty. Reuse current 4.1–4.8
+  evidence and 30-test schema/replay phase; no destructive replay now. Pending:
+  focused unit guards, API strict checking/lint/format, guarded real process suite,
+  image smoke, native test stop/restart, docs and commit. Test remains stopped.
+- Exact next action: run focused/affected offline checks, then inventory and
+  checkpoint before test startup. No outage or migration has occurred.
+
+- Offline gate passed: `./scripts/tooling.sh run pnpm exec vitest run --project api-unit`
+  **58 tests/four files**, including preconnection runner/config guards;
+  `./scripts/tooling.sh run pnpm --filter @storage-minis/api typecheck`,
+  `./scripts/tooling.sh run pnpm exec eslint apps/api/tests/process.integration.test.ts`,
+  and targeted Prettier passed. Initial sandbox-only Docker attempts were refused;
+  reruns with scoped escalation passed, no auto-review rejection.
+- Pre-live checkpoint: `docker ps` reports no running containers. Original DBs
+  remain stopped; existing runtime image index
+  `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`
+  matches 4.8. No image rebuild needed: runtime/schema/dependency/config inputs
+  unchanged. Next start only test (`./scripts/database.sh up test`, outer 90s),
+  verify authenticated identity, zero business/migration tables and no other
+  clients, then guarded `./scripts/tooling.sh run-db test pnpm test:api`
+  (180s suite supervisor plus 10s termination/1s pipes). No concurrent consumer.
+  Stop test back to initial stopped state after all phases, preserve development.
+
+- Socket scenario verified: guarded `./scripts/tooling.sh run-db test pnpm test:api`
+  passed **16 process tests / one file**, three successful Turbo tasks (only DB
+  build cached, live process uncached), 6.44s. New scenario 385ms: same API PID
+  **249**, backend **138 → 139**, exact ready 503 in **2ms** with one observed
+  reconnect refusal; live exact 200 before/during/after, ready 200 on recovery.
+  Only one listening marker; child exited 143, reserved listener/gate/sockets and
+  controller pool closed. Existing startup/config/credentials/bind/basic signals
+  still pass. No schema/migration writes; afterAll schema identity unchanged.
+- Before smoke: test remains exclusively running, process tooling/children/clients
+  released. Next `./scripts/database.sh api-verify test` (60s helper deadline,
+  65s outer); same existing image, unique owned one-off probe, dynamic loopback
+  port. Close/remove smoke probe before any native service-outage action.
+
+- Post-process independent SQL passed: zero public/drizzle tables, zero other
+  client backends. Smoke completed with exact host HTTP, SIGTERM 143 and owned
+  removal: probe `storage-minis-beijing-api-verify-92416-22534-25477`, container
+  `02e724e77b35a97a0222c4d26b0e1ecb15de7f66face4b91b52814bacbd5f803`,
+  loopback **55000**, unchanged image index `48aa5486…`. Helper returned 0.
+  Temporary native outage harness syntax checked with `ast.parse` (initial
+  `py_compile` was blocked only by its host cache path; no live action ran). Next run it; its preflight
+  verifies exclusivity and records API/port/DB ownership before disruption.
+
+- First outage harness preflight failed before API creation/disruption because
+  native `docker ps -q` abbreviates IDs while Compose returns full IDs. Inspected
+  inventory and normalized with `docker ps --no-trunc -q`; no extra consumer or
+  leaked resource. Test remains running and development stopped. Next rerun the
+  same approved scenario; no implementation/runtime change or failed HTTP claim.
+
+- Second preflight stopped before API creation: existing SQL helper intentionally
+  merges safe Compose creation notices into stdout, so raw output was not just
+  `0`. Safe probe confirmed table count 0; temporary harness now removes only
+  the known project SQL-client creation lines before exact result comparison.
+  No DB/schema change, no disruption, no surviving SQL client. A retry found
+  the first notice had lost its leading space through `strip()`; normalized that
+  whitespace too before the next preflight.
+
+- Pre-service-outage checkpoint: test `dde80d86c88f` exclusively running; process and smoke phases closed. No API/dev service or other test client. Temporary host harness `/private/tmp/storage-minis-stage49-outage.py` owns the next canonical API, loopback port `63439`; bind collision fails closed. Commands: `API_HOST_PORT=63439 ./scripts/database.sh api-up test` (45s outer), SQL probes (25s outer), native test stop (10s + 5s), `./scripts/database.sh up test` (90s outer), HTTP 8s abort / 7s assertion / recovery 30s. Record state before/after stop; finally restart if needed, stop/remove only owned API, return test to initially stopped state. Development/six volumes/settings preserved.
+
+- Service scenario healthy: API `80fb7560a19210c4595266dfa91cf367ac02df08f5f1c5f720380d60479757dd`, image `sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`, host port `63439`, host PID `4948`, started `2026-10-29T06:41:59.581424461Z`, restart count 0. Exact live/ready 200 in 9.7/1.4ms. Authenticated SQL still reports zero public/drizzle tables after API startup; only API backends `970|storage-minis`. SQL probe exits/removes its own client before disruption. Next native stop of test only; API stays running.
+
+- Test service is now STOPPED by native `docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test`; tmpfs intentionally discarded, API `80fb7560a19210c4595266dfa91cf367ac02df08f5f1c5f720380d60479757dd` remains running. Restoration action is `./scripts/database.sh up test` (90s outer), even if the next HTTP assertion fails/interruption occurs. No schema/smoke/process/SQL consumer overlaps.
+
+- Stopped-service HTTP passed: live exact 200 before/after ready (1.1/3.1ms), ready exact 503 in 2005.9ms (<7s). Same API identity/PID/start time/restart count, still running. Next restore test with `./scripts/database.sh up test`; startup must not migrate.
+
+- Service recovery passed: native test startup authenticated; exact ready/live 200 with the same API container/image/PID/start time and restart count 0. Ready request 1.5ms. Authenticated unmigrated identity remains `storage_minis_test|postgres|UTC`, zero public/drizzle tables; API startup/recovery applied no migrations. Test is RUNNING again. Next cleanup owned API and restore initial stopped test state.
+
+- Native scenario demonstrated all healthy/outage/recovery assertions, then
+  cleanup removed API (exit 143), verified zero other DB clients, stopped test,
+  and verified original development/six volumes. Final immediate host port bind
+  failed with `EADDRINUSE`; do not yet claim cleanup complete. Next independently
+  inventory owned resources and check listener release (distinguish TCP TIME_WAIT
+  from a surviving listener). Test has already returned to STOPPED, no restoration
+  is pending. No need to repeat successful disruption unless the audit finds a leak.
+
+- Independent cleanup audit passed: all-profile Compose inventory contains only
+  original stopped development `7d69a3e26bab` and test `dde80d86c88f`; global
+  `docker ps` is empty. Host connection to port 63439 returns **ECONNREFUSED (61)**;
+  bind with `SO_REUSEADDR` succeeds, confirming TIME_WAIT rather than a listener.
+  The final fixture check is resolved without another disruption. No recovery is
+  pending. Six volumes and saved settings preserved; SQL clients removed.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Implemented the [approved socket and native-service fixtures](technical-direction.md#step-49-db-failure-recovery-and-isolation-approval-2026-10-29).
+The permanent guarded test forwards real PostgreSQL traffic through an owned TCP
+gate, terminates the one observed API backend, checks live 200 and two fresh ready
+503 responses under the 6s DB + 1s scheduling bound, then restores forwarding and
+checks ready 200 with a new backend and unchanged API PID. Existing test owners
+release child/controller/gate/listeners/sockets on success or failure. The only
+preload edit updates its comment to describe both socket fixtures.
+
+| Check / exact command | Final result |
+| --- | --- |
+| `git branch --show-current`; initial `git status --short`; `git log -12 --oneline` | Required branch, clean tree at `78078f6`, all completed 4.1–4.8 evidence present. No other branch/worktree. |
+| `gh issue view 26 --repo WilliamPhilippe/storage-minis-be --json number,title,state,body,comments` | Open, no comments; inherited T01/T02/T04/business boundaries preserved. No backlog mutation. |
+| `git diff 2510bdd..HEAD -- apps/api/src packages/db/src/client.ts packages/db/src/schema pnpm-lock.yaml` | Empty. Runtime/schema/dependencies/lockfile unchanged; inherit 4.4's sequential 30-test schema/replay evidence and 4.8's 109-test strict aggregate. Neither live reset nor full aggregate repeated in this focused stage. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project api-unit` | 58 tests / four files passed, including target/runner/config preconnection guards and offline ownership/deadline fixtures. |
+| `./scripts/tooling.sh run pnpm --filter @storage-minis/api typecheck` | Passed; strict source/scripts/test/config types checked. |
+| `./scripts/tooling.sh run pnpm exec eslint apps/api/tests/process.integration.test.ts` | Passed; final lint also includes the updated preload comment. |
+| `./scripts/tooling.sh run pnpm exec prettier --check apps/api/tests/process.integration.test.ts apps/api/tests/fixtures/unavailable-database.ts` | Passed on final test inputs. |
+| `./scripts/database.sh up test`; authenticated SQL preflight | Test-only startup; `storage_minis_test / postgres / UTC`, zero public/drizzle tables, zero other client backends. Development stayed stopped. |
+| `./scripts/tooling.sh run-db test pnpm test:api` | 16 tests / one file passed, 6.44s including finite builds; live task uncached. Socket case 385ms, same API PID 249, DB backend 138 → 139, ready 503 in 2ms; exact live 200 throughout and ready 200 on recovery. Schema identity/pool/listener cleanup passed. |
+| Independent post-process SQL | Zero public/drizzle tables and zero other clients; process phase fully closed before smoke. |
+| `./scripts/database.sh api-verify test` (65s outer) | Passed on unchanged image, owned container `02e724e77b35…`, host loopback 55000; exact live/ready, TERM 143 and confirmed probe removal. |
+| `python3 /private/tmp/storage-minis-stage49-outage.py` | All HTTP/native service assertions passed: canonical API `80fb7560a192…`, port 63439, host PID 4948/start/restart count unchanged. Native DB stop: live 200, ready 503 in 2005.9ms; native DB startup: ready 200 in 1.5ms, live 200. Authenticated zero-table DB before/after startup and recovery. Final immediate bind assertion hit TIME_WAIT; independent inventory/refusal/rebind audit above resolved cleanup, so no unresolved failed check remains. |
+| Native stop/removal and independent final inventory | API exit 143 then removal; zero DB clients before final test stop; only original stopped DB containers remain, six volumes/settings preserved, no running container or listener. |
+
+Exact native outage sequence (performed only after process and smoke released
+the exclusive disposable test target):
+
+```sh
+API_HOST_PORT=63439 ./scripts/database.sh api-up test
+# Host HTTP live/ready each exact 200; SQL verifies zero public/drizzle tables.
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test
+# Same API: exact live 200, ready 503, live 200; each request <7s, abort 8s.
+./scripts/database.sh up test
+# Same API: exact ready/live 200; authenticated unmigrated identity still valid.
+docker compose --env-file .env.compose --file compose.yaml stop api
+docker compose --env-file .env.compose --file compose.yaml rm -f api
+# Confirm zero other clients; return test to its original stopped state.
+docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test
+```
+
+Authenticated nonmigration check, issued through the existing disposable SQL
+client before/after API startup and after DB restart:
+
+```sh
+./scripts/database.sh psql test -At -c "SELECT current_database(), current_user, current_setting('TimeZone'); SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('public','drizzle');"
+```
+
+Result: `storage_minis_test|postgres|UTC`, then `0`. Fresh HTTP uses the fixed
+`/health/live` body `{"status":"ok"}`, `/health/ready` healthy body
+`{"status":"ready"}` and unavailable body `{"status":"unavailable"}`.
+Each readiness result is current; no startup/recovery SQL or migration command
+was introduced. The temporary harness reads injected environment/inspection only
+in memory and prints allowlisted identities/results, never passwords/raw config.
+
+AC4-06/AC4-07/AC4-14 are complete using current focused/process/smoke/outage
+proof and unchanged predecessor unit/schema/security evidence. There was no
+concurrent schema reset, process suite, smoke, SQL client or outage consumer.
+No dependency/pin, runtime source, schema/migration, Compose model, environment
+settings, new command, infrastructure or distributed lock was added. This is
+local foundation evidence, not business workflow or production acceptance.
+AC4-09/17 shutdown edges remain 4.10; caches/final integration remain 4.11.
+
+Initial temporary harness ID/output-parser preflight failures and its host cache
+syntax-check limitation are recorded above; they occurred before disruption.
+The TIME_WAIT cleanup assertion is resolved by independent actual inventory,
+connection refusal and port reuse. No failing HTTP scenario or required check is
+deferred. Full aggregate/schema replay/image rebuild were unrun because their
+inputs remain current; targeted checks are the stage's required verification.
+
+No owned API/probe/controller/SQL client/port/source fixture remains. Both original
+DB containers are stopped; test tmpfs was deliberately discarded, development
+storage never started/reset. Six volumes and saved settings are unchanged.
+Only nonsecret temporary Python scripts under `/private/tmp` and ignored normal
+build/cache outputs remain outside Git; they are excluded from the stage commit.
+
+Current summaries/approvals are synchronized in stage/parent plans, foundation
+guide, README, technical direction and AGENTS, preserving dated history.
+Commit scope: the process test/preload comment plus these necessary stage docs.
+Exact next action: finish documentation/diff checks, stage these nine files,
+execute the recorded Conventional Commit, resolve its hash and verify
+`git status --short`; then stop. Stage 4.10 requires its own assignment;
+no push/PR or 4.10 work is authorized here.
+
+- Final gate passed: final two-file ESLint and Prettier checks; API strict
+  typecheck and 58 focused tests remain current (only a preload comment changed
+  afterward). `python3 /private/tmp/storage-minis-validate-stage49-docs.py`
+  passed seven Markdown files, 26 changed relative links/anchors, 59 tables,
+  fences and all 18 acceptance IDs (13 complete). `git diff --check` passed.
+  Reviewed final code/docs diff: exactly nine stage files, no unrelated work;
+  no runtime/schema/dependency/Compose change. No required check remains failed
+  or unrun. Next stage these exact files and commit with the recorded subject,
+  resolve actual hash and verify Git status; then stop before 4.10/push/PR.
+
 ## Stage 4.8 — Bounded runtime-image smoke
 
 **State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).

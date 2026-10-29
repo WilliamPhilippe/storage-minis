@@ -8,7 +8,8 @@ implemented and verified in `2510bdd`; stage 4.5 runtime packaging is approved,
 implemented and verified in `4fd7856`; stage 4.6 canonical runtime/startup is
 approved, implemented and verified in `f92a8ed`; stage 4.7 development/reload is
 approved, implemented and verified; stage 4.8 bounded runtime-image smoke is
-approved, implemented and verified; stages 4.9–4.11 remain pending.
+approved, implemented and verified; stage 4.9 DB socket/service recovery and
+shared-target isolation are approved and verified; stages 4.10–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -149,6 +150,8 @@ including native SIGINT stop after a verified TERM-chain drain failure, are
 approved and implemented; see the [4.7 approval](../technical/technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29).
 Stage 4.8's narrow verifier, exact-test injection/alias and bounded fixture choices
 are approved; see the [4.8 approval](../technical/technical-direction.md#step-48-bounded-image-smoke-approval-2026-10-29).
+Stage 4.9 socket-gate/backend-termination and native-service fixture choices
+are approved and verified; see the [4.9 approval](../technical/technical-direction.md#step-49-db-failure-recovery-and-isolation-approval-2026-10-29).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -185,8 +188,9 @@ AC4-04 has [stage 4.3 lifecycle/route evidence](../technical/step-4-verification
 AC4-05/AC4-08 have [stage 4.4 guarded process evidence](../technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests),
 including real startup failures, safe diagnostics and listener/pool cleanup.
 AC4-09 has basic real SIGINT/SIGTERM proof; shutdown edge/project paths remain
-with 4.10. AC4-06/AC4-07 have real healthy HTTP/authenticated-check proof, but
-service-outage liveness/readiness bounds/recovery remain partial until 4.9.
+with 4.10. AC4-06/AC4-07/AC4-14 are complete with [4.9 socket/service recovery and
+exclusive shared-target evidence](../technical/step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation).
+Both scenarios preserved API identity; unmigrated authenticated readiness passed.
 AC4-11 has [stage 4.5 packaging evidence](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image):
 all compiled files/declarations and portable production links. AC4-01 now has
 [4.6 native Compose/authenticated runtime evidence](../technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
@@ -211,9 +215,9 @@ Project drain proof stays with 4.10.
   tRPC dependency, dummy identity or second pool is introduced.
 - [x] **AC4-05 — Configuration:** explicit API/DB validation rejects invalid or
   missing settings before listening and exposes no supplied secret values.
-- [ ] **AC4-06 — Liveness:** real HTTP `/health/live` returns 200 and exactly
+- [x] **AC4-06 — Liveness:** real HTTP `/health/live` returns 200 and exactly
   `{"status":"ok"}` without querying PostgreSQL, including during a DB outage.
-- [ ] **AC4-07 — Readiness:** real HTTP `/health/ready` returns the specified
+- [x] **AC4-07 — Readiness:** real HTTP `/health/ready` returns the specified
   200/503 body from a fresh authenticated check. DB failure is bounded by 6s plus
   HTTP scheduling margin, and recovery restores 200 without API restart. This
   checks connection identity, not migration currency; startup never migrates.
@@ -242,7 +246,7 @@ Project drain proof stays with 4.10.
   Reuse saved nonsecret settings without required exports, ignore plain `.env`,
   and preserve existing DB CLI diagnostics. Image builds and ordinary checks
   work without DB/Doppler access.
-- [ ] **AC4-14 — Meaningful tests:** factory/config/lifecycle unit tests and the
+- [x] **AC4-14 — Meaningful tests:** factory/config/lifecycle unit tests and the
   guarded real-test-DB process suite pass; dev/wrong targets are rejected before
   secret fetching/connecting. Schema resets, API tests, smoke and outages sharing
   a test target run sequentially. Normal empty suites still fail; unit checks
@@ -915,7 +919,10 @@ Stage 4.5 P4-11 runtime packaging and stage 4.6 P4-07/P4-11 runtime Compose,
 health, launcher and native aliases are also approved and implemented. Stage 4.7
 watch/development/tasks/injection and its native SIGINT stop amendment are approved
 and implemented. Stage 4.8 smoke/helper/test choices are also approved; its
-verification is complete. Current delivered scope is stages 4.1–4.8; the original planning update remains a dated
+verification is complete. Stage 4.9 socket/service fixtures were approved on
+2026-10-29 and verified with unchanged API identity, bounded failure/recovery,
+unmigrated readiness and exclusive sequential ownership. Current delivered scope
+is stages 4.1–4.9; the original planning update remains a dated
 record of no installation or implementation.
 Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.

@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.8 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup development reload with verified in-flight foreground shutdown and bounded automated runtime-image smoke; overall Step 4 remains in progress, with stages 4.9–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.9 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; overall Step 4 remains in progress, with stages 4.10–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -886,6 +886,34 @@ absence. The final milestone passed 109 tests and all strict checks.
 [Checkpoint and evidence](step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke)
 close AC4-13/15 with current runtime/development/smoke evidence. Overall Step 4
 remains in progress; service outages and native project drain remain later stages.
+
+## Step 4.9 DB failure, recovery and isolation approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended socket and
+native-service fixtures in the 4.9 session before implementation. This covers
+only test/evidence work within P4-10; inherited runtime/deadline/target contracts
+remain unchanged.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Socket fixture | Extend the guarded process suite with an owned loopback TCP gate using the existing child-only DNS preload. Forward real PostgreSQL traffic, terminate the observed API backend with `pg_terminate_backend`, refuse reconnects for exact 503 probes, then restore forwarding. A single idle termination may reconnect before HTTP sees failure; repeated termination would be timing-sensitive. No mocked PostgreSQL replies or new dependency. |
+| Native service fixture | Temporary host harness uses existing `api-up test`, native `stop --timeout 10 postgres_test` and `database.sh up test`. Exact HTTP and unchanged container/PID/start/restart identity prove recovery. Another Compose project adds unnecessary setup when this disposable target is exclusive. |
+| Isolation/restoration | Reuse unchanged schema evidence; process → image smoke → outage, all exclusive and sequential. Close SQL/probes/clients between phases. Record ownership/restoration before stop; preserve development/six volumes/settings; return test to its initially stopped state and remove only the newly owned API. No lock/infrastructure/schema change. |
+| Bounds | Existing 30s tests/10s hooks/180s process supervisor; requests abort at 8s and assert below DB 6s + 1s scheduling margin. Native test stop 10s + 5s overhead, startup outer 90s, API startup 45s, recovery polling 30s. |
+
+**Implemented and verified:** 58 focused unit tests and API strict checks passed;
+16 guarded process tests passed, including real socket failure (ready 503 in 2ms)
+and recovery with the same PID. Current runtime image smoke passed. Native test
+stop produced exact ready 503 in 2005.9ms while live stayed 200; native restart
+restored exact ready 200 with the same API container/PID/start time/restart count.
+Authenticated test identity and zero public/drizzle tables before/after API
+startup/recovery prove diagnostic readiness without migrations. Final independent
+inventory/port checks closed cleanup after the host harness's immediate bind hit
+TCP TIME_WAIT; no listener or owned API/probe/client remains. Both original DBs
+are stopped, development and six volumes preserved.
+[Checkpoint and evidence](step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation)
+close AC4-06/AC4-07/AC4-14. Overall Step 4 remains in progress; 4.10–4.11 remain
+pending. Dated earlier-stage statements retain their historical scope.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

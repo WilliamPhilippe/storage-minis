@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createServer } from "node:net";
+import { createConnection, createServer } from "node:net";
 import type { Server, Socket } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import {
@@ -203,14 +203,88 @@ async function exited(child: OwnedProcess, code: number) {
     });
 }
 
-async function health(port: number, path: string, body: string) {
+async function health(port: number, path: string, body: string, status = 200) {
+  const start = performance.now();
   const response = await fetch(`http://127.0.0.1:${port}${path}`, {
-    signal: AbortSignal.timeout(7_000),
+    signal: AbortSignal.timeout(8_000),
     headers: { Connection: "close" },
   });
-  assert.equal(response.status, 200);
+  assert.equal(response.status, status);
   assert.equal(await response.text(), body);
+  const elapsed = performance.now() - start;
+  assert.ok(elapsed < 7_000, "Health exceeded 6s plus 1s scheduling margin.");
+  return elapsed;
 }
+
+it("recovers exact HTTP readiness after an owned real DB socket disruption", async () => {
+  // The existing child-only DNS preload routes the exact validated test host to
+  // this gate. Forward real authenticated traffic; never replace DB responses.
+  // Owners are registered before connect/terminate, including failure cleanup.
+  let forwarding = true;
+  let refused = 0;
+  const gate = await listen(5432, (socket) => {
+    if (!forwarding) {
+      refused++;
+      socket.destroy();
+      return;
+    }
+    const upstream = createConnection({ host: config.host, port: config.port });
+    sockets.add(upstream);
+    upstream.once("close", () => {
+      sockets.delete(upstream);
+      socket.destroy();
+    });
+    socket.once("close", () => upstream.destroy());
+    socket.on("error", () => upstream.destroy());
+    upstream.on("error", () => socket.destroy());
+    socket.pipe(upstream).pipe(socket);
+  });
+  const { child, port } = await startChild({}, true);
+  await child.waitForOutput("API lifecycle: listening.");
+  const pid = child.child.pid;
+  assert.ok(pid);
+  await health(port, "/health/live", '{"status":"ok"}');
+  await health(port, "/health/ready", '{"status":"ready"}');
+  const backends = await otherBackends();
+  assert.equal(backends.length, 1, "Expected only the owned API backend.");
+  const backend = backends[0];
+  assert.ok(backend);
+  forwarding = false;
+  const terminated = await controller.db.$client.query<{ terminated: boolean }>(
+    "SELECT pg_terminate_backend($1) AS terminated",
+    [backend.pid],
+  );
+  assert.equal(terminated.rows[0]?.terminated, true);
+  await health(port, "/health/live", '{"status":"ok"}');
+  const failedMs = await health(
+    port,
+    "/health/ready",
+    '{"status":"unavailable"}',
+    503,
+  );
+  // A second fresh check also proves refusal of a replacement connection,
+  // regardless of whether the first observed the terminated or a new socket.
+  await health(port, "/health/ready", '{"status":"unavailable"}', 503);
+  assert.ok(refused > 0, "No reconnect reached the owned gate.");
+  await health(port, "/health/live", '{"status":"ok"}');
+  forwarding = true;
+  await health(port, "/health/ready", '{"status":"ready"}');
+  await health(port, "/health/live", '{"status":"ok"}');
+  const recovered = await otherBackends();
+  assert.equal(recovered.length, 1);
+  assert.notEqual(recovered[0]?.pid, backend.pid);
+  assert.equal(child.settled, false, "API exited during DB recovery.");
+  assert.equal(child.child.pid, pid);
+  process.kill(pid, 0);
+  assert.equal(child.output.split("API lifecycle: listening.").length, 2);
+  console.info(
+    `Socket recovery: API pid ${pid}, backend ${backend.pid} -> ${recovered[0]?.pid}, ready 503 in ${Math.round(failedMs)}ms, reconnect refusals ${refused}.`,
+  );
+  child.child.kill("SIGTERM");
+  await exited(child, 143);
+  await releasedPort(port);
+  await closeListener(gate.server);
+});
 
 it.each(["SIGINT", "SIGTERM"] as const)(
   "starts built Node, answers exact HTTP and releases resources on %s",
