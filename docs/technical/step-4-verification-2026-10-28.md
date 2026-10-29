@@ -5,6 +5,252 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.4 — Guarded built-process tests
+
+**State: complete.** Required guarded, strict and aggregate checks passed on
+2026-10-28. Overall Step 4 remains in progress; stages 4.5–4.11 are not started.
+Completion commit subject: `test(api): verify guarded built-process lifecycle`.
+Resolve its hash with
+`git log -1 --format=%H --grep="^test(api): verify guarded built-process lifecycle$"`.
+
+### Initial checkpoint (2026-10-28, America/Maceio)
+
+Saved in progress before implementation; this initial snapshot is historical.
+
+- Owner: this stage's Codex session owns only its one-off tooling invocations,
+  future test children/listeners/watchdogs and test-only controller pool. No
+  development resource, business table, migration, schema reset or watcher is
+  owned or authorized for modification by this stage.
+- Checkout: `/Users/william/Documents/code/storage-minis`; verified branch
+  `WilliamPhilippe/step-4-implementation-plan`; base
+  `230a3486b8788162dbcc945cde5d86efcfb4d26c`. Initial Git status clean.
+- Predecessors: 4.1 `472e0a7`, 4.2 `29509a3`, 4.3 `230a348`; their recorded
+  completed evidence and relevant source/lockfile/build inputs match HEAD.
+  Reuse configuration/factory/lifecycle evidence; rerun affected checks.
+- Read stage execution/completion/checkpoint rules and 4.4 card, parent
+  P4-09/P4-10, exact test tuple, verification matrix and deadline contracts;
+  README Docker/PostgreSQL/Drizzle guidance and existing runner/prefetch guards.
+- Approval pending: presented dedicated runner/tasks/serial process tests and
+  ownership strategy, including a test-only loopback DNS/refusal fixture for
+  unavailable-DB startup. No runner/test implementation before the owner reply.
+  Existing approved 17s startup and 10s shutdown limits remain unchanged.
+- Resources inspected: existing `storage-minis-beijing` PostgreSQL containers
+  both stopped; saved host ports 5433/5434 retained. No live schema suite or
+  other project consumer is running. No DB/Doppler fetch, process child, pool,
+  listener, watchdog or temporary source fixture yet. Docker/issue read-only
+  inspections required sandbox/network escalation; Docker inspection passed.
+- Required checks pending: focused guard/ownership tests and affected strict
+  checks, sequential test-target availability/schema-phase release inspection,
+  `./scripts/tooling.sh run-db test pnpm test:api`, foundation milestone
+  `./scripts/tooling.sh run pnpm check`, docs/diff review and local commit.
+- Acceptance: AC4-05/AC4-08 pending real proof; AC4-06/AC4-07/AC4-09 remain
+  partial until later assigned outage/shutdown evidence. No 4.5 work or push/PR.
+- Exact next action: finish read-only issue/fixture inspection while awaiting
+  scoped owner approval, then record approval and implement resource ownership
+  before real scenarios. Checkpoint before live target/fixture changes.
+
+### Checkpoint history
+
+- Owner explicitly approved the scoped 4.4 recommendation in this session on
+  2026-10-28: planned commands/build graph/guard, existing dependencies only,
+  serial 30s tests/10s hooks/180s supervisor, bounded output and group cleanup,
+  reserved distinct ports and listening-marker ownership, existing pool activity
+  inspection and child-only loopback DNS/refusal preload. No service outage or
+  later stage was approved. Live #26/#21/#22/#23 read; remaining business/auth/
+  operations prerequisites unchanged. Ownership and refusal tests are implemented;
+  offline checks are next, before real scenarios or test PostgreSQL startup.
+- Before live fixture changes: ownership/guard tests passed (6 API plus 7 DB
+  launcher tests), broad typecheck passed. Initial lint found an unsafe `any`
+  return from the DNS overload delegation; typed the return using the existing
+  lookup signature and reran lint. Prefetch fixture now explicitly records
+  Doppler invocations and proves neither new command fetches on dev. No live
+  resource yet. Next start **test only**, run the inherited schema suite to
+  completion, confirm release, then run `run-db test pnpm test:api` sequentially.
+  The API suite owns serial per-child reserved ports, a 64 KiB output bound,
+  20s child watchdog plus 1s termination, 7s HTTP abort, controller pool and
+  loopback port 5432 only for the DNS/refusal fixture. Natural failures must
+  finish within 17s + 1s margin; basic signals must finish within 10s. Suite
+  watchdog is 180s + 10s termination + 1s pipe fallback, with 512 KiB output.
+  No development start/reset/stop, source replacement or managed-secret edit.
+- First live command `./scripts/database.sh up test` failed before startup with
+  the launcher's fixed Doppler/access/target diagnostic (exit 1). No credential
+  output was exposed and no API process/pool/listener started. Inspect existing
+  approved Doppler executable/login configuration without changing setup; stage
+  remains in progress and both required live/aggregate checks are pending.
+- Existing Doppler 3.77.1 is available; `doppler ... me` against the dedicated
+  directory returns `you must provide a token`. Requested the owner's existing
+  browser-login renewal, never a token in chat. No setup/package/configuration
+  changes were made. Finish offline checks and current in-progress summaries
+  while awaiting authentication. Test service is still stopped; no live owner.
+- Owner renewed the existing login. Offline foundation aggregate
+  `./scripts/tooling.sh run pnpm check` passed all 7 tasks and 85 unit tests in
+  11 files, including explicit PID release assertions. Dry process graph
+  inspection passed (DB build → API build → uncached finite process task).
+  Retrying test-only startup now; no development action. After schema release,
+  run the process suite, then rerun the required aggregate milestone with final
+  documentation. No API child/pool/listener has run yet.
+- Before the API live fixture phase: test-only startup passed authentication
+  and identity. `./scripts/tooling.sh run-db test pnpm test:db` passed 30 tests
+  (10 connection, 20 schema) in 34.19s, uncached; its tooling container exited.
+  Follow-up `database.sh psql test --tuples-only --no-align -c "SELECT count(*)
+  FROM pg_stat_activity WHERE datname = current_database() AND application_name
+  = 'storage-minis';"` returned **0**. Only test PostgreSQL runs; development
+  remains the original stopped container. The shared target is released.
+  Next run the exact required API command; no other live consumer may start.
+- Guarded `./scripts/tooling.sh run-db test pnpm test:api` passed **13 tests**
+  in 4.42s (3 successful Turbo tasks; DB/API finite-build cache reused, process
+  task explicitly bypassed cache). Real plain-Node children proved exact HTTP,
+  eight invalid/missing/blank configuration variants, wrong credentials, owned
+  real TCP refusal, occupied port and SIGINT/SIGTERM exits 130/143. Every child
+  exited naturally within assertions; no harness timeout/forced cleanup.
+  Per-scenario PID absence/port rebind/backend checks and final controller close/
+  schema-identity check passed. No source or managed-secret fixture was changed.
+  Before restoring live resources: inspect zero application backends, run test
+  identity check, then stop only the stage-started test service to restore its
+  initial stopped state (discarding only disposable tmpfs). Development unchanged.
+- Post-suite independent activity count returned **0** and ordinary test DB
+  authentication passed. Stopped only test PostgreSQL; development stayed stopped.
+  Post-live `pnpm check` passed all 7 tasks/85 tests (3 unchanged build/type cache
+  hits). Review identified two useful explicit missing-key process cases, beyond
+  the existing unit/malformed/blank proof: absent DB_TARGET and PGPASSWORD. Added
+  those before closing AC4-05. Before live fixture change: restart test only,
+  rerun the guarded suite (now 15 cases) against fresh unmigrated test storage,
+  then repeat activity/identity cleanup and the affected aggregate. The schema
+  phase already released the target; no schema/reset consumer will overlap.
+- Final guarded run passed **15 tests** in 4.89s, including absent DB_TARGET/
+  PGPASSWORD, with no watchdog/forced termination. The API finite build reran for
+  changed test input; process task bypassed cache again. Runtime source, lockfile
+  and dependency pins are unchanged. Next perform independent zero-backend/
+  unmigrated-schema inspection, stop test only, run the final aggregate, then
+  finish current status/docs validation and commit. No child/controller remains.
+
+### Completed handoff (2026-10-28, America/Maceio)
+
+The [approved 4.4 runner/task/test choices](technical-direction.md#step-44-guarded-process-test-approval-2026-10-28)
+are implemented. `apps/api/scripts/process-tests.ts` validates compiled DB
+configuration and requires the exact test tuple before child/client/cleanup
+acquisition, then launches the dedicated `api-process` Vitest config. That config
+and the test module repeat the guard. Root `test:api` selects API `test:process`,
+with DB → API finite builds and uncached, finite live execution/no outputs.
+Only the parent-listed 12 runtime variables pass through. No dependency, lockfile,
+runtime source, DB schema/migration or Compose configuration was changed.
+
+`scripts/database.sh` refuses both new command names on dev before even Doppler
+version/access lookup. Launcher fixtures record invocation and assert no fetch.
+Offline runner/config fixtures prove dev, mixed host/database, wrong port and URL
+refusal before spawn/socket acquisition; malformed imports cannot satisfy them.
+
+`owned-process.ts` owns child handles before events, bounded combined output,
+deadline, TERM/INT forwarding and bounded KILL fallback. The suite owns a detached
+process group; API children remain in that group, so runner cancellation includes
+descendants. Premature leader exit with survivors fails and cleans up the group;
+test success cannot hide orphan children or forced cleanup. This narrow helper is
+retained because Node/Vitest do not provide the whole suite's process-group,
+output-limit and orphan cleanup contract. Six offline tests prove natural exit,
+PID release, an ignored TERM/deadline, output overflow, descendant cleanup,
+repeated cancellation and exact-target refusal. No general lifecycle dispatcher
+or new infrastructure tool was added.
+
+Every real scenario reserves a distinct loopback port. It transfers the port to
+`node --enable-source-maps dist/server.js` with no loader, and requires **that
+child's** listening marker before HTTP. A competing bind fails closed. The
+occupied-port case keeps its listener, accepts no harness probes and releases it
+explicitly. Healthy children prove exact HTTP 200 live `{"status":"ok"}` and
+ready `{"status":"ready"}`, including repeat readiness. Ten configuration cases
+cover invalid/blank HTTP values, missing target/password, blank password, mixed
+DB host and URL refusal. Wrong credentials, unavailable socket and occupied port
+produce only fixed safe categories/exit 1, with no startup-success marker.
+
+The unavailable-DB child alone uses the test-only native Node preload
+`tests/fixtures/unavailable-database.ts`: only `postgres_test` resolves to
+loopback, where the suite owns port 5432 and records a real TCP connection before
+closing it. The validated tuple stays
+`test/postgres_test:5432/storage_minis_test/postgres`; shared PostgreSQL remains
+running and authenticated. This is startup socket-failure proof, not 4.9's
+service-outage/liveness/recovery proof. No preload ships in runtime `dist`.
+
+Both healthy signal cases exit naturally with 130/143. Each scenario checks
+child PID disappearance, listener rebind, and absence of API PostgreSQL backends
+through the already-owned controller pool. Final schema-name identity and
+controller `totalCount = 0` assertions pass. Business tables are never queried or
+written by API process fixtures. No reset/migrate/seed/import occurs in the API
+suite. Its final run against a fresh unmigrated test database proves diagnostic
+readiness does not require or apply migrations.
+
+All final commands below ran from the repository root on 2026-10-28, using
+existing Beijing project/ports 5433/5434 and tooling image
+`sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`,
+Node 24.22.1, pnpm 12.15.0, TypeScript 6.0.3, Turbo 2.11.10, Vitest 5.0.5,
+and PostgreSQL 18.6 image pinned in unchanged Compose. Base `230a348`; final
+source/config/test SHA256 is
+`0838df8a0ef568b5d9b6cd636d2e1001bade63bd1f1df88782617f2676b6c33f`.
+This hashes sorted path + NUL + bytes + NUL for 25 files: API TS/MTS/JSON files
+excluding dist/node_modules, root package/Turbo/lockfile, tooling/database/local
+launchers and DB launcher test. The tested pre-format identity was
+`a7644f6f2b706178505173cc4e8df869f16b735e546e2479ed7ceab27fba7436`;
+the only subsequent code-file change was Prettier's call wrapping in the test.
+Live evidence remains applicable: scenario values/logic, all runtime source,
+dependencies, environment and fixture behavior are unchanged.
+
+| Actual command | Final result |
+| --- | --- |
+| `./scripts/tooling.sh run pnpm exec vitest run --project api-unit --project db-unit apps/api/src/process-tests.test.ts packages/db/src/launcher.test.ts` | Passed 13 focused tests (6 API, 7 launcher), including refusal before fetch/connection. Final aggregate repeats these with PID-release assertions. |
+| `./scripts/tooling.sh run pnpm typecheck` and `./scripts/tooling.sh run pnpm lint` | Passed broad source/test/script/config types and zero-warning lint; repeated in the final aggregate. |
+| `./scripts/tooling.sh run pnpm exec prettier --write apps/api/scripts apps/api/src/process-tests.test.ts apps/api/tests apps/api/vitest.process.config.mts` | Passed; package/Turbo/launcher paths formatted separately with the same pinned command. Final integration-file format correction passed. |
+| `./scripts/tooling.sh run node --input-type=module` (inline task assertions) | Passed exact three-task graph, own finite build dependency, uncached/nonpersistent/no-output process task, exact 12-variable allowlist and no build credentials. No DB access. |
+| `./scripts/database.sh up test` | Passed authenticated database/user/UTC identity after the owner renewed the existing browser login. Development never started. |
+| `./scripts/tooling.sh run-db test pnpm test:db` | Passed 30 tests/2 files in 34.19s; inherited schema phase ran alone and exited. Post-phase activity count 0 before API tests. |
+| `./scripts/tooling.sh run-db test pnpm test:api` | Passed initial 13 and final 15 tests; final suite 4.89s/3 successful Turbo tasks, API finite build executed and live task explicitly bypassed cache. |
+| `./scripts/database.sh psql test --tuples-only --no-align -c "SELECT (SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND application_name = 'storage-minis'), (SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('public', 'drizzle'));"` | Final independent result `0\|0`: no leaked app/controller backend and no application/migration table in fresh test storage. |
+| `./scripts/database.sh check test` | Passed after both process runs. |
+| `docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test` | Passed; restored only stage-started test service to its original stopped state. Test tmpfs intentionally discarded. |
+| `./scripts/tooling.sh run pnpm check` | Final pass after live cleanup/format correction: 7 successful tasks, 85 unit tests/11 files, 2 unchanged DB build/type cache hits. Source/config/test/lint/format checks passed with both DB services stopped. |
+| `git diff --check` and `python3 /private/tmp/storage-minis-validate-stage-4.4-docs.py` | Passed: 7 Markdown files, 239 relative links/anchors, paired fences/consistent tables, all 18 criteria and exactly AC4-03/04/05/08/10 complete; 4.4 complete/4.5 not started, current summaries/approval links synchronized. |
+
+Deadlines: serial 30s process tests/10s hooks; 180s suite + 10s group termination
++ 1s pipe fallback, 512 KiB output. Each API child has 20s watchdog + 1s termination
++ 1s pipe fallback, 64 KiB output; HTTP aborts at 7s. Assertions require natural
+startup-failure exit under 18s (17s application limit + 1s scheduling margin) and
+signal cleanup under 10s. The controller inherits 2s connect/3s statement/4s
+query/6s check/10s close limits. No passing scenario needed a harness watchdog,
+runner force-exit or forced child cleanup.
+
+Resolved attempts: initial Doppler startup failed safely because the dedicated
+directory had no usable token; the owner renewed the existing browser login.
+An initial lint failure on the test preload's delegated return was fixed using
+the existing DNS signature. The aggregate after adding missing-key cases found
+Prettier call wrapping; formatting was applied and the full aggregate passed
+again. The adapted documentation validator initially assumed README must still
+spell out `4.3`; it now checks the current 4.4 range and passes. No documentation
+link, fence, table or acceptance mismatch was found. No required failed/unrun
+stage check remains. Earlier frozen dependency,
+compiled schema/export, build-cleaning and lifecycle evidence remains current;
+those inputs/behaviors did not change. Later image/watch/outage/project-shutdown/
+cache-completion checks remain intentionally unrun for their assigned stages.
+
+Acceptance: **AC4-05 and AC4-08 complete**, alongside inherited AC4-03/04/10.
+AC4-06/AC4-07 remain partial: exact healthy HTTP/authentication is real, but
+liveness through a service outage and bounded readiness failure/recovery remain
+4.9. AC4-09 has basic process-signal proof; later shutdown edge/project paths
+remain 4.10. Graph/unit/process portions of AC4-12/AC4-14 remain partial.
+No full Step 4, T06 or business acceptance is claimed.
+
+Resources: both original PostgreSQL containers stopped; development storage and
+container untouched. All one-off tooling/SQL containers self-removed; API children,
+controller pool, HTTP sockets, reserved ports, watchdogs and refusal listener
+released. No watcher, source replacement, temporary repository fixture or managed
+secret edit. The permanent test-only preload is intentionally committed; ignored
+dist/cache/dependency volumes remain. Necessary code/tests/tasks and seven current
+guidance/evidence files comprise this stage; initial checkout had no unrelated work.
+
+Final resource inspection confirms only the two original stopped DB containers,
+with no tooling/SQL container. Branch and diff review passed. Documentation-only
+completion summaries do not change the verified code/test inputs.
+
+Next action: execute the local Conventional Commit with the subject above,
+then verify its hash and `git status --short` and stop. Only a new assignment
+starts 4.5, first obtaining its uncovered image/package choices. No push/PR work.
+
 ## Stage 4.3 — Process lifecycle and entry point
 
 **State: complete.** All required stage checks passed before the local completion

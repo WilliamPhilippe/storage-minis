@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.2 complete; process startup and later stages remain pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.4 complete, including guarded process proof; overall Step 4 remains in progress, with stages 4.5–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -752,6 +752,29 @@ attempts both closes, destroys HTTP connections and forces exit 1 because it
 cannot certify release. OS signals, actual listener/pool release and DB process
 proof remain with 4.4/4.10; mocks do not establish those results. Later-stage
 recommendations retain their approval gates.
+
+## Step 4.4 guarded process-test approval (2026-10-28)
+
+**Owner approval:** The owner explicitly approved the scoped recommendation in
+the 4.4 session, covering the consuming P4-09/P4-10 details below. Later-stage
+recommendations retain their approval gates.
+
+| Choice | Approved scope and rationale |
+| --- | --- |
+| Commands/graph | API `test:process` uses existing tsx to run a dedicated Vitest supervisor; root `test:api` selects only that task. Its own finite build orders compiled DB/API output; live execution is uncached and outside ordinary `pnpm check`. Both names join the prefetch test-only guard. Injection alone cannot prove OS startup/shutdown; another runner package adds no needed capability. |
+| Ownership | Serial 30s tests, 10s hooks, 180s suite supervisor, then at most 10s termination plus a 1s pipe fallback. Bounded in-memory output, process-group cancellation, distinct reserved ports, child listening marker before HTTP, and existing DB-pool activity inspection establish resource ownership. No new dependency or business/schema fixture is needed. |
+| Unavailable startup | A test-only Node preload resolves only `postgres_test` to an owned loopback TCP refusal fixture. This exercises real socket/startup failure while retaining the exact validated test tuple and leaving shared PostgreSQL running. Stopping the actual test service with an already running API remains 4.9's separate outage proof. |
+
+Stage 4.4 is **complete**; see its
+[checkpoint and evidence](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests).
+Fifteen real process tests and the 85-test offline foundation aggregate passed,
+along with the sequential 30-test schema phase and independent zero-backend
+cleanup checks. AC4-05/AC4-08 are complete. AC4-06/07 remain partial until 4.9's
+real service outage; AC4-09 has basic signals only until later shutdown proof.
+The existing 17s startup/failure and 10s shutdown contracts remain unchanged.
+Both original DB services are stopped; development was preserved. No dependency,
+runtime source, schema/migration or Compose change was needed. Later-stage
+choices retain their approval gates; overall Step 4 is in progress.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

@@ -7,7 +7,7 @@ This repository contains workspace tooling, local PostgreSQL services, and
 application specifications. The Drizzle connection package and its tests are
 implemented, along with the approved structural schema and replayable migrations.
 API configuration, the injectable HTTP factory, process lifecycle and built entry
-are implemented. Real API process verification, image/Compose integration,
+are implemented and verified with guarded real-DB process tests. Image/Compose integration,
 business operations, the React frontend and CI remain pending.
 Docker lifecycle commands currently start PostgreSQL infrastructure only; API
 and frontend startup will follow their application implementation.
@@ -220,7 +220,7 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.3 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.4 are complete. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,
@@ -230,6 +230,25 @@ API suite; it requires no database or Doppler. See the
 [cumulative evidence](docs/technical/step-4-verification-2026-10-28.md).
 Integration tests run separately with `pnpm test:db` and require PostgreSQL. Empty suites still fail; do not use `--passWithNoTests` as evidence.
 
+Stage 4.4 adds root `pnpm test:api` and API `test:process`, outside ordinary
+unit checks. Run the schema suite to completion and release its clients before
+the process suite against the same test service:
+
+```sh
+./scripts/tooling.sh run-db test pnpm test:db
+./scripts/tooling.sh run-db test pnpm test:api
+```
+
+The process task builds DB/API finitely, then runs uncached serial tests against
+the exact test tuple. Both command names refuse development before credential
+fetch; runner/config guards also reject dev/mixed tuples. Tests own their
+children, reserved loopback ports and controller pool, and preserve schema and
+business data. Tests/hooks allow 30s/10s; the suite has a 180s supervisor plus
+10s termination and a 1s pipe fallback, with bounded in-memory output. No other
+schema/process/smoke/outage consumer may overlap. The 15 process cases and
+foundation aggregate passed; real service-outage proof remains stage 4.9.
+See the [evidence and cleanup record](docs/technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests).
+
 With an explicitly supplied, validated runtime environment, root `pnpm start`
 builds DB/API through Turbo and runs the API's
 `node --enable-source-maps dist/server.js`. After `pnpm build`, direct Node from
@@ -237,7 +256,7 @@ builds DB/API through Turbo and runs the API's
 start task passes only the [listed runtime settings](docs/plans/step-4-fastify-plan-2026-10-28.md#build-development-and-turbo-contract).
 Startup has a 17s failure/cleanup watchdog; signals share one 10s cleanup bound.
 Successful SIGINT/SIGTERM cleanup returns 130/143; failures return 1.
-Real OS/DB proof and guarded process commands belong to 4.4; the user-facing
+Real OS/DB startup-failure and basic signal proof is complete; the user-facing
 Doppler/Compose API startup path follows in 4.6. Existing Docker startup still
 supplies PostgreSQL only.
 
@@ -291,7 +310,7 @@ diagram now matches the approved structural schema.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-- [Step 4 Fastify plan — stages 4.1–4.3 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+- [Step 4 Fastify plan — stages 4.1–4.4 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
 - [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 - [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)

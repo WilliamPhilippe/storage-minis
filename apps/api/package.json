@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "start": "node --enable-source-maps dist/server.js"
+    "start": "node --enable-source-maps dist/server.js",
+    "test:process": "tsx scripts/process-tests.ts"
   },
   "dependencies": {
     "@storage-minis/db": "workspace:*",

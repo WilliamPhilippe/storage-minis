@@ -24,6 +24,7 @@
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
     "test:db": "turbo run test:integration",
+    "test:api": "turbo run test:process --filter=@storage-minis/api",
     "docker:build": "docker compose --env-file .env.compose --file compose.yaml build tooling",
     "docker:init": "docker compose --env-file .env.compose --file compose.yaml run --rm --no-deps tooling-init",
     "docker:up": "./scripts/database.sh up dev",

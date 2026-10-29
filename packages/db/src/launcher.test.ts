@@ -44,6 +44,7 @@ beforeEach(() => {
     doppler,
     `#!/bin/bash
 set -eu
+printf '%s\\n' invoked >> "$FIXTURE_DIRECTORY/fetches"
 if [[ \${1:-} == --version ]]; then echo v3.77.1; exit 0; fi
 selected=""; secret=""
 while [[ $# -gt 0 ]]; do
@@ -143,19 +144,25 @@ it("allows approved migrations through the selected test-target injection", () =
 });
 
 it("refuses development integration tests before credentials", () => {
-  for (const command of ["test:db", "test:integration"]) {
+  for (const command of [
+    "test:db",
+    "test:integration",
+    "test:api",
+    "test:process",
+  ]) {
     expect(() =>
       execFileSync(
         "/bin/bash",
         [join(root, "scripts/tooling.sh"), "run-db", "dev", "pnpm", command],
         {
-          env: { COMPOSE_PROJECT_NAME: "storage-minis-fixture" },
+          env: { ...environment, DOPPLER_CONFIG: "dev" },
           stdio: "pipe",
           timeout: 5_000,
         },
       ),
     ).toThrow("explicit test target");
   }
+  expect(existsSync(join(directory, "fetches"))).toBe(false);
 });
 
 function startup(target: string) {

@@ -89,6 +89,25 @@
         "DATABASE_URL"
       ]
     },
+    "@storage-minis/api#test:process": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "outputs": [],
+      "passThroughEnv": [
+        "DB_TARGET",
+        "PGHOST",
+        "PGPORT",
+        "PGDATABASE",
+        "PGUSER",
+        "PGPASSWORD",
+        "DATABASE_URL",
+        "HOST",
+        "PORT",
+        "LOG_LEVEL",
+        "NODE_ENV",
+        "TZ"
+      ]
+    },
     "test:integration": {
       "dependsOn": ["build"],
       "cache": false,

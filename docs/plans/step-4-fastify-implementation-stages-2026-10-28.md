@@ -1,7 +1,7 @@
 # Step 4 — Sequential implementation stages
 
 **Date:** 2026-10-28. **Status:** execution rules approved by the owner;
-stages 4.1–4.3 are complete; stages 4.4–4.11 remain pending. The
+stages 4.1–4.4 are complete; stages 4.5–4.11 remain pending. The
 [Step 4 plan](step-4-fastify-plan-2026-10-28.md) remains authoritative for technical
 contracts, approved amendments, pending choices and AC4-01–AC4-18.
 
@@ -109,7 +109,7 @@ completion owner below can mark the whole criterion complete.
 | [4.1](#41--configuration-and-finite-builds) | Validated configuration and compiled workspace builds | [Copy 4.1](step-4-fastify-stage-prompts-2026-10-28.md#prompt-41--configuration-and-finite-builds) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds) |
 | [4.2](#42--http-factory-health-and-safe-logs) | Testable HTTP factory, health and safe logs | [Copy 4.2](step-4-fastify-stage-prompts-2026-10-28.md#prompt-42--http-factory-health-and-safe-logs) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs) |
 | [4.3](#43--process-lifecycle-and-entry-point) | One DB owner, route extension and process entry | [Copy 4.3](step-4-fastify-stage-prompts-2026-10-28.md#prompt-43--process-lifecycle-and-entry-point) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point) |
-| [4.4](#44--guarded-built-process-tests) | Real-DB process tests and basic signal proof | [Copy 4.4](step-4-fastify-stage-prompts-2026-10-28.md#prompt-44--guarded-built-process-tests) | Not started | — |
+| [4.4](#44--guarded-built-process-tests) | Real-DB process tests and basic signal proof | [Copy 4.4](step-4-fastify-stage-prompts-2026-10-28.md#prompt-44--guarded-built-process-tests) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests) |
 | [4.5](#45--self-contained-runtime-image) | Portable API runtime image | [Copy 4.5](step-4-fastify-stage-prompts-2026-10-28.md#prompt-45--self-contained-runtime-image) | Not started | — |
 | [4.6](#46--canonical-compose-and-doppler-startup) | Profiled runtime service and secure native startup | [Copy 4.6](step-4-fastify-stage-prompts-2026-10-28.md#prompt-46--canonical-compose-and-doppler-startup) | Not started | — |
 | [4.7](#47--development-image-and-reload) | Development service and API/DB reload | [Copy 4.7](step-4-fastify-stage-prompts-2026-10-28.md#prompt-47--development-image-and-reload) | Not started | — |

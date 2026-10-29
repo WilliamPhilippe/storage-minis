@@ -3,7 +3,8 @@
 **Date:** 2026-10-28. **Status:** Step 4 in progress. Stage 4.1 is approved,
 implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented and
 verified in `29509a3`; stage 4.3 lifecycle/entry/start tasks are approved,
-implemented and verified; stages 4.4–4.11 remain pending.
+implemented and verified in `230a348`; stage 4.4 guarded process tests are approved,
+implemented and verified; stages 4.5–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -130,6 +131,9 @@ P4-03/P4-05/P4-06 and the factory/HTTP/logging contract were approved for stage
 P4-04, the process/deadline/exit contract and stage 4.3 start-task portions of
 P4-08/P4-09 were approved on 2026-10-28; implementation and offline checks are
 complete. See the [stage 4.3 approval](../technical/technical-direction.md#step-43-lifecycle-process-and-start-task-approval-2026-10-28).
+Stage 4.4 P4-09/P4-10 runner/task/test choices were approved on 2026-10-28;
+implementation and guarded/aggregate checks are complete. See the
+[4.4 approval](../technical/technical-direction.md#step-44-guarded-process-test-approval-2026-10-28).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -162,10 +166,11 @@ stage-scoped or later-stage evidence remains explicitly partial.
 The detailed scenarios and resource cleanup are in the verification matrix.
 AC4-03/AC4-10 have [stage 4.2 evidence](../technical/step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs).
 AC4-04 has [stage 4.3 lifecycle/route evidence](../technical/step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point).
-Startup/signal/deadline unit fixtures support AC4-08/AC4-09 only partially;
-real process/DB/project shutdown proof remains with 4.4/4.10.
-AC4-06/AC4-07 have injected health proof only; real HTTP/DB failure, bounds and
-outage/recovery remain partial for later stages.
+AC4-05/AC4-08 have [stage 4.4 guarded process evidence](../technical/step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests),
+including real startup failures, safe diagnostics and listener/pool cleanup.
+AC4-09 has basic real SIGINT/SIGTERM proof; shutdown edge/project paths remain
+with 4.10. AC4-06/AC4-07 have real healthy HTTP/authenticated-check proof, but
+service-outage liveness/readiness bounds/recovery remain partial until 4.9.
 
 - [ ] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
@@ -181,7 +186,7 @@ outage/recovery remain partial for later stages.
   async route-registration callback before readiness/listen. A test route proves
   access to that same instance and registration failure triggers cleanup. No
   tRPC dependency, dummy identity or second pool is introduced.
-- [ ] **AC4-05 — Configuration:** explicit API/DB validation rejects invalid or
+- [x] **AC4-05 — Configuration:** explicit API/DB validation rejects invalid or
   missing settings before listening and exposes no supplied secret values.
 - [ ] **AC4-06 — Liveness:** real HTTP `/health/live` returns 200 and exactly
   `{"status":"ok"}` without querying PostgreSQL, including during a DB outage.
@@ -189,7 +194,7 @@ outage/recovery remain partial for later stages.
   200/503 body from a fresh authenticated check. DB failure is bounded by 6s plus
   HTTP scheduling margin, and recovery restores 200 without API restart. This
   checks connection identity, not migration currency; startup never migrates.
-- [ ] **AC4-08 — Startup failures:** wrong credentials, unavailable DB, invalid
+- [x] **AC4-08 — Startup failures:** wrong credentials, unavailable DB, invalid
   configuration and occupied ports fail nonzero with safe diagnostics and no
   leaked listener/pool; startup/failure cleanup respects the 17s outer deadline.
 - [ ] **AC4-09 — Shutdown:** SIGINT/SIGTERM, repeated signals, startup interruption
@@ -863,10 +868,13 @@ on 2026-10-28; their scope and rationale are recorded above and in technical
 direction. P4-01 is retired. The later stage 4.1 approval covers P4-02, configuration
 and the finite-build/strict-check portions of P4-08/P4-09, delivered in `472e0a7`.
 The owner subsequently approved P4-03/P4-05/P4-06 for stage 4.2; that factory,
-HTTP and logging work is complete with passing injection/strict/build checks. Other P4 watch, process and packaging
-recommendations still need explicit implementation approval within the amended direction. The earlier
-planning update performed no installation or implementation; current delivered
-scope is stages 4.1–4.2. Preserve existing approved Step 3 behavior and obtain
+HTTP and logging work is complete with passing injection/strict/build checks.
+Stage 4.3 P4-04/process/start choices and stage 4.4 P4-09/P4-10 runner/task/test
+choices are also approved and implemented with offline and real process evidence.
+Later P4 watch, packaging and verification recommendations retain their approval
+gates within the amended direction. The earlier planning update performed no
+installation or implementation; current delivered scope is stages 4.1–4.4.
+Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.
 
 Planning validation: the original review inspected issue/PR state, package

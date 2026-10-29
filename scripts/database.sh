@@ -73,7 +73,7 @@ esac
 if [[ $operation == run ]]; then
   for argument in "$@"; do
     case "$argument" in
-      test:db|test:integration)
+      test:db|test:integration|test:api|test:process)
         [[ $target == test ]] || fail 'Database integration tests require the explicit test target.' ;;
     esac
   done
