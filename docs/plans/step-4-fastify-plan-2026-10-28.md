@@ -1,6 +1,6 @@
 # Step 4 — Fastify server implementation plan
 
-**Date:** 2026-10-28. **Status:** Step 4 in progress. Stage 4.1 is approved,
+**Date:** 2026-10-28. **Status:** Step 4 complete (2026-10-29). Stage 4.1 is approved,
 implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented and
 verified in `29509a3`; stage 4.3 lifecycle/entry/start tasks are approved,
 implemented and verified in `230a348`; stage 4.4 guarded process tests are approved,
@@ -10,9 +10,12 @@ approved, implemented and verified in `f92a8ed`; stage 4.7 development/reload is
 approved, implemented and verified; stage 4.8 bounded runtime-image smoke is
 approved, implemented and verified; stage 4.9 DB socket/service recovery and
 shared-target isolation are approved and verified; stage 4.10 shutdown and native
-project isolation are approved and verified; stage 4.11 remains pending.
+project isolation are approved and verified; stage 4.11 cache, final aggregate,
+setup/documentation and successor handoff are verified. All eighteen criteria
+passed; authorized implementation evidence is delivered on
+[PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
-Remaining implementation recommendations retain their approval gates.
+Later foundation choices retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 This plans Step 4 of the [implementation guide](../technical/technical-foundation-implementation-guide.md#step-4--fastify-server-foundation).
 This plan alone does not authorize dependency installation, runtime configuration changes,
@@ -203,7 +206,11 @@ all compiled files/declarations and portable production links. AC4-01 now has
 AC4-02 has [4.7 development/reload evidence](../technical/step-4-verification-2026-10-28.md#stage-47--development-image-and-reload), including compiler isolation/recovery and in-flight foreground interruption.
 AC4-13 and AC4-15 are complete with [4.8 smoke/security/deadline evidence](../technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke),
 current runtime/development credential proof and final container integration checks.
-Project drain proof stays with 4.10.
+Project drain proof is complete in 4.10. AC4-12/AC4-16 have
+[4.11 cache/setup/handoff evidence](../technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
+AC4-18 is complete with the owner-authorized implementation evidence on existing
+[PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107); fetched
+title/body/branch verified. Full T06/business acceptance remains deferred.
 
 - [x] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
@@ -242,7 +249,7 @@ Project drain proof stays with 4.10.
   builds remove stale emitted files, and API imports only compiled DB exports.
   Packaged workspace links resolve wholly within the API runtime image, including
   all compiled schema modules and declarations.
-- [ ] **AC4-12 — Task graph:** actual build/typecheck/test dependencies and
+- [x] **AC4-12 — Task graph:** actual build/typecheck/test dependencies and
   `dist/**` outputs are declared. Finite work restores/reuses valid cache entries;
   source changes invalidate consumers. Persistent/live work is uncached and no
   finite task depends on a persistent watcher.
@@ -261,7 +268,7 @@ Project drain proof stays with 4.10.
   the built API image over host HTTP, checks exact health responses, signals
   shutdown and removes every owned probe container on success/failure. It exits
   0 only after all assertions pass and reports bounded, sanitized failures.
-- [ ] **AC4-16 — Manual local proof:** README documents image build/start, browser
+- [x] **AC4-16 — Manual local proof:** README documents image build/start, browser
   or curl URLs, exact expected health bodies, logs, stop and development commands
   from a fresh checkout, with prerequisites and troubleshooting. No Step 5/6
   implementation is needed to follow it successfully.
@@ -270,7 +277,7 @@ Project drain proof stays with 4.10.
   cleanup preserves development DB storage and unrelated worktree resources.
   All API services are profiled in canonical `compose.yaml`; default DB startup
   excludes them and native project status/stop/down includes them when selected.
-- [ ] **AC4-18 — Handoff evidence:** the implementation PR records results for
+- [x] **AC4-18 — Handoff evidence:** the implementation PR records results for
   all these criteria, setup instructions, image identity and Step 5/6 contracts.
   Step 3B structural/replay evidence is inherited; remaining business writers,
   authorization and production acceptance stay explicitly deferred. Unresolved
@@ -548,12 +555,12 @@ and JavaScript source maps. Keep `noEmitOnError: true`, `rootDir: src`,
 `outDir: dist`, declaration emit and test exclusion. No API export map is needed
 until Step 5's type-only router export. Preserve the DB's existing output shape.
 Both finite package builds first remove only their own `dist` with native Node
-`fs.rmSync`, then run `tsc --project tsconfig.build.json`. This is a proposed DB
-build-script amendment to avoid stale files after source deletion/rename; no
+`fs.rmSync`, then run `tsc --project tsconfig.build.json`. This is the approved DB
+build-script amendment preventing stale files after source deletion/rename; no
 schema or DB public API change accompanies it. Clean builds must not run against
 the same output while development watchers are active.
 
-| Owner | Proposed command |
+| Owner | Implemented command |
 | --- | --- |
 | API `build` | Native Node clean of its `dist`, then `tsc --project tsconfig.build.json`. |
 | DB `build` | Same clean-before-compile amendment; existing compiler config retained. |
@@ -730,10 +737,9 @@ and preserve development storage; do not claim a pass or reset data to hide it.
 
 ## Local verification delivered by Step 4
 
-The API commands in this section are the final planned Step 4 workflow. They
-become available incrementally under the
-[stage guide](step-4-fastify-implementation-stages-2026-10-28.md); each stage
-documents only its working subset until the full quickstart is complete.
+The API commands in this section are the implemented Step 4 workflow, verified
+through the [stage guide](step-4-fastify-implementation-stages-2026-10-28.md) and
+[final reconciliation](../technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
 Existing Step 3 setup/DB commands already exist. Docker Desktop and the documented dedicated
 Doppler browser login/configs/passwords are prerequisites. Runtime image build/
 start needs neither host Node/pnpm nor tooling dependency volumes. Reuse existing
@@ -741,10 +747,10 @@ start needs neither host Node/pnpm nor tooling dependency volumes. Reuse existin
 a unique project and distinct available DB ports. Do not overwrite an initialized
 checkout's settings or export a replacement project name.
 
-Proposed package aliases follow Step 3's native lifecycle convention. The
+Implemented package aliases follow Step 3’s native lifecycle convention. The
 security-bearing exceptions call only the existing Doppler boundary:
 
-| Planned alias | Host command |
+| Host alias | Raw command |
 | --- | --- |
 | `pnpm docker:api:build` | `docker compose --env-file .env.compose --file compose.yaml build api api-dev` |
 | `pnpm docker:api:up` | `./scripts/database.sh api-up dev` |
@@ -862,7 +868,7 @@ settings. No global prune or development data reset is part of Step 4.
 
 ## Handoff, documentation and approval
 
-Implementation would change API source/tests/configuration and manifest, root
+Implementation through stage 4.10 changes API source/tests/configuration and manifest, root
 scripts/lockfile/Turbo, DB package build/dev/files settings, the selected-target
 host credential boundary and canonical Compose API profiles. Add the API
 Dockerfile/ignore/smoke files, native package aliases and service-aware project
@@ -885,9 +891,11 @@ stages remain partial Step 4 delivery, not completion of the whole plan.
 
 ### Verification of support for Steps 5 and 6
 
-The outputs below were checked against every completion criterion in the
-guide's Step 5 and Step 6. This establishes planned coverage, not runtime proof;
-AC4-01–AC4-18 require actual evidence before handoff.
+The outputs below are supported by stages 4.1–4.10 and the
+[stage 4.11 final reconciliation](../technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
+Successor-specific transport, type-export and clean-checkout proof remain with
+Steps 5/6. Every Step 4 criterion still needs its recorded evidence; PR delivery
+cannot be inferred from local checks.
 
 | Successor requirement | Step 4 output and proof | Successor work still required |
 | --- | --- | --- |
@@ -897,7 +905,7 @@ AC4-01–AC4-18 require actual evidence before handoff.
 | Step 5: future browser type contract | ESM/declaration builds and `files: ["dist"]` package built modules as they are added. The same API image rebuild includes future router output. | Add the type-only router export and prove emitted browser JavaScript imports no server/DB runtime. Step 4 provides no router type yet. |
 | Step 6: built-process smoke and shutdown | API runtime image, exact health responses, direct Node CMD, guarded process suite and `database.sh api-verify test` with owned-container cleanup. | Extend the existing smoke with valid/invalid tRPC requests and final failure/redaction scenarios rather than inventing another server lifecycle. |
 | Step 6: isolated PostgreSQL tests | Explicit test tuple guards, separate process/unit commands and known 6s check/10s shutdown limits. | Consolidate cross-package evidence in sequential shared-target phases. Inherit Step 3B schema/replay tests; business writers and their races remain deferred. |
-| Step 6: repeatable clean setup and caches | Image build/dependency packaging, documented local workflow, offline checks and declared finite/persistent task graph. | Reproduce the complete Steps 1–5 setup from a clean checkout and verify integrated cache/artifact restoration and failure propagation. |
+| Step 6: repeatable clean setup and caches | Image build/dependency packaging, documented local workflow, offline checks and declared finite/persistent task graph. | Reproduce complete Steps 1–5 setup from a clean checkout and extend the verified Step 4 cache/artifact/failure checks after tRPC changes. |
 | Step 6: setup diagnostics and limitations | README local verification, logs/stop commands, image identity, acceptance results and explicit deferrals. | Publish final consolidated evidence and outstanding T06/business/operations limitations. |
 
 The owner-required API image is an additional Step 4 deliverable; its packaging
@@ -930,7 +938,11 @@ verification is complete. Stage 4.9 socket/service fixtures were approved on
 unmigrated readiness and exclusive sequential ownership. Stage 4.10 fixtures are
 approved and verified with 25 guarded process cases, native in-flight stop/down/
 confirmed deletion, distinct process/container/client exits and owned-only cleanup.
-Current delivered scope is stages 4.1–4.10; the original planning update remains a dated
+Current delivered scope is stages 4.1–4.11: verified existing task/cache
+contracts, complete setup/approval records, all eighteen criteria and authorized
+PR evidence. No new runtime choice was needed for 4.11. Final results and
+successor contracts are tracked in the cumulative record.
+The original planning update remains a dated
 record of no installation or implementation.
 Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.

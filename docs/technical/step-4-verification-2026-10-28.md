@@ -5,6 +5,250 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.11 — Cache verification, documentation and final handoff
+
+**State: complete. Overall Step 4: complete.** Required checks and all eighteen
+acceptance criteria passed on 2026-10-29 (America/Maceio), including authorized
+implementation evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
+Completion commit subject: `docs(api): complete Fastify foundation verification and handoff`.
+Resolve its actual hash through Git history; this avoids a self-referential commit.
+The initial checkpoint and history below preserve earlier in-progress states.
+
+### Initial checkpoint
+
+- Checkout `/Users/william/Documents/code/storage-minis`; verified branch
+  `WilliamPhilippe/step-4-implementation-plan`, base `d051a5a`; initial tree clean.
+- Read AGENTS.md, stage execution/completion/checkpoint rules and 4.11 card,
+  foundation execution rules/Step 4/5/6 contracts, parent task graph and all
+  AC4-01–18. Progress table locates this cumulative record. Stages 4.1–4.10
+  completion commits exist in history; inspect their source/image/environment
+  identities before reusing results.
+- Assigned scope: real task discovery, finite cache reuse/restoration/source
+  invalidation, uncached live proof, final aggregate milestone, current setup/
+  approval summaries and Step 5/6 handoff. No new dependency/configuration or
+  business/auth/production/CI choice is approved by this assignment.
+- Preserve `.env.compose` (`storage-minis-beijing`, ports 5433/5434), owner data,
+  named volumes, historical records and unrelated work. No live resource or
+  temporary source mutation has been started in this stage.
+- Next: inspect current Docker/source identities, predecessor handoffs and live
+  T06/existing PR; establish recorded delivery authorization. Checkpoint before
+  temporary fixtures/live work; request approval for uncovered choices. Then
+  execute existing approved checks, reconcile all eighteen criteria and update
+  current summaries. Keep 4.11 in progress if required PR evidence is unmet;
+  do not push, change PRs or start Step 5 without existing authorization.
+
+### Checkpoint history
+
+- Discovery passed: 16 implemented tasks across root/API/DB. Both builds declare
+  `dist/**`; finite consumers depend on DB build; dev/start are persistent and
+  uncached, process/integration/DB live commands are uncached. No finite task
+  depends on a watcher. Aggregate dry run has seven real tasks.
+- Forced `./scripts/tooling.sh run pnpm check --force --summarize` passed all
+  seven tasks, 109 tests / 12 files, 53.722s. Unchanged repeat is recorded next.
+- Current Docker identities match predecessor runtime `48aa5486d3e6`, dev
+  `fc2c235b0878`, tooling `9654ab9e6cd6`; only original stopped DBs remain.
+  Runtime modules/schema/lockfile match 4.4 (test-only additions excluded);
+  Dockerfile/Compose/launch/smoke/task inputs match final 4.8. Reuse actual image,
+  reload, outage, security, schema and shutdown scenarios where unchanged.
+- Live T06 remains open with no comments and unchanged dependencies; PR #107
+  is open at `d051a5a`, with planning-only title/body and no comments/reviews.
+  Earlier authorization to push the seven planning docs did not authorize this
+  stage's delivery. Prepare concrete local PR evidence; AC4-18 cannot complete
+  without authorized update of the existing PR.
+- Before temporary cache experiments: no watchers/live consumers. Use existing
+  approved native Turbo/Node checks; inventory both dist trees, delete only those
+  generated outputs, rebuild and compare hashes. Temporarily append an exported
+  number/type fixture to DB index, verify consumer hashes/reexecution, then an
+  intentional TS2322 fixture to verify build failure blocks the API. Back up
+  original bytes in memory and restore in finally, then restore finite outputs.
+  No live command runs while sources are altered. No persistent code/config choice.
+  Next: cache restoration/invalidation, then sequential bounded test DB checks.
+
+- Cache experiment: forced/repeated builds passed; after deleting both dist trees,
+  both builds were cache hits and all 40 generated file hashes matched. DB source
+  edit changed DB/API build, API typecheck, root lint/test hashes; all eight
+  combined tasks executed. Seven passed, but one deadline assertion failed:
+  `verify-api.test.ts` observed Date.now elapsed 614491ms while Vitest reported
+  20325ms for that case (whole suite 42.98s, Turbo wall 10m38s). This suggests a
+  host/VM clock discontinuity or suspension; it is not passing deadline evidence.
+  No test threshold or implementation will change. Finally restored original
+  index bytes and all 40 output hashes; no live consumer existed.
+- Next temporary run uses a fresh fixture value and separate ignored logs under
+  `.turbo/stage411-retry` to demonstrate invalidation/reexecution again, rerun the
+  affected deadline case via the aggregate, and verify compiler failure blocks
+  API build. Keep the same finally restoration and no-live-work boundary.
+
+- Retry preflight hit a harness-only JSON parse failure: Turbo printed its
+  telemetry notice on stderr after dry-run JSON. No source mutation occurred;
+  finally still verified original outputs. Parse only the JSON object and retry;
+  application/task/test policy remains unchanged.
+
+- Source-invalidation retry passed eight tasks (all MISS/executed), 109 tests,
+  53.5s, summary `3LMMNOpCVojBOnWdsZDz5QPGlvC`. Intentional TS2322 build returned
+  1 with only the DB task executed (API blocked), summary
+  `3LMMNRNSCjOUnIvdvJcggzVdVMm`. Finally restored original source bytes and all
+  40 output hashes via two original cache hits (`3LMMNSW7WB9OXUBcI438DzlTBKJ`).
+  Earlier deadline failure has passing affected evidence without relaxed checks.
+- Before live work: sources restored; no watcher/process/schema/smoke consumer.
+  Original test `dde80d86c88f` and development `7d69a3e26bab` are stopped. Next
+  audit runtime image compiled files offline against restored dist, then own
+  test startup → SQL identity/zero-clients → two uncached DB checks → one image
+  smoke → SQL identity/zero-clients → native test stop in finally. Startup outer
+  90s, DB commands 45s, smoke 65s, SQL 30s, stop 20s. Preserve development,
+  image IDs, all six volumes/settings and initial stopped DB state. Reuse prior
+  failure/reload/outage/native-shutdown scenarios: relevant source/image/task/
+  environment inputs are unchanged; this phase verifies the final artifact and
+  live uncached execution after restoration, not a new date for every scenario.
+
+- Final exact aggregate passed seven tasks / 109 tests, 52.113s, with current
+  final implementation and setup/handoff documentation. Real 30s deadline case
+  passed at 29944ms; the earlier discontinuity-like result has no unresolved
+  acceptance failure. Documentation gate passed eight Markdown files, 41 changed
+  links/anchors, 69 tables and fences; `git diff --check` passed.
+- Final resource audit was first attempted while the aggregate’s owned tooling
+  container still ran; its no-running-container assertion correctly refused that
+  premature inventory. After the aggregate exited, repeat audit passed: exactly
+  two original stopped DB containers, six expected volumes with original ownership/
+  creation identities, unchanged three image IDs/nonroot commands and saved
+  settings. No live consumer, temporary source edit, listener or cleanup remains.
+- Only AC4-18 is unmet. Prepared concrete PR title
+  `feat(api): deliver Fastify server foundation` and body at
+  `/private/tmp/storage-minis-stage411-pr.md`; no remote mutation has occurred.
+  Next obtain owner delivery authorization; until then leave this stage/Step 4
+  in progress and all eight stage documents uncommitted. No later step started.
+
+### Final reconciliation (2026-10-29, America/Maceio)
+
+**Stage 4.11: complete. Overall Step 4: complete.** AC4-12 and AC4-16 have
+passing local evidence; AC4-18 has the owner-authorized implementation title/body
+on existing [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
+The fetched remote title/body and branch match the prepared evidence exactly.
+All eighteen criteria are complete; Steps 5/6 and full T06 remain separate.
+
+Predecessor completion commits verified in this branch’s history:
+`472e0a7` (4.1), `29509a3` (4.2), `230a348` (4.3), `2510bdd` (4.4),
+`4fd7856` (4.5), `f92a8ed` (4.6), `0ac5a74` (4.7), `78078f6` (4.8),
+`b2a4a81` (4.9), `d051a5a` (4.10). Existing choices cover this stage’s
+verification; no package, lockfile, task, environment contract or runtime code
+changed. The only tracked changes are eight necessary current documentation files.
+
+| Check / exact entry point | Result |
+| --- | --- |
+| `./scripts/tooling.sh run pnpm check --dry=json` | Seven actual aggregate tasks; DB build precedes API/DB typecheck and root lint/unit tests. |
+| `./scripts/tooling.sh run pnpm exec turbo run build typecheck typecheck:root lint format:check test dev start test:process test:integration db:check db:generate db:migrate --dry=json` | 16 implemented tasks; both builds declare `dist/**`, no finite task depends on persistent work, all persistent/live tasks uncached with narrow environment declarations. |
+| `./scripts/tooling.sh run pnpm check --force --summarize`, then unchanged `pnpm check --summarize` through the same launcher | Seven tasks / 109 tests passed, 53.722s; unchanged repeat 7/7 HIT, 34ms. Summaries `3LMJsQIhO6pVapOeSDnJWoG4VoS`, `3LMJuo1JGsSiqd7w2COolKgFllP`. |
+| `./scripts/tooling.sh run node --input-type=module < /private/tmp/storage-minis-stage411-cache.mjs` | Forced builds then unchanged 2/2 HIT. Deleted both dist trees with watchers stopped; next build 2/2 HIT restored all 40 file names/content hashes, including API maps and full DB schema declarations. Restoration summary `3LMK2WrDO1IpxKnFCX24KTkH20n`. Initial source-unit deadline failure is retained above. |
+| `./scripts/tooling.sh run node --input-type=module < /private/tmp/storage-minis-stage411-cache-retry.mjs` | Temporary DB implementation/type export changed DB/API build, API typecheck, root lint/test hashes. Eight tasks executed as MISS; strict types/lint/format and all 109 tests passed. Deliberate TS2322 returned 1 before API build. Finally restored original source and all 40 original output hashes using two cache hits. |
+| `python3 /private/tmp/storage-minis-stage411-live.py` | Runtime image’s 40 compiled file hashes equal restored current dist. Test startup → independent SQL → two DB checks → image smoke → independent SQL → native stop, exclusive and sequential, all passed. |
+| `./scripts/tooling.sh run-db test pnpm db:check --summarize` twice | Same hash `a2758726d8fffdee`, both `cache bypass, force executing`; actual authenticated checks ran again (395ms/374ms Turbo, 1.368s/1.339s host). Finite build prerequisites reused. Summaries `3LMMW2PtJfOvlZ7hVhmATHiwGNV`, `3LMMWNj6clg039Jf9OI4OOlmBbr`. |
+| `./scripts/database.sh api-verify test` | Final unchanged image success in 1.592s: exact host live/ready 200, TERM 143, owned probe removed. Container `0e5c3166ec56e88b72288ea79108c4b46ae448ced33b6a52e4d079def36f631e`, loopback port 55000. |
+| `./scripts/database.sh psql test -At -c "SELECT current_database(), current_user, current_setting('TimeZone'); SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('public','drizzle'); SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND backend_type='client backend' AND pid<>pg_backend_pid();"` before/after live checks | `storage_minis_test / postgres / UTC`, zero public/drizzle tables and zero other clients both times; no migration or business write. |
+| `./scripts/tooling.sh run pnpm test --project api-unit stage411-no-such-test` | Expected exit 1, “No test files found”; normal empty-suite refusal preserved. |
+| Final `./scripts/tooling.sh run pnpm check` and documentation/diff gate | Passed seven tasks, 109 tests / 12 files, 52.113s (three valid package cache hits). The affected real readiness deadline passed at 29944ms. Eight Markdown files, 41 changed relative links/anchors, 69 tables, paired fences, all eighteen criteria (17 complete) and `git diff --check` passed. |
+
+Ignored local reports are under `.turbo/runs/` and `.turbo/stage411{,-retry}/`;
+nonsecret host harnesses/logs are under `/private/tmp/storage-minis-*411*`.
+These are verification artifacts, not new installed tooling or committed code.
+Their source/output restoration and actual command assertions are described above
+so later checks can reproduce the proof with existing native tools.
+
+### Evidence identity and reuse
+
+Current runtime image/index:
+`sha256:48aa5486d3e649e8822b01eb4b5250f9d71654ba7de00830a257b3b4eb6ca2c0`,
+config `sha256:8b7a7d6fc7eb7f4aa2d6f3f2790f3986423b0972a361c6061fd87df3601a9320`.
+Development index `sha256:fc2c235b087810fb2fa8909d3747e2e7b7b8c4721c82cb43bf4925958eb26ca0`;
+tooling `sha256:9654ab9e6cd60e6372f06f6d00ac59f19d92c956b3dac87facafb5c8423fcdad`.
+Node 24.22.1, pnpm 12.15.0, Turbo 2.11.10, Docker 29.9.2, Compose 5.6.1;
+verified platform is Docker Desktop Linux/arm64 on this macOS checkout.
+
+Runtime API modules, DB implementation/config/index/schema, migrations, DB
+integration tests/scripts and lockfile have no diff from `2510bdd`. Dockerfile,
+ignore rules, canonical Compose, launchers, smoke, manifests and Turbo have no
+diff from final 4.8 `78078f6`. Image compiled bytes match current dist directly.
+Accordingly reuse 4.4’s 30-test PostgreSQL replay/constraint/lifecycle phase,
+4.5/4.6 packaging/security/publication proof, 4.7 API/compiled-schema reload and
+signals, 4.8 full smoke failure/security/deadline matrix, 4.9 same-process socket/
+service outage/recovery/unmigrated readiness, and 4.10’s current 25-process-case
+startup/shutdown/watchdog and native stop/down/volume-isolation evidence.
+No affected production input changed, so replaying every scenario adds no missing
+coverage. Stage 4.11 repeated only the final artifact/uncached success integration
+and affected source-invalidation/deadline evidence. Further relevant changes must
+rerun their affected proof; documentation dates alone do not invalidate it.
+
+Final live inventory equals the initial container identity set: stopped development
+`7d69a3e26bab`, stopped test `dde80d86c88f`; no API/probe/watcher/SQL controller
+remains. `.env.compose` bytes/project/ports are preserved. Test tmpfs loss on stop
+is intentional; owner development never started or reset. Final six-volume
+ownership/creation and nonroot image metadata audit passed after the aggregate. No fixture source remains.
+
+### AC4-01–18 reconciliation
+
+| Criterion | State | Actual evidence / remaining obligation |
+| --- | --- | --- |
+| AC4-01 | Complete | 4.5/4.6 portable nonroot image and authenticated native startup; final 4.11 byte identity/smoke. |
+| AC4-02 | Complete | 4.7 API/DB/schema reload, error/correction, rapid saves and signal drain; unchanged dev image/model. |
+| AC4-03 | Complete | 4.2 import/factory/injection ownership; current 109-unit aggregate. |
+| AC4-04 | Complete | 4.3 same-owned-DB registration before listen and failure cleanup; current lifecycle units. |
+| AC4-05 | Complete | 4.1 config units, 4.4 guarded process failures and current strict/unit checks. |
+| AC4-06 | Complete | 4.9 exact live 200 through socket/service outage without API restart. |
+| AC4-07 | Complete | 4.9 bounded ready 503/recovery with unchanged API and unmigrated DB; final authenticated zero-table proof. |
+| AC4-08 | Complete | 4.4 startup config/credential/unavailable/occupied-port checks; inherited by 4.10’s 25-case run. |
+| AC4-09 | Complete | 4.10 real repeated signals/startup cancellation/failed and hung close, 10s/17s watchdogs and native project drain. |
+| AC4-10 | Complete | 4.2 HTTP/framework/log sentinels plus current 109 units. |
+| AC4-11 | Complete | 4.1 clean ESM/declarations, 4.5 portable schema/type package; 4.11 all 40 compiled files match runtime image. |
+| AC4-12 | Complete | 4.11 real task graph, 7/7 check cache reuse, 2/2 build reuse/output restoration, source invalidation and failed dependency propagation; repeated live check remains uncached. |
+| AC4-13 | Complete | 4.6–4.8 selected-target Doppler refusal/redaction/precedence proof; final unchanged launcher/image smoke. |
+| AC4-14 | Complete | 109 units, 4.10 25 guarded process cases and inherited schema suite; exact-target guards, empty-suite refusal and exclusive phase ownership. |
+| AC4-15 | Complete | 4.8 full bounded smoke/failure/interruption matrix; final 4.11 success with confirmed removal. |
+| AC4-16 | Complete | README Docker-only prerequisites, exact image/start/HTTP/log/stop/dev/test commands and local-development settings/failure/recovery/limits; commands backed by 4.6–4.11 actual proof. Final link/fence/table gate recorded below. |
+| AC4-17 | Complete | 4.6 loopback/collision and 4.10 separate-project native stop/down/confirmed-delete isolation; final inventory unchanged. |
+| AC4-18 | Complete | Owner explicitly approved push/PR update on 2026-10-29. Existing PR #107 now records all criteria, actual checks, setup/image identity and Step 5/6 contracts; fetched title/body/branch verified. |
+
+### Step 5/6 handoff and limitations
+
+- Step 5 receives `startLifecycle` with `LifecycleOptions.registerRoutes(app,
+  database)` before readiness/listen, using the one owned full `Database`.
+  `buildApp` receives only check/closing capabilities. Extend that callback for
+  the actual Fastify tRPC adapter/context; preserve pool, listener, signals and
+  safe HTTP boundaries. Add real HTTP input/output/unknown-procedure/parser/
+  error tests and a type-only router export with emitted-browser-JS proof. No
+  principal, Organization, authentication bypass or router contract is supplied.
+- Step 6 extends the same runtime image and existing `verify-api.sh` with valid/
+  invalid tRPC requests and adapter failure/redaction cases. Reproduce Steps 1–5
+  from a clean checkout, reverify caches/artifacts/failure propagation after
+  transport changes, and consolidate sequential DB/process/smoke evidence. It
+  inherits the exact health, exit, deadlines, target guards and cleanup commands
+  above; it does not need to invent a second process/container lifecycle.
+- Step 3B’s schema/replay/constraint delivery is inherited, not full business
+  acceptance. T01/T03 writers, exact allocation/overflow/period contracts,
+  source reconciliation, business rollback/scope/races and T06’s Product-private
+  data/deletion-funding cases remain deferred. T02 Firebase/session/bootstrap/
+  Membership authorization, T04 production/secrets/backups/restore/operations,
+  frontend/Playwright and CI remain under their existing owners. First development
+  migration application stays an explicit owner action. No Step 5 work started.
+
+**Delivery approval, 2026-10-29:** The owner answered “Approve push and PR update
+(Recommended)” to the concrete title/body/same-branch proposal after local checks
+passed. Updated existing PR #107 to `feat(api): deliver Fastify server foundation`
+using the prepared body, then fetched and verified its exact title/body/branch.
+The PR is attached to this chat. No merge, issue closure or Step 5 is authorized.
+Current completion/approval summaries now agree in all eight stage documents;
+dated checkpoints and earlier stage records retain their historical scope.
+
+Final completion gate passed: all eight changed Markdown files, 45 changed
+relative links/anchors, 69 tables, paired fences, all eighteen criteria/current
+completion summaries and `git diff --check`. The final diff contains only those
+eight assigned-stage documents, with no unrelated/source change. Completion-only
+edits change no implementation/test/image/task input requiring new live scenarios. The final aggregate above already covers the restored final
+implementation and completed setup/handoff content. Stage exactly the eight
+changed documents, inspect the staged diff, execute the recorded Conventional
+Commit, then push only `HEAD:WilliamPhilippe/step-4-implementation-plan`. Verify
+remote PR head equals the resulting local commit and `git status --short` is
+clean. Report hash/results/limitations and stop. Exact next action is owner review of
+PR #107; foundation Step 5 planning requires the owner’s assignment and the
+guide’s predecessor delivery gate. Do not start it here.
+
 ## Stage 4.10 — Shutdown through all project paths
 
 **State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).

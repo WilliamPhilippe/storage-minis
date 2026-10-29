@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.10 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; overall Step 4 remains in progress, with stage 4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.11 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; Step 4 is complete with all eighteen criteria and authorized implementation evidence on PR #107. Steps 5/6 and full T06/business/production acceptance remain pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -945,6 +945,33 @@ are stopped, development and six volumes preserved.
 close AC4-06/AC4-07/AC4-14. Overall Step 4 remains in progress; 4.10–4.11 remain
 pending. Dated earlier-stage statements retain their historical scope.
 
+## Step 4.11 final verification and handoff (2026-10-29)
+
+The owner assigned only stage 4.11 on the existing branch, requiring real task
+cache/restoration/invalidation proof, the final ordinary aggregate, current
+setup/approval summaries, all eighteen criteria and the Step 5/6 handoff.
+This executes existing approved P4-08/P4-09/P4-10 contracts; no package/version,
+runtime configuration, infrastructure or business policy changed. Native
+Turbo/Node temporary output/source fixtures use finally restoration; live phases
+remain sequential on test only. Earlier dated approval/results keep their scope.
+
+The [stage checkpoint and final reconciliation](step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff)
+record results and current delivery state. README/local-development now describe
+implemented API/DB builds/tests/watchers, exact commands/variables, health/log/
+failure cleanup limits and successor extensions. AGENTS.md points agents to the
+current verification and future change triggers. Actual runtime/image/source
+identity governs reuse of earlier evidence, not the date alone.
+
+After local checks and the concrete PR draft were ready, the owner explicitly
+approved pushing this stage on the existing branch and updating PR #107 on
+2026-10-29: “Approve push and PR update (Recommended).” The PR now records
+implementation evidence with the title `feat(api): deliver Fastify server
+foundation`; fetched title/body/branch match the reviewed draft. This completes
+AC4-18 alongside AC4-12/16’s cache/setup evidence. Stage 4.11 and Step 4 are
+complete; no merge, issue closure or successor implementation is included.
+Business writers, Firebase/bootstrap, tRPC, frontend, CI, production and full T06
+acceptance remain deferred.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -1295,8 +1322,8 @@ artifacts and dependency versions are unchanged.
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
-| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Complete API/framework integration, application authorization/isolation, representative business transactions/races, CI and full setup acceptance. |
+| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Step 4 diagnostic API/image/cache/lifecycle is delivered. Complete Step 5 tRPC, Step 6 consolidated setup/verification, application authorization/isolation, representative business transactions/races and CI. |
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
-Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no production infrastructure has been provisioned. Workspace/tooling checks and structural PostgreSQL tests are implemented as recorded above; API/frontend builds, business workflows and their acceptance evidence remain pending.
+Hosting and operations are deliberately left open. Railway was discussed as an example, not selected. The [documentation/backlog review](technical-direction-review.md) records propagation to current documents and affected issue criteria. Decision and delivery issues remain open; no production infrastructure has been provisioned. Workspace/tooling checks and structural PostgreSQL tests are implemented as recorded above; the Step 4 API build/runtime foundation is delivered; frontend, later API integration, business workflows and their acceptance evidence remain pending.

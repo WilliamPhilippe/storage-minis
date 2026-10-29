@@ -8,7 +8,8 @@ application specifications. The Drizzle connection package and its tests are
 implemented, along with the approved structural schema and replayable migrations.
 API configuration, the injectable HTTP factory, process lifecycle and built entry
 are implemented and verified with guarded real-DB process tests. Stage 4.5 adds
-a verified portable API runtime image; overall Step 4 remains in progress.
+a verified portable API runtime image. Step 4 is complete with all eighteen
+criteria and [implementation evidence on PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
 Stage 4.6 adds optional Compose runtime startup with matching Doppler credentials.
 Stage 4.7 adds the development image and verified API/compiled-DB reload.
 Stage 4.8 adds bounded automated runtime-image smoke with owned-probe cleanup.
@@ -16,7 +17,12 @@ Stage 4.9 verifies live DB socket/service failure and recovery without API resta
 authenticated unmigrated readiness and exclusive sequential test-target use.
 Stage 4.10 verifies startup interruption, repeated signals, failed/hung cleanup,
 real watchdog deadlines and native project shutdown with owned-only deletion.
-Business operations, the React frontend and CI remain pending.
+Stage 4.11 verifies task discovery, finite cache reuse/restoration and source
+invalidation, and completes setup and successor handoff documentation. Its final
+checks and authorized PR delivery are in the
+[cumulative record](docs/technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
+Business operations, authentication, production deployment, the React frontend
+and CI remain pending.
 Default Docker startup still selects only PostgreSQL.
 
 ## Structure
@@ -98,7 +104,9 @@ checkout-specific Linux volumes. Host editors cannot resolve those dependencies.
 
 Stage 4.5 supplies the self-contained production package using the
 [approved packaging](docs/technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
-From the repository root, build it without PostgreSQL or Doppler access:
+For a new checkout, complete the [Docker-only setup and login](docs/technical/local-development.md#docker-tooling)
+once; preserve an initialized checkout’s `.env.compose`. From the repository root,
+build without PostgreSQL or Doppler access:
 
 ```sh
 docker compose --env-file .env.compose --file compose.yaml build api api-dev
@@ -120,14 +128,18 @@ the database and API separately:
 ```sh
 ./scripts/database.sh up dev
 ./scripts/database.sh api-up dev
-curl --fail --silent --show-error --max-time 8 http://127.0.0.1:3000/health/live
-curl --fail --silent --show-error --max-time 8 http://127.0.0.1:3000/health/ready
+curl --fail --silent --show-error --max-time 8 --write-out '\nHTTP %{http_code}\n' http://127.0.0.1:3000/health/live
+curl --fail --silent --show-error --max-time 8 --write-out '\nHTTP %{http_code}\n' http://127.0.0.1:3000/health/ready
 docker compose --env-file .env.compose --file compose.yaml logs --follow api
 docker compose --env-file .env.compose --file compose.yaml stop api
 ```
 
 The responses are HTTP 200 with exact bodies `{"status":"ok"}` and
-`{"status":"ready"}`. Interrupting the log viewer leaves the API running.
+`{"status":"ready"}`. Open [live](http://127.0.0.1:3000/health/live) or
+[ready](http://127.0.0.1:3000/health/ready) in a browser at the same port. A DB outage
+leaves live at 200 and makes ready return 503 with `{"status":"unavailable"}`
+within the 6s DB-check budget plus scheduling; recovery needs no API restart.
+Interrupting the log viewer leaves the API running.
 `api-up` uses saved settings, automatically selects matching Doppler credentials,
 and waits up to 30s for native readiness. It performs no build, pull, install or
 migration. Use `API_HOST_PORT=3001 ./scripts/database.sh api-up dev` for an explicit
@@ -142,6 +154,11 @@ startup; ambient PG/URL/password settings cannot replace managed credentials.
 Native model/build/status/log/stop require no Doppler. On startup failure inspect
 safe logs and run native `stop api`; a stopped container may remain for diagnosis.
 Readiness checks authenticated DB identity, independently of migration currency.
+For a failed start or Docker disconnect, restore Docker access, inspect native
+`ps --all` and logs, and stop only the owned API. Stop removes no container; use
+`docker compose --env-file .env.compose --file compose.yaml rm --force api` only
+after it is stopped if removal is needed. Do not reset data to repair readiness.
+See the [API variables and failure guide](docs/technical/local-development.md#api-runtime-settings-and-failures).
 
 Host aliases are `pnpm docker:api:build`, `pnpm docker:api:up` (dev target),
 `pnpm docker:api:logs`, `pnpm docker:api:stop` and existing `pnpm docker:ps`.
@@ -334,7 +351,7 @@ No host Drizzle installation is needed. After Docker dependency installation:
 ```
 
 These commands reuse the project/Doppler settings above. `build` emits API
-configuration and the DB package; `db:check` verifies an authenticated query; `test:db` requires the test
+app/configuration/lifecycle/server and the DB package; `db:check` verifies an authenticated query; `test:db` requires the test
 service and runs uncached integration tests. Stop test storage only after tests
 finish; it is discarded on stop.
 
@@ -369,7 +386,8 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.10 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.11 are complete; final verification and authorized
+PR evidence are tracked in the cumulative record. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,
@@ -404,8 +422,9 @@ after test stop, restore with `./scripts/database.sh up test`. See the
 The shutdown cases also prove late startup cancellation without listen, repeated
 INT/TERM request drain with one close, rejected cleanup and real 10s/17s watchdogs;
 API fixture children use a 25s outer bound. Test-only routes are excluded from
-production output/images. Full Step 4 remains in progress; final integration and
-handoff remain stage 4.11.
+production output/images. Stage 4.11 records final integration/cache checks and
+the Step 5/6 handoff. All eighteen Step 4 criteria are complete; Steps 5/6 and
+full business/T06 acceptance remain pending.
 
 With an explicitly supplied, validated runtime environment, root `pnpm start`
 builds DB/API through Turbo and runs the API's
@@ -421,7 +440,12 @@ Docker startup still selects PostgreSQL only.
 ### Turborepo checks and cache
 
 Turborepo caches successful checks in `.turbo/cache`. Remote caching is disabled.
-Use `pnpm check --dry=json` to inspect tasks. See the
+Use `pnpm check --dry=json` to inspect the seven aggregate tasks and
+`pnpm exec turbo run build dev start test:process test:integration --dry=json`
+for application/live dependencies. Both package builds cache `dist/**`; ordinary
+checks are finite. Start/dev are persistent and uncached; process/integration/DB
+live tasks are uncached. Stop watchers before output restoration experiments.
+See the
 [cache verification commands](docs/technical/local-development.md#turborepo-checks-and-cache)
 for forced runs and cache checks.
 
@@ -468,7 +492,7 @@ diagram now matches the approved structural schema.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-- [Step 4 Fastify plan — stages 4.1–4.10 complete; final integration pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+- [Step 4 Fastify foundation — complete with final verification and PR evidence](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
 - [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 - [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)

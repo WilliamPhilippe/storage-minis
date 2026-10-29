@@ -1,7 +1,8 @@
 # Step 4 — Sequential implementation stages
 
 **Date:** 2026-10-28. **Status:** execution rules approved by the owner;
-stages 4.1–4.10 are complete; stage 4.11 remains pending. The
+stages 4.1–4.11 and all eighteen Step 4 criteria are complete, including
+[authorized PR #107 evidence](https://github.com/WilliamPhilippe/storage-minis/pull/107). The
 [Step 4 plan](step-4-fastify-plan-2026-10-28.md) remains authoritative for technical
 contracts, approved amendments, pending choices and AC4-01–AC4-18.
 
@@ -116,7 +117,7 @@ completion owner below can mark the whole criterion complete.
 | [4.8](#48--bounded-runtime-image-smoke) | Automated host HTTP/image/shutdown smoke | [Copy 4.8](step-4-fastify-stage-prompts-2026-10-28.md#prompt-48--bounded-runtime-image-smoke) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke) |
 | [4.9](#49--database-failure-recovery-and-test-isolation) | Real outage/recovery and shared-target sequencing | [Copy 4.9](step-4-fastify-stage-prompts-2026-10-28.md#prompt-49--database-failure-recovery-and-test-isolation) | Complete | [Cumulative evidence](../technical/step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation) |
 | [4.10](#410--shutdown-through-all-project-paths) | Native project shutdown and cleanup proof | [Copy 4.10](step-4-fastify-stage-prompts-2026-10-28.md#prompt-410--shutdown-through-all-project-paths) | Complete | [Shutdown / isolation evidence](../technical/step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths) |
-| [4.11](#411--cache-verification-documentation-and-final-handoff) | Cache evidence, complete documentation and delivery handoff | [Copy 4.11](step-4-fastify-stage-prompts-2026-10-28.md#prompt-411--cache-verification-documentation-and-final-handoff) | Not started | — |
+| [4.11](#411--cache-verification-documentation-and-final-handoff) | Cache evidence, complete documentation and delivery handoff | [Copy 4.11](step-4-fastify-stage-prompts-2026-10-28.md#prompt-411--cache-verification-documentation-and-final-handoff) | Complete | [Final verification / delivered evidence](../technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff) |
 
 ### 4.1 — Configuration and finite builds
 
