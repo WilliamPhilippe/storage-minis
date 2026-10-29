@@ -4,85 +4,27 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Current status, 2026-10-29:** Workspace tooling, Turborepo checks, Step 1's
-Docker tooling/Doppler verification and Step 2's development/test PostgreSQL are
-implemented. Step 3A supplies Drizzle connection/tooling; Step 3B now supplies
-the approved structural schema, migration chain and PostgreSQL constraint tests.
-Step 4 is complete: [stage 4.1 configuration and finite builds](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds)
-is complete in `472e0a7`; stage 4.2 factory/HTTP/logging is complete in `29509a3`.
-[Stage 4.3 lifecycle/entry/start tasks](step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point)
-is complete with AC4-04 evidence. Stage 4.4 is complete with
-[guarded process evidence](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests)
-for AC4-05/AC4-08 and basic signals; its choices are
-[approved](technical-direction.md#step-44-guarded-process-test-approval-2026-10-28).
-Stage 4.5 is complete with
-[portable runtime-image evidence](step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image)
-for AC4-11 and [approved packaging](technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
-Stage 4.6 is complete with
-[canonical runtime/startup evidence](step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup)
-for AC4-01 and [approved Compose/launch details](technical-direction.md#step-46-compose-runtime-and-startup-approval-2026-10-29).
-Stage 4.7 is complete with [development/reload evidence](step-4-verification-2026-10-28.md#stage-47--development-image-and-reload)
-for AC4-02 and its runtime/development AC4-13 evidence; its [watch/service and SIGINT choices](technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29) are approved.
-Stage 4.8 is complete with [bounded runtime-image smoke/security evidence](step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke)
-for AC4-13/AC4-15 and the 109-test container integration milestone. Stage 4.9
-is complete with [socket/service recovery and isolation evidence](step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation)
-for AC4-06/AC4-07/AC4-14 and [approved fixtures](technical-direction.md#step-49-db-failure-recovery-and-isolation-approval-2026-10-29).
-Stage 4.10 is complete with [shutdown/watchdog/native project isolation evidence](step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths)
-for AC4-09/AC4-17 and [approved test fixtures](technical-direction.md#step-410-shutdown-fixture-approval-2026-10-29).
-Stage 4.11 is complete with [final cache/documentation/handoff evidence](step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff);
-all eighteen criteria and owner-authorized implementation evidence are recorded
-on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
-Steps 5–6 and business writers remain pending. The
-[Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) incorporates the owner's
-[approved post-Step-3 review amendments](technical-direction.md#step-4-review-decisions-after-step-3-2026-10-28).
-P4-01 is retired; stage 4.1 choices are approved and implemented. Stage 4.2
-P4-03/P4-05/P4-06 and stage 4.3's P4-04/process/start-task contract are approved
-and implemented; stage 4.4's runner/task/test contract and stage 4.5's
-build/package/runtime subset of P4-11 are approved and implemented. Stage 4.6
-P4-07/P4-11 runtime service/health/launch/alias details are approved and implemented.
-Stage 4.7 watcher/task/development/injection details and its native SIGINT stop
-amendment are approved and implemented. Stage 4.8 narrow smoke/helper/test
-choices are [approved, implemented and verified](technical-direction.md#step-48-bounded-image-smoke-approval-2026-10-29).
-Stage 4.10 shutdown fixtures are approved and verified; runtime/configuration
-policies remain unchanged. Remaining recommendations retain their approval gates.
-The owner requested [11 sequential session stages](../plans/step-4-fastify-implementation-stages-2026-10-28.md)
-with [individual assignment prompts](../plans/step-4-fastify-stage-prompts-2026-10-28.md),
-ongoing checkpoints and local completion commits. Assign one internal stage at a
-time and stop at its handoff. Focused checks apply per stage; full aggregate
-milestones are 4.4, 4.8 and 4.11. These retain the Step 4 PR/acceptance boundary.
-The owner approved the
-[split Step 3 plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-with its separate schema gate. The owner approved both earlier concrete
-plans and selected `storage-minis` naming. Step 1 PR #103 is merged. Step 2's
-[approved plan](../plans/step-2-postgresql-plan-2026-10-24.md) and
-[verification record](technical-direction.md#step-2-local-postgresql-planning-2026-10-24)
-cover local database infrastructure only. Step 3B replay uses disposable test
-storage; first development application is an explicit owner action.
-Later implementation choices follow the approval process
-in [AGENTS.md](../../AGENTS.md#owner-approval-before-decisions).
+**Current status, 2026-10-29:** Steps 1–4 are implemented. Docker tooling,
+separate development/test PostgreSQL, Drizzle connection/schema/migrations, and
+the diagnostic Fastify API are verified. Step 4 includes portable runtime and
+development images, reload, guarded process tests and bounded image verification.
+All eighteen Step 4 criteria passed; see
+[final verification and handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29)
+and [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
+Steps 5–6 and full T06/business/production acceptance remain pending.
 
-**Lifecycle follow-up, 2026-10-25:** The owner approved the
-[application-container and lifecycle plan](../plans/docker-application-lifecycle-plan-2026-10-25.md).
-Its first stage supplies host `docker:*` commands for existing infrastructure and
-guarded project cleanup. API/frontend Compose services follow their runnable
-application deliveries; this does not change Step 3B or later-step prerequisites.
-The owner subsequently approved replacing the general wrapper with standard
-Compose commands; use the [maintenance plan](../plans/standard-compose-maintenance-plan-2026-10-25.md)
-for the implemented canonical configuration, direct package aliases and retained
-Doppler/confirmed-deletion helpers. Current verification is recorded in
-[technical direction](technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25),
-separately from the earlier lifecycle evidence. The owner then approved the
-[one-time setup amendment](technical-direction.md#one-time-local-setup-2026-10-25):
-saved nonsecret checkout settings, automatic Doppler target selection, setup/start
-commands and a separate migration command. The subsequent 2026-10-25 schema
-approval lifts the physical-schema gate; see the Step 3 progress row.
+Use [README setup and commands](../../README.md) and the
+[local development reference](local-development.md) for current operation.
+Read the [approved Compose direction](technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25)
+and [one-time setup amendment](technical-direction.md#one-time-local-setup-2026-10-25)
+before changing container commands or configuration. First development migration
+application remains an explicit owner action; replay tests use disposable storage.
 
-This guide owns the step sequence, planning instructions and completion criteria.
-[Technical direction](technical-direction.md) owns approved technical outcomes;
+This guide owns the remaining step sequence, planning instructions and completion
+criteria. [Technical direction](technical-direction.md) owns approved outcomes;
 the [foundation proposal](t06-foundation-proposal-2026-10-24.md) supplies candidate
-versions, alternatives and detailed contracts. A recommendation in that proposal,
-or its publication in a merged PR, is not implementation approval. Apply approved
-decisions within their recorded scope without asking for the same approval again.
+versions, alternatives and detailed contracts. A recommendation in that proposal
+is not implementation approval. Reuse recorded approvals within their scope.
 
 ## Execution order and progress
 
@@ -92,20 +34,16 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
-| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24). [Approved plan](../plans/step-1-tooling-plan-2026-10-24.md); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
-| 2 | Development and test PostgreSQL | Step 1 | [Approved plan](../plans/step-2-postgresql-plan-2026-10-24.md); [implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24). [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [Approved plan](../plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md). [3A implementation/evidence](technical-direction.md#step-3a-drizzle-implementation-2026-10-25); [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged 2026-10-25. 3B S01–S10 approved 2026-10-25; [structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), merged in [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106). [Final evidence](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): fresh replay, 27 unit and 30 PostgreSQL tests passing. First development application remains an explicit owner action. |
-| 4 | Fastify server foundation | Steps 1–3 | [Revised plan and dependency review](../plans/step-4-fastify-plan-2026-10-28.md); eight review amendments approved 2026-10-28. [Sequential stages 4.1–4.11 and checkpoints](../plans/step-4-fastify-implementation-stages-2026-10-28.md) bound each implementation session. P4-01 retired. Stage 4.1 complete in `472e0a7` with [configuration/build evidence](step-4-verification-2026-10-28.md#stage-41--configuration-and-finite-builds); [Stage 4.2 factory/HTTP/logging](step-4-verification-2026-10-28.md#stage-42--http-factory-health-and-safe-logs) complete in `29509a3` with AC4-03/AC4-10; [stage 4.3 lifecycle/entry/start](step-4-verification-2026-10-28.md#stage-43--process-lifecycle-and-entry-point) complete with AC4-04 and offline lifecycle evidence. [Stage 4.4 guarded process tests](step-4-verification-2026-10-28.md#stage-44--guarded-built-process-tests) are complete with AC4-05/AC4-08, basic real signals and the 85-test aggregate; [stage 4.5 runtime packaging](step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image) is complete with AC4-11 and approved P4-11 packaging. [Stage 4.6 canonical runtime/startup](step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup) is complete with AC4-01 and partial AC4-13. [Stage 4.7 development/reload](step-4-verification-2026-10-28.md#stage-47--development-image-and-reload) is complete with AC4-02, partial AC4-13, API/compiled-DB reload, compiler recovery and in-flight foreground TERM/INT proof via the approved SIGINT stop setting. Stage 4.8 [bounded image smoke/security](step-4-verification-2026-10-28.md#stage-48--bounded-runtime-image-smoke) is complete with AC4-13/AC4-15 and the 109-test strict aggregate. [Stage 4.9 DB socket/service recovery and isolation](step-4-verification-2026-10-28.md#stage-49--database-failure-recovery-and-test-isolation) is complete with AC4-06/AC4-07/AC4-14, 16 guarded process cases, unchanged API identity and authenticated unmigrated readiness; [stage 4.10 shutdown/project isolation](step-4-verification-2026-10-28.md#stage-410--shutdown-through-all-project-paths) is complete with AC4-09/AC4-17, 25 process cases, native in-flight stop/down/confirmed deletion and preserved peer/owner storage; [stage 4.11 cache/documentation/handoff](step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff) is complete. All eighteen criteria pass with owner-authorized implementation evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Step 4 diagnostic foundation is complete; Steps 5/6 and full T06 remain pending. No successor work is started. |
+| 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
+| 2 | Development and test PostgreSQL | Step 1 | [Implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24); [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [3A implementation](technical-direction.md#step-3a-drizzle-implementation-2026-10-25), [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged. [Approved structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106), merged. [Recorded results](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): 27 unit and 30 PostgreSQL tests. First development application remains an explicit owner action. |
+| 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Steps 5/6 and full T06 remain pending. |
 | 5 | tRPC and Zod integration | Steps 1–4 | Not started |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started |
 
 Begin the next assignment from the previous step's merged result, unless the
 owner explicitly approves another branch arrangement. Reinspect the repository
 and predecessor evidence rather than assuming this table proves readiness.
-For Step 4's internal stages, the owner explicitly selected
-`WilliamPhilippe/step-4-implementation-plan` for every stage. Each stage's agent
-executes its local Conventional Commit after required checks pass; no merge or
-new branch between internal stages is required.
 Update the assigned row with its approval/evidence reference and PR when handing
 off; describe partial completion and deferrals explicitly.
 
@@ -375,91 +313,49 @@ schema delivery inherits the reviewed migration workflow.
 
 ## Step 4 — Fastify server foundation
 
-**Execution:** copy one [stage-specific prompt](../plans/step-4-fastify-stage-prompts-2026-10-28.md)
-from the [sequential implementation guide](../plans/step-4-fastify-implementation-stages-2026-10-28.md)
-per session. Keep its fixed boundary, obtain uncovered approvals before its work,
-and checkpoint before implementation and throughout the session. After required
-checks pass, save evidence and a local Conventional Commit, then stop. Incomplete
-work resumes the same stage. Run focused checks per stage and full ordinary
-aggregate checks at 4.4, 4.8 and 4.11; live checks remain separate. The completion
-criteria below cover the full Step 4 delivery across all stages. Stage completion
-does not close acceptance criteria still awaiting later evidence.
+**State: complete, 2026-10-29.** The
+[approval and verification record](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29)
+and [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107) record the
+completed diagnostic foundation. The completed stage assignments and prompts
+are no longer execution instructions.
 
-### Why this step is necessary
+### Delivered contracts
 
-A testable API process connects configuration, the DB dependency and HTTP
-lifecycle. Separate construction and startup make failures, health and shutdown
-testable without giving every test control of global process resources.
+- `buildApp` constructs Fastify from explicit configuration and injected DB-check/
+  closing capabilities. It acquires no pool, listener or process handlers.
+- `startLifecycle` owns one app and one full `Database`. Its async
+  `registerRoutes(app, database)` callback runs before readiness and listen.
+  Future routes reuse that database instead of creating a second pool.
+- `/health/live` returns 200 with `{"status":"ok"}`. `/health/ready` returns
+  200 with `{"status":"ready"}` or 503 with `{"status":"unavailable"}`.
+  Readiness checks authenticated DB identity, including an unmigrated database;
+  startup never migrates. Outage/recovery preserves the API process.
+- Fixed HTTP errors and restricted JSON logs omit sensitive data. Bodies are
+  limited to 16 KiB and receive time to 10s; client request IDs are disabled.
+- Startup has a 17s watchdog. Repeated SIGINT/SIGTERM share a 10s cleanup bound:
+  drain HTTP, then close DB. Successful signal exits are 130/143; failures use 1.
+  Compose gives API services 15s grace; development uses the approved SIGINT path.
+- Plain Node starts the compiled nonroot runtime image without source mounts or
+  startup installation. The development service reloads API and compiled DB
+  changes. Stop watchers before clean finite builds; live checks remain uncached.
+- The bounded image verifier asserts exact host health responses and TERM 143,
+  then confirms removal of its owned probe. Schema/process/smoke/outage phases
+  use the shared test target exclusively and sequentially.
 
-### Expected result and completion criteria
+Use [runtime/setup instructions](../../README.md#api-runtime-image),
+[development/recovery](../../README.md#api-development-and-reload) and
+[verification commands](../../README.md#automated-api-image-smoke). For later
+source/task/image changes, rerun affected proof against the changed artifacts.
 
-`apps/api` supplies an application factory, process entry, a dedicated API Docker
-image and working development/build/start/local-verification commands. The
-owner explicitly required the API image and local verification on 2026-10-28;
-the [Step 4 plan](../plans/step-4-fastify-plan-2026-10-28.md) contains the proposed
-implementation and its [acceptance checklist](../plans/step-4-fastify-plan-2026-10-28.md#step-4-acceptance-criteria).
-Completion requires evidence that:
+### Successor handoff
 
-- Fastify, compiled API/DB code and runtime dependencies are contained in the
-  repository's API runtime image. Plain Node starts it without a development
-  runner, source/dependency mounts or installation at startup.
-- Liveness and readiness have distinct documented responses. Database outage and
-  recovery affect readiness as specified, with bounded failures and safe logs.
-- Configuration errors, invalid credentials and occupied ports fail cleanly;
-  SIGINT/SIGTERM drain the server and close the owned pool without hanging.
-- Meaningful factory/configuration/lifecycle tests run, and source changes in the
-  DB package trigger the required rebuild and API reload during development.
-- The API workspace dependency, emitted files and Turbo ordering/outputs are
-  explicit; persistent tasks are outside finite task prerequisites.
-- Local setup documents image build/start, browser/curl URLs with exact expected
-  responses, logs and stop commands. A bounded automated smoke command verifies
-  the actual API image's health/shutdown and cleans up its owned container on
-  success and failure; this delivery does not wait for Step 6.
-- Route registration before listen can receive the already-owned DB instance,
-  giving Step 5 a tested extension point without another pool or process owner.
-
-### Research and planning focus
-
-Read the proposal's [Fastify/module step](t06-foundation-proposal-2026-10-24.md#5-step-3--modules-development-and-fastify)
-and the DB handoff. Concentrate on:
-
-- Fastify construction, injection testing, health routes, error/log serialization,
-  startup behavior and graceful close hooks for the selected release.
-- TypeScript no-emit checks versus build configurations, `.js` relative imports,
-  declarations, package resolution and stale generated files.
-- Watch behavior across compiled workspace dependencies, Docker bind mounts,
-  signal forwarding and the distinction between container bind address and host
-  loopback publication.
-- Dedicated API Dockerfile/build context, development versus self-contained
-  runtime targets, production dependency packaging and image verification that
-  does not rely on tooling volumes. New concrete packaging choices require
-  approval within the owner-required API-image scope.
-- Doppler injection before startup, validated environment and redaction,
-  signal forwarding through any Doppler wrapper, and pool ownership when startup
-  fails partway through resource creation. Specify restart behavior when Doppler
-  values change; do not assume a running process updates automatically.
-
-The plan must define factory/entry responsibilities, health response contracts,
-timeouts, cleanup ordering, commands and build artifacts. Map each failure case
-to a unit, process or real-DB check. Extend environment and Turbo declarations
-only for the code introduced here.
-
-**Scope boundary:** This is a diagnostic server. Business routes, Firebase
-bootstrap and protected procedures await their own decisions; authentication
-bypasses are not a scaffold prerequisite. tRPC integration belongs to Step 5.
-
-### How this helps the other steps
-
-| Consumer | Step 4 handoff | Work left to the consumer |
+| Consumer | Existing contract | Remaining work |
 | --- | --- | --- |
-| Step 5 | Testable Fastify host, route-registration extension using the owned DB, safe HTTP boundaries and the API image/build path. | Add tRPC adapter, diagnostic schemas/context, adapter-specific errors and type-only router export; rebuild the same application image. |
-| Step 6 | Working local image smoke, exact health/exit contracts, isolated process-test command, task graph and setup/log/stop instructions. | Extend verification with tRPC success/failure, clean-checkout reproduction and final cache/integration evidence. |
+| Step 5 | Fastify factory, `registerRoutes(app, database)`, safe HTTP boundaries and the existing API image/build path. | Add the real tRPC adapter/context, diagnostic schemas, adapter error tests and a type-only router export; rebuild the same image. |
+| Step 6 | Image verifier, exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions. | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
 
-The [detailed successor coverage](../plans/step-4-fastify-plan-2026-10-28.md#verification-of-support-for-steps-5-and-6)
-maps these outputs to both steps' completion criteria. Step 4 owns proof of its
-image, local health verification and resource lifecycle. Later steps extend
-those deliveries. Future authorization/workflow modules can reuse the factory
-without taking over process startup.
+Business routes, Firebase/bootstrap, Membership authorization, frontend,
+production and CI remain under their existing decision and delivery owners.
 
 ## Step 5 — tRPC and Zod integration
 
@@ -606,15 +502,10 @@ Organization isolation, authorization or concurrency correctness.
 
 ## Prompt for assigning an agent
 
-For Step 4 implementation, use the
-[individual stage prompts](../plans/step-4-fastify-stage-prompts-2026-10-28.md),
-selecting only the assigned stage such as `4.1`. Each is also its resume prompt;
-the progress table supplies the existing evidence path. The general prompt below
-applies to whole-step planning; its implementation clause must not expand a Step 4 stage
-assignment into the complete plan.
+Use the general prompt below for the assigned remaining foundation step.
 
 ```text
-Plan Step <number> of docs/technical-foundation-implementation-guide.md.
+Plan Step <number> of docs/technical/technical-foundation-implementation-guide.md.
 Read AGENTS.md, the assigned step, its linked decisions/proposal sections,
 the relevant live issues/comments and the predecessor's merged PR/evidence.
 

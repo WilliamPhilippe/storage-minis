@@ -355,7 +355,7 @@ The 63 native parent links and 117 prerequisite links are unchanged. The working
 
 ## Technical decision follow-up
 
-The 2026-10-21 technical choices supplement the v0.7 business baseline without changing its 307 active requirements, nine retired IDs, or primary delivery owners. See the [technical documentation/backlog review](technical-direction-review.md) for propagation and verification.
+The 2026-10-21 technical choices supplement the v0.7 business baseline without changing its 307 active requirements, nine retired IDs, or primary delivery owners. See the [technical documentation/backlog review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/technical-direction-review.md) for propagation and verification.
 
 | Design task | Accepted inputs | Remaining outputs |
 | --- | --- | --- |

@@ -617,7 +617,7 @@ leave Node watch waiting for an edit. For DB source additions/deletions/renames,
 stop development, run `./scripts/tooling.sh run pnpm build`, then restart. Stop
 watchers before all finite clean builds/checks that build DB to avoid two writers
 for `dist`. Watch mode does not remove stale emitted files. See the
-[actual reload/security/signal evidence](step-4-verification-2026-10-28.md#stage-47--development-image-and-reload).
+[actual reload/security/signal evidence](technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29).
 
 ## Development checks
 
@@ -668,11 +668,13 @@ always execute and never cache results. API start/dev and DB dev are persistent
 and uncached; their prerequisites are finite builds. Secret-bearing tasks allow only named DB environment values
 through strict Turbo filtering; those values are not added to cache hashes.
 Unit tests retain `NODE_ENV` / `TZ` hashing. API runtime tasks pass only the
-named settings in the [task contract](../plans/step-4-fastify-plan-2026-10-28.md#build-development-and-turbo-contract);
-DB compilers receive no DB credentials.
+named settings: `DB_TARGET`, `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`,
+`PGPASSWORD`, `DATABASE_URL` (for explicit rejection), `HOST`, `PORT`, `LOG_LEVEL`,
+`NODE_ENV` and `TZ`. DB compilers receive no DB credentials. Builds/checks do not
+fetch Doppler values or consume runtime settings.
 
 Stage 4.11 verifies forced/repeated finite work, deletion/restoration of all 40
 API/DB output files, DB source invalidation of API build/typecheck and root
 lint/tests, and compiler-failure propagation. Restore temporary source bytes and
-stop watchers before these checks. [Final evidence and successor boundaries](step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff)
+stop watchers before these checks. [Final evidence and successor boundaries](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29)
 distinguish current Step 4 proof from Step 6’s future clean-checkout/tRPC coverage.
