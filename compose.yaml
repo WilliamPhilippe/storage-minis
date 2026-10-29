@@ -9,6 +9,41 @@ x-postgres-health: &postgres-health
   start_period: 5s
 
 services:
+  api:
+    profiles: [api]
+    image: ${COMPOSE_PROJECT_NAME:?Set a unique COMPOSE_PROJECT_NAME}-api:step4
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+      target: runtime
+    init: true
+    restart: "no"
+    stop_grace_period: 15s
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      NODE_ENV: production
+      TZ: UTC
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DB_TARGET: ${DB_TARGET:-}
+      PGHOST: ${PGHOST:-}
+      PGPORT: ${PGPORT:-}
+      PGDATABASE: ${PGDATABASE:-}
+      PGUSER: ${PGUSER:-}
+      PGPASSWORD: ${PGPASSWORD:-}
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/health/ready', {signal: AbortSignal.timeout(7000)}).then(r => {if (r.status !== 200) process.exitCode = 1;}).catch(() => {process.exitCode = 1;});"
+      interval: 2s
+      timeout: 8s
+      start_period: 5s
+      retries: 3
+
   postgres:
     image: *postgres-image
     command: [postgres, -c, timezone=UTC]

@@ -257,7 +257,8 @@ Docker must be on PATH. They follow normal Docker context behavior and use
 The remaining helpers select the canonical file/project explicitly, ignore
 ambient file/profile overrides, and locate the checkout from their own path.
 
-`docker:stop` stops services without removing containers or named volumes;
+`docker:stop` honors each service grace (API 15s, others 10s) and stops services
+without removing containers or named volumes;
 `docker:stop:test` affects only test PostgreSQL. Test tmpfs is discarded on stop.
 `docker:prune` removes the project's containers (including orphans) and network,
 preserving all named volumes and images. These operations, status, and logs work
@@ -275,7 +276,7 @@ The volume helper obtains declared keys from `docker compose config --volumes`,
 prints their project-scoped names, and checks each existing volume's Compose project/logical-volume labels before changing any resources.
 Missing/wrong confirmation, failed inventory/inspection, or an ownership mismatch
 refuses teardown. Correct confirmation delegates removal to native full-profile
-`down --volumes --remove-orphans --timeout 10`, covering the owned
+`down --volumes --remove-orphans`, covering the owned
 `dependencies`, `api-dependencies`, `db-dependencies`,
 `pnpm-store`, `turbo`, and `pgdata` volumes. Other projects and images are retained.
 The supported local model has no external/custom-named volumes; adopting those
@@ -294,6 +295,11 @@ Never use global pruning for checkout cleanup. Ordinary lifecycle commands
 preserve development storage; full volume deletion is a separate operation.
 See the [approval and verification record](../../docs/technical/technical-direction.md#step-1-docker-tooling-2026-10-24)
 for actual evidence and remaining limits.
+
+For the optional diagnostic runtime API, use the
+[README build/start/health/log/stop instructions](../../README.md#api-runtime-image).
+Default startup still selects only PostgreSQL; development reload and automated
+API image smoke remain later stages.
 
 ## Local PostgreSQL
 
@@ -378,7 +384,7 @@ docker compose --env-file .env.compose --file compose.yaml logs --follow postgre
 docker compose --env-file .env.compose --file compose.yaml logs --follow postgres_test
 docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres_test      # Discards test data
 docker compose --env-file .env.compose --file compose.yaml stop --timeout 10 postgres       # Preserves development data
-docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans --timeout 10           # Stops project; preserves named volumes
+docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans           # Stops project; preserves named volumes
 ```
 
 Development storage is `<COMPOSE_PROJECT_NAME>_pgdata`, mounted at

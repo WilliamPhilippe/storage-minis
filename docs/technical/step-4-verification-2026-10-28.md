@@ -5,6 +5,173 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.6 — Canonical Compose and Doppler startup
+
+**State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
+Overall Step 4 remains in progress; 4.7–4.11 have not started. Completion commit
+subject: `feat(api): add guarded canonical Compose runtime startup`. Resolve its
+hash with `git log -1 --format=%H --grep="^feat(api): add guarded canonical Compose runtime startup$"`.
+
+### Initial checkpoint (historical; before implementation)
+
+- Checkout/branch: `/Users/william/Documents/code/storage-minis`, verified
+  `WilliamPhilippe/step-4-implementation-plan`; base `4fd7856` (stage 4.5).
+  Initial Git status/diff clean. No branch/worktree created.
+- Read AGENTS, README Docker/PostgreSQL/lifecycle guidance, approved maintenance
+  and one-time setup records, foundation/stage execution and completion rules,
+  4.6 card, parent Compose/saved-settings/credential/shutdown/security contracts,
+  `database.sh`, `local-config.sh`, inherited launcher/diagnostic tests and
+  predecessor evidence. Stages 4.1–4.5 are complete in current history; unchanged
+  source/lockfile/image inputs retain their earlier build/process evidence.
+- Existing runtime `storage-minis-api:stage4.5` is present, linux/arm64, image ID
+  `sha256:2f4d52f5f1d63184f7f17c627387924722004431a01c3a144ea3665b32aca344`.
+  Docker access requires sandbox escalation; read-only inspection passed.
+  Saved settings remain exactly project `storage-minis-beijing`, ports 5433/5434.
+  Both existing PostgreSQL containers are stopped. No stage-owned running resource,
+  API port, fixture, watcher, DB client or credential fetch exists.
+- Pending approval: concrete P4-07/P4-11 runtime service/health/injection/alias
+  subset before coding. Inherited canonical model, three-key settings, selected
+  secret/no-fallback boundary and service-grace amendment remain approved.
+- Live issue JSON reads for T06/#26 and T04/#23 hit sandbox network restrictions;
+  retry with network access. No issue mutation, migration or managed-secret change.
+- Required checks pending: focused launcher/security plus affected strict checks;
+  secret-free canonical model/build/status/log/stop; native runtime build;
+  exclusive test DB preparation, authenticated API startup/exact loopback HTTP,
+  explicit collision refusal, native stop and fresh-environment saved settings.
+  AC4-01 pending; AC4-13 partial through 4.7–4.8; drain proof remains 4.10.
+- Ownership/cleanup before live work: use only test PostgreSQL and runtime `api`
+  in saved project; preserve stopped development container/volume. Stop owned API
+  with `docker compose --env-file .env.compose --file compose.yaml stop api`;
+  stop test only after all clients close with the same prefix plus
+  `stop --timeout 10 postgres_test`. No full-project teardown or volume deletion.
+  Checkpoint again before starting these resources or a collision listener.
+- Exact next action: obtain uncovered 4.6 approval; meanwhile finish read-only
+  prerequisite/command inspection. Implement only 4.6, verify, synchronize current
+  summaries/evidence and make its local Conventional Commit. No push/PR.
+
+### Checkpoint history
+
+- 2026-10-29: owner approved the concrete runtime/service/health/launcher/alias
+  scope; recorded in technical direction. Live T06/#26 and T04/#23 JSON reads
+  succeeded after network escalation: both open, no comments, dependencies and
+  deferred business/production boundaries unchanged. Added runtime service,
+  `api-up`, direct runtime aliases and service-grace correction. Extended existing
+  launcher fixtures; no new packages/settings/model/dispatcher or later service.
+  No running resource or fixture edit yet. Next: focused tests/strict checks,
+  then checkpoint and execute native model/build/live verification.
+- Focused verification passed: 25 tests across launcher, volume guard, saved
+  setup and diagnostic files; Bash syntax/diff whitespace passed. Secret-free
+  model comparison against HEAD passed: only `api` added, five inherited services
+  byte-equivalent after resolution, same six resolved volume identities, default
+  selection only `postgres`, empty credentials and expected health/grace/port.
+- Before native build/live experiments: no stage-owned service is running; DB
+  consumers are absent and both original DB containers remain stopped. Build
+  `docker compose --env-file .env.compose --file compose.yaml build api` in a
+  fresh secret-free environment (600s attempt bound). Then exclusively own test
+  PostgreSQL via `./scripts/database.sh up test` and runtime via
+  `./scripts/database.sh api-up test`; no schema suite/process suite/outage runs
+  concurrently. Probe only after image/container/publication ownership checks.
+  A temporary host socket owns the explicit collision port and closes in finally.
+  Cleanup: native `stop api`, remove only stage-created `api` container with
+  `rm --force api`, then `stop --timeout 10 postgres_test`; preserve development,
+  named volumes, saved settings and retained image. All experiments have bounded
+  subprocesses and cleanup; no source fixtures or managed-secret edits.
+- Native Compose runtime build passed with no credential environment, including
+  frozen install, finite DB/API builds and 64-package production deployment.
+  Tag `storage-minis-beijing-api:step4`, image/index
+  `sha256:13a5e1e7b00a86537ad000dd1ee0142e867b3ccb5ea97d0c83e929a85296345e`.
+  Typecheck (four Turbo tasks), lint and format all passed.
+- First live attempt passed secret-free native status/log/stop, real wrong-config,
+  token, invalid-port/level and missing-login refusal, test DB preparation,
+  authenticated healthy API/image/nonroot/no-mount checks and both exact HTTP
+  responses. The temporary harness then asserted an invented `startup_ready`
+  marker; source emits `listening`. Its cleanup ran, but its final inspection
+  guard also wrongly treated captured container environment JSON as printed
+  command output. Corrected both harness assumptions; no application changes.
+  Confirmed API removed and both original DB containers stopped. No credentials
+  were printed/stored. Next: rerun the owned live phase to complete idempotence,
+  native exit/listener release, collision, ambient-input and cleanup assertions.
+- Corrected live phase passed in full. Native startup selected only the test
+  DB tuple through matching managed credentials. Fresh-environment default port
+  3000 and repeated idempotent startup used the same owned API container. Exact
+  live/ready bodies returned HTTP 200. Inspection confirmed the built image,
+  node user/plain Node CMD, init, 15s grace, no mounts, fixed container settings,
+  only loopback publication and no Doppler/raw managed-key/URL variables.
+  Native logs and health output contained no injected password.
+- Native API-only stop returned application exit 143, released port 3000 in
+  0.23s and preserved running test PostgreSQL. An owned listener on 60819 caused
+  explicit startup failure while retaining that listener. Successful override
+  on 60823 then proved ambient PG/URL/HTTP/Compose settings were discarded.
+  All commands used fresh HOME/PATH-only environments plus deliberate fixture
+  overrides. Cleanup removed only the stage-created API container and stopped
+  test PostgreSQL; development container ID/state and saved settings unchanged.
+  No running project consumer, collision listener, watcher or source fixture.
+  Next: synchronize completion summaries, validate documentation/final diff,
+  execute the local completion commit and verify hash/status.
+- Final documentation validation passed: eight changed Markdown files, 281
+  relative links/anchors, paired fences/consistent tables, 18 distinct acceptance
+  IDs with exactly AC4-01/03/04/05/08/10/11 complete. Current summaries/approval
+  links agree on 4.1–4.6 complete, 4.7–4.11 not started and AC4-13 partial.
+  Final diff review covers only 14 stage files, with unchanged lockfile/schema/
+  migration/API application source and no unrelated work. Resource cleanup is
+  complete. Next: stage this exact diff, check staged whitespace, commit with
+  the recorded subject, verify actual hash and clean status, then stop.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Approved scope and rationale are in
+[technical direction](technical-direction.md#step-46-compose-runtime-and-startup-approval-2026-10-29).
+Canonical `compose.yaml` adds only runtime `api` under profile `api`, with native
+runtime build, project-scoped image, loopback publication, Node readiness health,
+init, no restart and 15s grace. It has no mounts or implicit DB startup.
+`database.sh api-up dev|test` validates settings before fetch, clears ambient
+connection inputs and reuses the selected-key/no-fallback Doppler boundary and
+payload stderr forwarding. It delegates lifecycle/waiting to native Compose.
+Native build/up/log/stop aliases are available; existing `docker:ps` covers status.
+Project stop/prune and guarded full volume cleanup honor service grace; explicit
+DB-only stop/reset retains 10s. No dependencies, general dispatcher, extra model,
+settings keys, `api-dev` or `api-verify` placeholders were added.
+
+| Check / exact command | Result |
+| --- | --- |
+| `git branch --show-current`; initial `git status --short`; `git log -8 --oneline` | Required shared branch, clean initial tree, 4.1–4.5 completion commits present; predecessor is `4fd7856`. |
+| `docker image inspect storage-minis-api:stage4.5 --format '{{.Id}} {{.Os}}/{{.Architecture}}'` | Predecessor image present, ID recorded above. Prior unchanged configuration/lifecycle/package evidence remains applicable; current manifest/launcher changes received new checks/build. |
+| `bash -n scripts/database.sh scripts/local-config.sh scripts/reset-volumes.sh`; `git diff --check` | Passed. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project db-unit src/launcher.test.ts src/docker-launcher.test.ts src/local-setup.test.ts src/diagnostics.test.ts` | 25 tests passed. Covers selected dev/test key, special-character password preservation, missing key/network refusal despite ambient passwords, pre-fetch target/config/token/port/level rejection, native failure propagation and safe stdout/stderr diagnostics, saved settings and guarded cleanup. |
+| `./scripts/tooling.sh run pnpm typecheck`; `./scripts/tooling.sh run pnpm lint`; `./scripts/tooling.sh run pnpm format:check` | Passed: four Turbo build/type tasks, strict root/API/DB types, ESLint and existing Prettier. |
+| `python3 /private/tmp/storage-minis-stage46-model.py` | Fresh secret-free native Compose comparison against `git show HEAD:compose.yaml`: only API added, all five inherited services unchanged, six resolved volumes identical, default service only postgres, empty credential defaults and correct runtime profile/health/grace/publication. |
+| `env -i HOME="$HOME" PATH="$PATH" docker compose --env-file .env.compose --file compose.yaml build api` | Native build passed without DB/Doppler; frozen install, finite DB/API build and portable 64-package deployment. Tag `storage-minis-beijing-api:step4`, linux/arm64; image/index `sha256:13a5e1e7b00a86537ad000dd1ee0142e867b3ccb5ea97d0c83e929a85296345e`, config `sha256:8c169230d867460c977c5d1e415808ea1723a0083d70af74c531f065d5d7a556`. |
+| `python3 /private/tmp/storage-minis-stage46-live.py` | Corrected bounded host harness passed all assertions; first harness-only failures/corrections recorded above. Uses only HOME/PATH plus deliberate nonsecret overrides, captures inspection in memory, prints only allowlisted results. |
+| `./scripts/database.sh up test`; `./scripts/database.sh api-up test` (fresh environment, repeated) | Matching real Doppler test credentials; native API healthy with same container on repeated startup, correct image/node/plain Node/init/grace, no mounts or credential metadata. Default loopback port 3000. No build/pull/migration at startup. |
+| `/usr/bin/curl --noproxy '*' --silent --show-error --max-time 8 --write-out '\n%{http_code}' http://127.0.0.1:3000/health/live` and same for `ready` | Exact `{"status":"ok"}` / `{"status":"ready"}` plus HTTP 200; override port 60823 also passed. Only owned API image/container was probed. |
+| Native `logs --no-color api`, `stop api`, and `--profile '*' ps --all` with unavailable Doppler, contradictory config and fixture token | Passed without fetching secrets. Actual logs/health output checked against injected password in memory; no credentials printed or persisted. Stop exited 143, not OOM/SIGKILL, and released port in 0.23s; DB remained running. |
+| `API_HOST_PORT=60819 ./scripts/database.sh api-up test` with an owned collision socket; then valid port 60823 with ambient PG/URL/HTTP/Compose sentinels | Collision failed nonzero, original listener retained, no API running. Subsequent startup discarded all ambient connection/HTTP/Compose inputs and published only selected loopback port. Listener closed in finally. |
+| Native `stop api`, `rm --force api`, `stop --timeout 10 postgres_test` | Cleanup passed. API container removed, test stopped, no project consumer/listener/client/watcher; development container ID/state unchanged and saved settings byte-identical. No volume deletion or managed-secret change. |
+| `python3 /private/tmp/storage-minis-validate-stage-4.6-docs.py`; `git diff --check` | Passed: eight Markdown files, 281 relative links/anchors, fences/tables, current summaries/approval links and all 18 criteria; exactly seven criteria complete. |
+
+Build and live attempts stayed within the existing 600s/individual command bounds.
+Temporary verification scripts remain only in `/private/tmp`, outside the commit;
+they contain no credentials and created no source fixtures. No schema suite,
+process suite, image-smoke or outage consumer overlapped this test phase. Prior
+schema/process evidence is reused because application/schema/lockfile behavior
+is unchanged. Full aggregate milestone is next required at 4.8; this stage ran
+focused and affected strict checks. Development/reload, automated image smoke,
+outage recovery, full project drain and final cache/aggregate checks remain unrun
+for their assigned stages. No full Step 4/T06/business/production acceptance.
+
+AC4-01 is complete. AC4-13 has runtime credential/refusal/safe-diagnostic evidence
+but remains partial through 4.7–4.8. AC4-09/AC4-17 remain partial through 4.10;
+native API-only immediate shutdown does not claim in-flight project drain proof.
+AC4-11 packaging remains valid. Parent plan, stage table, foundation guide,
+README, technical direction, current local-development reference and AGENTS are
+synchronized; dated predecessor evidence remains historical.
+
+Commit scope: only the 4.6 runtime/launcher/aliases/grace changes, their focused
+tests and affected documentation; there was no unrelated initial diff. After
+documentation/diff validation, stage these files and execute the completion
+subject above, resolve hash, verify `git status --short` and stop. Next assigned
+work is 4.7, beginning with its uncovered approvals; no push/PR is authorized.
+
 ## Stage 4.5 — Self-contained runtime image
 
 **State: complete.** Required runtime packaging and affected build/strict checks

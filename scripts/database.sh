@@ -7,7 +7,7 @@ fail() {
 }
 usage() {
   printf '%s\n' \
-    'Usage: database.sh {up TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|reset TARGET --confirm PROJECT}' \
+    'Usage: database.sh {up TARGET|api-up TARGET|check TARGET|psql TARGET ARGS...|run TARGET COMMAND...|reset TARGET --confirm PROJECT}' \
     'TARGET is dev or test. psql is noninteractive; use -c SQL.'
 }
 
@@ -57,7 +57,7 @@ operation=$1; shift
 target=""
 case "$operation" in
   -h|--help) usage; exit 0 ;;
-  up|check|psql|reset|run)
+  up|api-up|check|psql|reset|run)
     [[ $# -ge 1 ]] || { usage >&2; exit 2; }
     target=$1; shift
     [[ $target == dev || $target == test ]] || fail 'Target must be dev or test.'
@@ -69,6 +69,18 @@ case "$operation" in
     esac ;;
   *) usage >&2; exit 2 ;;
 esac
+if [[ $operation == api-up ]]; then
+  export API_HOST_PORT=${API_HOST_PORT-3000} LOG_LEVEL=${LOG_LEVEL-info}
+  [[ $API_HOST_PORT =~ ^[1-9][0-9]{0,4}$ ]] && ((API_HOST_PORT <= 65535)) ||
+    fail 'API_HOST_PORT must be an integer in 1–65535 without leading zeros.'
+  case "$LOG_LEVEL" in
+    fatal|error|warn|info|debug|trace|silent) ;;
+    *) fail 'Invalid LOG_LEVEL.' ;;
+  esac
+  # Clear all host connection options before the fetch as well as the payload.
+  for key in ${!PG@}; do unset "$key"; done
+  unset DATABASE_URL DB_TARGET
+fi
 # Integration tests always require disposable storage, before any secret fetch.
 if [[ $operation == run ]]; then
   for argument in "$@"; do
@@ -109,7 +121,7 @@ fi
 # Only DB-bearing commands fetch secrets. Remove ambient values before Doppler
 # runs so a missing managed key cannot inherit an old password.
 case "$operation" in
-  up|check|psql|run)
+  up|api-up|check|psql|run)
     if [[ $injected -eq 0 ]]; then
       [[ -z ${DOPPLER_TOKEN:-} ]] || fail 'Unset DOPPLER_TOKEN; checkout-scoped browser login is required.'
       [[ ${DOPPLER_PROJECT:-storage-minis} == storage-minis && ${DOPPLER_CONFIG:-$target} == "$target" ]] ||
@@ -187,13 +199,16 @@ case "$operation" in
     printf '%s\n' "$target database authentication and identity passed."
     ;;
   psql) sql_client "$@" ;;
-  run)
+  run|api-up)
     password=${!secret_key}
     for key in ${!PG@}; do unset "$key"; done
     unset DATABASE_URL POSTGRES_PASSWORD POSTGRES_TEST_PASSWORD
     export DB_TARGET=$target PGHOST=$service PGPORT=5432 PGDATABASE=$database PGUSER=postgres
     export PGPASSWORD=$password
     unset password
+    if [[ $operation == api-up ]]; then
+      exec "${compose[@]}" up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api 2>&1
+    fi
     exec "$checkout/scripts/tooling.sh" _run-db "$target" "$@"
     ;;
   reset)

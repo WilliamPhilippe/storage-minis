@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.5 complete, including guarded process proof and portable runtime packaging; overall Step 4 remains in progress, with stages 4.6–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.6 complete, including guarded process proof, portable runtime packaging and canonical Compose/Doppler startup; overall Step 4 remains in progress, with stages 4.7–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -798,6 +798,32 @@ all compiled schema/declaration files and internal production links. AC4-01
 remains partial until authenticated startup in 4.6. Build needs no DB/Doppler;
 tooling/Compose, dependency versions and workspace injection policy are unchanged.
 Production hosting, release operations and T04 acceptance remain open.
+
+## Step 4.6 Compose runtime and startup approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the recommended 4.6 scope in
+this session. This covers only the runtime P4-07/P4-11 subset below. Development,
+automated image smoke and remaining task choices keep their later-stage gates.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Runtime service | Only `api`, profile `api`, in canonical Compose; project-scoped `-api:step4` tag, existing runtime build target, no mounts, `init: true`, no restart, 15s grace. Retain the default PostgreSQL selection and all six volume identities. |
+| Publication/health | Loopback host port 3000 by default with a validated invocation override. Node readiness healthcheck uses 7s HTTP abort, 8s Docker timeout, 2s interval, 5s start and three retries. Native Compose waits up to 30s; no custom polling policy. |
+| Credential operation | Only `api-up dev\|test`, with validated port/log level, cleared ambient DB inputs and the inherited selected-key Doppler/no-fallback/diagnostic boundary. Execute native `up --detach --no-deps --no-build --pull never --wait --wait-timeout 30 api`; runtime retains production mode and container `0.0.0.0:3000`. No migration or secret change. |
+| Native aliases/grace | Add build/up/log/stop aliases for runtime only; reuse `docker:ps`. Remove project-wide 10s overrides from stop/down/confirmed volume cleanup so per-service grace applies; retain DB-only 10s bounds. |
+| Verification | Extend inherited fixture security/diagnostic tests and affected strict checks. Native build, model/volume/default-selection checks, real test-target startup/exact HTTP/collision/native stop and fresh-environment settings proof. Keep AC4-13 partial until 4.7–4.8 and full project drain proof for 4.10. |
+
+**Implemented and verified:** Native Compose builds and starts the profiled runtime
+with selected test credentials; exact host HTTP health, image/user/command/mount
+inspection, collision refusal, idempotent fresh-environment startup and native
+exit/listener cleanup passed. Focused launcher/security and strict checks passed.
+AC4-01 is complete; AC4-13 remains partial through 4.7–4.8 and full project drain
+proof remains 4.10. No development migration, secret edit or dependency change.
+
+This preserves native lifecycle ownership and needs no dependency, dispatcher or
+extra settings/model file. Manual startup would lose the short guarded launch;
+custom polling/dispatch would add maintenance. Implementation evidence is tracked
+in the [4.6 checkpoint](step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

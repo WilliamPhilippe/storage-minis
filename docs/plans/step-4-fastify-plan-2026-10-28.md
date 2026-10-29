@@ -5,7 +5,8 @@ implemented and verified in commit `472e0a7`; stage 4.2 is approved, implemented
 verified in `29509a3`; stage 4.3 lifecycle/entry/start tasks are approved,
 implemented and verified in `230a348`; stage 4.4 guarded process tests are approved,
 implemented and verified in `2510bdd`; stage 4.5 runtime packaging is approved,
-implemented and verified; stages 4.6–4.11 remain pending.
+implemented and verified in `4fd7856`; stage 4.6 canonical runtime/startup is
+approved, implemented and verified; stages 4.7–4.11 remain pending.
 See the [cumulative evidence](../technical/step-4-verification-2026-10-28.md).
 Remaining implementation recommendations retain their approval gates.
 **Delivery owner:** [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
@@ -138,6 +139,9 @@ implementation and guarded/aggregate checks are complete. See the
 Stage 4.5's P4-11 build/package/runtime and dist-only package boundaries were
 approved on 2026-10-28; implementation and packaging checks are complete. See the
 [4.5 approval](../technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28).
+Stage 4.6's runtime P4-07/P4-11 service/health/launcher/alias subset was approved
+on 2026-10-29 and is implemented with native Compose/test-target evidence. See the
+[4.6 approval](../technical/technical-direction.md#step-46-compose-runtime-and-startup-approval-2026-10-29).
 Other details below remain recommendations until explicit implementation approval.
 These labels are local plan references, not new business requirements or backlog
 decisions. P4-01 remains retired.
@@ -149,16 +153,17 @@ decisions. P4-01 remains retired.
 | P4-04 — Lifecycle | A lifecycle module owns exactly one `Database`, one app and one idempotent close operation. Accept an optional async route-registration callback receiving that app and owned DB, before readiness/listen. A thin process entry validates configuration and installs signal handlers. Close resources on every partial-startup failure. | Listening while initially unready changes fail-fast behavior. Constructing another pool in Step 5 would duplicate ownership; the registration callback supplies an explicit extension point. |
 | P4-05 — HTTP | Use the live/ready contracts below, 16 KiB body limit, 10s request-receive timeout, `forceCloseConnections: "idle"`, and `trustProxy: false`. Each readiness request uses a current bounded DB check. | One health route loses the process/dependency distinction. Cached readiness reduces queries but needs freshness and recovery policies. |
 | P4-06 — Errors/logs | Use Fastify's JSON logger, server-generated request IDs, fixed failure categories and allowlisted request metadata. Disable default request logging, which includes raw URLs; never log environment objects, bodies, headers, raw errors or causes. | Header redaction alone leaves query strings and exception messages exposed. A second logging package is unnecessary. |
-| P4-07 — Configuration/launch | Approved direction: reuse `.env.compose`, native Compose commands and existing Doppler injection. Recommend narrow allowlisted API operations in `database.sh` for runtime injection, plus a bounded `verify-api.sh`; ordinary build/logs/stop use Compose directly. Ordinary tooling/DB commands remain port-free. | A general API dispatcher or duplicated secret-fetch implementation adds maintenance and diverges from the accepted standard Compose direction. |
+| P4-07 — Configuration/launch | Approved direction: reuse `.env.compose`, native Compose commands and existing Doppler injection. Stage 4.6 implements approved `api-up` in `database.sh` for runtime injection; development injection and bounded `verify-api.sh` remain pending; ordinary build/logs/stop use Compose directly. Ordinary tooling/DB commands remain port-free. | A general API dispatcher or duplicated secret-fetch implementation adds maintenance and diverges from the accepted standard Compose direction. |
 | P4-08 — Emit/watch | Use TypeScript for finite builds, compiled DB exports, a DB `tsc --watch` task and native Node watch with the already installed tsx loader for API source. Clean each package's own `dist` before finite builds. | `tsx watch` is the original candidate but has a 5s child-kill timer, shorter than the proposed API shutdown budget. Source DB exports break the agreed compiled boundary; bundling adds tooling. |
 | P4-09 — Task graph | Declare actual API dependencies, cached finite builds/checks and uncached persistent dev/start tasks. Add a separate uncached API process-test command; keep live resources outside ordinary checks. | Putting live checks into `pnpm check` adds DB/Doppler prerequisites to offline work. Making a persistent watcher a build prerequisite prevents finite completion. |
 | P4-10 — Evidence | Test the factory/configuration offline; test built Node processes and current DB behavior against the explicit test target. Approved amendments require shared-target serialization and project-wide shutdown proof. Add only the harness needed to prove Step 4. | Injection tests alone cannot prove bind failures, ESM exports, signal forwarding or released process resources. Deferring all process tests to Step 6 leaves Step 4 incomplete. |
-| P4-11 — API image | Approved layout: profiled API services in canonical `compose.yaml`. Stage 4.5 approves/implements `docker/Dockerfile.api` build/package/runtime, root `.dockerignore`, the existing pinned Node base, pnpm deploy and dist-only API/DB production packaging. Development target and Compose registration remain later stages. | A second Compose model fragments lifecycle/cleanup inventory. One image containing all build tools enlarges runtime scope; host pnpm links or tooling volumes make it incomplete. |
+| P4-11 — API image | Approved layout: profiled API services in canonical `compose.yaml`. Stage 4.5 approves/implements `docker/Dockerfile.api` build/package/runtime, root `.dockerignore`, the existing pinned Node base, pnpm deploy and dist-only API/DB production packaging. Stage 4.6 adds the approved runtime Compose service/health and secure startup; development remains 4.7. | A second Compose model fragments lifecycle/cleanup inventory. One image containing all build tools enlarges runtime scope; host pnpm links or tooling volumes make it incomplete. |
 
 Published exact manifests were inspected without installing packages. At research
 time Fastify 5.12.7 and Zod 4.6.7 were the registry's current stable releases.
 Installation and strict compilation passed for stage 4.1; stage 4.5 proves
-portable image packaging/imports. Authenticated image startup remains stage 4.6.
+portable image packaging/imports. Stage 4.6 also verifies authenticated native
+Compose runtime startup.
 [Fastify manifest](https://registry.npmjs.org/fastify/5.12.7),
 [Zod manifest](https://registry.npmjs.org/zod/4.6.7).
 
@@ -176,10 +181,12 @@ AC4-09 has basic real SIGINT/SIGTERM proof; shutdown edge/project paths remain
 with 4.10. AC4-06/AC4-07 have real healthy HTTP/authenticated-check proof, but
 service-outage liveness/readiness bounds/recovery remain partial until 4.9.
 AC4-11 has [stage 4.5 packaging evidence](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image):
-all compiled files/declarations and portable production links. AC4-01 remains
-partial until 4.6 proves authenticated container startup.
+all compiled files/declarations and portable production links. AC4-01 now has
+[4.6 native Compose/authenticated runtime evidence](../technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
+AC4-13 remains partial until the development and smoke credential paths pass in
+4.7–4.8; project drain proof stays with 4.10.
 
-- [ ] **AC4-01 — API image:** the repository builds a dedicated API runtime image
+- [x] **AC4-01 — API image:** the repository builds a dedicated API runtime image
   containing Fastify, compiled API/DB code and production dependencies. It starts
   with plain Node as a nonroot user without source/dependency mounts, a TS loader,
   an install at startup, live build credentials or access to tooling volumes.
@@ -360,7 +367,7 @@ root `.dockerignore`, with the repository root as build context. Its
 [approval](../technical/technical-direction.md#step-45-runtime-image-packaging-approval-2026-10-28)
 and [verification](../technical/step-4-verification-2026-10-28.md#stage-45--self-contained-runtime-image)
 cover portable production packaging. The development target remains for 4.7;
-Compose/authenticated startup remains 4.6. Reuse
+Compose/authenticated startup is delivered in 4.6. Reuse
 this exact base rather than choosing another Node distribution/version:
 
 ```text
@@ -414,7 +421,8 @@ PostgreSQL as the only default service: existing `docker:up` continues to start
 and authenticate the database without implicitly starting API/watchers. Existing
 DB service definitions, six volume identities and pins remain unchanged.
 
-Proposed API details: use project-scoped tags
+Implemented runtime details (4.6), with development details still proposed:
+use project-scoped tags
 `${COMPOSE_PROJECT_NAME}-api:step4` and `${COMPOSE_PROJECT_NAME}-api:step4-dev`.
 Both services join the existing default network, use `init: true`,
 `restart: "no"` and a 15s stop grace period, longer than the API's 10s process deadline.
@@ -455,8 +463,8 @@ owner's development project. Normal stop/down preserves named volumes.
 `load_local_config`, `resolve_doppler` and the existing selected-password fetch
 in `scripts/database.sh`. Recommend narrowly allowlisted operations
 `api-up TARGET`, `api-dev TARGET` and `api-verify test`: map them only to the corresponding
-native Compose payload or verifier, not arbitrary host callbacks. These proposed
-names are for the implementation below; they do not exist yet. Built startup
+native Compose payload or verifier, not arbitrary host callbacks. `api-up` is
+implemented in 4.6; `api-dev` and `api-verify` remain proposed for 4.7–4.8. Built startup
 executes the image's Node CMD, never `tooling.sh _run-db` or root `pnpm start`.
 Keep the tooling runner for checks/dependency maintenance and process tests.
 
@@ -722,8 +730,11 @@ security-bearing exceptions call only the existing Doppler boundary:
 | `pnpm docker:api:stop` | `docker compose --env-file .env.compose --file compose.yaml stop api api-dev` |
 | `pnpm docker:api:verify` | `./scripts/database.sh api-verify test` |
 
-These aliases and the new allowlisted helper operations are proposed concrete
-names, not implemented commands or a general lifecycle dispatcher. Existing
+The runtime subset is implemented in 4.6: build/stop select only `api`, `api-up`
+selects the explicit target, logs select `api`, and existing `docker:ps` supplies
+status. The table shows the final planned scope; `api-dev`/`api-verify` operations
+and aliases remain unavailable until 4.7–4.8. Current usable commands are in the
+[README](../../README.md#api-runtime-image). There is no general dispatcher. Existing
 `docker:ps`, `docker:stop` and `docker:prune` cover the API through full-profile
 selection; their project-wide stop/down commands must honor service grace periods.
 Use the raw commands above for Docker-only operation. The following quickstart
@@ -884,9 +895,11 @@ The owner subsequently approved P4-03/P4-05/P4-06 for stage 4.2; that factory,
 HTTP and logging work is complete with passing injection/strict/build checks.
 Stage 4.3 P4-04/process/start choices and stage 4.4 P4-09/P4-10 runner/task/test
 choices are also approved and implemented with offline and real process evidence.
-Later P4 watch, packaging and verification recommendations retain their approval
-gates within the amended direction. The earlier planning update performed no
-installation or implementation; current delivered scope is stages 4.1–4.4.
+Stage 4.5 P4-11 runtime packaging and stage 4.6 P4-07/P4-11 runtime Compose,
+health, launcher and native aliases are also approved and implemented. Later
+watch/development/smoke recommendations retain their approval gates. Current
+delivered scope is stages 4.1–4.6; the original planning update remains a dated
+record of no installation or implementation.
 Preserve existing approved Step 3 behavior and obtain
 approval only for uncovered choices when implementation is requested.
 
