@@ -531,6 +531,41 @@ its tmpfs is discarded. Aggregate reconciliation, permanent locks, authorized
 transitions, typed snapshot contracts and actual deletion-versus-funding races
 remain T01/T06 business-operation acceptance work.
 
+## API development
+
+Use the [README development workflow](../../README.md#api-development-and-reload)
+after the existing volume init/frozen install. Build both actual API targets with
+`docker compose --env-file .env.compose --file compose.yaml build api api-dev`,
+stop built mode, start/check development PostgreSQL with `./scripts/database.sh up dev`,
+and run `./scripts/database.sh api-dev dev` in the foreground. The development
+image runs as `node`, uses the checkout bind plus the existing five nocopy tooling
+volumes, and publishes only loopback port 3000 (`API_HOST_PORT` can override it).
+No host dependency tree or extra volume is used. No migration/reset is involved.
+
+Root `pnpm dev` runs Turbo's persistent uncached API/DB watchers after one finite
+DB build. API uses native Node watch with tsx; DB uses TypeScript watch and
+compiled exports, including schema JS/declarations. Actual API/DB/schema changes,
+compiler error/correction, rapid saves and a 6.5s restart drain are verified.
+Only the API task receives selected DB credentials; compilers and finite builds
+receive none. Reload keeps the injected environment; Doppler rotation requires
+relaunching the outer command. The test target remains available only with its
+matching config and exclusive ownership; ordinary development uses `dev`.
+
+Ctrl+C stops the foreground service. The approved development-only native SIGINT
+stop setting prevents duplicate TERM forwarding through pinned pnpm/Turbo;
+both outer TERM and INT drained a 6.5s response with container exit 0 and client
+143/130. Use the canonical Compose path for that shutdown guarantee. Runtime
+retains TERM. Follow safe logs with native `logs --follow api-dev`; API-only
+`stop api api-dev` preserves PostgreSQL. Stopped service containers may remain.
+
+A compiler error retains previous generated files and can leave the last valid
+API serving; correct it and confirm fresh HTTP readiness. A failed API child can
+leave Node watch waiting for an edit. For DB source additions/deletions/renames,
+stop development, run `./scripts/tooling.sh run pnpm build`, then restart. Stop
+watchers before all finite clean builds/checks that build DB to avoid two writers
+for `dist`. Watch mode does not remove stale emitted files. See the
+[actual reload/security/signal evidence](step-4-verification-2026-10-28.md#stage-47--development-image-and-reload).
+
 ## Development checks
 
 Run from the root, prefixed with `./scripts/tooling.sh run` for Docker:

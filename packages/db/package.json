@@ -12,7 +12,8 @@
     "db:check": "tsx scripts/check.ts",
     "db:generate": "tsx scripts/generate.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "test:integration": "tsx scripts/integration.ts"
+    "test:integration": "tsx scripts/integration.ts",
+    "dev": "tsc --project tsconfig.build.json --watch --preserveWatchOutput"
   },
   "dependencies": {
     "drizzle-orm": "0.45.4",

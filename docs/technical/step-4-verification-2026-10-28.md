@@ -5,6 +5,259 @@ sessions. Follow the [stage guide](../plans/step-4-fastify-implementation-stages
 and [parent contract](../plans/step-4-fastify-plan-2026-10-28.md).
 Stage completion is distinct from full Step 4 acceptance.
 
+## Stage 4.7 — Development image and reload
+
+**State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).
+Overall Step 4 remains in progress; 4.8–4.11 have not started. Completion commit
+subject: `feat(api): add isolated development reload workflow`. Resolve its hash
+with `git log -1 --format=%H --grep="^feat(api): add isolated development reload workflow$"`.
+
+### Initial checkpoint (historical; before implementation)
+
+**State at this checkpoint: in progress.**
+
+- Verified required branch `WilliamPhilippe/step-4-implementation-plan`; clean
+  initial status/diff. HEAD `f92a8ed` completes 4.6; current history contains the
+  4.1–4.6 completion commits and their cumulative evidence. No new worktree.
+- Read AGENTS, README Docker/PostgreSQL/lifecycle, stage execution/completion/
+  checkpoint rules and 4.7 card, parent build/watch/Turbo, development image,
+  volumes/security and reload verification contracts, foundation instructions,
+  maintenance/one-time setup decisions, current launcher/manifests/task graph.
+  Live T06 #26 remains open, no comments; inherited business/operations gates
+  remain unchanged. Existing finite-build/runtime/process evidence is inherited
+  for unchanged source/lockfile; affected declarations will receive new checks.
+- Owner approved the concrete watcher, nonroot development image/service,
+  task/environment, narrow injection/aliases and bounded fixture/live-verification
+  recommendation in this session. No dependencies or pins change.
+- Saved settings: `storage-minis-beijing`, ports 5433/5434. Docker read-only
+  inspection passed after sandbox escalation. Only existing stopped development
+  and test DB containers; six project volumes include the five tooling volumes.
+  No API/watchers/fixture/client/listener owned yet. No managed secrets fetched.
+- Required checks pending: focused launcher/security and actual Turbo graph/
+  environment isolation, native development image build/model/mount proof,
+  finite DB build before watchers, API/compiled DB implementation/schema reload,
+  compiler-error recovery, rapid edits and >5s graceful restart, foreground
+  TERM/INT cleanup through Doppler/Compose/pnpm/Turbo/Node, strict finite checks.
+  AC4-02 pending; AC4-13 remains partial through 4.8.
+- Live ownership plan: start/check existing development PostgreSQL without
+  migration or reset; foreground `./scripts/database.sh api-dev dev` only after
+  image build and another checkpoint. Back up temporary source bytes in
+  `/private/tmp`, restore exactly, stop watchers before finite clean builds.
+  Stop/remove only the stage-owned api-dev container; return PostgreSQL to its
+  initial stopped state, preserving container identity/data/settings/volumes.
+- Exact next action: record approval, implement only 4.7, focused checks, then
+  checkpoint before bounded live experiments. Synchronize current summaries,
+  record exact results/cleanup and commit locally only after required checks pass.
+  No 4.8, push or PR work.
+
+### Checkpoint history
+
+- Added approved development Docker target/service, real watcher commands and
+  persistent task prerequisites, narrow `api-dev` payload and native aliases.
+  Focused launcher/security suite passed: 29 tests in four files, including both
+  runtime/dev selected-key injection and special-character passwords, validation
+  before fetch, missing keys/network refusal, safe streams and native failures.
+  Bash syntax/whitespace passed. Live T04 #23 remains open with no comments.
+- Before image build/model/live work: no stage-owned process or source fixture.
+  Next run secret-free Compose model/default/volume checks, dev image build
+  (600s bound), and actual Turbo dry graph. Then save fixture recovery manifest
+  and checkpoint before starting `api-dev dev`. Development DB may be started
+  and authenticated only; no migration/reset. Temporary slow route/markers will
+  be restored before finite checks. API remains optional, using the existing
+  saved project and five initialized tooling volumes.
+
+- Secret-free native `api-dev` image build passed with frozen install and finite
+  DB/API builds; image index `sha256:68b7dc57ad969456eace0d66f9a2bdaa02bdf681175ac5b3818feb23d3a240e7`,
+  config `sha256:f65842c96d6071d86f58ab672f1cb2f596d7f9f46518df5cc5ca722d9f5ccba5`.
+  Model comparison passed: inherited services identical, six identical volumes,
+  only default postgres, nonroot dev with exact tooling mounts and loopback port.
+- Before temporary/live experiments: prepared bounded host harness
+  `/private/tmp/storage-minis-stage47-live.py`; it saves original server/client/
+  schema-index/DB-manifest bytes and SHA-256 manifest in
+  `/private/tmp/storage-minis-stage47-fixtures` before edits. Temporary diagnostic
+  routes report PID/API/DB/schema markers; a 6.5s request proves graceful restart.
+  DB finite task asserts no DB/Doppler keys, and live compiler environments are
+  inspected without printing values. No business table is read/written.
+  TERM and INT target the outer launcher separately; inspect container exit and
+  listener release. Finally restore all four files byte for byte, stop/remove
+  only api-dev, stop development PostgreSQL back to initial state. No migrations,
+  resets, secret changes or test target consumer. On interruption use that backup
+  manifest to restore fixtures, native stop api-dev before finite builds, remove
+  owned api-dev and stop postgres; preserve its identity/data/volumes/settings.
+
+- Actual Turbo dry graph passed: only finite DB build and two persistent
+  uncached dev tasks; both depend on the same build; DB tasks have no credential
+  pass-through. First live attempt reached authenticated dev/container startup,
+  then the host harness inspected Docker `StopTimeout` under the wrong object
+  (`HostConfig` instead of `Config`). Corrected that assertion. Finally cleanup
+  restored all fixture bytes, removed api-dev and stopped development DB; no
+  implementation failure or migration/reset. Next rerun the bounded live phase.
+
+- Corrected bounded live phase passed. Outer launcher PID 83753, initial container
+  host PID 2791. HTTP marker/PID sequence: `(api,db,schema,pid)` =
+  `(1,5,101,228)`, API edit `(2,5,101,265)`, DB implementation
+  `(2,6,101,285)`, schema `(2,6,102,309)`, corrected compiler error
+  `(2,7,102,333)`, rapid API edits `(5,7,102,345)`, slow-drain restart
+  `(6,7,102,365)`. Generated DB JS and schema JS/declarations checked.
+  Compiler PID 207 had no DB/Doppler keys; actual finite build asserted the same
+  and finished before both watchers started. Invalid DB source produced a visible
+  TS error and retained byte-identical previous output/PID; correction recovered.
+- A 6.5s HTTP request survived source-triggered restart, with new process ready
+  after 6.90s. Exact live/ready responses passed. Outer TERM returned 143,
+  container 143, listener released in 0.29s; separate outer INT PID 83919/
+  container host PID 3479 returned client 130, container 143 in 0.27s. Both
+  expected: native Compose translates foreground interruption to container TERM.
+  Container image/nonroot/init/grace, five volume overlays, loopback publication,
+  selected dev tuple/no Doppler or raw managed-key variables and safe logs passed.
+- Finally restored all four fixture files byte for byte; removed only api-dev,
+  stopped development PostgreSQL, retained settings/volumes and original DB
+  container. Next unresolved check: exercise outer TERM/INT while the 6.5s
+  diagnostic response is still in flight (idle signals already passed), using
+  the same bounded fixture backup/cleanup contract before finite strict checks.
+
+- Additional in-flight foreground TERM check **failed**: outer PID 84073,
+  API PID 160, native client/container exit 143 after 0.28s; curl returned 52
+  (empty reply) instead of the delayed response. This is an actual outer-chain
+  drain gap, not a harness inspection error. Idle TERM/INT and source restart
+  remain valid partial proof; do not mark 4.7 complete or commit completion.
+  Fixtures restored and api-dev removed; development DB stopped, data preserved.
+- Diagnosis next: minimise with a secret-free slow Node worker and compare the
+  pnpm, Turbo and direct Node-watch layers, observing PIDs/parent exits. Ranked
+  hypotheses: pnpm exits before children drain; Turbo terminates early; Node
+  watch outer-signal path differs from restart. Any changed development command
+  or retained signal protection needs concrete owner approval before coding.
+
+- Prepared `/private/tmp/storage-minis-stage47-signal-probe.py`: secret-free
+  single-worker reproduction using the built development image, an isolated
+  `/private/tmp` fixture bind and unique owned probe containers. Compare direct
+  Node, native Node watch, pnpm exec and pnpm run under Docker init with 15s grace;
+  worker logs ready/signal/drained after 6.5s. No repository fixture edits or DB.
+  Each probe is removed in finally. This isolates the failing outer-chain layer
+  before proposing any command/protection amendment.
+
+- Minimal diagnosis completed: direct Node 6.62s, Node watch 6.63s, pnpm exec
+  6.63s, pnpm run 6.63s and direct Turbo 6.64s all drained; pnpm wrapping Turbo
+  under TERM force-stopped after 0.09s. Native Node `--run` also exited early
+  (0.09s) and was rejected. With native Docker SIGINT stop, pnpm exec/Turbo and
+  pnpm run/Turbo each drained in 6.64s. Unique probe containers removed in finally;
+  no DB, repository source or dependencies changed by diagnosis.
+- Owner approved the declarative `api-dev`-only `stop_signal: SIGINT` amendment,
+  recorded with rationale/alternatives in technical direction; implemented that
+  one line. No custom signal helper or command/pin change. Next rerun canonical
+  in-flight outer TERM and INT using the same backed-up 6.5s fixture; verify
+  response completion, native client/container exit separately, no force kill,
+  listener release, exact source restoration and initial DB/container state.
+
+- Canonical in-flight foreground verification now **passed** with the approved
+  SIGINT stop setting. Outer TERM PID 84481 / container host PID 6188 / API PID
+  158 drained the full 6.5s response and stopped in 6.63s; client 143, container 0.
+  Separate outer INT PID 84541 / container host PID 6550 / API PID 158 drained
+  and stopped in 6.65s; client 130, container 0. Native Turbo completes its interrupted
+  task shutdown normally; report container/client statuses separately from the
+  inherited direct-Node 130/143 convention.
+  No forced kill, listener or running child remains. Secret/log/mount/tuple
+  assertions passed again. All four source fixtures restored byte for byte,
+  api-dev removed and development DB returned to initial stopped state.
+- Watchers are stopped before finite checks. Next run finite API/DB build,
+  affected strict type/lint/format checks, final model/graph and cleanup/source
+  restoration checks. Then synchronize current summaries/instructions/approval,
+  validate documentation and final diff, stage only 4.7 files and commit locally.
+
+- Finite DB/API build and strict typecheck/lint/format all passed after watchers
+  stopped and fixtures restored. Before final verification, add one focused
+  transitive schema-leaf scenario: temporary marker in `schema/enums.ts`, leaving
+  `schema/index.ts` unchanged, prove emitted leaf JS/declarations and changed HTTP
+  consumer PID/value. Use the same original-byte backup/finally restoration and
+  owned development resource cleanup. Then finite build again because emitted
+  fixture output must be replaced. No new implementation or dependency choice.
+
+- Transitive schema-leaf scenario passed through unchanged `schema/index.ts`:
+  outer PID 84918 / container host PID 7962; HTTP schema marker 101/API PID 228
+  changed to 102/PID 266 after editing only `schema/enums.ts`. Both emitted leaf
+  JS and declarations contained the new marker. Outer INT then stopped in 0.22s,
+  client 130/container 0; all original bytes/resources restored again.
+- Clean finite build after that fixture restored both packages from valid Turbo
+  outputs. Final native `build api api-dev` passed with no credentials; frozen
+  dependency policy/64-package production deploy retained. Dev content config
+  remained `sha256:f65842c96d6071d86f58ab672f1cb2f596d7f9f46518df5cc5ca722d9f5ccba5`;
+  final attested dev index `sha256:fc2c235b087810fb2fa8909d3747e2e7b7b8c4721c82cb43bf4925958eb26ca0`.
+  Runtime index `sha256:5d920420abf84e5114c6e757665f011a0445c842015e16ea17b25fa43f66ad9c`,
+  config `sha256:03b46340674fc0b8e7e407b8ae22bb6de74d51c600760550c284313bacff4a33`.
+- Final model/security/cleanup assertions passed: real wrong-config, token,
+  invalid-port and missing-login dev refusals occur before payload startup;
+  inherited services/volumes/default selection unchanged; approved SIGINT and
+  exact tooling overlays; original fixture SHA-256 values, no generated markers,
+  original saved settings, only the two original stopped DB containers, no API,
+  watcher, client, probe container or port-3000 listener. Documentation and final
+  staged diff checks precede the local completion commit; no later-stage work.
+
+- Final documentation validation passed: eight changed Markdown files, 293
+  relative links/anchors, paired fences/consistent tables, all 18 distinct AC4
+  IDs with exactly AC4-01/02/03/04/05/08/10/11 complete. Current status/approval
+  summaries agree on 4.1–4.7 complete, 4.8–4.11 not started and AC4-13 partial.
+  Final diff review contains only the 16 stage files; no application/schema/
+  migration/lockfile or unrelated fixture changes. Next: stage that exact set,
+  check staged whitespace, execute the recorded Conventional Commit, resolve
+  actual hash and verify clean status, then stop.
+
+### Completed handoff (2026-10-29, America/Maceio)
+
+Implemented the [approved watcher/development/injection choices and SIGINT amendment](technical-direction.md#step-47-development-image-and-reload-approval-2026-10-29).
+The API Dockerfile's nonroot development target runs root `pnpm dev`. Canonical
+`api-dev` overlays the checkout and existing five nocopy tooling volumes; both
+persistent uncached tasks wait for one finite DB build. Only API dev receives
+named runtime settings. `database.sh api-dev dev|test` reuses the selected-key,
+no-fallback host boundary and native foreground Compose. Build/stop aliases now
+select both real services, and `docker:api:dev` is available. No new packages,
+versions, host dependency mount, setting key, volume, dispatcher or migration.
+
+| Check / exact command | Result |
+| --- | --- |
+| `git branch --show-current`; `git status --short`; `git diff --stat`; `git log -8 --oneline` | Required shared branch and clean initial tree; 4.1–4.6 completed evidence/commits present. Preserved existing checkout; no worktree or branch added. |
+| `gh issue view 26 --repo WilliamPhilippe/storage-minis-be --json number,title,state,body,comments` and same for `23` | Open, no comments; delivery/production and business prerequisites unchanged. No issue mutation. |
+| `bash -n scripts/database.sh`; `git diff --check` | Passed. |
+| `./scripts/tooling.sh run pnpm exec vitest run --project db-unit src/launcher.test.ts src/docker-launcher.test.ts src/local-setup.test.ts src/diagnostics.test.ts` | 29 tests passed across four files. Both API operations cover selected dev/test key, special-character passwords, missing key/fetch refusal despite ambient credentials, pre-fetch validation, safe stdout/stderr and native failure propagation. |
+| `env -i HOME="$HOME" PATH="$PATH" docker compose --env-file .env.compose --file compose.yaml build api-dev` (executed via Python `subprocess.run`, 600s bound); final same native command with `build api api-dev` | Passed frozen install, finite DB/API builds, nonroot dev and retained portable production packaging. Exact image identities above; no DB/Doppler credentials in builds. |
+| `python3 /private/tmp/storage-minis-stage47-graph.py` (actual `./scripts/tooling.sh run pnpm dev --dry=json`) | Passed: one finite DB build shared by two uncached persistent watchers, no persistent finite prerequisite, no DB task credential pass-through. |
+| `python3 /private/tmp/storage-minis-stage47-live.py` | Corrected harness passed finite-build-before-watch ordering, actual finite compiler environment assertion, live compiler PID 207 environment isolation, API/DB/schema reload/PIDs, JS/declaration output, visible compiler rejection and correction, rapid edits and 6.90s graceful restart with a complete delayed HTTP response. First inspection-only harness error preserved above. |
+| Canonical `./scripts/database.sh up dev`; `./scripts/database.sh api-dev dev` inside bounded live harnesses | Matching real dev credentials, selected tuple/no Doppler/raw managed keys or URL variables in container; nonroot/init/grace/loopback/five-volume overlay checks; exact `/health/live` and `/health/ready` HTTP 200 bodies. No migration, reset or business-table change. |
+| Minimal secret-free Node/watch/pnpm/Turbo probes and `python3 /private/tmp/storage-minis-stage47-signals.py` | Initial TERM-chain failure exposed and diagnosed; owner approved native SIGINT. Full canonical in-flight outer TERM and INT then passed, complete 6.5s responses, client 143/130 and container 0 in 6.63s/6.65s. PIDs and rejected alternatives recorded above. No force kill/listener/child leak. |
+| `python3 /private/tmp/storage-minis-stage47-schema-leaf.py` | Compiled transitive `schema/enums.ts` marker and declaration changed through unchanged schema index, consumer PID/value changed; exact bytes restored and watchers stopped. |
+| `./scripts/tooling.sh run pnpm build`; `./scripts/tooling.sh run pnpm typecheck`; `./scripts/tooling.sh run pnpm lint`; `./scripts/tooling.sh run pnpm format:check` | All passed after watchers stopped and source restoration: finite API/DB builds, four Turbo type/build tasks, strict ESLint and existing Prettier. Repeated finite build after the final schema fixture restored clean cached outputs; no fixture markers remain. |
+| `python3 /private/tmp/storage-minis-stage47-final.py` | Final secret-free model/refusal/source/generated-output/resource/settings assertions passed. No running container/API listener; only original stopped development/test DB containers retained. |
+| Native `stop api-dev`, `rm --force api-dev`, `stop --timeout 10 postgres` in each live harness's finally path | Removed only owned API/probe resources, returned development DB to initial stopped state, preserved its data/identity, six named volumes and saved settings. Test service remained untouched/stopped. |
+
+AC4-02 is complete. AC4-13 now has runtime and development credential isolation/
+refusal/compiler-boundary evidence and remains **partial** until the 4.8 smoke
+path. AC4-09/AC4-17 have development foreground proof; full project drain/teardown
+remains 4.10. AC4-12 has actual persistent-graph proof; final finite cache/source
+invalidation remains 4.11. This is partial Step 4 delivery, not full Step 4, T06,
+business or production acceptance.
+
+Required 4.7 checks passed; initial harness/TERM failures were corrected and
+verified, not deferred. Full `pnpm check` is next required at milestone 4.8;
+schema/API process suites, runtime smoke, outage and project-wide teardown/cache
+experiments were not rerun as part of this stage. Prior unchanged application/
+schema/lockfile/process behavior retains its recorded 4.1–4.6 evidence; changed
+launcher/manifests/task declarations received focused/strict/native checks here.
+No test-target consumer or managed-secret modification occurred.
+
+All temporary source fixtures are restored byte for byte; finite outputs contain
+no diagnostic routes/markers. Diagnostic scripts/fixtures remain only under
+`/private/tmp` (minimal prototypes archived in `storage-minis-stage47-debug`),
+not in the commit. They contain no credentials; environment inspections stayed
+in memory and output only safe assertion/PID results. No stage-owned live
+resource remains. User-facing recovery/commands and current status/approval
+summaries are synchronized in README, local-development, parent/stage plans,
+foundation guide, technical direction and AGENTS; dated history is preserved.
+
+Commit scope: only the 4.7 development declarations/launcher/watchers, focused
+security tests and necessary documentation/evidence. No unrelated initial work.
+Next action after final documentation/diff checks: stage those files, execute
+`feat(api): add isolated development reload workflow`, resolve actual hash,
+verify `git status --short`, then stop. Stage 4.8 requires its separate assignment;
+no 4.8 implementation, push or PR is authorized here.
+
 ## Stage 4.6 — Canonical Compose and Doppler startup
 
 **State: complete.** Required stage checks passed on 2026-10-29 (America/Maceio).

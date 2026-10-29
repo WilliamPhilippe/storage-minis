@@ -10,7 +10,8 @@
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "start": "node --enable-source-maps dist/server.js",
-    "test:process": "tsx scripts/process-tests.ts"
+    "test:process": "tsx scripts/process-tests.ts",
+    "dev": "node --watch --watch-preserve-output --import tsx src/server.ts"
   },
   "dependencies": {
     "@storage-minis/db": "workspace:*",

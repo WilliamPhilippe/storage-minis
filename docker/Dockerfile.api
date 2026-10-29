@@ -18,6 +18,12 @@ COPY apps/api/src ./apps/api/src
 COPY packages/db/src ./packages/db/src
 RUN pnpm build
 
+FROM build AS development
+ENV PNPM_CONFIG_STORE_DIR=/pnpm/store
+USER node
+EXPOSE 3000
+CMD ["pnpm", "dev"]
+
 FROM build AS package
 RUN pnpm --filter=@storage-minis/api --prod deploy /out
 

@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.6 complete, including guarded process proof, portable runtime packaging and canonical Compose/Doppler startup; overall Step 4 remains in progress, with stages 4.7–4.11 pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.7 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup and development reload with verified in-flight foreground shutdown; overall Step 4 remains in progress, with stages 4.8–4.11 pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [model review](../entities/model-review.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) continue to govern domain invariants.
 
@@ -824,6 +824,41 @@ This preserves native lifecycle ownership and needs no dependency, dispatcher or
 extra settings/model file. Manual startup would lose the short guarded launch;
 custom polling/dispatch would add maintenance. Implementation evidence is tracked
 in the [4.6 checkpoint](step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
+
+## Step 4.7 development image and reload approval (2026-10-29)
+
+**Owner approval:** The owner explicitly approved the concrete 4.7 recommendation
+in this session, before implementation. The scope is P4-08/P4-09 watchers and
+P4-07/P4-11 development service/injection only. No dependency or pin changes.
+
+| Choice | Approved outcome and rationale |
+| --- | --- |
+| Watchers | API `node --watch --watch-preserve-output --import tsx src/server.ts`; DB `tsc --project tsconfig.build.json --watch --preserveWatchOutput`; root `turbo run dev`. Preserve compiled DB exports. Native Node waits for child exit on restart; tsx watch's 5s kill limit is shorter than the 10s application cleanup budget. |
+| Task graph | Persistent uncached API `dev` depends on `^build`; DB `dev` depends on its finite `build`. Both share that prerequisite; no persistent task is a finite prerequisite. Only API gets the existing named runtime allowlist; DB compiler/builds get no DB credentials. |
+| Development image/service | Nonroot `development` inherits the pinned build stage, runs `pnpm dev` in `/workspace`. Optional canonical `api-dev` uses the checkout bind and existing five tooling volumes with nocopy, `init`, no restart, 15s grace and loopback publication. Existing init/frozen install remains prerequisite. No host dependencies or extra storage. |
+| Launcher/aliases | Extend existing selected-key/no-fallback boundary with `api-dev dev\|test`, native foreground `up --no-deps --no-build --pull never api-dev`. Extend native build/stop to both actual services and add the dev alias. One model and one credential boundary avoid duplicated maintenance. |
+| Verification | Bounded live `./scripts/database.sh api-dev dev` with temporary API/DB/schema, error/rapid-edit and >5s drain fixtures, restored byte for byte; inspect PIDs, compiled outputs, environment and cleanup. Focused security/graph and affected strict finite checks after watchers stop. No migration/reset or managed-secret changes. |
+
+**Implemented and verified:** Development image, compiled DB reload, compiler
+error/correction, rapid edits, >5s restart drain, compiler secret isolation and
+canonical in-flight TERM/INT passed; see the
+[4.7 evidence](step-4-verification-2026-10-28.md#stage-47--development-image-and-reload).
+AC4-02 is complete and AC4-13 remains partial until the 4.8 smoke path also passes.
+Source exports, a new watcher package or a separate launcher/model would change
+the compiled boundary or add maintenance and are not selected.
+
+**Approved amendment (same date):** After actual in-flight outer TERM failed,
+the owner approved `stop_signal: SIGINT` on `api-dev` only, retaining 15s grace.
+The secret-free minimal worker drained in 6.6s under direct Node watch, pnpm and
+direct Turbo; pnpm wrapping Turbo under TERM force-stopped immediately. The
+pinned Turbo wrapper forwards TERM, and combined forwarding triggers native
+Turbo's repeated-signal force-stop path. SIGINT through the same pnpm/Turbo chain
+drained in 6.6s. Native Compose's service stop signal avoids a custom wrapper or
+bypassing pnpm. Runtime `api` retains default TERM. The full canonical foreground
+TERM/INT path subsequently passed, draining in 6.63s/6.65s with container exit 0
+and native client statuses 143/130 respectively. See
+[Turbo's pinned wrapper](https://github.com/vercel/turborepo/blob/v2.11.10/packages/turbo/bin/turbo)
+and [Compose stop_signal](https://docs.docker.com/reference/compose-file/services/#stop_signal).
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

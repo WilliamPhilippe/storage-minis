@@ -35,12 +35,14 @@
     "docker:prune:volumes": "./scripts/reset-volumes.sh",
     "docker:ps": "docker compose --env-file .env.compose --file compose.yaml --profile '*' ps --all",
     "docker:logs": "docker compose --env-file .env.compose --file compose.yaml logs --follow postgres",
-    "docker:api:build": "docker compose --env-file .env.compose --file compose.yaml build api",
+    "docker:api:build": "docker compose --env-file .env.compose --file compose.yaml build api api-dev",
     "docker:api:up": "./scripts/database.sh api-up dev",
     "docker:api:logs": "docker compose --env-file .env.compose --file compose.yaml logs --follow api",
-    "docker:api:stop": "docker compose --env-file .env.compose --file compose.yaml stop api",
+    "docker:api:stop": "docker compose --env-file .env.compose --file compose.yaml stop api api-dev",
     "docker:setup": "./scripts/configure-local.sh && pnpm docker:build && docker compose --env-file .env.compose --file compose.yaml pull postgres && pnpm docker:init && ./scripts/tooling.sh run pnpm install --frozen-lockfile && pnpm docker:up",
-    "docker:migrate": "./scripts/tooling.sh run-db dev pnpm db:migrate"
+    "docker:migrate": "./scripts/tooling.sh run-db dev pnpm db:migrate",
+    "dev": "turbo run dev",
+    "docker:api:dev": "./scripts/database.sh api-dev dev"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

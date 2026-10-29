@@ -10,7 +10,8 @@ API configuration, the injectable HTTP factory, process lifecycle and built entr
 are implemented and verified with guarded real-DB process tests. Stage 4.5 adds
 a verified portable API runtime image; overall Step 4 remains in progress.
 Stage 4.6 adds optional Compose runtime startup with matching Doppler credentials.
-Business operations, API development reload, the React frontend and CI remain pending.
+Stage 4.7 adds the development image and verified API/compiled-DB reload.
+Business operations, the React frontend, automated image smoke and CI remain pending.
 Default Docker startup still selects only PostgreSQL.
 
 ## Structure
@@ -22,7 +23,7 @@ docker/                   Tooling/API images and volume initializer
 scripts/tooling.sh        Run workspace commands in Docker
 scripts/database.sh       Inject selected DB credentials and start PostgreSQL/API
 scripts/reset-volumes.sh  Confirmed project volume deletion
-compose.yaml              PostgreSQL, optional runtime API/test/tools, and volumes
+compose.yaml              PostgreSQL, optional runtime/development API/test/tools, and volumes
 docs/                     Requirements, models, plans, and technical decisions
 AGENTS.md                 Agent instructions and approval rules
 ```
@@ -95,7 +96,7 @@ Stage 4.5 supplies the self-contained production package using the
 From the repository root, build it without PostgreSQL or Doppler access:
 
 ```sh
-docker compose --env-file .env.compose --file compose.yaml build api
+docker compose --env-file .env.compose --file compose.yaml build api api-dev
 ```
 
 The pinned Node/pnpm build compiles API/DB, then pnpm deploy packages production
@@ -141,9 +142,51 @@ Host aliases are `pnpm docker:api:build`, `pnpm docker:api:up` (dev target),
 `pnpm docker:api:logs`, `pnpm docker:api:stop` and existing `pnpm docker:ps`.
 The API gets 15s native stop grace around its 10s application cleanup deadline;
 project-wide commands honor service grace. Full project drain proof remains 4.10.
-The development target/reload and automated smoke command remain 4.7–4.8; no
-`api-dev` or `api-verify` command is available yet. See the
+Automated smoke remains 4.8; `api-verify` is not available yet. See the
 [runtime startup evidence](docs/technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
+
+### API development and reload
+
+Stage 4.7 runs the nonroot API Dockerfile `development` target through the optional
+`api-dev` service, using the checkout and the same five initialized tooling
+volumes. After the existing one-time volume init/frozen install and API image
+build above, stop built mode and start foreground development:
+
+```sh
+docker compose --env-file .env.compose --file compose.yaml stop api api-dev
+./scripts/database.sh up dev
+./scripts/database.sh api-dev dev
+```
+
+Open [liveness](http://127.0.0.1:3000/health/live) and
+[readiness](http://127.0.0.1:3000/health/ready), or use the curl commands above.
+The same exact HTTP 200 bodies apply. `pnpm docker:api:dev` is the host shortcut;
+`docker:api:build` and `docker:api:stop` now select both real API services.
+For another log viewer use
+`docker compose --env-file .env.compose --file compose.yaml logs --follow api-dev`.
+
+The finite DB build finishes before both persistent uncached watchers. API source
+runs with native Node watch and the pinned tsx loader; DB TypeScript watch emits
+compiled JS/declarations and imported DB/schema changes reload the API. Only the
+API task receives the selected DB tuple; compilers receive no DB credentials.
+No migration, install or secret fetch occurs on reload. Relaunch the outer command
+to obtain changed Doppler values. Both modes default to loopback port 3000 and
+cannot publish that same port together; `API_HOST_PORT` also applies to dev.
+
+Ctrl+C stops foreground development. The development service uses native SIGINT
+and 15s grace: the pinned pnpm/Turbo TERM chain cut off an in-flight response;
+SIGINT preserved it through both outer TERM and Ctrl+C. Runtime retains TERM.
+Use the canonical foreground command for this verified shutdown path. A stopped
+service container can remain for diagnosis; native API-only stop preserves DBs.
+
+A DB compiler error is visible and retains the last valid compiled output/API;
+that running process does not prove current source passes checks. Correct the
+error and verify readiness again. Failed API startup can leave Node watch waiting
+for an edit. Adding/removing/renaming DB files requires stopping dev and running
+`./scripts/tooling.sh run pnpm build` before restarting; watch emit does not remove
+stale output. Stop watchers before any finite clean build or strict check that
+can build DB. No migrations or data resets are required for diagnostic health.
+See the [reload, recovery and signal evidence](docs/technical/step-4-verification-2026-10-28.md#stage-47--development-image-and-reload).
 
 ### Doppler host setup and verification
 
@@ -185,8 +228,8 @@ the [database reference](docs/technical/local-development.md#local-postgresql).
 ## Docker lifecycle commands
 
 The canonical `compose.yaml` defines development PostgreSQL by default. Test,
-tooling, the SQL client and runtime API use optional `test`, `tools`, `db-tools`
-and `api` profiles.
+tooling, the SQL client and API services use optional `test`, `tools`, `db-tools`,
+`api` and `api-dev` profiles.
 Run package scripts on the host from the repository root. In the table,
 `docker compose …` means
 `docker compose --env-file .env.compose --file compose.yaml`.
@@ -279,7 +322,7 @@ Prefix each command with `./scripts/tooling.sh run` when you use Docker.
 `pnpm check` builds the DB package and checks types, lint, formatting and API/DB
 unit tests. `pnpm build` emits API configuration/factory/lifecycle/server ESM/declarations/source maps and
 DB ESM/declarations, cleaning each package’s own `dist` first. Stop watchers before
-finite builds. Stages 4.1–4.6 are complete. The factory uses explicit HTTP
+finite builds. Stages 4.1–4.7 are complete. The factory uses explicit HTTP
 configuration and injected DB-check/closing capabilities; the lifecycle owns one
 DB/app and passes that full DB to async route registration before readiness/listen.
 Injection and lifecycle fixtures cover health/errors/logs, partial failures,
@@ -369,7 +412,7 @@ diagram now matches the approved structural schema.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md)
 - Approved plans: [Docker tooling](docs/plans/step-1-tooling-plan-2026-10-24.md), [PostgreSQL](docs/plans/step-2-postgresql-plan-2026-10-24.md), and [Drizzle and base migration](docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md)
-- [Step 4 Fastify plan — stages 4.1–4.6 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
+- [Step 4 Fastify plan — stages 4.1–4.7 complete; later stages pending](docs/plans/step-4-fastify-plan-2026-10-28.md), [sequential implementation stages](docs/plans/step-4-fastify-implementation-stages-2026-10-28.md) and [one prompt per stage](docs/plans/step-4-fastify-stage-prompts-2026-10-28.md)
 - [Current Compose maintenance plan — implemented](docs/plans/standard-compose-maintenance-plan-2026-10-25.md)
 - [Earlier application-container and lifecycle plan — superseded direction](docs/plans/docker-application-lifecycle-plan-2026-10-25.md)
 - [Foundation proposal — approval pending](docs/technical/t06-foundation-proposal-2026-10-24.md)
