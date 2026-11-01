@@ -91,7 +91,10 @@ const components = {
     headerHeight: 64,
     headerPadding: "0 24px",
   },
+  // activeBarBorderWidth draws an inline Menu's right border, which doubled
+  // the SideNav's own and showed inside the phone drawer (owner, 2026-11-01).
   Menu: {
+    activeBarBorderWidth: 0,
     itemSelectedBg: surfaceSunken,
     itemSelectedColor: ink,
     itemHoverBg: surfaceSunken,
