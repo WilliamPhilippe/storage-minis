@@ -1,5 +1,6 @@
 import { Server, Socket } from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Database } from "@storage-minis/db";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "./app.js";
 import type { AppDependencies } from "./app.js";
@@ -19,12 +20,14 @@ const httpConfig: ApiConfig["http"] = {
 const secret = "HOSTILE_SECRET_SENTINEL";
 const requestId = "HOSTILE_REQUEST_ID_SENTINEL";
 const apps: FastifyInstance[] = [];
+// Construction and health never touch Drizzle; identity proves pass-through.
+const db = {} as Database["db"];
 let output: string[];
 
 function createApp(overrides: Partial<AppDependencies> = {}) {
   const check = vi.fn<() => Promise<void>>().mockResolvedValue();
   const app = buildApp(httpConfig, {
-    database: { check },
+    database: { db, check },
     isClosing: () => false,
     ...overrides,
   });
@@ -86,7 +89,7 @@ describe("HTTP factory", () => {
       });
       const imported = await import("./app.js");
       app = imported.buildApp(httpConfig, {
-        database: { check: vi.fn() },
+        database: { db, check: vi.fn() },
         isClosing: () => false,
       });
       apps.push(app);
@@ -104,13 +107,23 @@ describe("HTTP factory", () => {
       requestTimeout: 10_000,
       forceCloseConnections: "idle",
     });
+    // Routes are plugins that Fastify loads in ready(), the lifecycle's
+    // readiness phase; construction registers them without loading.
+    expect(app?.hasRoute({ method: "GET", url: "/health/live" })).toBe(false);
+    await app?.ready();
+    expect(app?.hasRoute({ method: "GET", url: "/health/live" })).toBe(true);
+    expect(app?.hasRoute({ method: "GET", url: "/health/ready" })).toBe(true);
+    expect(listen).not.toHaveBeenCalled();
   });
 
   it("returns exact liveness without checking the DB, including failure and closing", async () => {
     const check = vi
       .fn<() => Promise<void>>()
       .mockRejectedValue(new Error(secret));
-    const { app } = createApp({ database: { check }, isClosing: () => true });
+    const { app } = createApp({
+      database: { db, check },
+      isClosing: () => true,
+    });
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const response = await app.inject("/health/live");
       expect(response.statusCode).toBe(200);
@@ -156,7 +169,7 @@ describe("HTTP factory", () => {
         }),
     );
     const { app } = createApp({
-      database: { check },
+      database: { db, check },
       isClosing: () => closing,
     });
     const pending = app.inject("/health/ready");

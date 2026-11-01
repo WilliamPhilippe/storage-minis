@@ -15,7 +15,6 @@ type Category =
   | "configuration_failed"
   | "database_acquisition_failed"
   | "app_construction_failed"
-  | "registration_failed"
   | "app_readiness_failed"
   | "database_readiness_failed"
   | "listen_failed"
@@ -39,7 +38,6 @@ export interface LifecycleOptions {
     httpConfig: ApiConfig["http"],
     dependencies: AppDependencies,
   ) => FastifyInstance;
-  registerRoutes?: (app: FastifyInstance, database: Database) => Promise<void>;
   runtime?: LifecycleRuntime;
 }
 
@@ -52,7 +50,7 @@ const processRuntime: LifecycleRuntime = {
   },
   exit: (code) => process.exit(code),
   report: (category) => {
-    // Never pass an exception, configuration, address or registration input here.
+    // Never pass an exception, configuration or address here.
     process.stderr.write(`API lifecycle: ${category}.\n`);
   },
 };
@@ -103,7 +101,7 @@ export function startLifecycle(
       lifecycleLimits.shutdownMs,
     );
     cleanup = (async () => {
-      // A pending acquisition/registration/readiness/listen must settle before
+      // A pending acquisition/plugin load/readiness/listen must settle before
       // handlers disappear or cleanup can claim it has released every resource.
       await startupSettled.promise;
       let cleanupFailed = false;
@@ -169,9 +167,7 @@ export function startLifecycle(
         isClosing: () => closing,
       });
       if (closing) return false;
-      failure = "registration_failed";
-      await options.registerRoutes?.(app, database);
-      if (closing) return false;
+      // Fastify loads the app's plugins (routes, later tRPC) here.
       failure = "app_readiness_failed";
       await app.ready();
       if (closing) return false;

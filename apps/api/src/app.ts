@@ -4,9 +4,14 @@ import Fastify, { LogController } from "fastify";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { PinoLoggerOptions } from "fastify/types/logger.js";
 import type { ApiConfig } from "./config.js";
+import { healthRoutes } from "./health.js";
 
+/**
+ * What the app may use from its owner. The lifecycle owns the pool; `close`
+ * and `healthy` stay out of reach so no route or plugin can end it.
+ */
 export interface AppDependencies {
-  database: Pick<Database, "check">;
+  database: Pick<Database, "db" | "check">;
   isClosing: () => boolean;
 }
 
@@ -105,21 +110,11 @@ export function buildApp(
     done();
   });
 
-  app.get("/health/live", (_request, reply) => reply.send({ status: "ok" }));
-  app.get("/health/ready", async (request, reply) => {
-    if (!dependencies.isClosing()) {
-      try {
-        await dependencies.database.check();
-        // Shutdown may have begun while the current check was in flight.
-        if (!dependencies.isClosing()) return { status: "ready" };
-      } catch {
-        request.log.warn(
-          { category: "database_unavailable", status: 503 },
-          "readiness_unavailable",
-        );
-      }
-    }
-    return reply.code(503).send({ status: "unavailable" });
+  // The single composition root: production and app.inject() tests build the
+  // same plugins. Fastify loads them during app.ready(), owned by the lifecycle.
+  void app.register(healthRoutes, {
+    database: dependencies.database,
+    isClosing: dependencies.isClosing,
   });
 
   return app;
