@@ -31,7 +31,9 @@ compose.stack.yaml      Parity stack: API on 127.0.0.1:3100
 docker/api.Dockerfile   API image (also runs the migrator)
 docker/postgres/init/   Role init script run on first volume initialization
 apps/api                @storage-minis/api: Fastify API
+apps/web                @storage-minis/web: React web app (Vite, antd, TanStack Router)
 packages/db             @storage-minis/db: schema, migrations, client, migrator
+tsconfig.browser.json   Browser TypeScript profile for apps/web (beside tsconfig.node.json)
 ```
 
 Dependencies are saved with exact versions. The esbuild install scripts allowed
@@ -212,6 +214,16 @@ Run `test:db` and `test:api` one at a time; `test:db` drops the test schemas.
 | tRPC | `/trpc/<procedure>`: plain JSON, no transformer, no batching, queries by GET and mutations by POST. One diagnostic procedure, `diagnostics.echo`. See the [tRPC HTTP contract](#trpc-http-contract). |
 | Logs | JSON lines on stdout. Request lines carry method, matched route template (`/trpc/:path` for tRPC), status, elapsed time, a generated request ID and, for a matched tRPC procedure only, `procedure`; never URLs, bodies, headers or other request inputs. Failures add an allowlisted `err`: constructor `type`, a string `code` (Node code or Postgres SQLSTATE such as `28P01`, `23505`), `stack` frames only (at most 20) and `cause` to depth 3. Messages appear only when `NODE_ENV=development`, except the API's own `ConfigurationError`, which names only variables. 4xx failures log at info, 5xx at error. Client responses stay fixed. |
 
+## Web dev server
+
+| Area | Contract |
+| --- | --- |
+| Address | `vite` (in `pnpm dev`) binds `127.0.0.1:5173`; `vite preview` binds `127.0.0.1:4173`. Both use `strictPort`, so an occupied port fails instead of moving. The documented URL is `http://localhost:5173`, the origin PR 3 authorizes in the Firebase dev project. |
+| Proxy | `/trpc/` (with the trailing slash, so `/trpcx` is not matched) goes to `http://127.0.0.1:3000`; `vite preview` reuses it. With the API down, Vite logs `http proxy error` and the browser gets 502 with no tRPC envelope, which the app reports as "Can't reach the server" after three retries. |
+| Deep links | `appType` stays `spa`: any other path returns `index.html` in dev and preview. |
+| Generated files | The router plugin writes `apps/web/src/routeTree.gen.ts` (committed) and uses `.tanstack/` (ignored) while it runs. |
+| Environment | The web build reads no `VITE_*` variables yet. |
+
 ### tRPC HTTP contract
 
 Every response under `/trpc` uses one envelope with a fixed message per code; it
@@ -283,7 +295,8 @@ serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 | Task | Depends on | Cache | Passes through |
 | --- | --- | --- | --- |
 | `build` | `^build` | `dist/**` | Nothing |
-| `typecheck`, `//#lint`, `//#test` | DB `build` | Yes | `NODE_ENV`, `TZ` hashed for `//#test` |
+| `typecheck` | `^build` (DB `typecheck` waits for its own `build`) | Yes | Nothing |
+| `//#lint`, `//#test` | DB and API `build` | Yes | `NODE_ENV`, `TZ` hashed for `//#test` |
 | `//#typecheck:root`, `//#format:check` | None | Yes | Nothing |
 | DB `db:generate` | None | No | Nothing |
 | DB `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
@@ -291,6 +304,7 @@ serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 | API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | DB `dev` | `build` | No, persistent | Nothing |
+| Web `dev` | None | No, persistent | Nothing |
 
 `pnpm check --dry=json` shows the graph; `pnpm check --force --summarize`
 followed by `pnpm check --summarize` shows a full run and its cache reuse.

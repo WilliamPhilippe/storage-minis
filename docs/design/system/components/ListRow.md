@@ -1,6 +1,8 @@
 # ListRow
 
-One record in a filterable list (an item, sale, customer or payment), built from antd `List` and readable at phone width.
+One record in a filterable list (an item, sale, customer or payment), readable at phone width.
+
+**Before building:** antd's `List` is deprecated since antd 6.0 and warns on every render. Its replacement, `Listy` (6.6.0), is a different, virtualized API, so `ListRow`'s first implementation chooses between `Listy` and plain markup (a `<ul>` styled with CSS Modules). The sketch below shows the anatomy with the old `List` names only.
 
 ```tsx
 <List
@@ -13,7 +15,7 @@ One record in a filterable list (an item, sale, customer or payment), built from
           title={`Sale #${sale.number} · ${sale.customerName}`}
           description={<>{t("sale.items", { count: sale.itemCount })} · {formatDate(sale.createdAt)}</>}
         />
-        <Tag bordered={false} {...statusTagProps(sale.state)} />
+        <Tag variant="filled" {...statusTagProps(sale.state)} />
         <Typography.Text strong>{formatMoney(sale.total, lang)}</Typography.Text>
         <RightOutlined aria-hidden />
       </Link>

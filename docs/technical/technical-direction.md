@@ -1333,9 +1333,10 @@ re-verifies its pins.
 **Owner approval:** On 2026-11-01 the owner approved the
 [web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
-with the changes listed after the table. Nothing is implemented yet; the
-implementation PR adds the outcome and the evidence. Choices the plan does not
-settle, and deviations that implementation forces, still need approval.
+with the changes listed after the table. Implemented on branch `feat/web-shell`
+(the web shell PR); the outcome, three implementation-time decisions and the
+evidence follow the design reference. Choices the plan does not settle, and
+deviations that implementation forces, still need approval.
 
 **Rationale.** The plan keeps PR 1 to the shell that later PRs build on, using
 the decided stack. Scratch prototypes found where antd 6.6.8, pnpm 12 and the
@@ -1383,6 +1384,111 @@ The plan settles each one.
 design in [`docs/design/`](../design/README.md) on 2026-11-01. They are design
 references: an approved technical or requirements document wins where they
 disagree, and each implementation still follows its own approved plan.
+
+### Implementation-time decisions (2026-11-01)
+
+Building the shell raised three points the plan did not settle. The owner
+decided each on 2026-11-01:
+
+| Topic | Decided outcome | Why |
+| --- | --- | --- |
+| Heading size and spacing | `components.Typography` sets `fontSizeHeading1: 22`, `lineHeightHeading1: 30 / 22` and `titleMarginBottom: 0`, so every h1 is a `title-lg` page title. CSS Modules set the gaps; where a gap sets the spacing, a two-class selector on our own classes removes a Paragraph's margin. The Login lead's `body-lg` (phones) and `body` (desktop) size is a CSS Module class. No `.ant-*` selector. | antd styles titles as `h1.ant-typography` (38 px, 0.5 em bottom margin) and paragraphs with a 1 em margin, which a single CSS Module class cannot override. The design asks for `title-lg` h1s spaced by gaps. |
+| QueryClient instance | `lib/trpc.ts` exports the app's `queryClient = createQueryClient()` beside the `trpc` options proxy, as in tRPC's Vite SPA setup; `main.tsx` imports it. Tests still create a fresh client per test. | The proxy needs its QueryClient when it is created. Its `queryOptions()` never uses that client (checked in the 11.22.1 source), so each test's client runs every query. |
+| Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays. Three design details are affected: the MenuFab keeps antd's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu keeps antd's 14 px text instead of 16 px; and the inline Menu keeps its own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, and draws the inline Menu's border with a three-class selector. |
+
+While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
+byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
+The owner applied the WS-07 corrections to the Claude originals during
+implementation, and this PR refreshes `docs/design/` from them, so the copy now
+includes `header-height` and `header-height-phone`.
+
+### Implemented outcome
+
+- **Package.** `apps/web` is `@storage-minis/web`, with the WS-01 pins and no
+  `minimumReleaseAgeExclude` entry. Vite 8 runs the TanStack Router plugin
+  before the React plugin, binds `127.0.0.1:5173` (preview `4173`) and proxies
+  `/trpc/` to the API. The root `tsconfig.browser.json` and a solution-style
+  `apps/web/tsconfig.json` give browser and Node profiles.
+- **Routes.** `/` redirects to `/app`. `/login` is the Login page.
+  `/catalog/$nickname` is a public placeholder. `/app` is the shell with a home
+  page and eight section placeholders. Route files hold only definitions, and
+  `routeTree.gen.ts` is committed. `staticData.titleKey` drives one h1 per page
+  and `document.title` ("Inventory · StorageMinis").
+- **Data.** `lib/trpc.ts` holds `createQueryClient`, the app's `queryClient`,
+  the `httpLink` client, the options proxy and `describeError`. The home
+  loader runs `queryClient.query({ ...echoQuery(trpc), staleTime: "static" })`
+  and the page reads `diagnostics.echo` with `useSuspenseQuery`.
+- **Languages.** The `common`, `app`, `login` and `catalog` namespaces load per
+  language through `import()`. Boot loads `common` with the antd and dayjs
+  locales. A switch loads the already loaded namespaces first; a failed
+  switch keeps the language, and the last of overlapping switches wins.
+- **Styling (W3 outcome).** antd's runtime CSS-in-JS stays, so PR 4's policy
+  allows inline styles (`style-src 'self' 'unsafe-inline'`). antd's reset, the
+  token copy, the allowed overrides and one body rule; light only, with
+  `color-scheme: light`.
+- **Shell.** TopBar, SideNav with its own toggle and a remembered choice
+  (`storage-minis.sideNav`), MenuFab with a bottom drawer, and link-based menus
+  in `nav` "Main menu" landmarks. The logo, mark and favicon are resized
+  copies.
+- **Login page.** State 1 on phones and in the 400 px desktop card. The button
+  has no action, nothing imports Firebase, and Google's "G" waits for PR 3.
+- **Tests.** The `web-unit` project (jsdom, `America/Sao_Paulo`) runs inside
+  `pnpm check`. `src/test/harness.ts` holds the browser stubs, the fetch guard
+  and the console policy that `setup.ts` installs.
+- **Design copy.** `docs/design/system/` is refreshed from the Claude originals:
+  the WS-07 corrections, the two text fixes and the notes for later screens.
+
+Implementation notes, not decisions: the home page's title is "Home"; the
+pt-BR strings are first translations for the owner's review;
+`viewport-fit=cover` lets the content's bottom padding include the safe-area
+inset; and the generic error page shows a server message only for tRPC errors.
+The design's `theme.ts` does not list the Typography tokens yet, so a later
+refresh of the originals should add them.
+
+**Evidence (2026-11-01, branch `feat/web-shell`):**
+
+- `pnpm install --frozen-lockfile` passes. `pnpm-workspace.yaml` is unchanged:
+  no `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers
+  check` finds no issue. The TanStack and tRPC agent skills stay unapproved.
+- `pnpm check`: 9 tasks, 184 unit tests in 21 files (from 120 in 12). The
+  `web-unit` project adds 64 tests in 9 files: money, dates, languages, a
+  failed switch, the pending page, the shell, routes, the Login page and the
+  echo card.
+- `pnpm check --dry=json` lists `@storage-minis/web#typecheck`, and `//#lint`
+  depends on `@storage-minis/api#build` and `@storage-minis/db#build`.
+- Each guard was broken on purpose and failed: an undeclared console warning,
+  an unstubbed `fetch`, a removed `aria-hidden` on a menu icon, and in `tsc` a
+  missing pt-BR key, an extra key, a missing `_many`, a wrong `t()` key and a
+  wrong title key.
+- `pnpm build` builds `apps/web/dist`. First catalog visit: about 282 KiB
+  (gzip −9) of JavaScript and CSS (252.6 initial JavaScript, 2.2 CSS, 27.2 for
+  the catalog page, plus the string chunks). The 22.5 KiB shell chunk loads
+  only on `/app`.
+- Without `routeTree.gen.ts`, `pnpm --filter @storage-minis/web build`
+  regenerates it byte-identically. `cmp` finds `apps/web/src/ui/tokens.css`
+  identical to `docs/design/system/tokens.css`.
+- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged. `pnpm test:stack` 5 on
+  an image rebuilt with the new lockfile.
+- Live echo: through `http://127.0.0.1:5173` and `http://localhost:5173`, the
+  proxy returned the API's exact 200 and 400 bodies, and `/trpcx` returned the
+  app's `index.html`. With the API stopped, the card showed "Can't reach the
+  server" 7.6 s after navigation, after four requests (the first and three
+  retries at about 1, 2 and 4 s). With the API restarted, "Try again" showed
+  the echoed message.
+- Browser pane at 375 × 812, 900 and 1280 wide: no sideways scroll; header 56
+  and 64 px; 44 and 40 px controls; ink primary buttons and solid ink text
+  (`rgb(22, 27, 33)`); the FAB's `shadow-fab`; the current item at weight 600;
+  SideNav collapsed at 900 and expanded at 1280; one h1 per page; no console
+  warning.
+- The Login page at 390 × 844 and 1280 × 800 matches `screens/1-sign-in.png`
+  and `screens/5-desktop.png`, apart from the "G" placeholder. Its button does
+  nothing, and the network list shows no external request.
+- Under emulated dark mode, the page and the browser's controls stay light.
+- On `vite preview`, `/catalog/demo` and `/app` load only the en-US string
+  chunks. A switch to pt-BR adds only the pt-BR `common` and `app` strings and
+  the antd and dayjs locales.
+
+This is tooling evidence, not business acceptance.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

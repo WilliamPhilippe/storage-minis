@@ -46,6 +46,8 @@
   --fab-offset: 16px; /* Floating menu button distance from the right and bottom edges. */
   --sider-width: 240px; /* Expanded desktop sidebar. */
   --sider-collapsed: 72px; /* Collapsed desktop sidebar. */
+  --header-height: 64px; /* TopBar height on desktop (antd Layout headerHeight). */
+  --header-height-phone: 56px; /* TopBar height below bp-md. */
   --bp-sm: 576px; /* Large phones in landscape; catalog grid stays two columns. */
   --bp-md: 768px; /* Tablet: the drawer menu becomes a collapsible side menu; controls drop to control-md; gutters grow to space-5. */
   --bp-lg: 992px; /* Desktop: side menu open by default; catalog grid three to four columns. */

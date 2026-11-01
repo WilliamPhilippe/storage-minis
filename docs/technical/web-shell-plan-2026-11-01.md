@@ -1,10 +1,13 @@
 # Frontend PR 1 plan — web shell (2026-11-01)
 
 **Status: approved by the owner on 2026-11-01, with the changes listed under
-[Approval](#approval-2026-11-01); not yet implemented.** The approval record
-is in
+[Approval](#approval-2026-11-01); implemented on branch `feat/web-shell` (the
+web shell PR).** The approval record, three implementation-time decisions, the
+outcome and the evidence are in
 [technical direction](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01).
-Where this plan's text and that record differ, the record applies. This is the
+Where this plan's text and that record differ (heading tokens, the QueryClient's
+module, and antd defaults kept where an override is not simple), the record
+applies. The plan text below is kept as approved. This is the
 plan for PR 1 of the
 [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)
 (W11 item 1), delivered under
