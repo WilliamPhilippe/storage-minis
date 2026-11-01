@@ -9,7 +9,10 @@ Assign one step to one agent, deliver one PR, and hand off before the next step.
 replaced their tooling container and Doppler launchers with host Node, standard
 Compose, committed local values, owner/app database roles, regenerated migrations
 and a parity stack ([PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110)).
-Steps 5–6 are re-planned against this foundation. Full T06/business/production
+The [API composition and error-log rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01)
+(2026-11-01, [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112))
+made `buildApp` the single plugin composition root and made failure logs
+diagnosable. Steps 5–6 are re-planned against this foundation. Full T06/business/production
 acceptance remains pending.
 
 Use [README setup and commands](../../README.md) and the
@@ -37,7 +40,8 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [3A implementation](technical-direction.md#step-3a-drizzle-implementation-2026-10-25), [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged. [Approved structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106), merged. [Recorded results](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): 27 unit and 30 PostgreSQL tests. First development application was an explicit owner action until the 2026-10-31 restructure; its approved clean-slate check (V1) makes `pnpm db:migrate` part of local setup. |
 | 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Steps 5/6 and full T06 remain pending. |
 | — | [Foundation restructure](foundation-restructure-plan-2026-10-31.md) (not a numbered step) | Steps 1–4 | Implemented in [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), stacked on #109; per-group evidence, V1–V7 and superseded-versus-re-proven Step 1–4 evidence are in the PR and the [technical direction record](technical-direction.md#foundation-restructure-2026-10-31). |
-| 5 | tRPC and Zod integration | Steps 1–4, restructure | Not started; re-plan against the restructured foundation |
+| — | [API composition and error-log rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (not a numbered step) | Steps 1–4, restructure | Implemented in [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112): plugin composition root, `registerRoutes` removed, allowlisted error logs and JSON lifecycle lines; evidence in the record and the PR. |
+| 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | Not started; re-plan against the reworked API and its [Step 5 planning inputs](#step-5--trpc-and-zod-integration) |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation |
 
 Begin the next assignment from the previous step's merged result, unless the
@@ -336,16 +340,23 @@ are no longer execution instructions.
 
 ### Delivered contracts
 
-- `buildApp` constructs Fastify from explicit configuration and injected DB-check/
-  closing capabilities. It acquires no pool, listener or process handlers.
-- `startLifecycle` owns one app and one full `Database`. Its async
-  `registerRoutes(app, database)` callback runs before readiness and listen.
-  Future routes reuse that database instead of creating a second pool.
+- `buildApp` is the single composition root (2026-11-01 rework): it constructs
+  Fastify from explicit configuration and registers every route group as a
+  plugin, starting with the health routes (`apps/api/src/health.ts`). It receives
+  `Pick<Database, "db" | "check">` and closing state, and acquires no pool,
+  listener or process handlers. Production and `app.inject()` tests build the same app.
+- `startLifecycle` owns one app and one full `Database`; plugins load during its
+  `app.ready()` phase, before the database check and listen. Future routes reuse
+  that database instead of creating a second pool. (The former
+  `registerRoutes(app, database)` callback was removed on 2026-11-01.)
 - `/health/live` returns 200 with `{"status":"ok"}`. `/health/ready` returns
   200 with `{"status":"ready"}` or 503 with `{"status":"unavailable"}`.
   Readiness checks authenticated DB identity, including an unmigrated database;
   startup never migrates. Outage/recovery preserves the API process.
-- Fixed HTTP errors and restricted JSON logs omit sensitive data. Bodies are
+- Fixed HTTP error bodies omit every detail. Failure logs (2026-11-01) carry an
+  allowlisted `err` (type, code such as SQLSTATE, stack frames, causes to depth 3),
+  with messages only when `NODE_ENV=development`; 4xx log at info, 5xx at error.
+  Lifecycle events are JSON lines on stdout, independent of `LOG_LEVEL`. Bodies are
   limited to 16 KiB and receive time to 10s; client request IDs are disabled.
 - Startup has a 17s watchdog. Repeated SIGINT/SIGTERM share a 10s cleanup bound:
   drain HTTP, then close DB. Successful signal exits are 130/143; failures use 1.
@@ -368,7 +379,7 @@ the changed artifacts.
 
 | Consumer | Existing contract | Remaining work |
 | --- | --- | --- |
-| Step 5 | Fastify factory, `registerRoutes(app, database)`, safe HTTP boundaries and the existing API image/build path. | Add the real tRPC adapter/context, diagnostic schemas, adapter error tests and a type-only router export; rebuild the same image. |
+| Step 5 | `buildApp` composition root (register the adapter with `app.register`), `database.db` through `AppDependencies`, fixed client errors with allowlisted error logs, and the existing API image/build path. | Add the real tRPC adapter/context, diagnostic schemas, adapter error tests and a type-only router export; rebuild the same image. |
 | Step 6 | Parity stack suite (`pnpm test:stack`), exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions. | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
 
 Business routes, Firebase/bootstrap, Membership authorization, frontend,
@@ -398,6 +409,15 @@ Completion requires evidence that:
   emitted JavaScript introduces no server initialization or DB runtime import.
 - The endpoints remain diagnostic and table-free. Adapter tests establish more
   than a successful direct router call.
+
+**Planning inputs approved on 2026-11-01** (with the
+[API rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01)):
+
+- Register the tRPC Fastify adapter as a plugin in `buildApp`; do not add a
+  lifecycle callback or a second composition path.
+- The tRPC context exposes `database.db`, never the whole `Database`.
+- Request logs include the tRPC procedure name. Failures keep the existing
+  allowlisted `err` record and fixed client bodies.
 
 ### Research and planning focus
 

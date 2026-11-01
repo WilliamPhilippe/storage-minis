@@ -779,6 +779,13 @@ documentation; process lifecycle, real HTTP/DB/outage proof and later-stage
 recommendations retained their gates. The separate 4.3 approval follows below.
 No production or business acceptance is implied.
 
+**Superseded in part (2026-11-01):** the
+[API composition and error-log rework](#api-composition-and-error-log-rework-2026-11-01)
+replaces the Construction row's `Pick<Database, "check">` with
+`Pick<Database, "db" | "check">` and health routes registered as a plugin, and the
+Logs row's fixed failure categories with an allowlisted error record. The HTTP row
+and the rest of this record are unchanged.
+
 ## Step 4.3 lifecycle, process and start-task approval (2026-10-28)
 
 **Owner approval:** In the stage 4.3 session, the owner explicitly approved the
@@ -802,6 +809,14 @@ attempts both closes, destroys HTTP connections and forces exit 1 because it
 cannot certify release. OS signals, actual listener/pool release and DB process
 proof remain with 4.4/4.10; mocks do not establish those results. Later-stage
 recommendations retain their approval gates.
+
+**Superseded in part (2026-11-01):** the
+[API composition and error-log rework](#api-composition-and-error-log-rework-2026-11-01)
+removes the Ownership row's optional async callback (`registerRoutes`) and its
+`registration_failed` category, because `buildApp` now assembles every plugin, and
+replaces the Diagnostics row's fixed text categories with JSON lifecycle lines that
+carry an allowlisted error record. Ownership, early cancellation, deadlines, exit
+codes and the built start are unchanged.
 
 ## Step 4.4 guarded process-test approval (2026-10-28)
 
@@ -1070,7 +1085,10 @@ commands, identities, failed attempts and final results remain in the
 [historical verification](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-411--cache-verification-documentation-and-final-handoff).
 
 Step 5 extends `startLifecycle`'s async `registerRoutes(app, database)` callback
-with the real tRPC adapter/context and a type-only router export. It reuses the
+with the real tRPC adapter/context and a type-only router export. *(Superseded on
+2026-11-01: the callback is removed; Step 5 registers the adapter as a plugin in
+`buildApp`. See the
+[API composition and error-log rework](#api-composition-and-error-log-rework-2026-11-01).)* It reuses the
 single owned DB and existing image. Step 6 extends the same image verifier with
 valid/invalid tRPC HTTP requests, reproduces clean setup and rechecks affected
 cache/integration proof. Read the [current guide](technical-foundation-implementation-guide.md#step-4--fastify-server-foundation)
@@ -1130,6 +1148,53 @@ local workflow.
 | Step 4.6 Compose runtime with Doppler, 4.7 development image and reload, 4.8 image smoke | Superseded by the parity stack, `pnpm dev` on the host and `pnpm test:stack`. |
 | Step 4.9 native test-service outage and 4.10 container drain through stop/down and volume deletion | Not re-proven; they used removed helpers. `pnpm test:stack` proves the containerized SIGTERM exit 143, and the process suite proves draining. |
 | Step 4.11 task graph and cache reuse | Re-checked in V2 (dry runs and reuse). |
+
+## API composition and error-log rework (2026-11-01)
+
+**Owner approval:** On 2026-11-01 the owner approved two API changes before
+Foundation Step 5, handled like the foundation restructure (one branch, one PR), and
+then approved the ten implementation choices below as recommended. This is not a
+numbered guide step. Implemented in
+[PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112).
+
+**Rationale.** (1) Fastify's plugin model makes one composition root natural; tests
+then exercise exactly what production runs, and `buildApp` could not host tRPC with
+only the readiness check. (2) Fixed categories discarded every detail, making tRPC
+development and production 500s undiagnosable; an allowlist keeps secrets out, and
+error-level 4xx logs were noise.
+
+| Area | Approved outcome |
+| --- | --- |
+| Composition root | `buildApp(httpConfig, { database, isClosing })` assembles the whole app from Fastify plugins with `app.register`; the health routes are the encapsulated plugin `src/health.ts`. Production and `app.inject()` tests build the same app. It still acquires no pool, listener or process handlers. |
+| Dependency shape | `AppDependencies.database` is `Pick<Database, "db" \| "check">`: Step 5 receives Drizzle, while `close` and `healthy` stay with the lifecycle so no plugin can end the pool. |
+| Lifecycle | `startLifecycle`'s `registerRoutes` option and the `registration_failed` category are removed. Plugins load in `app.ready()`; a failure there is `app_readiness_failed`, and Fastify's default 10 s plugin timeout ends a hung plugin before the 17 s watchdog. Pool ownership, signals, the 17 s startup watchdog, the 10 s shutdown bound, drain-then-close ordering and exits 130/143/1 are unchanged. |
+| Client responses | Unchanged fixed bodies; no messages, stacks, causes or values. |
+| Error record | `err: { type, code?, message?, stack, cause? }`, Pino's field names. `type` is the constructor name (or `typeof` for a non-Error throw); `code` only if a string matching `^[A-Za-z0-9_]{1,64}$` (Node code or Postgres SQLSTATE such as `23505`, `28P01`); `stack` keeps only the `at` frame lines, at most 20, because a multi-line message would otherwise leak through the stack's header; `cause` is followed to depth 3, since the DB package wraps the driver error as its cause. No other property (Postgres `detail`, a URL parser's `input`) is read. The serializer is `apps/api/src/error-log.ts`, also Pino's `err` serializer. |
+| Messages | Logged only when `NODE_ENV` is exactly `development`. Before configuration, the lifecycle reads `process.env.NODE_ENV`; afterwards the app uses `httpConfig.nodeEnv`. `readApiConfig` now defaults `NODE_ENV` to `production` (fail closed), so both agree, and `.env.development` sets `NODE_ENV=development` for `pnpm dev`/`start`. The image and `compose.yaml` already set `production`. |
+| Configuration errors | The API's own `ConfigurationError` keeps its message in every mode: it names only variables (`Check PORT.`) and wraps the DB package's fixed `DATABASE_URL` texts without their cause. |
+| Levels | `request_failed` logs at info for 4xx and error for 5xx, with `category`, `status` and `err`; `readiness_unavailable` (warn) also carries `err`. Request fields (method, matched route template, status, elapsed time), authorization/cookie redaction and generated request IDs are unchanged. Inputs, bodies, URLs and headers are never logged. |
+| Lifecycle lines | One JSON line per event on stdout, the request logs' stream: `{"level":30\|50,"time":<epoch ms>,"msg":"<category>","err":{…}}`; `listening` is 30, every failure and timeout 50. Written with `JSON.stringify` (no new dependency) and independent of `LOG_LEVEL`, because startup can fail before configuration is read. |
+
+**Step 5 planning inputs (approved 2026-11-01):** register the tRPC adapter as a
+plugin in `buildApp`; the tRPC context exposes `database.db`, never the whole
+`Database`; request logs include the tRPC procedure name.
+
+**Test changes.** The shutdown fixture wraps `buildApp`, as it already did for
+`onClose`, and holds startup pending in the first `database.check()` (a lifecycle
+phase that no Fastify plugin timeout bounds) instead of a registration callback, so
+cancelled-startup ownership and the real 17 s and 10 s watchdogs keep equivalent
+coverage. Lifecycle unit tests moved their registration cases to `app.ready()`.
+Tests still assert that responses carry no details, and now assert the log policy:
+allowlisted fields only, SQLSTATE through the cause chain, messages only in
+development, and no database password or `DATABASE_URL` in any process output.
+
+**Evidence (2026-11-01, branch `refactor/api-composition-error-logs`):** `pnpm check`
+83 unit tests in 9 files; `pnpm build`; `pnpm test:api` 27 real-process tests
+(one new: wrong credentials in development mode); `pnpm test:db` 29 tests;
+`pnpm test:stack` 5 tests on rebuilt image
+`sha256:8176e03deff7f9a68cadc898aaf7ab971c6ed072b75ec81abe0f6047297bac36`. Sample lines
+for a 500, a 413 and a startup database failure in both modes are in the PR. This
+is tooling evidence, not business acceptance.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
