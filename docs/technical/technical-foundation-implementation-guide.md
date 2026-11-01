@@ -16,7 +16,8 @@ diagnosable. Steps 5–6 are re-planned against this foundation. Full T06/busine
 acceptance remains pending. Frontend work follows the
 [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)
 (2026-11-01): its four delivery steps sit outside this guide's six, and each
-needs its own plan.
+needs its own plan. They come before Step 6, which the owner left TBD until the
+app is validated locally (2026-11-01).
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.
@@ -45,7 +46,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | — | [Foundation restructure](foundation-restructure-plan-2026-10-31.md) (not a numbered step) | Steps 1–4 | Implemented in [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), stacked on #109; per-group evidence, V1–V7 and superseded-versus-re-proven Step 1–4 evidence are in the PR and the [technical direction record](technical-direction.md#foundation-restructure-2026-10-31). |
 | — | [API composition and error-log rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (not a numbered step) | Steps 1–4, restructure | Implemented in [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112): plugin composition root, `registerRoutes` removed, allowlisted error logs and JSON lifecycle lines; evidence in the record and the PR. |
 | 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | Implemented in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114) from the [approved plan](step-5-trpc-plan-2026-11-01.md) (P5-01–P5-10) and six implementation-time approvals: `/trpc` adapter, `diagnostics.echo`, one error envelope, `procedure` log field and the types-only `AppRouter` export. Outcome and evidence are in the [approval record](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01); the [Step 6 handoff](#handoff-to-step-6) lists what Step 6 receives. |
-| 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation and the Step 5 handoff. |
+| 6 | Repeatable verification and handoff | Steps 1–5 | TBD (owner, 2026-11-01): re-planned once the app is validated locally, against the restructured foundation and the Step 5 handoff. |
 
 Begin the next assignment from the previous step's merged result, unless the
 owner explicitly approves another branch arrangement. Reinspect the repository
@@ -113,7 +114,10 @@ committed local development/test values, real environment values taking
 precedence, Compose `${VAR:?}` for production secrets, and Doppler `prd` on the
 VPS only. A real development secret adds `doppler.yaml` and `doppler run`, which
 needs its own approval. Keep production values out of committed files, images and
-test/cache artifacts.
+test/cache artifacts. The one recorded exception is the public Firebase web
+configuration, which every visitor's browser receives
+([frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md),
+W10).
 
 Node.js and pnpm run on the host; PostgreSQL and the production images run in
 Docker. Explain any new host installation and obtain approval before attempting
@@ -488,6 +492,10 @@ transport or resource lifecycle.
   source edit reruns root tests.
 
 ## Step 6 — Repeatable verification and handoff
+
+**Status (2026-11-01): TBD.** The owner deferred this step until the app is
+validated locally; re-plan it then against the state of the repository at that
+time.
 
 ### Why this step is necessary
 
