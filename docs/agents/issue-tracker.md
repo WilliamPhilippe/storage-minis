@@ -1,16 +1,16 @@
 # Issue tracker: GitHub
 
-Issues and specs for this repository live in [WilliamPhilippe/storage-minis-be](https://github.com/WilliamPhilippe/storage-minis-be/issues). Use the authenticated `gh` CLI from the repository root with `--repo WilliamPhilippe/storage-minis-be`.
+Issues and specs for this repository live in [WilliamPhilippe/storage-minis](https://github.com/WilliamPhilippe/storage-minis/issues). Use the authenticated `gh` CLI from the repository root with `--repo WilliamPhilippe/storage-minis`.
 
 ## Existing backlog
 
-Read the relevant live issue, including comments, acceptance criteria and dependencies, before acting. Follow the hierarchy and requirement ownership rules in [AGENTS.md](../../AGENTS.md). Consult the [current ownership index](../requirements-coverage-v0.7.md) before creating work; extend the existing delivery owner when the requirement is already assigned.
+Read the relevant live issue, including comments, acceptance criteria and dependencies, before acting. Follow the hierarchy and requirement ownership rules in [AGENTS.md](../../AGENTS.md). Consult the [current ownership index](../requirements/requirements-coverage-v0.7.md) before creating work; extend the existing delivery owner when the requirement is already assigned.
 
-The [current baseline tracker, #82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82), is a published reference. Its closed state is not evidence that application workflows are implemented. Preserve existing issue identities, parent links, dependencies and decision boundaries.
+The [current baseline tracker, #82](https://github.com/WilliamPhilippe/storage-minis/issues/82), is a published reference. Its closed state is not evidence that application workflows are implemented. Preserve existing issue identities, parent links, dependencies and decision boundaries.
 
 ## Operations
 
-Append `--repo WilliamPhilippe/storage-minis-be` to these commands:
+Append `--repo WilliamPhilippe/storage-minis` to these commands:
 
 - Read: `gh issue view <number> --json number,title,state,body,labels,comments,assignees`.
 - List: `gh issue list --state open --limit 100 --json number,title,labels,assignees`, with appropriate `--label` filters. Paginate when the task requires the full backlog.

@@ -81,7 +81,7 @@ Hosting, deployment, backups, and operational targets remain T04 work. Database 
 | [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
 | [PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md) | Shared expenses across Purchases, selected-unit allocation, affected workflows, and verification scope. |
 
-The published requirements baseline tracker remains [#82](https://github.com/WilliamPhilippe/storage-minis-be/issues/82). Entity map v0.8 consolidates the approved schema review but does not publish a complete v0.8 requirements baseline. Live project issue requirements/criteria now apply the approved review; requirements/coverage consolidation remains pending. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. The issue propagation record reports current status; older versioned publication records retain their original pending-state notes. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than superseded wording.
+The published requirements baseline tracker remains [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82). Entity map v0.8 consolidates the approved schema review but does not publish a complete v0.8 requirements baseline. Live project issue requirements/criteria now apply the approved review; requirements/coverage consolidation remains pending. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. The issue propagation record reports current status; older versioned publication records retain their original pending-state notes. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than superseded wording.
 
 For a task, read its live issue, relevant requirement IDs, acceptance criteria, and dependencies. If the approved sources conflict or a needed business rule is unresolved, identify the exact conflict and ask the owner; do not silently pick a policy. Continue independent work that does not depend on that answer.
 
@@ -147,10 +147,10 @@ Run commands from the repository root. Git and authenticated GitHub CLI access a
 git status --short
 git diff --check
 git diff --stat
-gh issue view 82 --repo WilliamPhilippe/storage-minis-be
+gh issue view 82 --repo WilliamPhilippe/storage-minis
 ```
 
-Use `gh issue view <number> --repo WilliamPhilippe/storage-minis-be --comments` for the relevant task and decision discussions. Read-only issue inspection does not require changing the backlog.
+Use `gh issue view <number> --repo WilliamPhilippe/storage-minis --comments` for the relevant task and decision discussions. Read-only issue inspection does not require changing the backlog.
 
 For documentation changes, check changed relative links, Markdown fences/tables, referenced IDs, and consistency with the current baseline and affected issues. For baseline changes, verify active/retired IDs and unique primary ownership. Report what was checked and any unresolved gaps.
 
@@ -168,23 +168,23 @@ Read the live issue together with the approved log before dependent work. The re
 
 | Decision | Approved scope and remaining work |
 | --- | --- |
-| [D01 / #15](https://github.com/WilliamPhilippe/storage-minis-be/issues/15) | Refund FIFO selected; equal-time tie-breaking and non-refund source attribution remain. |
-| [D02 / #16](https://github.com/WilliamPhilippe/storage-minis-be/issues/16) | Current membership only; past-date report excluded. Propagate the approved outcome. |
-| [D03 / #17](https://github.com/WilliamPhilippe/storage-minis-be/issues/17) | Signed negative profit selected for model/pool recovery. Propagate and verify formulas. |
-| [D04 / #18](https://github.com/WilliamPhilippe/storage-minis-be/issues/18) | Context/allowlist/grouping/prices/photos/privacy selected; detailed filters and unknown-condition presentation remain. |
-| [D05 / #19](https://github.com/WilliamPhilippe/storage-minis-be/issues/19) | Original-period reporting and on-hand average-cost basis selected; full launch report/widget set and filter contracts remain. |
-| [D06 / #20](https://github.com/WilliamPhilippe/storage-minis-be/issues/20) | Sale deletion/dispatch and permanent cost/Purchase locks selected; exceptional correction authority/shared-expense disposition remain. |
-| [D07 / #79](https://github.com/WilliamPhilippe/storage-minis-be/issues/79) | Global edit permission, current metadata, unit-only private notes, and global audit selected; typed audit/enforcement/bootstrap remain. |
-| [D08 / #80](https://github.com/WilliamPhilippe/storage-minis-be/issues/80) | Explicit complete/settled collection finalization and provisional metrics selected; concrete workflow/enforcement remain. |
+| [D01 / #15](https://github.com/WilliamPhilippe/storage-minis/issues/15) | Refund FIFO selected; equal-time tie-breaking and non-refund source attribution remain. |
+| [D02 / #16](https://github.com/WilliamPhilippe/storage-minis/issues/16) | Current membership only; past-date report excluded. Propagate the approved outcome. |
+| [D03 / #17](https://github.com/WilliamPhilippe/storage-minis/issues/17) | Signed negative profit selected for model/pool recovery. Propagate and verify formulas. |
+| [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) | Context/allowlist/grouping/prices/photos/privacy selected; detailed filters and unknown-condition presentation remain. |
+| [D05 / #19](https://github.com/WilliamPhilippe/storage-minis/issues/19) | Original-period reporting and on-hand average-cost basis selected; full launch report/widget set and filter contracts remain. |
+| [D06 / #20](https://github.com/WilliamPhilippe/storage-minis/issues/20) | Sale deletion/dispatch and permanent cost/Purchase locks selected; exceptional correction authority/shared-expense disposition remain. |
+| [D07 / #79](https://github.com/WilliamPhilippe/storage-minis/issues/79) | Global edit permission, current metadata, unit-only private notes, and global audit selected; typed audit/enforcement/bootstrap remain. |
+| [D08 / #80](https://github.com/WilliamPhilippe/storage-minis/issues/80) | Explicit complete/settled collection finalization and provisional metrics selected; concrete workflow/enforcement remain. |
 
 Technical choices also remain open; their issues define the required outputs:
 
-- [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22): finish persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, recovery, administrator bootstrap, and authorization around Google-only Firebase sign-in, ID tokens, active-use refresh, and explicit logout. The owner has supplied the administrator email.
-- [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
-- [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
-- [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
-- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26): turn the selected frameworks into a runnable foundation, pin versions, choose layout/migration/API conventions, and demonstrate transaction/concurrency behavior; depends on T01/T02/T04. See the technical direction record for accepted choices and remaining outputs.
+- [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): finish persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, recovery, administrator bootstrap, and authorization around Google-only Firebase sign-in, ID tokens, active-use refresh, and explicit logout. The owner has supplied the administrator email.
+- [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
+- [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
+- [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
+- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): turn the selected frameworks into a runnable foundation, pin versions, choose layout/migration/API conventions, and demonstrate transaction/concurrency behavior; depends on T01/T02/T04. See the technical direction record for accepted choices and remaining outputs.
 
 ## Agreed conventions
 
