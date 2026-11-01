@@ -1283,6 +1283,51 @@ on 2026-11-01:
 
 This is tooling evidence, not business acceptance.
 
+## Frontend foundation decisions (2026-11-01)
+
+**Owner approval:** On 2026-11-01 the owner decided every item, W1–W11, of the
+[frontend foundation proposal](frontend-foundation-proposal-2026-11-01.md) over
+two review rounds. Nothing is implemented yet; each W11 delivery step gets its
+own plan for approval. W7 replaces the React Hook Form choice in the
+[accepted application stack](#accepted-application-stack) (2026-10-21) with
+TanStack Form, and W2–W4 settle the design system, styling conventions,
+application language and UI locale that the stack record left open. A
+[follow-up review](frontend-foundation-proposal-2026-11-01.md#follow-up-review-2026-11-01)
+the same day refined W4–W6 and W8–W11; the table shows the result.
+
+**Rationale.** One SPA keeps one build, one image and one origin. Ant Design
+covers the back office's components first-party, with their en-US and pt-BR
+texts. i18next is the most widely used translation library and needs no build
+step. TanStack Form takes Zod schemas directly and documents how to register the
+app's antd fields once. A Firebase dev project with custom-token test sign-ins
+avoids the Auth emulator's boilerplate while tests still use real Firebase
+sessions and real token verification. The app is mobile-first, because most use,
+especially of the catalog, is on phones.
+
+| Item | Approved outcome |
+| --- | --- |
+| W1 App shape | One SPA, `apps/web`, holding the public catalog and the signed-in back office, split by route. |
+| W2 Design system | Ant Design 6. |
+| W3 Styling | antd theme tokens plus CSS Modules; antd's zero-runtime mode is prototyped in the first step. |
+| W4 Languages and money | i18next with react-i18next; en-US main, pt-BR second; strings live in the frontend, split by area, and only the active language loads. Amounts carry no currency: the back office shows `$` with separators that follow the language and cents only when not zero (`$1,234.50` and `-$400.50` in en-US, `$1.234,50` and `-$400,50` in pt-BR), and the public catalog shows the Organization's currency symbol, `R$` (the default) or `US$`. Each Organization chooses its currency once; requirements v0.8 publishes the rule. |
+| W5 Active Organization | No Organization id in back-office URLs. A session context holds the user, Memberships and active Organization for the whole UI; nothing is persisted while each user has one Membership; the API receives the Organization in a request header, and switching Organization clears the query cache. Catalog URLs are `/catalog/<nickname>`, with a unique nickname set once when the Organization is created and renamed only by a `global_admin`. |
+| W6 Data layer | `@trpc/tanstack-react-query` over same-origin `/trpc`, with `httpLink`, no batching and no transformer. The link calls `getIdToken()` before each request, and requests follow user activity only, with no refetch on reconnect and no polling, so tokens refresh only while the user is active. |
+| W7 Forms | TanStack Form with the app's own antd field components, replacing React Hook Form. |
+| W8 Sign-in | Redirect on phones and popup on desktops; redirect runs through a same-origin `/__/auth/` proxy behind Caddy, and development signs in by popup through the dev project's `firebaseapp.com` domain. A session ends 7 days after the last Google sign-in: the API rejects ID tokens whose `auth_time` is older, and the app does not refresh such a session. A test-only custom-token sign-in for Playwright is accepted only behind an opt-in setting that only the committed development and test env files set. T02 settles the remaining session policies in its own record before PR 3. |
+| W9 Tests | Vitest component tests inside `pnpm check`; Playwright next, on phone and desktop projects; every component located by role and label; tests run in `America/Sao_Paulo`. |
+| W10 Build and tooling | A Caddy `web` image proxying `/trpc` and `/__/auth/`; the production Firebase web config committed as public identifiers, with the web build never run under Doppler; a browser TypeScript profile; React and TanStack ESLint plugins; no React Compiler yet. |
+| W11 Delivery | Four PRs: web shell, Playwright, sign-in end to end, web image. The parity stack runs signed-out Playwright checks, and real phones first sign in on a deployed HTTPS environment. Foundation Step 6 stays TBD until the app is validated locally. |
+
+Deferred by the owner: the structure of the Playwright sign-in, big-table
+behavior (filterable lists are the default), persisting the active
+Organization once users can belong to several, the nickname's remaining rules
+(D04/E10), Organization invitations (TBD until the website is developed) and
+Foundation Step 6 (TBD until the app is validated locally). The session limit
+replaces the [authentication](#authentication-and-initial-administrator)
+record's "No absolute or idle session timeout has been chosen". The proposal
+holds the options considered, candidate versions and sources; each step's plan
+re-verifies its pins.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -1503,7 +1548,7 @@ environment changes. Existing approved choices retain their recorded scope.
 | Frontend | React with Vite | Separate frontend application. |
 | Routing | TanStack Router | Client navigation and URL state. |
 | Server data | TanStack Query with the tRPC integration | Scope private caches by Organization and authentication context while preserving global Product reuse. |
-| Forms | React Hook Form with Zod | Form handling and input validation. |
+| Forms | TanStack Form with Zod | Form handling and input validation; replaced React Hook Form on 2026-11-01 ([frontend foundation decisions](#frontend-foundation-decisions-2026-11-01)). |
 | Database | PostgreSQL | Final schema, constraints, and transaction/concurrency design remain pending. |
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
 | Development infrastructure | Docker Compose for PostgreSQL | Production direction (2026-10-31): the same Compose model on a single Hostinger VPS; hosting and operations details remain T04 work. |
@@ -1513,7 +1558,7 @@ environment changes. Existing approved choices retain their recorded scope.
 
 The choices provide shared TypeScript contracts within one repository while retaining independent frontend/backend deployment. They do not introduce additional domain features or settle unresolved business policies.
 
-**Design-system preference:** the owner leans toward Ant Design. Keep it as the preferred candidate until explicitly finalized. Styling conventions, application language, and UI locale remain open.
+**Design system and UI conventions:** the owner preferred Ant Design on 2026-10-21 and confirmed Ant Design 6 on 2026-11-01, styled with antd theme tokens and CSS Modules, with en-US as the main UI language and pt-BR as the second, on a mobile-first layout. See the [frontend foundation decisions](#frontend-foundation-decisions-2026-11-01).
 
 ## Authentication and initial administrator
 
@@ -1529,7 +1574,9 @@ Firebase documents that ID tokens last for an hour and refresh tokens can obtain
 
 Examples: while the administrator is using the system, token expiry triggers refresh and work continues without an hourly interactive sign-in. If the administrator is inactive, the client does not refresh the token. The administrator can explicitly log out. A valid Google/Firebase identity without the required application authorization does not grant access to private inventory or financial records.
 
-[T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) still needs the administrator bootstrap mechanism, browser persistence policy, activity signals/inactivity threshold, return-after-inactivity behavior, logout scope/revocation, Google-account recovery expectations, and expiry/recovery acceptance cases. In particular, deciding not to refresh while inactive does not settle whether returning after token expiry refreshes the token or requires interactive sign-in. Initial-admin selection must use the configured owner identity; an arbitrary first Google sign-in is not authorization. No absolute or idle session timeout has been chosen.
+**Session decisions (2026-11-01):** the [frontend foundation decisions](#frontend-foundation-decisions-2026-11-01) settled token acquisition and return after inactivity. The client requests a token only when a request needs one, and requests follow user activity only, so tokens refresh only while the user is active. Returning after inactivity refreshes on the first action. A session ends 7 days after the last Google sign-in: the API rejects ID tokens whose `auth_time` is older, and the client does not refresh such a session. There is no idle timeout. Until then no absolute or idle session timeout had been chosen.
+
+[T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) still needs the administrator bootstrap mechanism, browser persistence policy, logout scope/revocation, Google-account recovery expectations, and expiry/recovery acceptance cases, in its own approved record before the frontend's sign-in step. Initial-admin selection must use the configured owner identity; an arbitrary first Google sign-in is not authorization.
 
 ## Money and dates
 

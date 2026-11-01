@@ -17,8 +17,12 @@ allowlisted error-log policy; read it before changing API composition or logging
 [Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)
 (2026-11-01) added the diagnostic tRPC transport at `/trpc`, its error envelope and
 the types-only `@storage-minis/api/types` export; read its record before changing
-`apps/api/src/trpc` or adding a procedure. Step 6, business operations,
-authentication, frontend, production and CI remain pending.
+`apps/api/src/trpc` or adding a procedure. The
+[frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
+(2026-11-01) set the web app's architecture, design system, languages and four
+delivery steps; read them before frontend work. Step 6 is TBD until the app is
+validated locally; business operations, authentication, the frontend
+implementation, production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -53,10 +57,10 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Application scope | Full application in one monorepo: backend/API and frontend, with independent deployments supported. |
 | Application language | TypeScript with strict checking for backend and frontend code. |
 | Backend | Node.js with Fastify and tRPC. |
-| Frontend | React with Vite, TanStack Router, and TanStack Query. |
-| Forms and validation | React Hook Form and Zod; runtime API validation with Zod. |
+| Frontend | React with Vite, TanStack Router, and TanStack Query with tRPC; Ant Design 6; en-US (main) and pt-BR through i18next; mobile-first (2026-11-01). |
+| Forms and validation | TanStack Form and Zod (replaced React Hook Form on 2026-11-01); runtime API validation with Zod. |
 | Database and persistence | PostgreSQL with Drizzle ORM; Docker Compose locally and, by the 2026-10-31 direction, on a single Hostinger VPS. Hosting and operations details remain T04 work. |
-| Authentication | Firebase Authentication with Google sign-in only and Firebase ID tokens; refresh during active use, no refresh while inactive, and explicit logout. |
+| Authentication | Firebase Authentication with Google sign-in only and Firebase ID tokens; refresh during active use, no refresh while inactive, and explicit logout. A session ends 7 days after the last Google sign-in (2026-11-01). |
 | Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
 | Package manager | pnpm. |
 | Build tasks | Turborepo. |
@@ -65,9 +69,9 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Money | Integer cents in each Organization's currency, BRL by default or USD, chosen once at creation (2026-11-01); exact largest-remainder cost allocation with permanent Item ID tie-breaking. Step 3B selects int32 storage; exact allocation code, overflow rejection and API/period contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
-Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records and the [Step 3A amendments](docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25) before changing shared configuration, module conventions, or task caching. Step 3A selects compiled DB exports and a generate/review/apply workflow; Step 3B implements the approved structural schema. Concrete business transaction/concurrency writers remain T01/T06 work. Tooling is not business acceptance evidence.
+The owner confirmed Ant Design 6 as the design system on 2026-11-01. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records and the [Step 3A amendments](docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25) before changing shared configuration, module conventions, or task caching. Step 3A selects compiled DB exports and a generate/review/apply workflow; Step 3B implements the approved structural schema. Concrete business transaction/concurrency writers remain T01/T06 work. Tooling is not business acceptance evidence.
 
-Hosting, deployment, backups, and operational targets remain T04 work. The 2026-10-31 restructure sets their direction only: a Caddy `web` image for the SPA, images from GitHub Container Registry, daily `pg_dump` backups with a tested restore, and a deploy that runs `migrate` as a one-off before `up`. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
+Hosting, deployment, backups, and operational targets remain T04 work. The 2026-10-31 restructure sets their direction only: a Caddy `web` image for the SPA, images from GitHub Container Registry, daily `pg_dump` backups with a tested restore, and a deploy that runs `migrate` as a one-off before `up`. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, logout scope/revocation, and recovery behavior. The 2026-11-01 frontend decisions settled token acquisition (on demand, with requests that follow user activity only), return after inactivity (the first action refreshes) and the 7-day session limit. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
 ## Read before making changes
 
@@ -184,17 +188,17 @@ Read the live issue together with the approved log before dependent work. The re
 Technical choices also remain open; their issues define the required outputs:
 
 - [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): finish persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, recovery, administrator bootstrap, and authorization around Google-only Firebase sign-in, ID tokens, active-use refresh, and explicit logout. The owner has supplied the administrator email.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): finish persistence, logout scope/revocation, recovery, administrator bootstrap, and authorization around Google-only Firebase sign-in, ID tokens, active-use refresh, explicit logout and the 7-day session limit, in its own approved record before the frontend's sign-in step. Activity and return after inactivity were settled on 2026-11-01. The owner has supplied the administrator email.
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
-- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): Steps 1–5, the 2026-10-31 restructure and the 2026-11-01 API rework delivered the workspace, local databases, schema and migrations, diagnostic API, diagnostic tRPC transport and types-only router export, image and parity stack. Remaining: Step 6 verification and handoff, application authorization/isolation, representative business transactions/races and CI; depends on T01/T02/T04. The live issue was closed on 2026-10-29 through PR #107's closing link, although that PR states it does not close #26. See the technical direction record for accepted choices and remaining outputs.
+- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): Steps 1–5, the 2026-10-31 restructure and the 2026-11-01 API rework delivered the workspace, local databases, schema and migrations, diagnostic API, diagnostic tRPC transport and types-only router export, image and parity stack. Remaining: Step 6 verification and handoff (TBD until the app is validated locally), application authorization/isolation, representative business transactions/races and CI; depends on T01/T02/T04. The live issue was closed on 2026-10-29 through PR #107's closing link, although that PR states it does not close #26. See the technical direction record for accepted choices and remaining outputs.
 
 ## Agreed conventions
 
 The owner approved this baseline on 2026-10-21 and the concrete tooling setup on 2026-10-23. Follow these conventions when implementing the application.
 
-- Use English for code identifiers, comments, and project documentation. This does not choose the application's user-facing language or locale.
+- Use English for code identifiers, comments, and project documentation. The UI offers en-US (main) and pt-BR, decided on 2026-11-01.
 - Use TypeScript with strict checking for Node.js and React code, with ESLint and Prettier for linting and formatting.
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
 - Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
