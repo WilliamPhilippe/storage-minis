@@ -246,7 +246,12 @@ The `stack:*` and `test:stack` scripts and the `db:up`/`db:down`/`db:psql`/
 
 The VPS runs `compose.yaml` alone, with values from Doppler config `prd`
 through a read-only service token (`doppler run -- ...`), in the same two steps
-as the parity stack. The `prd` keys, Caddy `web` image, image distribution,
+as the parity stack. Use Doppler CLI 3.77.1 or later, the version verified with
+this project; the CLI authenticates there with `DOPPLER_TOKEN`, and no exact
+version check or dedicated login directory is required. Never write secrets to
+a `.env` file on the VPS. `compose.yaml` still sets no restart policy for
+PostgreSQL and `restart: "no"` for `migrate` and `api`; choosing production
+restart policies is part of T04. The `prd` keys, Caddy `web` image, image distribution,
 backups and the deploy procedure remain T04 work; see the
 [plan's T04 list](foundation-restructure-plan-2026-10-31.md#later-under-t04-not-part-of-this-restructure).
 
