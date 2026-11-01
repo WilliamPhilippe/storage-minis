@@ -1084,7 +1084,8 @@ shared test consumers remain exclusive and sequential.
 (PR #109): core decisions A1–A5, detailed decisions D1–D10, plan-review
 amendments R1–R15 and the final verification V1–V7. During implementation the
 owner answered four further questions on 2026-10-31 and 2026-11-01
-(R16–R19). The plan
+(R16–R19), and on 2026-11-01 approved twelve implementation choices as
+recommended (R20). The plan
 is the authoritative record of alternatives and wording; its Section 4a
 amendments win where wording conflicts. Rationale: prefer standard tool
 workflows over custom code (owner direction 2026-10-25, reaffirmed
@@ -1102,6 +1103,7 @@ tooling.
 | Migrations (A5, D6, D7, D8, R5, R19) | Schema and migrations may be reset freely. The baseline is regenerated as a Drizzle custom migration for `inventory_id_base36` followed by one generated migration. A `migrate` service runs the compiled `dist/migrate.js` from the API image as the owner role; `api` waits for it to complete successfully and never migrates itself. Brief deploy downtime is acceptable. Because a single `up` stops the running API before `migrate` finishes (verified), the stack and the later VPS deploy run `docker compose run --rm migrate` first and `up -d --wait` second, so a failed migration leaves the running API in place. Rotate a role password with `ALTER ROLE` before changing its secret: the secret also feeds the `postgres` service, so changing it recreates PostgreSQL and stops the API. Drizzle stays on 0.45.4 / Kit 0.31.11. |
 | Parity check (R10) | `pnpm stack:up` / `stack:down` run the production model locally; `pnpm test:stack` is an opt-in Vitest smoke suite outside `pnpm check`. |
 | Delivery (R1, R16, R18) | One PR in four ordered commit groups, stacked on PR #109. Each PR, not each commit, must leave a working state; host DB commands are unavailable between commit groups 1 and 2. |
+| Implementation choices (R20) | Approved as recommended on 2026-11-01, completing V6. Every URL component is explicit, with `sslmode=disable` or `verify-full` only. Committed URLs use `127.0.0.1` and fixed ports 5433/5434. Every pool pins `search_path=public`, UTF-8 and standard SSL negotiation. The other choices cover migration names, owner-role migration tests, database-wide default privileges, the migrator's default signal handling, the API suite's config guard and the smoke-test design; the plan's R20 lists all twelve. |
 | Direction only (D5, D9, D10) | A Caddy-based `web` image for the client-side SPA, image distribution through GitHub Container Registry and daily `pg_dump` backups with a tested restore. These remain T04 implementation work. |
 
 The implementation, the commands each commit group ran with their output, and

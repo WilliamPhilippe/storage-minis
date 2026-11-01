@@ -7,7 +7,7 @@ Section 10. The plan is **implemented** in
 [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), which records
 the evidence for each commit group and for V1–V7. Choices not listed here (for
 example CI) still need their own approval. The owner's answers in the plan
-review and during implementation (R1–R19, Section 4a) amend the plan; where
+review and during implementation (R1–R20, Section 4a) amend the plan; where
 wording conflicts, Section 4a wins.
 
 **Supersedes, once the restructure PR merges:** the Step 1 container-only Node execution model, the
@@ -137,8 +137,9 @@ implementation remains T04 work.
 
 The owner answered the plan-review rounds on 2026-10-31 (R1–R7 in round 1,
 R8–R11 in round 2, R12–R15 in round 3) and implementation questions on
-2026-10-31 and 2026-11-01 (R16–R19). These answers amend the sections that
-follow.
+2026-10-31 and 2026-11-01 (R16–R19), and on 2026-11-01 approved the remaining
+implementation choices as recommended (R20). These answers amend the sections
+that follow.
 
 | ID | Decision | Effect on the plan |
 | --- | --- | --- |
@@ -161,6 +162,7 @@ follow.
 | R17 | **Compose model with a stack overlay** (implementation question, 2026-10-31). Compose interpolates every `${VAR:?}` in all loaded files, including `api`/`migrate`, before merging (verified on Compose 5.6.1), so an override `env_file:` cannot supply them. Local scripts therefore pass `--env-file .env.development`; `postgres_test` loads `.env.test` through `env_file:`. A small `compose.stack.yaml` publishes the stack API on `127.0.0.1:3100`, and the stack uses `.env.test` values. `build:` lives in `compose.yaml` because group 3 drops the development target. The override puts `api`/`migrate` in a `stack` profile so a bare `docker compose up` never migrates the development database. | Amends D1, R9 (Compose side) and R15; adds `compose.stack.yaml` to Section 5. `compose.yaml` still never names a committed `.env` file (R13). |
 | R18 | **The restructure PR is stacked on PR #109** (implementation question, 2026-10-31). Branch `feat/foundation-restructure` starts at this plan's commit; GitHub retargets the PR to `main` when #109 merges. | Applies to R1. |
 | R19 | **Run `migrate` first as a one-off, then `up`** (implementation question, 2026-11-01). Verified on Compose 5.6.1: a single `up` recreates, and so stops, the running `api` before `migrate` finishes, so a failed migration in a new image left no API running, contrary to R5. `docker compose run --rm --build migrate` followed by `up -d --wait` kept the running API serving when a temporary failing migration was deployed. `up --wait migrate` cannot replace the one-off: it exits 1 even when `migrate` succeeds. Separately, changing `DB_OWNER_PASSWORD` or `DB_APP_PASSWORD` also changes the `postgres` service, so Compose recreates it and stops the API: rotate a role password with `ALTER ROLE` before changing the secret. | Amends R5 and D6. `stack:up` runs both steps, and the T04 deploy uses the same sequence. The `migrate` service and `depends_on` remain, so a bare `up` never starts the API on an unmigrated database. |
+| R20 | **Implementation choices approved as recommended** (owner, 2026-11-01; completes V6). (1) `DATABASE_URL` spells out user, password, host and port; only `sslmode=disable` or `verify-full`; other parameters are rejected. (2) Committed URLs use `127.0.0.1`. (3) Host ports are fixed at 5433/5434. (4) Migrations are `0000_inventory_id_base36` (custom) and `0001_baseline`. (5) `db:check` is removed. (6) The API process suite guards in its Vitest config; `owned-process.ts` lives in `apps/api/tests/`. (7) Migration-behavior tests use the owner role; the test reset recreates `public`; default privileges are database-wide. (8) The migrator keeps Node's default signal handling. (9) `test:stack` asserts beyond R10; `db:up`/`stack:up` use `--wait-timeout 60`; the Dockerfile has no `# syntax=` line. (10) Restart policies stay with T04; Doppler CLI 3.77.1 or later. (11) Every pool pins `search_path=public`, UTF-8 client encoding and standard SSL negotiation. (12) The R19 smoke test simulates a failing redeploy with a held history lock and a changed `LOG_LEVEL`. | Recorded as implemented in PR #110; no further change. |
 
 ## 5. Target layout
 
