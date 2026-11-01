@@ -1,0 +1,50 @@
+.sider {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  border-inline-end: 1px solid var(--line);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* The logo area is 64px tall, like the TopBar. */
+.logoLink,
+.markLink {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 64px;
+}
+
+.logoLink {
+  padding-inline: var(--space-5);
+}
+
+.markLink {
+  justify-content: center;
+}
+
+.logoLink img,
+.markLink img {
+  display: block;
+}
+
+.nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-top: 1px solid var(--line);
+}

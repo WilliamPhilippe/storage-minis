@@ -1,0 +1,11 @@
+/* Light mode only (owner, 2026-11-01): the controls and scrollbars the
+   browser draws stay light when the device is in dark mode. */
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}

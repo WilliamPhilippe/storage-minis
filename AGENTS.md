@@ -5,8 +5,8 @@
 StorageMinis manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
 This repository contains the full application's TypeScript workspace, specifications,
-a synchronized DBML diagram, the Drizzle schema and migrations, and the diagnostic
-Fastify API. Node.js and pnpm run on the host; PostgreSQL runs in Docker. The
+a synchronized DBML diagram, the Drizzle schema and migrations, the diagnostic
+Fastify API, and the React web shell in `apps/web`. Node.js and pnpm run on the host; PostgreSQL runs in Docker. The
 [foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31)
 (2026-10-31) replaced the earlier tooling container and Doppler launchers with
 standard Compose, committed local database values, owner/app database roles and a
@@ -22,10 +22,13 @@ the types-only `@storage-minis/api/types` export; read its record before changin
 (2026-11-01) set the web app's architecture, design system, languages and four
 delivery steps; read them before frontend work. The
 [PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) (approved
-2026-11-01) governs `apps/web`'s first PR, and [`docs/design/`](docs/design/README.md)
-holds the owner-approved design system and page designs. Step 6 is TBD until the app is
-validated locally; business operations, authentication, the frontend
-implementation, production and CI remain pending.
+2026-11-01) and its record's implementation-time decisions govern `apps/web`: the
+responsive shell, the en-US and pt-BR catalogs, placeholder pages, the Login page
+without sign-in and `diagnostics.echo` through the Vite proxy.
+[`docs/design/`](docs/design/README.md) holds the owner-approved design system and
+page designs. Step 6 is TBD until the app is validated locally; business
+operations, authentication, business screens, Playwright, the web image,
+production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -169,6 +172,8 @@ Use the [README](README.md) for local setup, the daily loop, migrations and chec
 - Raw `docker compose` commands need `--env-file .env.development`. The parity stack uses its own project and file flags; see the [parity stack reference](docs/technical/local-development.md#parity-stack).
 - Generate migrations offline with `pnpm db:generate` and confirm Drizzle Kit's final line; it can exit 0 after an error. Review and commit SQL, snapshots and journal together. Preserve applied history and correct it with forward migrations.
 - Stop `pnpm dev` before finite builds or checks; both write the DB package's `dist`.
+- `pnpm dev` also serves the web app on `http://localhost:5173` (bound to `127.0.0.1`, `strictPort`), with `/trpc/` proxied to the API on port 3000. The router plugin regenerates `apps/web/src/routeTree.gen.ts` during `pnpm dev` and `pnpm build`; commit it with any route change.
+- `pnpm check` includes the `web-unit` Vitest project: jsdom in `America/Sao_Paulo`, a fresh app per test, and a harness that fails a test on an unstubbed `fetch` or on an undeclared `console.error` or `console.warn` (`expectConsole`).
 - Shared `skipLibCheck: true` is owner-approved for Drizzle declaration compatibility; all source strictness remains.
 - Rerun the affected live suites after source, task, image or Compose changes. Report tooling and connection validation separately from business acceptance evidence.
 

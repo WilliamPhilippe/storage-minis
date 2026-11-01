@@ -17,7 +17,7 @@ StorageMinis manages inventory, purchases, sales, collections and a public stock
 - **Voice:** plain and direct, written to one person ("you"). Use sentence case everywhere, including buttons, titles and tags: "Mark available", not "Mark Available".
 - **Buttons start with a verb:** "Record payment", "Add item", "Cancel sale". Name the object when the screen holds more than one: "Save purchase".
 - **Domain words are fixed:** Item, Item ID, Product, Purchase, Sale, Payment, Return, Customer, Organization, plus the item states listed below. Don't swap in synonyms such as "order" for Sale or "stock" for Item.
-- **Money:** always `$` followed by the amount, never `R$` or `US$`. Show cents only when they aren't zero. Separators follow the language: `$1,234.50` in en-US, `$1.234,50` in pt-BR, and a minus sign goes before the `$` (`-$400.50`). Amounts are BRL integer centavos, and `$` is only how they are displayed. Always format through `Money` / `lib/format`.
+- **Money:** amounts are integer cents in the Organization's currency (BRL by default, or USD, chosen once). The back office shows `$` followed by the amount; the public catalog shows the Organization's symbol, `R$` or `US$`. Show cents only when they aren't zero. Separators follow the language: `$1,234.50` in en-US, `$1.234,50` in pt-BR, and a minus sign goes before the symbol (`-$400.50`). Always format through `Money` / `lib/format`.
 - **Dates:** show local time to the visitor. Use a short date in rows ("Oct 28") and the full date with time in details.
 - **No emoji** in the UI or in copy.
 
@@ -104,7 +104,7 @@ Rules:
 
 - Text holds at least 4.5:1 contrast on the surfaces its token names, and control borders, icons and the focus ring hold at least 3:1. Every pair in `tokens.json` has been checked.
 - Every form field has a visible label. Placeholders are never used as labels.
-- Components are built for Playwright from the start, so tests locate them by role and label (`getByRole`, `getByLabel`). Use `data-testid` only for repeated records such as an `ItemCard` keyed by its Item ID.
+- Components are built for Playwright from the start, so tests locate them by role and label (`getByRole`, `getByLabel`). Use `data-testid` only for repeated records, such as an `ItemCard` keyed by its Item ID, and where no role or label identifies the element.
 - At phone width, pages never scroll sideways.
 
 ## Components

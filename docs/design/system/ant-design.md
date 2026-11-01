@@ -15,7 +15,7 @@ Don't target `.ant-*` classes globally, don't use `!important`, and don't copy a
 
 | StorageMinis token | antd token |
 | --- | --- |
-| `ink` | `colorPrimary`, `colorTextBase` |
+| `ink` | `colorPrimary`, `colorTextBase`, `colorText` |
 | `ink-hover` | `colorPrimaryHover` |
 | `ink-muted` | `colorTextSecondary`, `colorTextDescription`, `colorTextPlaceholder` |
 | `ink-disabled` | `colorTextDisabled` |
@@ -36,6 +36,8 @@ Don't target `.ant-*` classes globally, don't use `!important`, and don't copy a
 | `radius-sm`, `radius-md`, `radius-lg` | `borderRadiusSM` 4, `borderRadius` 6, `borderRadiusLG` 10 |
 | `control-sm`, `control-md`, `control-touch` | `controlHeightSM` 32, `controlHeight` 40, `controlHeightLG` 44 |
 | `shadow-overlay` | `boxShadowSecondary` |
+| `shadow-fab` | `FloatButton` component token `boxShadowSecondary` |
+| `header-height`, `header-height-phone` | `Layout` component token `headerHeight` (64; 56 below `bp-md`) |
 
 ## The theme
 
@@ -62,6 +64,7 @@ export const theme: ThemeConfig = {
     colorErrorBg: "#fdeceb",
     colorErrorText: "#ba0101",
     colorTextBase: ink,
+    colorText: ink, // without it, body text renders as ink at 88% opacity
     colorTextSecondary: "#57606a",
     colorTextDescription: "#57606a",
     colorTextPlaceholder: "#57606a",
@@ -92,17 +95,19 @@ export const theme: ThemeConfig = {
     Button: { primaryShadow: "none", defaultShadow: "none", dangerShadow: "none", fontWeight: 500 },
     Input: { activeBorderColor: ink, hoverBorderColor: ink, activeShadow: "0 0 0 2px #1d5fc2" },
     Select: { activeBorderColor: ink, hoverBorderColor: ink, optionSelectedBg: surfaceSunken },
-    Layout: { headerBg: "#ffffff", bodyBg: "#f6f7f9", siderBg: "#ffffff", triggerBg: "#ffffff", triggerColor: ink, triggerHeight: 48 },
+    Layout: { headerBg: "#ffffff", bodyBg: "#f6f7f9", headerHeight: 64, headerPadding: "0 24px" },
     Menu: { itemSelectedBg: surfaceSunken, itemSelectedColor: ink, itemHoverBg: surfaceSunken, itemHeight: 44, iconSize: 20, collapsedIconSize: 20 },
-    FloatButton: { controlHeightLG: 56 },
+    FloatButton: { controlHeightLG: 56, boxShadowSecondary: "0 6px 16px rgba(22, 27, 33, 0.24), 0 2px 4px rgba(22, 27, 33, 0.12)" }, // shadow-fab
     Tag: { defaultBg: surfaceSunken, defaultColor: "#57606a" },
   },
 };
 ```
 
-- `main.tsx` wraps the app in `<ConfigProvider theme={theme} locale={…} componentSize={isPhone ? "large" : "middle"}>`. Below `bp-md`, `large` gives 44px controls and 16px input text, which avoids iOS zoom on focus.
+- `main.tsx` wraps the app in `<ConfigProvider theme={theme} locale={…} componentSize={isPhone ? "large" : "medium"}>`. Below `bp-md`, `large` gives 44px controls and 16px input text, which avoids iOS zoom on focus. Use `"medium"`, not `"middle"`: `"middle"` is deprecated and removed in antd 7.
+- Below `bp-md`, the provider also sets the `Layout` tokens `headerHeight: 56` (`header-height-phone`) and `headerPadding: "0 16px"`.
+- There are no `siderBg` or `trigger*` tokens: they do nothing on a light `Sider`, and `SideNav` replaces the built-in trigger with its own button.
 - Keep `theme.ts` and `tokens.json` in step: a value changes in both or in neither.
-- Check every token name against the antd 6 theme editor in the first web PR. antd ignores names it doesn't know without warning.
+- Verified under antd 6.6.8 (web shell plan WS-07, approved 2026-11-01): the theme type-checks and renders. antd ignores token names it doesn't know without warning, so check any new name the same way.
 
 ## Allowed overrides
 
@@ -135,14 +140,14 @@ These are the only global rules on antd classes, kept in `apps/web/src/ui/antd-o
 | Need | antd | Notes |
 | --- | --- | --- |
 | Actions | `Button` | `type="primary"` is ink, the default type is outlined, `type="text"`. Attention is `type="primary" danger` |
-| Status words | `Tag` with `bordered={false}` and `color="success" \| "warning" \| "processing" \| "error"` | See `StatusTag` |
-| Records list | `List`, `List.Item`, `List.Item.Meta` | See `ListRow` |
+| Status words | `Tag` with `variant="filled"` and `color="success" \| "warning" \| "processing" \| "error"` | See `StatusTag`. `bordered={false}` is deprecated |
+| Records list | `Listy` (6.6.0) or plain markup | See `ListRow`. `List` is deprecated since antd 6.0 and warns on every render; `Listy` is a different, virtualized API, so `ListRow`'s first implementation chooses between the two |
 | Catalog item | `Card` with `cover` and `Card.Meta` | See `ItemCard` |
-| Money and IDs | `Typography.Text` (`strong`, `code`), `Statistic` for totals | Formatting comes from `lib/format` |
+| Money and IDs | `Typography.Text` (`strong`, `code`), `Statistic` for totals | Formatting comes from `lib/format`. `Statistic`'s value defaults to 24px, not `money-lg`'s 20 |
 | Forms | `Form.Item` (layout `vertical`), `Input`, `InputNumber`, `Select`, `DatePicker` through our TanStack Form field wrappers | See `FormField` |
-| Search and filters | `Input` (`allowClear`, prefix icon), `Button`, `Badge`, `Drawer` (`placement="bottom"` on phones) | See `SearchBar` |
-| Main menu, phones | `FloatButton` (bottom right) opening a `Drawer` (`placement="bottom"`) with `Menu` | See `MenuFab` |
-| Main menu, desktop | `Layout.Sider` (`collapsible`, `width` 240, `collapsedWidth` 72, `theme="light"`) with `Menu mode="inline"` | See `SideNav` |
+| Search and filters | `Input` (`allowClear`, prefix icon), `Button`, `Badge`, `Drawer` (`placement="bottom"` on phones) | See `SearchBar`. The `Drawer` takes its shadow from its own `boxShadowDrawer*` tokens, not `boxShadowSecondary` |
+| Main menu, phones | `FloatButton` (bottom right) opening a `Drawer` (`placement="bottom"`, `size="auto"`) with `Menu` | See `MenuFab` |
+| Main menu, desktop | `Layout.Sider` (`collapsible`, `trigger={null}`, `width` 240, `collapsedWidth` 72, `theme="light"`) with `Menu mode="inline"` and our own collapse button | See `SideNav` |
 | Header | `Layout.Header`, `Avatar`, `Dropdown` | See `TopBar` |
 | Feedback | `Alert`, `message`, `notification`, `Modal.confirm`, `Result`, `Empty`, `Skeleton` | Errors use the `error` type (racing red), always with words |
 | Data-heavy screens | `Table` | Only when a list won't do, and its phone layout is decided per screen |

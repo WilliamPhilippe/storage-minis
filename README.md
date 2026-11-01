@@ -4,10 +4,12 @@ StorageMinis manages inventory, purchases, sales, finances, collections, and a
 public stock catalog for 1/64 miniature sellers and collectors.
 
 The repository is a pnpm/Turborepo workspace: the Drizzle schema and migrations
-in `packages/db`, and a Fastify API in `apps/api` that currently serves
-diagnostic health routes and one diagnostic tRPC procedure. Node.js runs on the
-host; PostgreSQL runs in Docker. **Authentication, business endpoints, and the
-React frontend are still pending.**
+in `packages/db`; a Fastify API in `apps/api` that currently serves diagnostic
+health routes and one diagnostic tRPC procedure; and the React web app in
+`apps/web`, with the responsive shell, the en-US and pt-BR catalogs, placeholder
+pages, the Login page without sign-in, and a card that calls the diagnostic
+procedure. Node.js runs on the host; PostgreSQL runs in Docker.
+**Authentication, business endpoints and business screens are still pending.**
 
 Follow [local setup](#local-setup), then the [daily loop](#daily-development).
 For a feature, read [implementing a feature](#implementing-a-feature) and
@@ -99,11 +101,16 @@ The test database is recreated on every start, so it always uses the current
 
 ```sh
 pnpm db:up   # if the databases are not running
-pnpm dev     # API on http://127.0.0.1:3000 with reload; Ctrl+C stops it
+pnpm dev     # API on http://127.0.0.1:3000, web on http://localhost:5173; Ctrl+C stops both
 ```
 
 `pnpm dev` builds the DB package once, then watches both packages: API edits
 restart the server, and DB package edits recompile it and restart the server.
+It also runs the web app's Vite server on `http://localhost:5173` (bound to
+`127.0.0.1`; it fails rather than move to another port), which proxies `/trpc/`
+to the API. Open [`/app`](http://localhost:5173/app): the API connection card
+shows the echoed message. With the API stopped, the card's error appears after
+about 7 s of retries.
 Open [liveness](http://127.0.0.1:3000/health/live) and
 [readiness](http://127.0.0.1:3000/health/ready): expect HTTP 200 with
 `{"status":"ok"}` and `{"status":"ready"}`. Readiness checks the database
@@ -112,6 +119,9 @@ API never migrates.
 
 - **Schema change:** follow [database migrations](#database-migrations).
   TypeScript edits alone do not change PostgreSQL.
+- **Route file added, renamed, or removed:** the router plugin regenerates
+  `apps/web/src/routeTree.gen.ts` while `pnpm dev` or `pnpm build` runs. Commit
+  the regenerated file with the route; typecheck, lint and tests read it.
 - **DB file added, renamed, or removed:** stop `pnpm dev` and run `pnpm build`
   first; watch mode does not delete stale output.
 - **Dependency or lockfile change:** stop `pnpm dev`, run
@@ -136,7 +146,10 @@ no new business contract.
 | Reviewed database upgrade | Generated SQL and metadata in `packages/db/drizzle/` |
 | HTTP/lifecycle integration | `apps/api/src/`; add routes as plugins registered in `app.ts` (see `health.ts`); preserve `lifecycle.ts` and `server.ts` ownership |
 | New API procedure | Router module in `apps/api/src/trpc/routers/`, attached in `trpc/router.ts`; see [developing a tRPC endpoint](#developing-a-trpc-endpoint) |
-| Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior |
+| Web page | Route definition only in `apps/web/src/routes/`; the page component, its CSS Module (with a `.module.d.css.ts` declaration) and its tests in `apps/web/src/features/<area>/`. Follow the page's design in [`docs/design/`](docs/design/README.md) |
+| Web strings | Both catalogs: `apps/web/src/i18n/en-US/<namespace>.ts` and the pt-BR file typed against it with `satisfies CatalogShape<typeof en>`. A route's loader calls `ensureNamespace` for its area |
+| Money and dates in the web app | `formatMoney` and the date helpers in `apps/web/src/lib/format/` |
+| Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior; web component tests by role and label |
 
 A typical feature goes through approved contract → schema/migration if needed →
 typed DB operation → validated/authorized API procedure → appropriate tests.
@@ -292,7 +305,8 @@ const { message } = await client.diagnostics.echo.query({ message: "ok" });
 ```
 
 Read errors through `error.data.code` (and `error.data.issues` for validation).
-The React frontend is pending. Sharing runtime Zod schemas with the browser needs
+The web app's client, QueryClient and options proxy live in
+`apps/web/src/lib/trpc.ts`. Sharing runtime Zod schemas with the browser needs
 a separate package, because this export carries types only. See the official
 [procedures](https://trpc.io/docs/server/procedures) and
 [validation](https://trpc.io/docs/server/validators) documentation.
@@ -302,12 +316,18 @@ a separate package, because this export carries types only. See the official
 Stop `pnpm dev` before these finite commands:
 
 ```sh
-pnpm check   # build DB exports; strict typechecks, lint, formatting, unit tests
-pnpm build   # compile both packages
+pnpm check   # build DB and API exports; strict typechecks, lint, formatting, unit tests
+pnpm build   # compile the packages and build apps/web/dist
 ```
 
 `pnpm check` needs no database or Docker. Focused commands are `pnpm typecheck`,
-`pnpm lint`, `pnpm format`, `pnpm test`, or `pnpm exec vitest run --project api-unit`.
+`pnpm lint`, `pnpm format`, `pnpm test`, `pnpm exec vitest run --project api-unit`,
+or `pnpm exec vitest run --project web-unit`. The `web-unit` project runs the web
+app's component tests in jsdom, in `America/Sao_Paulo`, with a fresh app per
+test. Its harness fails a test on any `fetch` the test did not stub and on any
+`console.error` or `console.warn` it did not declare with `expectConsole`.
+`pnpm --filter @storage-minis/web preview` serves `apps/web/dist` on
+`http://localhost:4173` with the same proxy.
 Prettier does not format Markdown; review changed links, fences and tables by hand.
 
 The live suites run uncached. Start the databases first with `pnpm db:up`:
@@ -353,9 +373,12 @@ migration, process-test and watch tasks never cache. Inspect the task graph with
 
 ## Code conventions
 
-Use English, strict TypeScript, ESM, `.js` extensions in relative TS imports, and
-`import type` for types. Handle promises and missing indexed values. Unit tests
-live beside source as `src/**/*.test.ts` and import Vitest APIs explicitly.
+Use English, strict TypeScript, ESM, `.js` extensions in relative TS imports in
+the Node packages, and `import type` for types. Web code in `apps/web` uses
+extensionless relative imports (`./lib/trpc`). Handle promises and missing
+indexed values. Unit tests live beside source as `src/**/*.test.ts`
+(`.test.tsx` in web code, never under `src/routes/`) and import Vitest APIs
+explicitly.
 Use the pinned pnpm versions/lockfile, Prettier, and Conventional Commits.
 
 ## Documentation

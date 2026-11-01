@@ -6,3 +6,8 @@ pnpm-lock.yaml
 **/.turbo/
 **/.vite/
 **/.vitest/
+**/routeTree.gen.ts
+**/.tanstack/
+# A byte-identical copy of docs/design/system/tokens.css, which Prettier would
+# rewrap.
+apps/web/src/ui/tokens.css

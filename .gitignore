@@ -148,6 +148,9 @@ vite.config.ts.timestamp-*
 # Vitest reports and artifacts
 .vitest/
 
+# TanStack Router generator's temporary files
+.tanstack/
+
 # Astro generated types
 .astro/
 

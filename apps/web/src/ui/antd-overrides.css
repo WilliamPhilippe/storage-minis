@@ -1,0 +1,23 @@
+/* The only global rules on antd classes (docs/design/system/ant-design.md,
+   "Allowed overrides"). */
+
+/* One visible focus ring everywhere: focus-ring, 2px, offset 2px (3:1+ on
+   every surface). antd's own outline is a soft tint of colorPrimary that
+   doesn't reach 3:1 everywhere with an ink primary. */
+.ant-btn:focus-visible,
+.ant-menu-item:focus-visible,
+.ant-tag-checkable:focus-visible,
+.ant-switch:focus-visible,
+.ant-checkbox-input:focus-visible + .ant-checkbox-inner,
+.ant-radio-input:focus-visible + .ant-radio-inner {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Amounts, counts and IDs line up in columns; antd has no token for numeric
+   figures. */
+.ant-statistic-content,
+.ant-table-cell,
+.ant-input-number-input {
+  font-variant-numeric: tabular-nums;
+}
