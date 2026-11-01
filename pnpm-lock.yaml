@@ -162,6 +162,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-y/M5gU93yKYFDS8eVPCbTx8rRNN7CvVhzBGQ18tr+us=
+
 importers:
 
   .:
@@ -919,6 +921,9 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.7.2'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@turbo/darwin-64@2.11.10':
     resolution: {integrity: sha512-By4idRap5+nLnMuRzLB4qkOPRlvNdyY1ne4VJYDyUoUB11H94k7uif9mbe3JT8JSNXs1D68uMcBj6hJ/jMQRvA==}
@@ -2290,7 +2295,7 @@ snapshots:
       typescript: 6.0.3
 
   '@trpc/server@11.22.1(typescript@6.0.3)':
-    dependencies:
+    optionalDependencies:
       typescript: 6.0.3
 
   '@turbo/darwin-64@2.11.10':

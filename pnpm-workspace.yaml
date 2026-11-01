@@ -8,3 +8,13 @@ saveExact: true
 # Owner-approved on 2026-10-24 for the pinned Drizzle Kit/tsx dependency tree.
 allowBuilds:
   esbuild@0.18.20 || 0.25.12 || 0.28.2: true
+
+# Owner-approved on 2026-11-01 (Step 5): tRPC needs TypeScript only for its
+# declarations, but declares it as a required peer, so `pnpm deploy --prod`
+# would ship ~24 MB of unused TypeScript in the API image. The root
+# devDependency still satisfies the peer for type-checking and tests.
+packageExtensions:
+  "@trpc/server@11.22.1":
+    peerDependenciesMeta:
+      typescript:
+        optional: true
