@@ -1,6 +1,6 @@
 # Technical direction
 
-**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: stages 4.1–4.11 complete, including guarded process proof, portable runtime packaging, canonical Compose/Doppler startup, development reload, bounded image smoke and live DB socket/service recovery with sequential test-target ownership and unmigrated readiness; Step 4 is complete with all eighteen criteria and authorized implementation evidence on PR #107. Steps 5/6 and full T06/business/production acceptance remain pending.
+**Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: Steps 1–4 are complete (Step 4 with all eighteen criteria, evidence on PR #107), and the [foundation restructure](#foundation-restructure-2026-10-31) of 2026-10-31 (PR #110) replaced their tooling container and Doppler launchers with host Node, standard Compose, committed local values, owner/app database roles, a regenerated migration baseline and a parity stack. Steps 5/6 and full T06/business/production acceptance remain pending.
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [current entity map](../entities/entity-map-v0.8.md), [approved updates](../requirement-updates/README.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) govern domain invariants.
 
@@ -67,7 +67,7 @@ The exact configurations live in [the shared TypeScript base](../../tsconfig.bas
 [the Node profile](../../tsconfig.node.json), [ESLint](../../eslint.config.mjs),
 [Prettier](../../.prettierrc.json), and [Vitest project discovery](../../vitest.config.mts).
 The [root manifest](../../package.json) and shared lockfile record installed versions.
-See [development checks](../../README.md#development-checks) for command usage and
+See [checks](../../README.md#checks) for command usage and
 current empty-suite limitations.
 
 Examples: reading `items[index]` requires handling an absent value; an optional
@@ -119,7 +119,7 @@ centralized tooling, and strict empty-suite behavior.
 | Mutating and persistent work | Retain direct `lint:fix`, `format`, and `test:watch` commands. Future persistent tasks should use `cache: false` and `persistent: true`, outside finite task prerequisites. Future database mutations and, initially, real-database integration tests should be uncached because source hashes do not capture live database state. Concrete future tasks remain separate implementation decisions. |
 
 The exact configuration is [turbo.json](../../turbo.json); command usage and the
-cache demonstration live in [Turborepo checks](../../README.md#turborepo-checks-and-cache).
+cache demonstration live in the [Turborepo cache reference](local-development.md#turborepo-tasks-and-cache).
 This adopts the documented [incremental installation](https://turborepo.dev/docs/getting-started/add-to-existing-repository),
 [root tasks](https://turborepo.dev/docs/crafting-your-repository/configuring-tasks#registering-root-tasks),
 [configuration](https://turborepo.dev/docs/reference/configuration),
@@ -377,6 +377,9 @@ during Step 3 planning. The merge does not approve Step 3's implementation choic
 
 ## Step 3 planning direction (2026-10-24)
 
+**Superseded in part (2026-10-31):** Drizzle and its CLI now run on the host.
+The separate dev/test configuration sources became committed local values. See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 The owner requested a [two-part Step 3 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md):
 Drizzle installation/connection tooling, followed by base migration creation from
 the existing DBML. The owner explicitly approved reconciliation with current
@@ -403,6 +406,11 @@ foundation proposal or deliver an executable schema. No installation or database
 mutation was performed during planning.
 
 ## Step 3A Drizzle implementation (2026-10-25)
+
+**Partly superseded (2026-10-31):** The dependencies, factory, limits and
+compiled exports remain. The fixed dev/test tuple, Doppler injection, `db:check`
+and the command supervisors are replaced by `DATABASE_URL`, committed values,
+`drizzle-kit generate` and `src/migrate.ts` (A1). See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** On 2026-10-24 the owner approved the
 [two-part plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md),
@@ -664,6 +672,11 @@ and full T06 acceptance remain outside this diagnostic delivery.
 
 ## Step 4 review decisions after Step 3 (2026-10-28)
 
+**Partly superseded (2026-10-31):** Items 1–3 (profiled API services, `.env.compose`
+saved settings and the Doppler launch boundary) are replaced by the restructure's
+Compose model and committed local values; items 4–8 remain historical context.
+See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner approval:** After the Step 3 merge and review of its divergence from the
 [Step 4 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-4-fastify-plan-2026-10-28.md), the owner accepted all
 eight recommendations and requested a plan update. This approves the following
@@ -792,6 +805,11 @@ recommendations retain their approval gates.
 
 ## Step 4.4 guarded process-test approval (2026-10-28)
 
+**Partly superseded (2026-10-31):** The process tests remain and were re-proven
+with `DATABASE_URL`. The 180s suite supervisor became plain Vitest with a config
+guard, and the DNS preload became owned loopback listeners. `owned-process.ts` is
+retained. See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner approval:** The owner explicitly approved the scoped recommendation in
 the 4.4 session, covering the consuming P4-09/P4-10 details below. Later-stage
 recommendations retain their approval gates.
@@ -838,6 +856,10 @@ Production hosting, release operations and T04 acceptance remain open.
 
 ## Step 4.6 Compose runtime and startup approval (2026-10-29)
 
+**Superseded (2026-10-31):** The profiled runtime service and the Doppler
+`api-up` launcher are replaced by the production-shaped `migrate`/`api` services
+and the parity stack (`pnpm stack:up`, R2/R15/R19). See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner approval:** The owner explicitly approved the recommended 4.6 scope in
 this session. This covers only the runtime P4-07/P4-11 subset below. Development,
 automated image smoke and remaining task choices keep their later-stage gates.
@@ -863,6 +885,9 @@ custom polling/dispatch would add maintenance. Implementation evidence is tracke
 in the [4.6 checkpoint](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-4-verification-2026-10-28.md#stage-46--canonical-compose-and-doppler-startup).
 
 ## Step 4.7 development image and reload approval (2026-10-29)
+
+**Superseded (2026-10-31):** The development image, `api-dev` service and its
+SIGINT amendment are removed; `pnpm dev` runs the same watchers on the host. See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** The owner explicitly approved the concrete 4.7 recommendation
 in this session, before implementation. The scope is P4-08/P4-09 watchers and
@@ -899,6 +924,9 @@ and [Compose stop_signal](https://docs.docker.com/reference/compose-file/service
 
 ## Step 4.8 bounded image smoke approval (2026-10-29)
 
+**Superseded (2026-10-31):** `scripts/verify-api.sh` is replaced by the opt-in
+`pnpm test:stack` Vitest suite (R10). See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner approval:** The owner explicitly approved the concrete recommendation
 before implementation in the 4.8 session. This covers only the narrow smoke
 helper, exact-test injection/alias and its verification; no new dependencies.
@@ -925,6 +953,11 @@ close AC4-13/15 with current runtime/development/smoke evidence. Overall Step 4
 remains in progress; service outages and native project drain remain later stages.
 
 ## Step 4.10 shutdown fixture approval (2026-10-29)
+
+**Partly superseded (2026-10-31):** The shutdown fixtures and real watchdog tests
+remain and were re-proven. The container drain through native stop/down and the
+confirmed volume deletion used removed services and helpers; `pnpm test:stack`
+now proves the API's SIGTERM exit. See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** The owner explicitly approved the recommended shutdown
 fixtures in the 4.10 session before coding or disposable resource creation.
@@ -955,6 +988,10 @@ modules and use source-only type references. The container fixture retains its
 original test path and a temporary importing entry; neither enters the image.
 
 ## Step 4.9 DB failure, recovery and isolation approval (2026-10-29)
+
+**Partly superseded (2026-10-31):** The socket recovery test remains, pointed at
+an owned loopback gate through `DATABASE_URL` instead of the DNS preload. The
+native-service outage harness used the removed launcher; it was not re-run. See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** The owner explicitly approved the recommended socket and
 native-service fixtures in the 4.9 session before implementation. This covers
@@ -1067,9 +1104,30 @@ tooling.
 | Delivery (R1, R16, R18) | One PR in four ordered commit groups, stacked on PR #109. Each PR, not each commit, must leave a working state; host DB commands are unavailable between commit groups 1 and 2. |
 | Direction only (D5, D9, D10) | A Caddy-based `web` image for the client-side SPA, image distribution through GitHub Container Registry and daily `pg_dump` backups with a tested restore. These remain T04 implementation work. |
 
-The implementation and its verification evidence are recorded in the
-restructure PR. The sections below marked superseded keep their historical
-evidence; this record owns the current local workflow.
+The implementation, the commands each commit group ran with their output, and
+the final verification V1–V7 are recorded in
+[PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110). The sections
+marked superseded keep their historical evidence; this record owns the current
+local workflow.
+
+### Step 1–4 evidence after the restructure
+
+| Earlier evidence | Status |
+| --- | --- |
+| Step 1 tooling image, dependency volumes, launcher signal forwarding, checkout-scoped Doppler login and `verify-env` probe | Superseded; the mechanisms no longer exist. |
+| Step 2 services: health, persistent development data, discarded test data, loopback-only ports, separate credentials | Re-proven with the new roles: SCRAM from the host, wrong passwords and cross-server credentials rejected with `28P01`. |
+| Step 2 Doppler injection, SQL client container, launcher deadlines and confirmed per-target resets | Superseded by committed values, `pnpm db:psql` and `pnpm db:reset`. |
+| One-time setup and lifecycle helpers (`.env.compose`, volume-ownership checks) | Superseded by native Compose scripts; the ownership guard has nothing left to guard. |
+| Step 3A connection factory, limits, compiled exports, plain consumer | Re-proven in the connection suite, plus a new test that ambient `PG*` values cannot redirect the URL. |
+| Step 3A target tuple and `DATABASE_URL` rejection | Superseded by A1; URL validation has new unit tests. |
+| Step 3B constraints, scope/party rejection, races, replay, repeat application, chain rollback, lock timeout, interrupted migration | Re-proven on the regenerated chain, with fixtures running as the app role and a new app-role DML/DDL test. |
+| Step 3B supervisor bounds: 120 s process deadline, 130/143 signal exits, Kit zero-exit check | Superseded; the migrator relies on connection timeouts and Node's default signal handling, and the Kit behavior is documented. |
+| Step 4 factory, HTTP, logging and lifecycle unit tests | Re-proven unchanged, apart from the configuration shape. |
+| Step 4.4/4.9/4.10 real process tests: startup failures, signals, drain, 10 s/17 s watchdogs, socket outage and recovery | Re-proven: 26 process tests through `DATABASE_URL` and owned loopback listeners. |
+| Step 4.5 runtime image packaging | Re-proven: nonroot `node`, no mounts, compiled API/DB plus `dist/migrate.js` and the migrations. |
+| Step 4.6 Compose runtime with Doppler, 4.7 development image and reload, 4.8 image smoke | Superseded by the parity stack, `pnpm dev` on the host and `pnpm test:stack`. |
+| Step 4.9 native test-service outage and 4.10 container drain through stop/down and volume deletion | Not re-proven; they used removed helpers. `pnpm test:stack` proves the containerized SIGTERM exit 143, and the process suite proves draining. |
+| Step 4.11 task graph and cache reuse | Re-checked in V2 (dry runs and reuse). |
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
@@ -1294,8 +1352,8 @@ environment changes. Existing approved choices retain their recorded scope.
 | Forms | React Hook Form with Zod | Form handling and input validation. |
 | Database | PostgreSQL | Final schema, constraints, and transaction/concurrency design remain pending. |
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
-| Development infrastructure | Docker Compose for PostgreSQL | Production database hosting remains undecided. |
-| Environment variables | Doppler | Step 1 provides local host-to-Compose verification; application/test/production mapping and operational policy remain later decisions. |
+| Development infrastructure | Docker Compose for PostgreSQL | Production direction (2026-10-31): the same Compose model on a single Hostinger VPS; hosting and operations details remain T04 work. |
+| Environment variables | Doppler | Production values in config `prd` through a read-only VPS service token (keys created under T04). Local development and test values are committed (2026-10-31, R3/R8/R12). |
 | Tests | Vitest and Playwright | Vitest for unit/integration tests, including real PostgreSQL for rollback, constraints, and concurrency; Playwright for core administrator and public-catalog workflows. |
 | Lint and formatting | ESLint and Prettier | Concrete settings and commands approved in the 2026-10-23 tooling setup above. |
 
@@ -1333,6 +1391,12 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) still needs exact BRL representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
 
 ## Step 3B structural schema (2026-10-25)
+
+**Partly superseded (2026-10-31):** The approved structure stands. The
+`0000_base` + `0001_customer_name_whitespace` chain was regenerated as
+`0000_inventory_id_base36` (custom) + `0001_baseline`; the baseline matches the
+reviewed chain except the folded constraint (D8). The generation wrapper is
+removed. See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 The owner approved the [S01–S10 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/database/step-3b-schema-review-2026-10-25.md)
 on 2026-10-25: “Schema is approved. Implement it.” The resulting
@@ -1383,6 +1447,10 @@ spreadsheet import or production state was changed.
 
 ### DB command error visibility follow-up (2026-10-25)
 
+**Partly superseded (2026-10-31):** The direct native migrator and its detailed
+redacted errors remain in `src/migrate.ts`; the supervising child process and
+`db:check` are removed. See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 The owner requested that DB scripts log their actual error messages. Command
 handlers now retain messages, nested causes and driver codes, redacting the
 injected password and PostgreSQL URL credentials. Check/shutdown/artifact errors
@@ -1419,9 +1487,9 @@ artifacts and dependency versions are unchanged.
 | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
 | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | Complete bootstrap, persistence, activity/inactivity handling, return behavior, logout scope/revocation, and recovery around the accepted Google/ID-token/active-use-refresh/logout choices and supplied administrator email. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
-| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. |
+| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
-| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide pinned tooling, local databases, typed Drizzle schema and migration replay. Step 4 diagnostic API/image/cache/lifecycle is delivered. Complete Step 5 tRPC, Step 6 consolidated setup/verification, application authorization/isolation, representative business transactions/races and CI. |
+| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide the workspace, local databases, typed Drizzle schema and migration replay. Step 4 delivered the diagnostic API/image/cache/lifecycle, and the 2026-10-31 restructure moved them onto host Node, standard Compose, database roles and a parity stack. Complete Step 5 tRPC, Step 6 consolidated setup/verification, application authorization/isolation, representative business transactions/races and CI. |
 
 T06's existing T01/T02/T04 prerequisites remain in force. The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 

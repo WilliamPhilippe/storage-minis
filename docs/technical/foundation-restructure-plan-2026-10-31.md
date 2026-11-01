@@ -3,10 +3,12 @@
 **Status:** **Approved by the owner on 2026-10-31.** The owner approved A1–A5
 in response to the infrastructure review, then reviewed the full plan and
 approved every recommendation in D1–D10 and the final verification in
-Section 10. The plan is approved but **not yet implemented**. Implementation
-evidence is recorded in the restructure PR. Choices not listed here (for example CI) still need
-their own approval. The owner's answers in the plan review (R1–R7, Section 4a)
-(R1–R15) amend the plan on the same date; where wording conflicts, Section 4a wins.
+Section 10. The plan is **implemented** in
+[PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), which records
+the evidence for each commit group and for V1–V7. Choices not listed here (for
+example CI) still need their own approval. The owner's answers in the plan
+review and during implementation (R1–R19, Section 4a) amend the plan; where
+wording conflicts, Section 4a wins.
 
 **Supersedes, once the restructure PR merges:** the Step 1 container-only Node execution model, the
 wrapped Doppler launch path, the local-only database configuration contract and
