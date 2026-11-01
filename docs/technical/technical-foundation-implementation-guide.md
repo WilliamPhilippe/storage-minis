@@ -17,7 +17,10 @@ acceptance remains pending. Frontend work follows the
 [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)
 (2026-11-01): its four delivery steps sit outside this guide's six, and each
 needs its own plan. They come before Step 6, which the owner left TBD until the
-app is validated locally (2026-11-01).
+app is validated locally (2026-11-01). The
+[PR 1 web shell plan](web-shell-plan-2026-11-01.md) was
+[approved on 2026-11-01](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01)
+and is not yet implemented.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.

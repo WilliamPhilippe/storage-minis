@@ -1328,6 +1328,62 @@ record's "No absolute or idle session timeout has been chosen". The proposal
 holds the options considered, candidate versions and sources; each step's plan
 re-verifies its pins.
 
+## Frontend PR 1 web shell plan approval (2026-11-01)
+
+**Owner approval:** On 2026-11-01 the owner approved the
+[web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
+frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
+with the changes listed after the table. Nothing is implemented yet; the
+implementation PR adds the outcome and the evidence. Choices the plan does not
+settle, and deviations that implementation forces, still need approval.
+
+**Rationale.** The plan keeps PR 1 to the shell that later PRs build on, using
+the decided stack. Scratch prototypes found where antd 6.6.8, pnpm 12 and the
+strict flags differ from the proposal's assumptions:
+
+- zero-runtime mode does not allow a strict style policy;
+- antd 6.6.8 differs from the approved design in ten places;
+- pnpm's release-age rule blocks the newest pins;
+- CSS Module class names fail the strict flags without per-module
+  declarations.
+
+The plan settles each one.
+
+| Item | Approved outcome |
+| --- | --- |
+| WS-01 Pins | Exact pins, each the newest version at least 24 hours old (pnpm 12's release age), so no exclusion entry is needed. Adds `@trpc/server`, `@types/react`, `@types/react-dom`, `@testing-library/dom` and `@testing-library/user-event`; i18next 26.5.12, react-i18next 17.1.9, Query 5.105.0. |
+| WS-02 Layout | `@storage-minis/web`; a root `tsconfig.browser.json`; a solution-style `apps/web/tsconfig.json` with browser and Node profiles; extensionless imports in web code (Node packages keep `.js`); route files hold only route definitions, with pages in `src/features/`; one declaration file per CSS Module. |
+| WS-03 Vite | Bound to `127.0.0.1:5173`, documented as `http://localhost:5173` (W8's authorized origin); `/trpc/` proxied to the API; the router plugin before the React plugin. |
+| WS-04 Routes | `/` → `/app`; the Login page from its design, with no working feature; a catalog placeholder; the `/app` shell with a home page and eight section placeholders; the home page calls `diagnostics.echo`; typed page titles; pending, error and not-found pages; `routeTree.gen.ts` committed. |
+| WS-05 Data | A QueryClient factory: no retry for 4xx; no refetch on reconnect; mutations never retried and never queued offline (`networkMode: "always"`). Loaders use `queryClient.query({ …, staleTime: "static" })`. |
+| WS-06 Styling | W3 outcome: antd's runtime styles stay. In a real browser under `style-src 'self'`, both modes rendered unstyled, so PR 4's policy allows inline styles. Light mode only. antd's reset and one body rule. |
+| WS-07 Design corrections | Ten corrections to the approved design from antd 6.6.8's behavior, among them `componentSize="medium"`, `Drawer size`, solid ink text, header heights as tokens, an accessible sidebar toggle and the FAB shadow as a component token. The owner applies them to the Claude originals, and PR 1 refreshes `docs/design/`. |
+| WS-08 Shell | The design's TopBar, SideNav and MenuFab; link-based menus in named `nav` landmarks; the safe-area inset; logo files resized to twice their largest use. |
+| WS-09 Languages | `common`, `app`, `login` and `catalog` namespaces, loaded per language through `import()`; typed keys; pt-BR typed against en-US, including plural `_many` keys; detection and switch failures handled in our code. |
+| WS-10 Formatting | Money from integer cents through exact decimal strings; dates through `Intl` in the visitor's zone. |
+| WS-11 Tests | A `web-unit` jsdom project inside `pnpm check`, with a fresh app per test, stubbed `fetch` and a console policy with declared exceptions. |
+| WS-12 Tooling | The React and TanStack ESLint rules for web code; Node globals forbidden there; `//#lint` waits for the API build; ignore entries for generated files. |
+| WS-13 Delivery | This docs PR, then one implementation PR in four commit groups, "Part of #118". |
+
+**Owner changes at approval (2026-11-01):**
+
+1. **Release age:** the newest versions at least 24 hours old ("They release
+   new versions very frequently"), rather than waiting or adding exclusions.
+2. **Design copy:** the owner updates the Claude originals first, and the
+   repository copy is refreshed from them.
+3. **Login page:** the first UI page. PR 1 builds it from its approved design,
+   with no working feature; PR 3 adds sign-in.
+4. **Design-system direction:** the personal look comes mostly from colors
+   that follow the logo's racing red, with antd's own design and small tweaks
+   for everything else. The approved color roles stay: ink is the primary
+   color, and racing red is kept for attention.
+5. **Light mode only:** for now the app has only a light theme.
+
+**Design reference.** The owner approved the design system and the Login page
+design in [`docs/design/`](../design/README.md) on 2026-11-01. They are design
+references: an approved technical or requirements document wins where they
+disagree, and each implementation still follows its own approved plan.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
