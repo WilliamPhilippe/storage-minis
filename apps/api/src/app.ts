@@ -4,6 +4,7 @@ import Fastify, { LogController } from "fastify";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { PinoLoggerOptions } from "fastify/types/logger.js";
 import type { ApiConfig } from "./config.js";
+import { serializeError } from "./error-log.js";
 import { healthRoutes } from "./health.js";
 
 /**
@@ -55,7 +56,10 @@ function sendFailure(
   reply: FastifyReply,
 ) {
   const { status, category } = safeFailure(error);
-  request.log.error({ category, status }, "request_failed");
+  // Like Fastify's default: client errors are info, server errors error.
+  const fields = { category, status, err: error };
+  if (status >= 500) request.log.error(fields, "request_failed");
+  else request.log.info(fields, "request_failed");
   void reply.code(status).send({ error: category });
 }
 
@@ -65,6 +69,7 @@ export function buildApp(
 ) {
   // Pino permits omitting raw error fields; Fastify's specialized err type
   // unnecessarily requires message/stack. Use its exported Pino dictionary type.
+  const messages = httpConfig.nodeEnv === "development";
   const serializers: PinoLoggerOptions["serializers"] = {
     req: (request: FastifyRequest) => ({
       method: request.method,
@@ -73,7 +78,8 @@ export function buildApp(
     res: (reply: Pick<FastifyReply, "statusCode">) => ({
       status: reply.statusCode,
     }),
-    err: () => ({ category: "internal_error" }),
+    // Every `err` Fastify or a route logs passes through the allowlist.
+    err: (error: unknown) => serializeError(error, { messages }),
   };
   const app = Fastify({
     bodyLimit: 16 * 1024,

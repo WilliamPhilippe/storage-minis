@@ -1,6 +1,7 @@
 import { Server, Socket } from "node:net";
 import { describe, expect, it, vi } from "vitest";
 import { readApiConfig } from "./config.js";
+import { ConfigurationError } from "./error-log.js";
 
 const password = "fixture-secret-@:$'\\\n";
 const environment = {
@@ -14,7 +15,8 @@ describe("API configuration", () => {
         host: "127.0.0.1",
         port: 3000,
         logLevel: "info",
-        nodeEnv: "development",
+        // Fail closed: only an explicit development value logs messages.
+        nodeEnv: "production",
       },
       database: {
         host: "127.0.0.1",
@@ -107,9 +109,9 @@ describe("API configuration", () => {
       });
       expect.fail("expected validation failure");
     } catch (error) {
-      expect(error).toBeInstanceOf(Error);
+      expect(error).toBeInstanceOf(ConfigurationError);
       expect(String(error)).toBe(
-        "Error: Invalid API configuration. Check HOST, PORT, LOG_LEVEL, NODE_ENV.",
+        "ConfigurationError: Invalid API configuration. Check HOST, PORT, LOG_LEVEL, NODE_ENV.",
       );
       expect(error).not.toHaveProperty("cause");
       expect(error).not.toHaveProperty("issues");
@@ -118,8 +120,10 @@ describe("API configuration", () => {
     }
   });
 
-  it("inherits DATABASE_URL validation without leaking secrets", () => {
-    expect(() => readApiConfig({})).toThrow("DATABASE_URL is required.");
+  it("inherits DATABASE_URL validation as a cause-free ConfigurationError without leaking secrets", () => {
+    expect(() => readApiConfig({})).toThrow(
+      new ConfigurationError("DATABASE_URL is required."),
+    );
     for (const DATABASE_URL of [
       "postgres://private-sentinel",
       "postgres://storage_minis_app:private-sentinel@127.0.0.1/storage_minis_test",
@@ -134,8 +138,10 @@ describe("API configuration", () => {
       } catch (error) {
         failure = error;
       }
+      expect(failure).toBeInstanceOf(ConfigurationError);
+      expect(failure).not.toHaveProperty("cause");
       expect(String(failure)).toBe(
-        "Error: Invalid DATABASE_URL. Expected postgres://USER:PASSWORD@HOST:PORT/DATABASE with optional ?sslmode=disable|verify-full.",
+        "ConfigurationError: Invalid DATABASE_URL. Expected postgres://USER:PASSWORD@HOST:PORT/DATABASE with optional ?sslmode=disable|verify-full.",
       );
     }
   });

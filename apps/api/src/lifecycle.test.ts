@@ -254,7 +254,8 @@ describe("partial startup failures", () => {
       expect(await owner.closed).toBe(1);
       expect(f.app.close).toHaveBeenCalledTimes(appCloses);
       expect(f.database.close).toHaveBeenCalledTimes(dbCloses);
-      expect(f.runtime.report.mock.calls).toEqual([[category]]);
+      // The caught error reaches the allowlist log; the writer sanitizes it.
+      expect(f.runtime.report.mock.calls).toEqual([[category, hostile]]);
       expect(f.runtime.setExitCode).toHaveBeenLastCalledWith(1);
       expect(f.runtime.exit).not.toHaveBeenCalled();
       expect(f.signals.eventNames()).toEqual([]);
@@ -390,8 +391,8 @@ describe("signals, cancellation and cleanup", () => {
       expect(f.database.close).toHaveBeenCalledTimes(1);
       expect(f.runtime.report.mock.calls).toEqual([
         ["listening"],
-        ...(phase !== "DB" ? [["http_close_failed"]] : []),
-        ...(phase !== "HTTP" ? [["database_close_failed"]] : []),
+        ...(phase !== "DB" ? [["http_close_failed", hostile]] : []),
+        ...(phase !== "HTTP" ? [["database_close_failed", hostile]] : []),
       ]);
       expect(f.runtime.setExitCode).toHaveBeenLastCalledWith(1);
       expect(f.runtime.exit).toHaveBeenCalledExactlyOnceWith(1);

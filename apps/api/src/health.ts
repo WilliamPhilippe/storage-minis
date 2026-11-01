@@ -21,9 +21,9 @@ export const healthRoutes: FastifyPluginAsync<HealthOptions> = (
         await database.check();
         // Shutdown may have begun while the current check was in flight.
         if (!isClosing()) return { status: "ready" };
-      } catch {
+      } catch (error) {
         request.log.warn(
-          { category: "database_unavailable", status: 503 },
+          { category: "database_unavailable", status: 503, err: error },
           "readiness_unavailable",
         );
       }

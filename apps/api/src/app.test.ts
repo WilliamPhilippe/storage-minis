@@ -24,15 +24,24 @@ const apps: FastifyInstance[] = [];
 const db = {} as Database["db"];
 let output: string[];
 
-function createApp(overrides: Partial<AppDependencies> = {}) {
+function createApp(
+  overrides: Partial<AppDependencies> = {},
+  http: ApiConfig["http"] = httpConfig,
+) {
   const check = vi.fn<() => Promise<void>>().mockResolvedValue();
-  const app = buildApp(httpConfig, {
+  const app = buildApp(http, {
     database: { db, check },
     isClosing: () => false,
     ...overrides,
   });
   apps.push(app);
   return { app, check };
+}
+
+function failure(): Record<string, unknown> & { err: Record<string, unknown> } {
+  const found = records().filter((log) => log.msg === "request_failed");
+  expect(found).toHaveLength(1);
+  return found[0] as Record<string, unknown> & { err: Record<string, unknown> };
 }
 
 function records(): Record<string, unknown>[] {
@@ -150,8 +159,10 @@ describe("HTTP factory", () => {
     expect(check).toHaveBeenCalledTimes(3);
     expect(records()).toContainEqual(
       expect.objectContaining({
+        level: 40,
         category: "database_unavailable",
         status: 503,
+        err: expect.objectContaining({ type: "Error" }) as unknown,
       }),
     );
     expect(output.join("")).not.toContain(secret);
@@ -237,7 +248,7 @@ describe("HTTP factory", () => {
     expect(output.join("")).not.toContain(requestId);
   });
 
-  it("returns safe unexpected errors and never serializes messages, stacks, causes or bodies", async () => {
+  it("returns safe unexpected errors and logs only type, code, frames and causes outside development", async () => {
     const { app } = createApp();
     app.post("/fixture", () =>
       Promise.reject(
@@ -260,12 +271,57 @@ describe("HTTP factory", () => {
     expect(response.body).toBe('{"error":"internal_error"}');
     expect(output.join("")).not.toContain(secret);
     expect(output.join("")).not.toContain(requestId);
-    expect(output.join("")).not.toMatch(
-      /stack|cause|postgres:|SELECT|password|headers|body/,
+    expect(output.join("")).not.toMatch(/postgres:|SELECT|password/);
+    const log = failure();
+    expect(Object.keys(log).sort()).toEqual([
+      "category",
+      "err",
+      "level",
+      "msg",
+      "reqId",
+      "status",
+      "time",
+    ]);
+    expect(log).toMatchObject({
+      level: 50,
+      category: "internal_error",
+      status: 500,
+      err: { type: "Error", cause: { type: "Error" } },
+    });
+    expect(Object.keys(log.err).sort()).toEqual(["cause", "stack", "type"]);
+    expect(log.err.stack).toMatch(/^at .*app\.test\.ts/);
+  });
+
+  it("adds error messages only in development, never other properties or request inputs", async () => {
+    const { app } = createApp({}, { ...httpConfig, nodeEnv: "development" });
+    app.post("/fixture", () =>
+      Promise.reject(
+        new Error("Database query failed.", {
+          cause: Object.assign(
+            new Error('duplicate key value violates unique constraint "sku"'),
+            { code: "23505", detail: `Key (sku)=(${secret}) already exists.` },
+          ),
+        }),
+      ),
     );
-    expect(records()).toContainEqual(
-      expect.objectContaining({ category: "internal_error", status: 500 }),
-    );
+    const response = await app.inject({
+      method: "POST",
+      url: `/fixture?query=${secret}`,
+      payload: { password: secret },
+      headers: { authorization: secret, cookie: secret },
+    });
+    expect(response.body).toBe('{"error":"internal_error"}');
+    expect(failure().err).toMatchObject({
+      type: "Error",
+      message: "Database query failed.",
+      cause: {
+        type: "Error",
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "sku"',
+      },
+    });
+    expect(output.join("")).not.toContain(secret);
+    expect(output.join("")).not.toContain("already exists");
   });
 
   it.each([
@@ -305,6 +361,14 @@ describe("HTTP factory", () => {
       expect(response.statusCode).toBe(status);
       expect(response.body).toBe(JSON.stringify({ error: category }));
       expect(handler).not.toHaveBeenCalled();
+      // Client errors log at info, like Fastify's default.
+      expect(failure()).toMatchObject({
+        level: 30,
+        status,
+        category,
+        err: { type: expect.any(String) as unknown },
+      });
+      expect(failure().err).not.toHaveProperty("message");
       expect(output.join("")).not.toContain(secret);
       expect(output.join("")).not.toContain(requestId);
     },
@@ -376,8 +440,9 @@ describe("HTTP factory", () => {
     expect(records()[0]).toMatchObject({
       req: { method: "GET", route: "/fixture/:id" },
       res: { status: 200 },
-      err: { category: "internal_error" },
+      err: { type: "Error", cause: { type: "string" } },
     });
+    expect(records()[0]?.err).not.toHaveProperty("message");
     expect(output.join("")).not.toContain(secret);
   });
 });
