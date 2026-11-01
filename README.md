@@ -21,7 +21,7 @@ decisions.
 Run all commands from the repository root. You need:
 
 - Git and a checkout of this repository.
-- Docker Desktop, or another Docker Engine with Compose v2
+- Docker Desktop, or another Docker Engine with Compose v2 or later
   (`docker compose version`), running. PostgreSQL runs in containers; no host
   PostgreSQL installation is needed.
 - Node.js **24.22.1** and pnpm **12.15.0** on the host. The versions are pinned in
@@ -318,7 +318,7 @@ separate Compose project `storage-minis-stack` with its own throwaway database:
 
 ```sh
 pnpm stack:up     # build the API image, run migrate, start the API
-curl http://127.0.0.1:3100/health/ready
+curl http://127.0.0.1:3100/health/ready   # expect HTTP 200 {"status":"ready"}
 pnpm stack:down   # remove the stack, including its database volume
 ```
 
@@ -327,7 +327,9 @@ after it succeeds. The VPS deploy uses the same order, so a failed migration
 leaves a running API in place. The stack API listens on `127.0.0.1:3100` and
 its PostgreSQL is not published, so the stack can run alongside `pnpm dev`.
 `pnpm test:stack` starts a fresh stack, checks health, user, mounts, migration
-order and shutdown, and always removes the stack afterwards.
+order, a failed redeploy and shutdown, and always removes the stack afterwards.
+`stack:down` keeps the built `storage-minis-api:local` image for faster
+rebuilds; remove it with `docker image rm storage-minis-api:local`.
 
 ### Turborepo cache
 
