@@ -1200,9 +1200,10 @@ is tooling evidence, not business acceptance.
 
 **Owner approval:** On 2026-11-01 the owner approved the
 [Step 5 plan](step-5-trpc-plan-2026-11-01.md) as recommended, P5-01–P5-10.
-Implementation is pending; the implementing PR adds its outcome and evidence to
-this record. Choices the plan does not settle, and deviations that implementation
-forces, still need approval.
+Implemented in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114);
+the outcome, six implementation-time approvals and the evidence follow the table.
+Choices the plan does not settle, and deviations that implementation forces, still
+need approval.
 
 **Rationale.** The plan keeps Step 5 diagnostic and table-free on the reworked
 composition root and the approved planning inputs. It also prepares the transport
@@ -1225,6 +1226,62 @@ client controls.
 | P5-08 Type export | `@storage-minis/api/types`, a types-only export of `AppRouter`. |
 | P5-09 Layout | `apps/api/src/trpc/` (`init`, `context`, `errors`, `plugin`, `router`, `routers/`) and `src/types.ts`. |
 | P5-10 Tests | An `app.inject()` matrix, a loopback test with `@trpc/client`, and a compiled browser-profile consumer; `//#test` depends on `@storage-minis/api#build`. |
+
+### Implementation-time approvals (2026-11-01)
+
+Reading and running tRPC 11.22.1 and Fastify 5.12.7 showed six points the plan did
+not settle or could not meet as written. The owner approved each recommendation
+on 2026-11-01:
+
+| Topic | Approved outcome | Why |
+| --- | --- | --- |
+| Adapter route | `trpcRoutes` declares its own `/:path` route that calls the official adapter's `fastifyRequestHandler`, instead of registering `fastifyTRPCPlugin`. The 1 MiB limit is that route's `bodyLimit` option, so P5-03's `onRoute` hook is unnecessary. | The stock plugin replaces its scope's JSON parser with a raw-string pass-through and forwards multipart bodies. A probe showed it bypassed Fastify's prototype-poisoning check, returned `BAD_REQUEST` for malformed bodies and 500 for multipart, against P5-03 and cases 18–19. |
+| Query JSON code | A `BAD_REQUEST` whose cause is a `SyntaxError` is reported as `PARSE_ERROR` (case 7). The log keeps tRPC's own error, with category `parse_error`. | tRPC parses a query's `input` inside its input reader and wraps the failure as `BAD_REQUEST`; malformed bodies (case 18) are `PARSE_ERROR`. The mapping uses tRPC's public `TRPCError`. |
+| HEAD | tRPC answers `HEAD /trpc/<anything>` with 204 and no body before resolving a procedure. Kept, tested and documented. | No procedure, context or data is involved. |
+| Oversized uploads | Kept Fastify's behaviour: an over-limit `Content-Length` is rejected unread and the connection closed, so a client still uploading may see `ECONNRESET` instead of the 413 envelope. The loopback test accepts either outcome and asserts the procedure never runs; `app.inject()` (case 15) asserts the exact envelope. | Draining an over-limit body would let a client hold a connection. A probe saw resets for about a third of 2–8 MiB uploads. |
+| JSON content type | tRPC's public `responseMeta` sets `content-type: application/json` on every tRPC response. | tRPC labels errors raised before a call resolves (batching, its own media-type check) `text/plain`. Only the object form of `headers` sets rather than appends in 11.22.1; tRPC deprecates that form for v12, so revisit it on that upgrade. |
+| TypeScript peer | `packageExtensions` in `pnpm-workspace.yaml` marks `@trpc/server` 11.22.1's `typescript` peer optional. | tRPC declares TypeScript a required peer although it uses it only in declarations, so `pnpm deploy --prod` shipped ~24 MB of unused TypeScript in the image (`node_modules` 69 MB → 45 MB). The root devDependency still satisfies the peer for type-checking and tests. |
+
+### Implemented outcome
+
+- `buildApp` registers `trpcRoutes` at `/trpc` with `appRouter` and
+  `database.db`; production and `app.inject()` tests build the same app. The plugin
+  holds the route, the empty-body JSON parser, scoped error and not-found handlers
+  and the adapter's `onError` log; the root `frameworkErrors` handler sends
+  malformed `/trpc` URLs to the same envelope.
+- `diagnostics.echo` is the only procedure. `init.ts` exports tRPC's root object
+  `t` (with `isDev: false` and the envelope formatter), not a procedure builder.
+  Each router derives a module-private builder from `t.procedure` through
+  `recordProcedure` (`context.ts`).
+- The envelope helper (`trpc/errors.ts`) is built from `TRPCError`,
+  `getHTTPStatusCodeFromError` and `TRPC_ERROR_CODES_BY_KEY`. It has a fixed
+  message for every tRPC code, and at most 20 validation issues, each
+  `{ path, code }`.
+- Request logs add `procedure` through the `trpcProcedure` request decorator.
+  Each tRPC failure logs one `request_failed` with `category`, `status`,
+  `procedure` when recorded, and the allowlisted `err` (a `TRPCError` and its
+  cause chain). Development logs include tRPC and Zod messages under the
+  existing policy; these can name unknown keys or a requested path.
+- `@storage-minis/api/types` exports only the `AppRouter` type; the browser
+  type-check loads no Fastify or plugin declarations.
+
+**Evidence (2026-11-01, branch `feat/step-5-trpc`):**
+- `pnpm install --frozen-lockfile` passes.
+- `pnpm check`: 8 tasks, 120 unit tests in 12 files (from 83 in 9): 5 envelope,
+  30 adapter (section 5 cases 1–22, HEAD and the loopback client) and 2 consumer
+  tests.
+- `pnpm build` emits `dist/types.d.ts` and `dist/trpc/`.
+- `pnpm turbo run test --dry=json` lists `@storage-minis/api#build` and
+  `@storage-minis/db#build` under `//#test`. An API source edit missed
+  `@storage-minis/api#build` and `//#test`; restoring it hit both again (root test
+  hash `058dc2bd2b5f997b`).
+- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged.
+- `pnpm test:stack` 5 on rebuilt image
+  `sha256:54798c608f2f722de2d9c904a3985dcaaaaedbe940c6cdf930f4a3bae6a03744`. A
+  `docker run` listing shows `node_modules/@trpc` holding only `server`, with no
+  `@trpc/client` or `typescript` package.
+
+This is tooling evidence, not business acceptance.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

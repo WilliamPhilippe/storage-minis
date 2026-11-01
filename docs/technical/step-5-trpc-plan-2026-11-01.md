@@ -1,10 +1,14 @@
 # Step 5 plan — tRPC and Zod integration (2026-11-01)
 
-**Status: approved by the owner on 2026-11-01; not yet implemented.** The owner
-approved P5-01–P5-10 as recommended. The approval is recorded in
-[technical direction](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01);
-the implementing PR adds its outcome and evidence there. Choices this plan does
-not settle, and any deviation that implementation forces, still need approval.
+**Status: approved by the owner on 2026-11-01; implemented in
+[PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114).** The owner
+approved P5-01–P5-10 as recommended. The approval, six implementation-time
+approvals, the outcome and the evidence are recorded in
+[technical direction](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01).
+Where this plan and those approvals differ (the adapter route instead of an
+`onRoute` hook, case 7's code mapping, HEAD, oversized uploads, the JSON content
+type, the TypeScript peer), the record applies. The plan text below is kept as
+approved.
 This is the plan for
 [Step 5](technical-foundation-implementation-guide.md#step-5--trpc-and-zod-integration)
 of the foundation guide, part of

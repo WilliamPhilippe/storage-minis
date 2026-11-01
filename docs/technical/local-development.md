@@ -208,8 +208,53 @@ Run `test:db` and `test:api` one at a time; `test:db` drops the test schemas.
 | Startup | Configuration, database acquisition, plugin loading (`app.ready()`), the database check and listen must finish within 17 s, or the process exits 1. Fastify's 10 s plugin timeout ends a hung plugin earlier as `app_readiness_failed`. |
 | Lifecycle lines | One JSON line per event on stdout, always written regardless of `LOG_LEVEL`: `{"level":30,"time":…,"msg":"listening"}`, or level 50 with a category such as `configuration_failed`, `database_readiness_failed`, `listen_failed`, `startup_timeout` and an `err` for failures. |
 | Shutdown | SIGINT/SIGTERM drain HTTP, then close the pool, within one 10 s bound. Success exits 130/143; a failed or timed-out cleanup exits 1. Compose gives the API 15 s. |
-| HTTP limits | 16 KiB bodies, 10 s request receive time, no trusted proxy, generated request IDs. |
-| Logs | JSON lines on stdout. Request lines carry method, matched route template, status, elapsed time and a generated request ID; never URLs, bodies, headers or other request inputs. Failures add an allowlisted `err`: constructor `type`, a string `code` (Node code or Postgres SQLSTATE such as `28P01`, `23505`), `stack` frames only (at most 20) and `cause` to depth 3. Messages appear only when `NODE_ENV=development`, except the API's own `ConfigurationError`, which names only variables. 4xx failures log at info, 5xx at error. Client responses stay fixed. |
+| HTTP limits | 16 KiB bodies (1 MiB on the tRPC route), 10 s request receive time, no trusted proxy, generated request IDs. |
+| tRPC | `/trpc/<procedure>`: plain JSON, no transformer, no batching, queries by GET and mutations by POST. One diagnostic procedure, `diagnostics.echo`. See the [tRPC HTTP contract](#trpc-http-contract). |
+| Logs | JSON lines on stdout. Request lines carry method, matched route template (`/trpc/:path` for tRPC), status, elapsed time, a generated request ID and, for a matched tRPC procedure only, `procedure`; never URLs, bodies, headers or other request inputs. Failures add an allowlisted `err`: constructor `type`, a string `code` (Node code or Postgres SQLSTATE such as `28P01`, `23505`), `stack` frames only (at most 20) and `cause` to depth 3. Messages appear only when `NODE_ENV=development`, except the API's own `ConfigurationError`, which names only variables. 4xx failures log at info, 5xx at error. Client responses stay fixed. |
+
+### tRPC HTTP contract
+
+Every response under `/trpc` uses one envelope with a fixed message per code; it
+has no stack, cause, procedure path or client text:
+
+```json
+{"error":{"message":"Invalid request","code":-32600,"data":{"code":"BAD_REQUEST","httpStatus":400,"issues":[{"path":["message"],"code":"too_small"}]}}}
+```
+
+`issues` (at most 20, each `{ path, code }`) appears only for input validation.
+Clients read `error.data.code`. Each failure logs one `request_failed`, at info
+for 4xx and error for 5xx, with `category` (the lowercased code; 500 is
+`internal_error`), `status`, `procedure` when matched, and the allowlisted `err`.
+
+| Request | Response |
+| --- | --- |
+| `GET /trpc/diagnostics.echo?input={"message":"ok"}` (URL-encoded) | 200 `{"result":{"data":{"message":"ok"}}}` |
+| `message` empty, over 100 characters or not a string; an unknown key; no `input` | 400 `BAD_REQUEST` with `too_small`, `too_big`, `invalid_type`, `unrecognized_keys` (path `[]`, key names not echoed) or `invalid_type` (path `[]`) |
+| `input` that is not JSON, or a malformed or prototype-poisoned JSON body | 400 `PARSE_ERROR` |
+| An unknown procedure, `/trpc`, `/trpc/` or `/trpc/a/b` | 404 `NOT_FOUND`; the path is neither echoed nor logged |
+| A query by POST or PUT | 405 `METHOD_NOT_SUPPORTED` |
+| A batch call (`?batch=1`) | 400 `BAD_REQUEST` |
+| A malformed URL such as `/trpc/%E0%A4%A` | 400 `BAD_REQUEST` |
+| A body over 1 MiB | 413 `PAYLOAD_TOO_LARGE` |
+| A media type other than JSON (`text/plain`, `multipart/form-data`, …) | 415 `UNSUPPORTED_MEDIA_TYPE`; the header is not echoed |
+| A POST with `content-type: application/json` and no body | Treated as no input; a mutation without input succeeds |
+| An output that fails its schema, or an unexpected error | 500 `INTERNAL_SERVER_ERROR`, message `Internal server error` |
+
+Documented exceptions:
+
+- `HEAD` under `/trpc` returns 204 with no body. tRPC answers it before resolving a
+  procedure, so it runs no procedure and logs no failure.
+- An oversized upload may end in a connection reset instead of the 413 envelope.
+  Fastify rejects an over-limit `Content-Length` unread and closes the connection,
+  and a client still sending sees `ECONNRESET`. The tRPC client then reports a
+  `TRPCClientError` without `data`.
+- Node or Fastify handles some failures before routing (431 for oversized headers
+  or URL, 408 for a receive timeout, malformed HTTP). They keep Fastify's
+  client-error body, and the tRPC client reports them as plain HTTP errors. Query
+  input travels in the URL, so it must stay well under Node's 16 KiB header limit.
+- Development logs (`NODE_ENV=development`) include tRPC and Zod messages under
+  the log policy; these can name unknown keys or a requested path. Other modes
+  log no messages.
 
 ## Parity stack
 

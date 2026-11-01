@@ -14,8 +14,11 @@ production-shaped parity stack. The
 [API composition and error-log rework](docs/technical/technical-direction.md#api-composition-and-error-log-rework-2026-11-01)
 (2026-11-01) made `buildApp` the single plugin composition root and set the
 allowlisted error-log policy; read it before changing API composition or logging.
-Steps 5/6, business operations, authentication, frontend, production and CI remain
-pending.
+[Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)
+(2026-11-01) added the diagnostic tRPC transport at `/trpc`, its error envelope and
+the types-only `@storage-minis/api/types` export; read its record before changing
+`apps/api/src/trpc` or adding a procedure. Step 6, business operations,
+authentication, frontend, production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -185,7 +188,7 @@ Technical choices also remain open; their issues define the required outputs:
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
-- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): Steps 1–4, the 2026-10-31 restructure and the 2026-11-01 API rework delivered the workspace, local databases, schema and migrations, diagnostic API, image and parity stack. Remaining: Step 5 tRPC, Step 6 verification and handoff, application authorization/isolation, representative business transactions/races and CI; depends on T01/T02/T04. The live issue was closed on 2026-10-29 through PR #107's closing link, although that PR states it does not close #26. See the technical direction record for accepted choices and remaining outputs.
+- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): Steps 1–5, the 2026-10-31 restructure and the 2026-11-01 API rework delivered the workspace, local databases, schema and migrations, diagnostic API, diagnostic tRPC transport and types-only router export, image and parity stack. Remaining: Step 6 verification and handoff, application authorization/isolation, representative business transactions/races and CI; depends on T01/T02/T04. The live issue was closed on 2026-10-29 through PR #107's closing link, although that PR states it does not close #26. See the technical direction record for accepted choices and remaining outputs.
 
 ## Agreed conventions
 

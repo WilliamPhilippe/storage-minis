@@ -5,9 +5,9 @@ public stock catalog for 1/64 miniature sellers and collectors.
 
 The repository is a pnpm/Turborepo workspace: the Drizzle schema and migrations
 in `packages/db`, and a Fastify API in `apps/api` that currently serves
-diagnostic health routes. Node.js runs on the host; PostgreSQL runs in Docker.
-**tRPC, authentication, business endpoints, and the React frontend are still
-pending.**
+diagnostic health routes and one diagnostic tRPC procedure. Node.js runs on the
+host; PostgreSQL runs in Docker. **Authentication, business endpoints, and the
+React frontend are still pending.**
 
 Follow [local setup](#local-setup), then the [daily loop](#daily-development).
 For a feature, read [implementing a feature](#implementing-a-feature) and
@@ -135,7 +135,7 @@ no new business contract.
 | Columns, enums, constraints, indexes | Existing domain file in `packages/db/src/schema/`; exports in `schema/index.ts` |
 | Reviewed database upgrade | Generated SQL and metadata in `packages/db/drizzle/` |
 | HTTP/lifecycle integration | `apps/api/src/`; add routes as plugins registered in `app.ts` (see `health.ts`); preserve `lifecycle.ts` and `server.ts` ownership |
-| New API procedure | Future tRPC router in `apps/api`; adapter/context conventions remain Step 5 work |
+| New API procedure | Router module in `apps/api/src/trpc/routers/`, attached in `trpc/router.ts`; see [developing a tRPC endpoint](#developing-a-trpc-endpoint) |
 | Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior |
 
 A typical feature goes through approved contract → schema/migration if needed →
@@ -220,76 +220,82 @@ the other. If a migration run is interrupted, inspect `drizzle.__drizzle_migrati
 before retrying; see the
 [migration reference](docs/technical/local-development.md#migrations).
 
-### Developing a tRPC endpoint (pending)
+### Developing a tRPC endpoint
 
-The foundation does **not** yet install `@trpc/server`, mount a tRPC URL, export an
-`AppRouter`, or implement protected procedures. Do not expect tRPC calls to work yet.
-[Foundation Step 5](docs/technical/technical-foundation-implementation-guide.md#step-5--trpc-and-zod-integration)
-first needs approved dependency pins, the Fastify adapter, request context, bounded
-Zod input/output schemas, safe errors, and a type-only router export. Its initial
-procedures are diagnostic and table-free. Business authorization remains T02 work.
+The API serves tRPC at `/trpc` with plain JSON (no transformer), no batching,
+queries by GET and mutations by POST. The only procedure is the diagnostic
+`diagnostics.echo`; protected procedures and business authorization are T02
+work. With `pnpm dev` running:
 
-The integration point is [`buildApp`](apps/api/src/app.ts), the single composition
-root: it registers each route group as a Fastify plugin with `app.register`, as the
-[health routes](apps/api/src/health.ts) do, and production and `app.inject()` tests
-build the same app. Step 5 registers the adapter there, and Fastify loads it during
-the lifecycle's `app.ready()`, before the database check and listen. The request
-context exposes the **same owned** `database.db` Drizzle handle, never the whole
-`Database`, plus request information. Request logs gain the tRPC procedure name.
-Keep pool creation, listening, signals and cleanup in
-[the lifecycle](apps/api/src/lifecycle.ts).
-The [official Fastify adapter documentation](https://trpc.io/docs/server/adapters/fastify)
-explains adapter registration; local paths, URL prefix, and exports await that step.
-
-Once the adapter and required business authorization exist, a normal endpoint
-implementation follows this sequence:
-
-1. Define the feature's input and safe output with Zod, including approved bounds
-   and money/date rules. Database row types do not validate HTTP input or define
-   which fields a caller may see.
-2. Add a read `.query()` or write `.mutation()` to the established router. Use the
-   approved authenticated context and verify Membership/Organization scope before
-   accessing private records. A submitted Organization ID is not authorization;
-   public catalog queries require their explicit field allowlist.
-3. Read through the context's Drizzle handle (`ctx.db` below). For a business
-   write, perform source, inventory, funding, financial, and audit changes in one
-   transaction, including the required locks, scope checks, and invariant
-   enforcement.
-4. Return only the declared output and translate expected failures safely. Unexpected
-   failures keep a fixed client body; their log records the error type, code
-   (for example SQLSTATE `23505`) and stack frames, with messages only in
-   development. Never log inputs or extra error properties.
-5. Test the procedure through the actual Fastify/tRPC HTTP adapter, including invalid
-   input/output and denied access. Writes also need real PostgreSQL rollback,
-   reconciliation, and relevant concurrency tests.
-6. Consume the eventual `AppRouter` through `import type` in a client. There is no
-   separate generated tRPC client in this checkout; the frontend is also pending.
-
-Illustrative procedure shape **after those prerequisites**; all builder, schema,
-and operation names below are placeholders, not existing repository exports:
-
-```ts
-const read = authorizedProcedure
-  .input(readInputSchema)
-  .output(readOutputSchema)
-  .query(({ ctx, input }) =>
-    readScopedData(ctx.db, ctx.organizationId, input),
-  );
-
-const write = authorizedProcedure
-  .input(writeInputSchema)
-  .output(writeOutputSchema)
-  .mutation(({ ctx, input }) =>
-    ctx.db.transaction((tx) =>
-      writeScopedDataAndAudit(tx, ctx.organizationId, ctx.actor, input),
-    ),
-  );
+```sh
+curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22ok%22%7D'
+# 200 {"result":{"data":{"message":"ok"}}}
+curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22%22%7D'
+# 400 {"error":{"message":"Invalid request","code":-32600,"data":{"code":"BAD_REQUEST","httpStatus":400,"issues":[{"path":["message"],"code":"too_small"}]}}}
+curl -X POST -H 'content-type: application/json' -d '{"message":"ok"}' \
+  http://127.0.0.1:3000/trpc/diagnostics.echo
+# 405 METHOD_NOT_SUPPORTED: a query is GET only
 ```
 
-See official [procedures](https://trpc.io/docs/server/procedures) and
-[input/output validation](https://trpc.io/docs/server/validators) documentation for
-these APIs. This sketch supplies no authentication implementation or business
-writer; their decisions and tests must precede exposing a real operation.
+Every failure under `/trpc` uses one envelope with a fixed message; the
+[tRPC HTTP contract](docs/technical/local-development.md#trpc-http-contract) lists
+each case and the documented exceptions. Request logs add `procedure` for a
+matched procedure.
+
+Where things live, under `apps/api/src/trpc/`:
+
+| File | Holds |
+| --- | --- |
+| `init.ts` | `Context` (`{ db, requestId }`) and tRPC's root object `t` |
+| `context.ts` | `createContext` and the `recordProcedure` middleware |
+| `errors.ts` | The error envelope |
+| `plugin.ts` | The Fastify route, body limit, JSON parser and failure handlers; `buildApp` registers it |
+| `router.ts` | `appRouter`, which attaches each router module |
+| `routers/` | One module per router, such as `diagnostics.ts` |
+
+A new procedure follows this sequence:
+
+1. Define the input and safe output with Zod. Bound **every string and array with
+   `.max()`**: the 1 MiB body limit is only the outer bound, and query input
+   travels in the URL (16 KiB header limit). Use `z.strictObject` so unknown keys
+   are rejected. Database row types do not validate HTTP input or define which
+   fields a caller may see.
+2. Build from a module-private builder derived from `t.procedure` through
+   `recordProcedure`, as `routers/diagnostics.ts` does; that middleware supplies
+   the `procedure` log field. No public builder is exported. Business procedures
+   wait for T02's protected builder, which verifies identity and
+   Membership/Organization scope before private records are read. A submitted
+   Organization ID is not authorization.
+3. Read through `ctx.db`, the lifecycle's owned Drizzle handle. A business write
+   performs source, inventory, funding, financial and audit changes in one
+   transaction, with the required locks, scope checks and invariant enforcement.
+4. Throw `TRPCError` with a fitting code for expected failures; clients see only
+   the code and its fixed message. Unexpected errors become 500s whose log
+   records the error type, code and stack frames, with messages only in
+   development.
+5. Test through `buildApp` and `app.inject()`, as `trpc/plugin.test.ts` does, not
+   only by calling the router. Include invalid input and output and, for business
+   procedures, denied access, plus real PostgreSQL rollback, reconciliation and
+   concurrency tests for writes.
+
+A client imports only the router type, and runtime imports of
+`@storage-minis/api/types` fail by design:
+
+```ts
+import { createTRPCClient, httpLink } from "@trpc/client";
+import type { AppRouter } from "@storage-minis/api/types";
+
+const client = createTRPCClient<AppRouter>({
+  links: [httpLink({ url: "/trpc" })],
+});
+const { message } = await client.diagnostics.echo.query({ message: "ok" });
+```
+
+Read errors through `error.data.code` (and `error.data.issues` for validation).
+The React frontend is pending. Sharing runtime Zod schemas with the browser needs
+a separate package, because this export carries types only. See the official
+[procedures](https://trpc.io/docs/server/procedures) and
+[validation](https://trpc.io/docs/server/validators) documentation.
 
 ## Checks
 
