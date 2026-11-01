@@ -1283,6 +1283,45 @@ on 2026-11-01:
 
 This is tooling evidence, not business acceptance.
 
+## Frontend foundation decisions (2026-11-01)
+
+**Owner approval:** On 2026-11-01 the owner decided every item, W1–W11, of the
+[frontend foundation proposal](frontend-foundation-proposal-2026-11-01.md) over
+two review rounds. Nothing is implemented yet; each W11 delivery step gets its
+own plan for approval. W7 replaces the React Hook Form choice in the
+[accepted application stack](#accepted-application-stack) (2026-10-21) with
+TanStack Form, and W2–W4 settle the design system, styling conventions,
+application language and UI locale that the stack record left open.
+
+**Rationale.** One SPA keeps one build, one image and one origin. Ant Design
+covers the back office's components first-party, with their en-US and pt-BR
+texts. i18next is the most widely used translation library and needs no build
+step. TanStack Form takes Zod schemas directly and documents how to register the
+app's antd fields once. A Firebase dev project with custom-token test sign-ins
+avoids the Auth emulator's boilerplate while tests still use real Firebase
+sessions and real token verification. The app is mobile-first, because most use,
+especially of the catalog, is on phones.
+
+| Item | Approved outcome |
+| --- | --- |
+| W1 App shape | One SPA, `apps/web`, holding the public catalog and the signed-in back office, split by route. |
+| W2 Design system | Ant Design 6. |
+| W3 Styling | antd theme tokens plus CSS Modules; antd's zero-runtime mode is prototyped in the first step. |
+| W4 Languages and money | i18next with react-i18next; en-US main, pt-BR second; strings live in the frontend. Amounts show `$`, never `R$` or `US$`, with separators that follow the language and cents only when not zero: `$1,234.50` and `-$400.50` in en-US, `$1.234,50` and `-$400,50` in pt-BR. Amounts remain BRL (REQ-008). |
+| W5 Active Organization | No Organization id in URLs. A session context holds the user, Memberships and active Organization for the whole UI; nothing is persisted while each user has one Membership; the API receives the Organization in a request header, and switching Organization clears the query cache. |
+| W6 Data layer | `@trpc/tanstack-react-query` over same-origin `/trpc`, with `httpLink`, no batching and no transformer. |
+| W7 Forms | TanStack Form with the app's own antd field components, replacing React Hook Form. |
+| W8 Sign-in | Redirect on phones and popup on desktops through a same-origin `/__/auth/` proxy; a Firebase dev project for local development; a test-only custom-token sign-in for Playwright. T02 settles the session policies first. |
+| W9 Tests | Vitest component tests inside `pnpm check`; Playwright next, on phone and desktop projects; every component located by role and label. |
+| W10 Build and tooling | A Caddy `web` image proxying `/trpc` and `/__/auth/`; a browser TypeScript profile; React and TanStack ESLint plugins; no React Compiler yet. |
+| W11 Delivery | Four PRs: web shell, Playwright, sign-in end to end, web image. |
+
+Deferred by the owner: the structure of the Playwright sign-in, big-table
+behavior (filterable lists are the default), and persisting the active
+Organization once users can belong to several. The proposal holds the options
+considered, candidate versions and sources; each step's plan re-verifies its
+pins.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -1503,7 +1542,7 @@ environment changes. Existing approved choices retain their recorded scope.
 | Frontend | React with Vite | Separate frontend application. |
 | Routing | TanStack Router | Client navigation and URL state. |
 | Server data | TanStack Query with the tRPC integration | Scope private caches by Organization and authentication context while preserving global Product reuse. |
-| Forms | React Hook Form with Zod | Form handling and input validation. |
+| Forms | TanStack Form with Zod | Form handling and input validation; replaced React Hook Form on 2026-11-01 ([frontend foundation decisions](#frontend-foundation-decisions-2026-11-01)). |
 | Database | PostgreSQL | Final schema, constraints, and transaction/concurrency design remain pending. |
 | Persistence access | Drizzle ORM | Migration workflow and database-driver/version selection remain T06 work. |
 | Development infrastructure | Docker Compose for PostgreSQL | Production direction (2026-10-31): the same Compose model on a single Hostinger VPS; hosting and operations details remain T04 work. |
@@ -1513,7 +1552,7 @@ environment changes. Existing approved choices retain their recorded scope.
 
 The choices provide shared TypeScript contracts within one repository while retaining independent frontend/backend deployment. They do not introduce additional domain features or settle unresolved business policies.
 
-**Design-system preference:** the owner leans toward Ant Design. Keep it as the preferred candidate until explicitly finalized. Styling conventions, application language, and UI locale remain open.
+**Design system and UI conventions:** the owner preferred Ant Design on 2026-10-21 and confirmed Ant Design 6 on 2026-11-01, styled with antd theme tokens and CSS Modules, with en-US as the main UI language and pt-BR as the second, on a mobile-first layout. See the [frontend foundation decisions](#frontend-foundation-decisions-2026-11-01).
 
 ## Authentication and initial administrator
 

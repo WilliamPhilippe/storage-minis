@@ -17,8 +17,11 @@ allowlisted error-log policy; read it before changing API composition or logging
 [Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)
 (2026-11-01) added the diagnostic tRPC transport at `/trpc`, its error envelope and
 the types-only `@storage-minis/api/types` export; read its record before changing
-`apps/api/src/trpc` or adding a procedure. Step 6, business operations,
-authentication, frontend, production and CI remain pending.
+`apps/api/src/trpc` or adding a procedure. The
+[frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
+(2026-11-01) set the web app's architecture, design system, languages and four
+delivery steps; read them before frontend work. Step 6, business operations,
+authentication, the frontend implementation, production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -53,8 +56,8 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Application scope | Full application in one monorepo: backend/API and frontend, with independent deployments supported. |
 | Application language | TypeScript with strict checking for backend and frontend code. |
 | Backend | Node.js with Fastify and tRPC. |
-| Frontend | React with Vite, TanStack Router, and TanStack Query. |
-| Forms and validation | React Hook Form and Zod; runtime API validation with Zod. |
+| Frontend | React with Vite, TanStack Router, and TanStack Query with tRPC; Ant Design 6; en-US (main) and pt-BR through i18next; mobile-first (2026-11-01). |
+| Forms and validation | TanStack Form and Zod (replaced React Hook Form on 2026-11-01); runtime API validation with Zod. |
 | Database and persistence | PostgreSQL with Drizzle ORM; Docker Compose locally and, by the 2026-10-31 direction, on a single Hostinger VPS. Hosting and operations details remain T04 work. |
 | Authentication | Firebase Authentication with Google sign-in only and Firebase ID tokens; refresh during active use, no refresh while inactive, and explicit logout. |
 | Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
@@ -65,7 +68,7 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Step 3B selects int32 storage; exact allocation code, overflow rejection and API/period contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
-Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records and the [Step 3A amendments](docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25) before changing shared configuration, module conventions, or task caching. Step 3A selects compiled DB exports and a generate/review/apply workflow; Step 3B implements the approved structural schema. Concrete business transaction/concurrency writers remain T01/T06 work. Tooling is not business acceptance evidence.
+The owner confirmed Ant Design 6 as the design system on 2026-11-01. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records and the [Step 3A amendments](docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25) before changing shared configuration, module conventions, or task caching. Step 3A selects compiled DB exports and a generate/review/apply workflow; Step 3B implements the approved structural schema. Concrete business transaction/concurrency writers remain T01/T06 work. Tooling is not business acceptance evidence.
 
 Hosting, deployment, backups, and operational targets remain T04 work. The 2026-10-31 restructure sets their direction only: a Caddy `web` image for the SPA, images from GitHub Container Registry, daily `pg_dump` backups with a tested restore, and a deploy that runs `migrate` as a one-off before `up`. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
@@ -194,7 +197,7 @@ Technical choices also remain open; their issues define the required outputs:
 
 The owner approved this baseline on 2026-10-21 and the concrete tooling setup on 2026-10-23. Follow these conventions when implementing the application.
 
-- Use English for code identifiers, comments, and project documentation. This does not choose the application's user-facing language or locale.
+- Use English for code identifiers, comments, and project documentation. The UI offers en-US (main) and pt-BR, decided on 2026-11-01.
 - Use TypeScript with strict checking for Node.js and React code, with ESLint and Prettier for linting and formatting.
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
 - Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.

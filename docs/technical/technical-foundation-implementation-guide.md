@@ -13,7 +13,10 @@ The [API composition and error-log rework](technical-direction.md#api-compositio
 (2026-11-01, [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112))
 made `buildApp` the single plugin composition root and made failure logs
 diagnosable. Steps 5–6 are re-planned against this foundation. Full T06/business/production
-acceptance remains pending.
+acceptance remains pending. Frontend work follows the
+[frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)
+(2026-11-01): its four delivery steps sit outside this guide's six, and each
+needs its own plan.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.
