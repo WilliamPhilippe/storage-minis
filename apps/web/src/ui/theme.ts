@@ -95,6 +95,13 @@ const components = {
   // WS-07 #9: the FAB's shadow-fab through the token FloatButton reads.
   FloatButton: { controlHeightLG: 56, boxShadowSecondary: shadowFab },
   Tag: { defaultBg: surfaceSunken, defaultColor: inkMuted },
+  // Every h1 is a page title in title-lg (22/30/600), and spacing comes from
+  // layout gaps (owner, 2026-11-01).
+  Typography: {
+    fontSizeHeading1: 22,
+    lineHeightHeading1: 30 / 22,
+    titleMarginBottom: 0,
+  },
 } satisfies ThemeConfig["components"];
 
 export const theme: ThemeConfig = { token, components };

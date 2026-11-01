@@ -1,0 +1,35 @@
+.shell {
+  min-height: 100dvh;
+}
+
+/* Phones: space-4 gutters, and bottom room so the MenuFab never covers the
+   last line: space-7 + fab-size + the safe-area inset. */
+.content {
+  padding: var(--space-4) var(--space-4)
+    calc(var(--space-7) + var(--fab-size) + env(safe-area-inset-bottom));
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* bp-md: space-5 gutters, no MenuFab. */
+@media (min-width: 768px) {
+  .content {
+    padding: var(--space-5);
+  }
+
+  .inner {
+    gap: var(--space-5);
+  }
+}
+
+/* bp-xl: content at most 1200px wide, centred. */
+@media (min-width: 1200px) {
+  .inner {
+    max-width: 1200px;
+    margin-inline: auto;
+  }
+}

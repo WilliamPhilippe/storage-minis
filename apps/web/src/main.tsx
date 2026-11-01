@@ -2,11 +2,14 @@ import "antd/dist/reset.css";
 import "./ui/tokens.css";
 import "./ui/antd-overrides.css";
 import "./ui/base.css";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { detectLanguage, initI18n } from "./i18n/i18n";
+import { queryClient } from "./lib/trpc";
+import { createAppRouter } from "./router";
 import { AppProviders } from "./ui/AppProviders";
-import { LanguageSwitch } from "./ui/LanguageSwitch";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -17,11 +20,14 @@ const root = rootElement;
 // Languages load before the first render (WS-09).
 async function boot(): Promise<void> {
   await initI18n(detectLanguage());
+  const router = createAppRouter({ queryClient });
   createRoot(root).render(
     <StrictMode>
-      <AppProviders>
-        <LanguageSwitch />
-      </AppProviders>
+      <QueryClientProvider client={queryClient}>
+        <AppProviders>
+          <RouterProvider router={router} />
+        </AppProviders>
+      </QueryClientProvider>
     </StrictMode>,
   );
 }

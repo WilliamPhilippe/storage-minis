@@ -1,0 +1,95 @@
+/* Phones: a single column with space-4 gutters, vertically centred and
+   slightly above centre, and a footer line with a top border. */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-4);
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--space-4) calc(var(--space-7) * 2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.logo {
+  display: block;
+  align-self: flex-start;
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* The gap sets the spacing, so the paragraph's own margin goes; body-lg on
+   phones. */
+.titleBlock .lead {
+  margin: 0;
+  font: var(--text-body-lg);
+}
+
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.caption {
+  font: var(--text-caption);
+}
+
+.footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+/* bp-md: the same content in a 400px card centred on surface-page, with the
+   footer line below it. */
+@media (min-width: 768px) {
+  .header {
+    align-items: center;
+    height: 64px;
+    padding: 0 var(--space-5);
+  }
+
+  .main {
+    align-items: center;
+    padding-bottom: 64px;
+  }
+
+  .card {
+    width: 400px;
+    max-width: 100%;
+    padding: var(--space-6);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .titleBlock .lead {
+    font: var(--text-body);
+  }
+
+  .footer {
+    padding: var(--space-4) var(--space-5);
+    border-top: 0;
+  }
+}

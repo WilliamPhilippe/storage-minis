@@ -1,0 +1,19 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.logoLink {
+  display: flex;
+}
+
+.logo {
+  display: block;
+}
+
+.actions {
+  display: flex;
+  margin-inline-start: auto;
+}
