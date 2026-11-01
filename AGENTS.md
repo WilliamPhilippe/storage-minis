@@ -20,7 +20,10 @@ the types-only `@storage-minis/api/types` export; read its record before changin
 `apps/api/src/trpc` or adding a procedure. The
 [frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
 (2026-11-01) set the web app's architecture, design system, languages and four
-delivery steps; read them before frontend work. Step 6 is TBD until the app is
+delivery steps; read them before frontend work. The
+[PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) (approved
+2026-11-01) governs `apps/web`'s first PR, and [`docs/design/`](docs/design/README.md)
+holds the owner-approved design system and page designs. Step 6 is TBD until the app is
 validated locally; business operations, authentication, the frontend
 implementation, production and CI remain pending.
 
@@ -79,6 +82,7 @@ Hosting, deployment, backups, and operational targets remain T04 work. The 2026-
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
 | [Technical foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
+| [Design](docs/design/README.md) | For UI work, read the design system (`system/`) and the page's folder under `pages/` before building a page. Approved technical and requirements documents win where they disagree. |
 | [Requirements v0.8](docs/requirements/requirements-v0.8.md) | Published requirements and acceptance scenarios; consolidates every approved update log through 2026-11-01. Section 14 lists the decisions still open. |
 | [Entity map v0.9](docs/entities/entity-map-v0.9.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.8. Entities do not automatically imply SQL tables. |
 | [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. Apply dated decisions in order, including the 2026-10-23 DBML review; the index tracks propagation. |

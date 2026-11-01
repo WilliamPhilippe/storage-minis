@@ -1,0 +1,143 @@
+/* StorageMinis — generated from tokens.json */
+:root, [data-theme="light"] {
+  --surface-page: #f6f7f9; /* App and catalog page background behind cards and lists (antd colorBgLayout). */
+  --surface: #ffffff; /* Cards, list rows, inputs, drawers, the top bar (antd colorBgContainer / colorBgElevated). */
+  --surface-sunken: #eef0f3; /* Row hover and pressed fill, filter chips, image placeholders, read-only fields (antd colorFillSecondary). */
+  --line: #e3e6ea; /* Hairlines: card borders, list dividers, table rules (antd colorBorderSecondary / colorSplit). Decorative only, never the sole boundary of a control. */
+  --line-strong: #7f8791; /* Borders of inputs, selects, checkboxes and default buttons (antd colorBorder). Holds 3:1 on surface, surface-page and surface-sunken. */
+  --ink: #161b21; /* Body text and headings on surface, surface-page and surface-sunken (15:1 or more). Also the fill of primary buttons, selected menu items, checked controls (antd colorPrimary, colorText). */
+  --ink-hover: #2c343d; /* Hover fill of ink primary buttons (antd colorPrimaryHover). */
+  --ink-muted: #57606a; /* Secondary text: meta lines, help text, captions, table headers, placeholder. Reads 5.6:1 or more on surface, surface-page and surface-sunken (antd colorTextSecondary). */
+  --ink-disabled: #9aa1aa; /* Disabled text and icons only (exempt from contrast). Never for readable copy (antd colorTextDisabled). */
+  --on-ink: #ffffff; /* Text and icons on ink fills such as primary buttons (17:1). */
+  --racing-red: #ba0101; /* The brand colour, taken from the logo's red; in the UI only for attention (antd colorError). White on it reads 6.8:1. */
+  --racing-red-hover: #960000; /* Hover and pressed fill of attention buttons (antd colorErrorHover). */
+  --on-racing-red: #ffffff; /* Text and icons on racing-red fills. */
+  --racing-red-soft: #fdeceb; /* Background of attention tags, error alerts and invalid-field banners; text on it is racing-red-text. */
+  --racing-red-text: var(--racing-red); /* Red text: field errors, attention tag labels, overdue amounts. 5.9:1 on racing-red-soft. */
+  --success: #1b7a43; /* Success text and icons (Available, Paid). 4.7:1 on success-soft, 5.4:1 on surface (antd colorSuccess). */
+  --success-soft: #e5f3eb; /* Background of success tags and alerts. */
+  --warning: #94570a; /* Warning text and icons (Reserved with balance due, incomplete cost). 5.2:1 on warning-soft, 5.8:1 on surface (antd colorWarning). */
+  --warning-soft: #fdf2df; /* Background of warning tags and alerts. */
+  --info: #1d5fc2; /* Links, info text and icons (In Garage). 6:1 on surface, 5.6:1 on surface-page (antd colorInfo / colorLink). */
+  --info-soft: #e8f0fc; /* Background of info tags and alerts; selected filter chip. */
+  --focus-ring: var(--info); /* 2px solid keyboard focus outline with 2px offset on every interactive element. 5.6:1 or more on every surface. */
+  --shadow-raised: 0 1px 2px rgba(22, 27, 33, 0.06), 0 1px 3px rgba(22, 27, 33, 0.08); /* Pressed or hovered catalog cards; the top bar once the page scrolls. */
+  --shadow-overlay: 0 8px 24px rgba(22, 27, 33, 0.14), 0 2px 6px rgba(22, 27, 33, 0.08); /* Dropdowns, popovers, modals, bottom drawers (antd boxShadowSecondary). */
+  --shadow-fab: 0 6px 16px rgba(22, 27, 33, 0.24), 0 2px 4px rgba(22, 27, 33, 0.12); /* The floating menu button on phones. */
+  --shadow-sticky: 0 -1px 0 #e3e6ea, 0 -4px 12px rgba(22, 27, 33, 0.06); /* Sticky action bar at the bottom of phone forms. */
+}
+:root {
+  --space-1: 4px; /* Icon-to-label gap, tag padding block (antd paddingXXS / marginXXS). */
+  --space-2: 8px; /* Gap between related items: label to input, tag to tag, row meta lines (antd paddingXS). */
+  --space-3: 12px; /* List-row padding block, compact card padding, filter chip padding (antd paddingSM). */
+  --space-4: 16px; /* Page gutter on phones, card padding, gap between form fields (antd padding). */
+  --space-5: 24px; /* Page gutter from tablet up, gap between page sections (antd paddingLG). */
+  --space-6: 32px; /* Gap between major page regions on desktop (antd paddingXL). */
+  --space-7: 48px; /* Empty-state and page-top breathing room. */
+  --radius-sm: 4px; /* Tags, checkboxes, small buttons (antd borderRadiusSM). */
+  --radius-md: 6px; /* Buttons, inputs, selects, list cards (antd borderRadius). */
+  --radius-lg: 10px; /* Catalog cards, drawers' top corners, modals, image frames (antd borderRadiusLG). */
+  --radius-full: 999px; /* Avatars, status dots and filter chips only. */
+  --control-sm: 32px; /* Dense desktop toolbars and table actions only (antd controlHeightSM). */
+  --control-md: 40px; /* Default control height on desktop (antd controlHeight). */
+  --control-touch: 44px; /* Every control on phones: buttons, inputs, selects, list-row tap targets (antd controlHeightLG; set componentSize large below md). */
+  --fab-size: 56px; /* Floating menu button diameter on phones. */
+  --fab-offset: 16px; /* Floating menu button distance from the right and bottom edges. */
+  --sider-width: 240px; /* Expanded desktop sidebar. */
+  --sider-collapsed: 72px; /* Collapsed desktop sidebar. */
+  --bp-sm: 576px; /* Large phones in landscape; catalog grid stays two columns. */
+  --bp-md: 768px; /* Tablet: the drawer menu becomes a collapsible side menu; controls drop to control-md; gutters grow to space-5. */
+  --bp-lg: 992px; /* Desktop: side menu open by default; catalog grid three to four columns. */
+  --bp-xl: 1200px; /* Wide desktop: content max width 1200px, centred. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --text-title-xl: 600 28px/36px var(--font-sans); /* Page title from tablet widths up (antd fontSizeHeading2 range). */
+  --text-title-lg: 600 22px/30px var(--font-sans); /* Page title on phones; drawer and modal titles on desktop. */
+  --text-title: 600 18px/26px var(--font-sans); /* Section headings inside a page; card titles. */
+  --text-heading: 600 16px/24px var(--font-sans); /* List-row and catalog-card titles; form group labels. */
+  --text-body-lg: 400 16px/24px var(--font-sans); /* Text inside inputs and large controls on phones (16px prevents iOS zoom on focus); catalog body copy (antd fontSizeLG). */
+  --text-body: 400 14px/22px var(--font-sans); /* Default body text, table cells, desktop controls (antd fontSize). */
+  --text-label: 500 14px/22px var(--font-sans); /* Form field labels and button text. */
+  --text-caption: 400 12px/20px var(--font-sans); /* Meta lines, timestamps, tag text, helper counts; always ink-muted or a status colour (antd fontSizeSM). */
+  --text-money-lg: 600 20px/28px var(--font-sans); /* Totals and balances (sale total, outstanding balance). Set font-variant-numeric: tabular-nums. */
+  --text-money: 600 15px/22px var(--font-sans); /* Prices in list rows and catalog cards. Set font-variant-numeric: tabular-nums. */
+  --text-item-id: 500 13px/20px var(--font-mono); /* Item IDs and SKUs wherever a person may read them aloud or compare them; ink-muted in meta lines, ink when it is the subject. */
+}
+.title-xl {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.title-lg {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.title {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.heading {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.body-lg {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.caption {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.money-lg {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.money {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.item-id {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
