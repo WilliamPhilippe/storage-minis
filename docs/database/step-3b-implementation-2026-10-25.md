@@ -13,11 +13,15 @@ DBML domain families, with explicit TypeScript-to-SQL column mappings and shared
 enums. The compiled package exports `schema`; `createDatabase` supplies its typed
 Drizzle handle. Importing the package opens no connection.
 
-The migration chain is [0000_base.sql](../../packages/db/drizzle/0000_base.sql)
-and [0001_customer_name_whitespace.sql](../../packages/db/drizzle/0001_customer_name_whitespace.sql),
-with the native Drizzle snapshots and journal committed together. The second
-migration extends the Customer name check to tabs/newlines as well as spaces;
-the already-tested base artifact is preserved. History is stored in
+The delivered migration chain was `0000_base.sql` and
+`0001_customer_name_whitespace.sql`, with the native Drizzle snapshots and journal
+committed together. The second migration extended the Customer name check to
+tabs/newlines as well as spaces. On 2026-10-31 the foundation restructure (D8)
+regenerated the chain as
+[0000_inventory_id_base36.sql](../../packages/db/drizzle/0000_inventory_id_base36.sql),
+a Drizzle custom migration for the base36 function, and
+[0001_baseline.sql](../../packages/db/drizzle/0001_baseline.sql), which matches the
+reviewed tables and folds in the second migration's check. History is stored in
 `drizzle.__drizzle_migrations`. No development application, seed, administrator
 bootstrap, import, API or production migration was performed in this delivery.
 
@@ -83,58 +87,44 @@ arbitrary SQL deletion, subject-ID changes or edits to audit snapshots.
 
 ## Command contract
 
-After one-time Docker/Doppler setup:
+**Updated 2026-10-31 for the [foundation restructure](../technical/technical-direction.md#foundation-restructure-2026-10-31).**
+The [original 2026-10-25 contract](https://github.com/WilliamPhilippe/storage-minis/blob/3f1ae6c8c105a56663d002e06f97f7843c57880c/docs/database/step-3b-implementation-2026-10-25.md#command-contract) ran these commands
+through the tooling container and Doppler launcher, with a supervising process.
+The migration chain was regenerated (D8) as `0000_inventory_id_base36`, a Drizzle
+custom migration, followed by the generated `0001_baseline`; the baseline
+matches the reviewed chain except that it folds in the customer name check.
 
 ```sh
-pnpm docker:up
-pnpm docker:migrate
+pnpm db:up
+pnpm db:migrate
 ```
 
-Startup preserves storage and performs no migrations. The explicit migration
-command applies only unapplied committed SQL to the development target. Repeating
-it is safe. First development application remains a separate owner action after
-reviewing SQL and the test evidence, as required by the approved Step 3 plan.
+Startup preserves storage and performs no migrations. `pnpm db:migrate` runs the
+compiled [migrator](../../packages/db/src/migrate.ts) as the owner role. It applies
+only unapplied committed SQL to the development database, and repeating it is
+safe. The parity stack and the later VPS deploy run the same migrator in the
+`migrate` Compose service before the API starts.
 
 Generation is offline:
 
 ```sh
-./scripts/tooling.sh run pnpm db:generate
-# For a later named change:
-./scripts/tooling.sh run pnpm db:generate -- --name describe_change
+pnpm db:generate -- --name describe_change
 ```
 
-Generation executes the pinned native Drizzle CLI from `packages/db`, using a
-relative `./drizzle` output path. Kit 0.31.11 incorrectly prepends `./` to absolute
-snapshot paths on repeat generation; keeping the package working directory
-fixed avoids that upstream behavior. Its generation handler also catches some
-exceptions with status zero, so the supervisor requires the native terminal
-success message in addition to status zero. No-change generation must preserve
-all artifacts.
+`drizzle-kit generate` runs from `packages/db` with a relative `./drizzle` output
+path, because Kit 0.31.11 prepends `./` to absolute snapshot paths on repeat
+generation. Kit can also exit 0 after a generation error, so confirm its final
+line. No-change generation must preserve all artifacts.
 
-Application validates the exact approved dev/test tuple, checks that the native
-SQL/journal chain exists and is nonempty before connecting, and passes only
-component credentials to the runner. The migrator's actual pg connection receives
-5s lock / 30s statement / 30s idle-in-transaction timeouts through replaced
-`PGOPTIONS`, plus a 2s connection timeout. The supervisor bounds the process at
-120s, forwards SIGINT/SIGTERM and forces termination after 5s. Failed commands
-log actual messages and nested causes/codes with password redaction. On
-2026-10-25 the owner approved calling the installed native
-`drizzle-orm/node-postgres/migrator` directly through the supervised
-[application runner](../../packages/db/scripts/apply-migrations.ts). Kit 0.31.11's
-progress renderer otherwise discards migration failures before logging them.
-The native SQL/journal/history and transaction semantics are unchanged; no custom
-SQL executor or dependency change is introduced. The host launcher forwards
-command stderr across the Doppler boundary.
-An interrupted run requires inspecting history before retry; no automatic
-down migration or destructive recovery is supplied. Use the wrapper commands
-for these bounds; a raw CLI invocation bypasses their process supervision.
-
-The single custom SQL function is required because the selected Drizzle Kit
-version does not manage functions. It performs only positive integer/base36
-conversion, has no table reads, and is installed within the native migration
-transaction. Its body lives in the base SQL; future function changes require a
-reviewed forward migration. Stored generated expressions remain in Drizzle's
-snapshot, so normal generation retains their dependency without schema drift.
+The migrator refuses before connecting when the SQL/journal chain is missing or
+empty or `MIGRATION_DATABASE_URL` is invalid. Its connection sets a 5 s lock
+timeout, 30 s statement and idle-in-transaction timeouts and a 2 s connection
+timeout. It calls the installed native `drizzle-orm/node-postgres/migrator`
+directly, as approved on 2026-10-25, because Kit 0.31.11's progress renderer
+discards migration failures. Failures log the actual messages and nested
+causes/codes with password redaction. An interrupted run requires inspecting
+history before retry; no automatic down migration or destructive recovery is
+supplied.
 
 ## Deferred writers and acceptance
 
@@ -159,13 +149,18 @@ introduced. Structural fixture SQL is not evidence that these operations exist.
 
 ## Validation
 
-The schema integration suite runs only on the validated disposable test target:
+The schema integration suite runs only on a disposable database named
+`*_test`:
 
 ```sh
-pnpm docker:up:test
-./scripts/tooling.sh run-db test pnpm test:db
-./scripts/tooling.sh run pnpm check
+pnpm db:up
+pnpm test:db
+pnpm check
 ```
+
+Since 2026-10-31, the suite's global setup refuses any other database before
+connecting, then resets and migrates as the owner role; the fixture and
+constraint tests run as the app role.
 
 It resets only test schemas at suite startup, replays the complete committed
 chain, compares catalog coverage, verifies repeat application, and cleans its
@@ -175,7 +170,7 @@ provenance. Two overlapping sessions wait on unique-index locks before one loses
 each commitment/collection race. A copied full chain with an invalid final
 statement rolls back its tables, enums/function and migration history entries.
 An actual CLI blocked on migration-history access fails at the 5s lock bound;
-wrong tuple/password failures are sanitized. A blocked CLI interruption ends its
+invalid URL and wrong-password failures are sanitized. A blocked CLI interruption ends its
 backend within the lock-timeout bound and preserves migration history. Existing connection/lifecycle tests
 continue separately in the same suite. Final execution results are recorded in
 [technical direction](../technical/technical-direction.md#step-3b-structural-schema-2026-10-25).

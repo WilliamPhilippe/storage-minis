@@ -8,7 +8,16 @@ export interface ProcessResult {
   failure: string | undefined;
 }
 
-/** Test infrastructure only. Install ownership before the child can emit/exit. */
+/**
+ * Test infrastructure only. Install ownership before the child can emit/exit.
+ *
+ * Retained on purpose (foundation restructure review, 2026-10-31): Vitest
+ * bounds each test and hook, but it does not own processes that a test
+ * spawns. This helper adds a per-child deadline, an output limit and
+ * process-group cleanup, so a hung or leaked API child fails its test instead
+ * of outliving the suite. The former suite supervisor (process-tests.ts) is
+ * gone; Vitest's own timeouts and the config guard replace it.
+ */
 export function ownProcess(
   args: string[],
   options: Pick<SpawnOptions, "cwd" | "env"> & {

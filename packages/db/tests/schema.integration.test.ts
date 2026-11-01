@@ -26,42 +26,56 @@ import {
   schema,
 } from "../dist/index.js";
 
+// Global setup refused any database not named *_test, reset its schemas and
+// applied the committed chain as the owner role; repeat the guard for direct
+// imports. Fixture and constraint tests run as the app role (DATABASE_URL), so
+// they also exercise its grants. Migration-behavior tests use the owner role
+// (MIGRATION_DATABASE_URL), which alone can read the drizzle history schema.
 const config = readDatabaseConfig(process.env);
+const ownerConfig = readDatabaseConfig(process.env, "MIGRATION_DATABASE_URL");
 requireTestDatabase(config);
+requireTestDatabase(ownerConfig);
 const database = createDatabase(config);
+const owner = createDatabase(ownerConfig);
 const execute = promisify(execFile);
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
 const migrationsFolder = join(packageRoot, "drizzle");
 let client: PoolClient;
 
-// This suite owns only the explicitly validated disposable test database.
-async function freshSchema() {
-  await database.db.execute(sql`DROP SCHEMA public CASCADE`);
-  await database.db.execute(sql`CREATE SCHEMA public`);
-  await database.db.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE`);
-}
-
 function applyCommand(environment: NodeJS.ProcessEnv = process.env) {
-  return execute(process.execPath, ["--import", "tsx", "scripts/migrate.ts"], {
+  return execute(process.execPath, ["dist/migrate.js"], {
     cwd: packageRoot,
     env: environment,
     timeout: 15_000,
   });
 }
 
+function history(connection: Pick<PoolClient, "query"> = owner.db.$client) {
+  return connection.query(
+    "SELECT * FROM drizzle.__drizzle_migrations ORDER BY id",
+  );
+}
+
+/** An owner session inside a transaction; the test must roll it back. */
+async function ownerTransaction() {
+  const session = await owner.db.$client.connect();
+  await session.query("BEGIN");
+  return session;
+}
+
 beforeAll(async () => {
   await database.check();
-  await freshSchema();
-  await applyCommand();
+  await owner.check();
 });
 afterAll(async () => {
   try {
+    // The app role has no TRUNCATE grant; remove committed race fixtures as owner.
     const tables = Object.values(schema).filter((value) => is(value, PgTable));
-    await database.db.$client.query(
+    await owner.db.$client.query(
       `TRUNCATE ${tables.map((table) => identifier(getTableConfig(table).name)).join(", ")}`,
     );
   } finally {
-    await database.close();
+    await Promise.all([database.close(), owner.close()]);
   }
 });
 beforeEach(async () => {
@@ -303,20 +317,37 @@ it("replays all 33 tables/316 columns/11 enums with every declared constraint", 
   }
 });
 
-it("repeat CLI application changes neither migration history nor schema", async () => {
-  const before = await client.query(
-    "SELECT * FROM drizzle.__drizzle_migrations ORDER BY id",
+it("lets the app role write rows but not change the schema or read history", async () => {
+  const privileges = await client.query<{ table: string; granted: string[] }>(
+    "SELECT table_name AS table, array_agg(privilege_type::text ORDER BY privilege_type) AS granted FROM information_schema.table_privileges WHERE grantee = current_user AND table_schema = 'public' GROUP BY table_name",
   );
+  expect(privileges.rows).toHaveLength(33);
+  for (const row of privileges.rows)
+    expect(row.granted).toEqual(["DELETE", "INSERT", "SELECT", "UPDATE"]);
+  const id = await insert("organizations", { name: "App role DML" });
+  await client.query(
+    "UPDATE organizations SET name = 'Updated' WHERE id = $1",
+    [id],
+  );
+  await client.query("DELETE FROM organizations WHERE id = $1", [id]);
+  for (const statement of [
+    "CREATE TABLE app_role_probe (id integer)",
+    "CREATE SCHEMA app_role_probe",
+    "ALTER TABLE organizations ADD COLUMN app_role_probe integer",
+    "CREATE INDEX app_role_probe ON organizations (name)",
+    "DROP TABLE organizations",
+    "TRUNCATE organizations",
+    "SELECT * FROM drizzle.__drizzle_migrations",
+  ])
+    await rejected(statement, [], "42501");
+});
+
+it("repeat CLI application changes neither migration history nor schema", async () => {
+  const before = await history();
   expect(before.rowCount).toBe(readMigrationFiles({ migrationsFolder }).length);
   const output = await applyCommand();
   expect(output.stdout).toContain("already-applied migrations were skipped");
-  expect(
-    (
-      await client.query(
-        "SELECT * FROM drizzle.__drizzle_migrations ORDER BY id",
-      )
-    ).rows,
-  ).toEqual(before.rows);
+  expect((await history()).rows).toEqual(before.rows);
   expect(
     (
       await client.query(
@@ -334,11 +365,11 @@ it("a failed later statement rolls back the entire copied migration chain", asyn
   // statement at its end. Committed SQL/journal and public fixtures stay intact.
   const schemaName = "migration_rollback_fixture";
   const isolated = new Pool({
-    host: config.host,
-    port: config.port,
-    database: config.database,
-    user: config.user,
-    password: config.password,
+    host: ownerConfig.host,
+    port: ownerConfig.port,
+    database: ownerConfig.database,
+    user: ownerConfig.user,
+    password: ownerConfig.password,
     ssl: false,
     max: 1,
     options: `-c search_path=${schemaName}`,
@@ -346,7 +377,7 @@ it("a failed later statement rolls back the entire copied migration chain", asyn
     statement_timeout: 3_000,
   });
   try {
-    await database.db.execute(sql`CREATE SCHEMA migration_rollback_fixture`);
+    await owner.db.execute(sql`CREATE SCHEMA migration_rollback_fixture`);
     await cp(migrationsFolder, copy, { recursive: true });
     const files = (await readdir(copy))
       .filter((file) => file.endsWith(".sql"))
@@ -385,17 +416,17 @@ it("a failed later statement rolls back the entire copied migration chain", asyn
     ).toEqual([{ count: 0 }]);
     expect(
       (
-        await database.db.$client.query(
+        await owner.db.$client.query(
           "SELECT count(*)::integer AS count FROM migration_failure_history.__drizzle_migrations",
         )
       ).rows,
     ).toEqual([{ count: 0 }]);
   } finally {
     await isolated.end();
-    await database.db.execute(
+    await owner.db.execute(
       sql`DROP SCHEMA IF EXISTS migration_rollback_fixture CASCADE`,
     );
-    await database.db.execute(
+    await owner.db.execute(
       sql`DROP SCHEMA IF EXISTS migration_failure_history CASCADE`,
     );
     await rm(copy, { recursive: true, force: true });
@@ -999,53 +1030,69 @@ it("round-trips the compiled typed schema through Drizzle", async () => {
   });
 });
 
+async function waitingMigration(observer: PoolClient) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const activity = await observer.query<{ pid: number; query: string }>(
+      "SELECT pid, query FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%__drizzle_migrations%' AND pid <> pg_backend_pid()",
+    );
+    const row = activity.rows[0];
+    if (row) return row;
+    await observer.query("SELECT pg_sleep(0.02)");
+  }
+  return undefined;
+}
+
 it("bounds CLI lock waits on the actual migration connection and sanitizes failures", async () => {
   // Reading migration history needs ACCESS SHARE; this conflicts with the lock.
-  await client.query(
-    "LOCK TABLE drizzle.__drizzle_migrations IN ACCESS EXCLUSIVE MODE",
-  );
-  const started = performance.now();
-  const pending = applyCommand().then(
-    () => null,
-    (error: unknown) => error,
-  );
-  // Verify actual backend settings through pg_stat_activity while CLI is waiting.
-  const observer = await database.db.$client.connect();
+  const holder = await ownerTransaction();
+  const observer = await owner.db.$client.connect();
   try {
-    let options = "";
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const activity = await observer.query<{ query: string }>(
-        "SELECT query FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%__drizzle_migrations%' AND pid <> pg_backend_pid()",
-      );
-      if (activity.rowCount) {
-        options = activity.rows[0]?.query ?? "";
-        break;
-      }
-      await observer.query("SELECT pg_sleep(0.02)");
-    }
-    expect(options).toContain("__drizzle_migrations");
+    await holder.query(
+      "LOCK TABLE drizzle.__drizzle_migrations IN ACCESS EXCLUSIVE MODE",
+    );
+    const started = performance.now();
+    const pending = applyCommand().then(
+      () => null,
+      (error: unknown) => error,
+    );
+    // Observe the real migration backend while it waits on the lock.
+    expect((await waitingMigration(observer))?.query).toContain(
+      "__drizzle_migrations",
+    );
     const failure = await pending;
     expect(failure).toMatchObject({ code: 1 });
     expect(String(failure)).toContain(
       "canceling statement due to lock timeout",
     );
     expect(String(failure)).toContain("55P03");
-    expect(String(failure)).not.toContain(config.password);
+    expect(String(failure)).not.toContain(ownerConfig.password);
     expect(performance.now() - started).toBeGreaterThan(4_500);
     expect(performance.now() - started).toBeLessThan(9_000);
   } finally {
     observer.release();
+    await holder.query("ROLLBACK");
+    holder.release();
   }
 });
 
-it("logs invalid-target and authentication messages without exposing injected values", async () => {
+it("logs missing, invalid and rejected URLs without exposing passwords", async () => {
+  const wrongPassword = "deliberately-invalid-fixture-password";
+  const rejectedUrl = new URL(process.env.MIGRATION_DATABASE_URL ?? "");
+  rejectedUrl.password = wrongPassword;
+  const missing: NodeJS.ProcessEnv = { ...process.env };
+  delete missing.MIGRATION_DATABASE_URL;
   for (const [environment, message] of [
+    [missing, "MIGRATION_DATABASE_URL is required."],
     [
-      { ...process.env, DB_TARGET: "test", PGDATABASE: "storage_minis_dev" },
-      "Invalid database configuration",
+      {
+        ...process.env,
+        MIGRATION_DATABASE_URL:
+          "mysql://storage_minis_owner:secret-sentinel@127.0.0.1:5434/storage_minis_test",
+      },
+      "Invalid MIGRATION_DATABASE_URL.",
     ],
     [
-      { ...process.env, PGPASSWORD: "deliberately-invalid-fixture-password" },
+      { ...process.env, MIGRATION_DATABASE_URL: rejectedUrl.href },
       "password authentication failed",
     ],
   ] as const) {
@@ -1055,72 +1102,40 @@ it("logs invalid-target and authentication messages without exposing injected va
     );
     expect(failure).toMatchObject({ code: 1 });
     expect(String(failure)).toContain(message);
-    expect(String(failure)).not.toContain(config.password);
-    expect(String(failure)).not.toContain(
-      "deliberately-invalid-fixture-password",
-    );
+    expect(String(failure)).not.toContain(ownerConfig.password);
+    expect(String(failure)).not.toContain(wrongPassword);
+    expect(String(failure)).not.toContain("secret-sentinel");
   }
 });
 
-it("logs the driver's authentication message from db:check", async () => {
-  const failure: unknown = await execute(
-    process.execPath,
-    ["--import", "tsx", "scripts/check.ts"],
-    {
-      cwd: packageRoot,
-      env: {
-        ...process.env,
-        PGPASSWORD: "deliberately-invalid-fixture-password",
-      },
-      timeout: 15_000,
-    },
-  ).then(
-    () => null,
-    (error: unknown) => error,
-  );
-  expect(failure).toMatchObject({ code: 1 });
-  expect(String(failure)).toContain("Database command failed");
-  expect(String(failure)).toContain("password authentication failed");
-  expect(String(failure)).toContain("28P01");
-  expect(String(failure)).not.toContain(
-    "deliberately-invalid-fixture-password",
-  );
-});
-
 it("interrupts a blocked migration without leaking its backend or changing history", async () => {
-  const history = await client.query(
-    "SELECT * FROM drizzle.__drizzle_migrations ORDER BY id",
-  );
-  await client.query(
+  const before = await history();
+  const holder = await ownerTransaction();
+  const observer = await owner.db.$client.connect();
+  await holder.query(
     "LOCK TABLE drizzle.__drizzle_migrations IN ACCESS EXCLUSIVE MODE",
   );
-  const child = spawn(
-    process.execPath,
-    ["--import", "tsx", "scripts/migrate.ts"],
-    {
-      cwd: packageRoot,
-      stdio: ["ignore", "ignore", "ignore"],
-    },
-  );
-  const exited = new Promise<number | null>((resolve, reject) => {
+  const child = spawn(process.execPath, ["dist/migrate.js"], {
+    cwd: packageRoot,
+    stdio: ["ignore", "ignore", "ignore"],
+  });
+  const exited = new Promise<{
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }>((resolve, reject) => {
     child.once("error", reject);
-    child.once("exit", resolve);
+    child.once("exit", (code, signal) => {
+      resolve({ code, signal });
+    });
   });
   const deadline = setTimeout(() => child.kill("SIGKILL"), 10_000);
-  const observer = await database.db.$client.connect();
   try {
-    let pid: number | undefined;
-    for (let attempt = 0; attempt < 100; attempt += 1) {
-      const activity = await observer.query<{ pid: number }>(
-        "SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock' AND query LIKE '%__drizzle_migrations%' AND pid <> pg_backend_pid()",
-      );
-      pid = activity.rows[0]?.pid;
-      if (pid !== undefined) break;
-      await observer.query("SELECT pg_sleep(0.02)");
-    }
+    const pid = (await waitingMigration(observer))?.pid;
     expect(pid).toBeTypeOf("number");
     child.kill("SIGTERM");
-    expect(await exited).toBe(1);
+    // No custom handler: Node's default SIGTERM action ends the process, so
+    // its socket closes and PostgreSQL rolls the open transaction back.
+    expect(await exited).toEqual({ code: null, signal: "SIGTERM" });
     // PostgreSQL can observe a closed peer only after its lock wait wakes.
     // Require backend removal within the configured five-second lock bound.
     let remaining = 1;
@@ -1134,18 +1149,15 @@ it("interrupts a blocked migration without leaking its backend or changing histo
       await observer.query("SELECT pg_sleep(0.05)");
     }
     expect(remaining).toBe(0);
-    expect(
-      (
-        await client.query(
-          "SELECT * FROM drizzle.__drizzle_migrations ORDER BY id",
-        )
-      ).rows,
-    ).toEqual(history.rows);
+    // The holder still owns the lock, so read history in its own transaction.
+    expect((await history(holder)).rows).toEqual(before.rows);
   } finally {
     clearTimeout(deadline);
     if (child.exitCode === null && child.signalCode === null)
       child.kill("SIGKILL");
     await exited;
     observer.release();
+    await holder.query("ROLLBACK");
+    holder.release();
   }
 });

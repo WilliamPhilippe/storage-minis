@@ -4,21 +4,19 @@
 the local technical foundation for [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26).
 Assign one step to one agent, deliver one PR, and hand off before the next step.
 
-**Current status, 2026-10-29:** Steps 1–4 are implemented. Docker tooling,
-separate development/test PostgreSQL, Drizzle connection/schema/migrations, and
-the diagnostic Fastify API are verified. Step 4 includes portable runtime and
-development images, reload, guarded process tests and bounded image verification.
-All eighteen Step 4 criteria passed; see
-[final verification and handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29)
-and [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107).
-Steps 5–6 and full T06/business/production acceptance remain pending.
+**Current status, 2026-11-01:** Steps 1–4 are implemented, and the
+[foundation restructure](technical-direction.md#foundation-restructure-2026-10-31)
+replaced their tooling container and Doppler launchers with host Node, standard
+Compose, committed local values, owner/app database roles, regenerated migrations
+and a parity stack ([PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110)).
+Steps 5–6 are re-planned against this foundation. Full T06/business/production
+acceptance remains pending.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.
-Read the [approved Compose direction](technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25)
-and [one-time setup amendment](technical-direction.md#one-time-local-setup-2026-10-25)
-before changing container commands or configuration. First development migration
-application remains an explicit owner action; replay tests use disposable storage.
+Read the [foundation restructure record](technical-direction.md#foundation-restructure-2026-10-31)
+before changing local commands, Compose files or configuration. Migrations apply
+only on explicit request; test setup replays them on the disposable test database.
 
 This guide owns the remaining step sequence, planning instructions and completion
 criteria. [Technical direction](technical-direction.md) owns approved outcomes;
@@ -28,18 +26,19 @@ is not implementation approval. Reuse recorded approvals within their scope.
 
 ## Execution order and progress
 
-The six assignments separate the Node tooling container from the original
-five-step checklist. Guide step numbers are workflow references, not new issue,
+The six assignments separated the Node tooling container (removed on 2026-10-31)
+from the original five-step checklist. Guide step numbers are workflow references, not new issue,
 requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 
 | Step | Agent assignment | Prerequisite delivery | Progress / evidence |
 | --- | --- | --- | --- |
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24); [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
-| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [3A implementation](technical-direction.md#step-3a-drizzle-implementation-2026-10-25), [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged. [Approved structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106), merged. [Recorded results](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): 27 unit and 30 PostgreSQL tests. First development application remains an explicit owner action. |
+| 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [3A implementation](technical-direction.md#step-3a-drizzle-implementation-2026-10-25), [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged. [Approved structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106), merged. [Recorded results](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): 27 unit and 30 PostgreSQL tests. First development application was an explicit owner action until the 2026-10-31 restructure; its approved clean-slate check (V1) makes `pnpm db:migrate` part of local setup. |
 | 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Steps 5/6 and full T06 remain pending. |
-| 5 | tRPC and Zod integration | Steps 1–4 | Not started |
-| 6 | Repeatable verification and handoff | Steps 1–5 | Not started |
+| — | [Foundation restructure](foundation-restructure-plan-2026-10-31.md) (not a numbered step) | Steps 1–4 | Implemented in [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), stacked on #109; per-group evidence, V1–V7 and superseded-versus-re-proven Step 1–4 evidence are in the PR and the [technical direction record](technical-direction.md#foundation-restructure-2026-10-31). |
+| 5 | tRPC and Zod integration | Steps 1–4, restructure | Not started; re-plan against the restructured foundation |
+| 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation |
 
 Begin the next assignment from the previous step's merged result, unless the
 owner explicitly approves another branch arrangement. Reinspect the repository
@@ -102,17 +101,17 @@ date, scope and rationale of approved outcomes in technical direction.
 
 ### Keep each implementation independently reviewable
 
-Use the approved [Doppler direction](technical-direction.md#environment-configuration--doppler-2026-10-24)
-when planning configuration. The copied-`.env`/native-loader proposal is
-superseded. Distinguish injection into host Compose from injection into container
-processes. Keep the variable inventory secret-free; identify the actual Doppler
-project/config and credential bootstrap without inventing account details.
+Plan configuration with the [restructure's configuration model](local-development.md#configuration):
+committed local development/test values, real environment values taking
+precedence, Compose `${VAR:?}` for production secrets, and Doppler `prd` on the
+VPS only. A real development secret adds `doppler.yaml` and `doppler run`, which
+needs its own approval. Keep production values out of committed files, images and
+test/cache artifacts.
 
-Prefer Docker images for new tools and services. Preserve existing host tools;
-explain a necessary host installation and obtain approval before attempting it.
-Keep host Compose orchestration separate from Node commands inside the tooling
-container. Follow the proposal's distinction between host-mapped ports and
-container service addresses.
+Node.js and pnpm run on the host; PostgreSQL and the production images run in
+Docker. Explain any new host installation and obtain approval before attempting
+it. Keep host-side URLs (`127.0.0.1:5433/5434`) distinct from the in-network
+URLs that `compose.yaml` builds.
 
 Implement only the assigned scope and the tests needed to prove it. Each agent
 owns verification of its change; Step 6 consolidates the workflow rather than
@@ -128,6 +127,11 @@ choices distinct in the proposal. Stop at the assigned step's handoff. A PR
 does not authorize merging, the next step or closing T06.
 
 ## Step 1 — Docker tooling environment
+
+**State: complete 2026-10-24; superseded 2026-10-31.** The
+[foundation restructure](technical-direction.md#foundation-restructure-2026-10-31)
+runs Node.js and pnpm on the host and removed this tooling image. The text below
+is the historical assignment.
 
 ### Why this step is necessary
 
@@ -193,6 +197,11 @@ the complete workflow from a clean container dependency installation.
 
 ## Step 2 — Development and test PostgreSQL
 
+**State: complete 2026-10-24; partly superseded 2026-10-31.** The two
+services remain; the restructure replaced superuser-only access, Doppler-held
+passwords and the Bash launcher with owner/app roles, committed local values and
+`db:*` package scripts. The text below is the historical assignment.
+
 ### Why this step is necessary
 
 The persistence layer needs a real PostgreSQL instance, and tests need separate
@@ -252,6 +261,12 @@ process health from DB readiness. Steps 5–6 can exercise the actual adapter an
 test environment without using operational storage as a disposable fixture.
 
 ## Step 3 — Drizzle connection and migration tooling
+
+**State: complete 2026-10-25; partly superseded 2026-10-31.** The factory,
+compiled exports and generate/review/apply workflow remain. The restructure
+replaced the fixed target tuple with `DATABASE_URL`, the command supervisors
+with `drizzle-kit generate` and `src/migrate.ts`, and regenerated the
+migration baseline. The text below is the historical assignment.
 
 ### Why this step is necessary
 
@@ -334,25 +349,27 @@ are no longer execution instructions.
   limited to 16 KiB and receive time to 10s; client request IDs are disabled.
 - Startup has a 17s watchdog. Repeated SIGINT/SIGTERM share a 10s cleanup bound:
   drain HTTP, then close DB. Successful signal exits are 130/143; failures use 1.
-  Compose gives API services 15s grace; development uses the approved SIGINT path.
+  Compose gives the API service 15s grace.
 - Plain Node starts the compiled nonroot runtime image without source mounts or
-  startup installation. The development service reloads API and compiled DB
-  changes. Stop watchers before clean finite builds; live checks remain uncached.
-- The bounded image verifier asserts exact host health responses and TERM 143,
-  then confirms removal of its owned probe. Schema/process/smoke/outage phases
-  use the shared test target exclusively and sequentially.
+  startup installation. Since the restructure, `pnpm dev` on the host reloads API
+  and compiled DB changes. Stop watchers before clean finite builds; live checks
+  remain uncached.
+- Since the restructure, the `pnpm test:stack` parity suite asserts exact health
+  responses, a nonroot API without mounts, `migrate` before `api` and SIGTERM 143,
+  then removes the stack. The schema and process suites share the test database
+  and run one at a time.
 
-Use [runtime/setup instructions](../../README.md#api-runtime-image),
-[development/recovery](../../README.md#api-development-and-reload) and
-[verification commands](../../README.md#automated-api-image-smoke). For later
-source/task/image changes, rerun affected proof against the changed artifacts.
+Use the [daily development loop](../../README.md#daily-development),
+[checks](../../README.md#checks) and [parity stack](../../README.md#parity-stack)
+instructions. For later source/task/image changes, rerun affected proof against
+the changed artifacts.
 
 ### Successor handoff
 
 | Consumer | Existing contract | Remaining work |
 | --- | --- | --- |
 | Step 5 | Fastify factory, `registerRoutes(app, database)`, safe HTTP boundaries and the existing API image/build path. | Add the real tRPC adapter/context, diagnostic schemas, adapter error tests and a type-only router export; rebuild the same image. |
-| Step 6 | Image verifier, exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions. | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
+| Step 6 | Parity stack suite (`pnpm test:stack`), exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions. | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
 
 Business routes, Firebase/bootstrap, Membership authorization, frontend,
 production and CI remain under their existing decision and delivery owners.
@@ -424,8 +441,8 @@ remaining business and operational acceptance gaps.
 
 ### Expected result and completion criteria
 
-A new checkout can follow the README from approved image build/dependency install
-to a verified diagnostic API. Completion requires evidence that:
+A new checkout can follow the README from host dependency install and database
+startup to a verified diagnostic API, both on the host and in the parity stack. Completion requires evidence that:
 
 - A built-process smoke harness starts the API, bounds readiness waiting, checks
   health and valid/invalid tRPC requests, signals shutdown and cleans up its child
@@ -452,8 +469,8 @@ and all five predecessor handoffs. Concentrate on:
 
 - Gaps between existing component tests and a real built process: readiness
   deadlines, child ownership, logs, process signals and cleanup.
-- Vitest project discovery, Doppler test-config/database targeting, setup/isolation
-  and cleanup; unit tests use explicit fixtures without contacting Doppler or a DB.
+- Vitest project discovery, committed test values and the `*_test` guard,
+  setup/isolation and cleanup; unit tests use explicit fixtures without a DB.
 - Turbo hashes, injection timing, strict environment filtering, artifact
   restoration and external state that source hashes cannot cover. Cached tasks
   must not fetch untracked configuration after their hash is computed.
@@ -461,8 +478,8 @@ and all five predecessor handoffs. Concentrate on:
   evidence and schema/application integrity evidence.
 
 The plan must provide a verification matrix of scenario, command/test, expected
-outcome, resources and cleanup. Include missing/invalid Doppler credentials, wrong
-config/test target, approved offline/fallback behavior, precedence and redaction.
+outcome, resources and cleanup. Include missing/invalid database URLs, a non-test
+target, environment precedence and redaction.
 Identify which checks already exist, which need
 automation and which are gated; avoid merely rerunning every predecessor check
 without a specific integration concern. Include a final evidence and limitations

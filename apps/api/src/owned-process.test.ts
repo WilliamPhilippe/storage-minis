@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import { expect, it } from "vitest";
-import { ownProcess } from "../scripts/owned-process.js";
+import { ownProcess } from "../tests/owned-process.js";
 
 async function requireGone(pid: number | undefined) {
   expect(pid).toBeTypeOf("number");
@@ -89,34 +89,15 @@ it("shares termination ownership for repeated outer signals", async () => {
   });
 });
 
-it("runner and config refuse dev/mixed/URL targets before child or socket acquisition", () => {
-  const base = {
-    DB_TARGET: "test",
-    PGHOST: "postgres_test",
-    PGPORT: "5432",
-    PGDATABASE: "storage_minis_test",
-    PGUSER: "postgres",
-    PGPASSWORD: "guard-secret",
-  };
-  for (const entry of [
-    "scripts/process-tests.ts",
-    "vitest.process.config.mts",
-  ]) {
-    for (const override of [
-      { DB_TARGET: "dev", PGHOST: "postgres", PGDATABASE: "storage_minis_dev" },
-      { PGHOST: "postgres" },
-      { PGDATABASE: "storage_minis_dev" },
-      { PGPORT: "5434" },
-      { DATABASE_URL: "postgres://guard-secret@host/database" },
-    ]) {
-      const result = spawnSync(
-        process.execPath,
-        [
-          "--import",
-          "tsx",
-          "--input-type=module",
-          "-e",
-          `
+function importConfig(DATABASE_URL: string) {
+  return spawnSync(
+    process.execPath,
+    [
+      "--import",
+      "tsx",
+      "--input-type=module",
+      "-e",
+      `
         import cp from 'node:child_process';
         import { Socket } from 'node:net';
         import { syncBuiltinESMExports } from 'node:module';
@@ -124,27 +105,42 @@ it("runner and config refuse dev/mixed/URL targets before child or socket acquis
         Socket.prototype.connect = () => { console.error('UNEXPECTED_ACQUISITION'); throw new Error('unexpected socket'); };
         syncBuiltinESMExports();
         await import('@storage-minis/db');
-        try { await import('./${entry}'); }
-        catch { console.error('guard refused'); process.exitCode = 1; }
+        try { await import('./vitest.process.config.mts'); console.log('config loaded'); }
+        catch (error) { console.error('guard refused:', error.message); process.exitCode = 1; }
       `,
-        ],
-        {
-          cwd: new URL("..", import.meta.url),
-          env: { ...base, ...override },
-          encoding: "utf8",
-          timeout: 5_000,
-        },
-      );
-      expect(result.status).toBe(1);
-      expect(result.stdout + result.stderr).toContain(
-        entry.startsWith("scripts/")
-          ? "API process tests require the exact explicit test configuration."
-          : "guard refused",
-      );
-      expect(result.stdout + result.stderr).not.toContain(
-        "UNEXPECTED_ACQUISITION",
-      );
-      expect(result.stdout + result.stderr).not.toContain("guard-secret");
-    }
+    ],
+    {
+      cwd: new URL("..", import.meta.url),
+      env: { DATABASE_URL },
+      encoding: "utf8",
+      timeout: 5_000,
+    },
+  );
+}
+
+it("process config refuses non-test and invalid URLs before child or socket acquisition", () => {
+  const accepted = importConfig(
+    "postgres://storage_minis_app:guard-secret@127.0.0.1:5434/storage_minis_test",
+  );
+  expect(accepted.status).toBe(0);
+  expect(accepted.stdout).toContain("config loaded");
+  for (const [DATABASE_URL, message] of [
+    [
+      "postgres://storage_minis_app:guard-secret@127.0.0.1:5433/storage_minis_dev",
+      "require a database whose name ends in _test",
+    ],
+    [
+      "postgres://storage_minis_app:guard-secret@postgres:5432/storage_minis",
+      "require a database whose name ends in _test",
+    ],
+    ["postgres://guard-secret@host/database", "Invalid DATABASE_URL."],
+  ] as const) {
+    const result = importConfig(DATABASE_URL);
+    const output = result.stdout + result.stderr;
+    expect(result.status).toBe(1);
+    expect(output).toContain("guard refused:");
+    expect(output).toContain(message);
+    expect(output).not.toContain("UNEXPECTED_ACQUISITION");
+    expect(output).not.toContain("guard-secret");
   }
 }, 15_000);
