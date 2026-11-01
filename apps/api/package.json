@@ -6,6 +6,11 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    "./types": {
+      "types": "./dist/types.d.ts"
+    }
+  },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit --project tsconfig.json",
@@ -16,7 +21,11 @@
   },
   "dependencies": {
     "@storage-minis/db": "workspace:*",
+    "@trpc/server": "11.22.1",
     "fastify": "5.12.7",
     "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@trpc/client": "11.22.1"
   }
 }

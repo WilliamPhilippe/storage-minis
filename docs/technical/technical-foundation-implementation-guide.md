@@ -38,11 +38,11 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | 1 | Docker tooling environment | Existing workspace/tooling | [Implemented and verified](technical-direction.md#step-1-docker-tooling-2026-10-24); [PR #103](https://github.com/WilliamPhilippe/storage-minis/pull/103), merged. |
 | 2 | Development and test PostgreSQL | Step 1 | [Implemented and verified](technical-direction.md#step-2-local-postgresql-planning-2026-10-24); [PR #104](https://github.com/WilliamPhilippe/storage-minis/pull/104), merged. |
 | 3 | 3A: Drizzle tooling; 3B: base migration | Steps 1–2; schema approval for 3B | [3A implementation](technical-direction.md#step-3a-drizzle-implementation-2026-10-25), [PR #105](https://github.com/WilliamPhilippe/storage-minis/pull/105), merged. [Approved structural implementation and writer deferrals](../database/step-3b-implementation-2026-10-25.md), [PR #106](https://github.com/WilliamPhilippe/storage-minis/pull/106), merged. [Recorded results](technical-direction.md#db-command-error-visibility-follow-up-2026-10-25): 27 unit and 30 PostgreSQL tests. First development application was an explicit owner action until the 2026-10-31 restructure; its approved clean-slate check (V1) makes `pnpm db:migrate` part of local setup. |
-| 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Steps 5/6 and full T06 remain pending. |
+| 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Step 6 and full T06 remain pending. |
 | — | [Foundation restructure](foundation-restructure-plan-2026-10-31.md) (not a numbered step) | Steps 1–4 | Implemented in [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), stacked on #109; per-group evidence, V1–V7 and superseded-versus-re-proven Step 1–4 evidence are in the PR and the [technical direction record](technical-direction.md#foundation-restructure-2026-10-31). |
 | — | [API composition and error-log rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (not a numbered step) | Steps 1–4, restructure | Implemented in [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112): plugin composition root, `registerRoutes` removed, allowlisted error logs and JSON lifecycle lines; evidence in the record and the PR. |
-| 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | [Plan](step-5-trpc-plan-2026-11-01.md) approved on 2026-11-01 (P5-01–P5-10; [approval record](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)); implementation pending. |
-| 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation |
+| 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | Implemented in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114) from the [approved plan](step-5-trpc-plan-2026-11-01.md) (P5-01–P5-10) and six implementation-time approvals: `/trpc` adapter, `diagnostics.echo`, one error envelope, `procedure` log field and the types-only `AppRouter` export. Outcome and evidence are in the [approval record](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01); the [Step 6 handoff](#handoff-to-step-6) lists what Step 6 receives. |
+| 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation and the Step 5 handoff. |
 
 Begin the next assignment from the previous step's merged result, unless the
 owner explicitly approves another branch arrangement. Reinspect the repository
@@ -379,8 +379,8 @@ the changed artifacts.
 
 | Consumer | Existing contract | Remaining work |
 | --- | --- | --- |
-| Step 5 | `buildApp` composition root (register the adapter with `app.register`), `database.db` through `AppDependencies`, fixed client errors with allowlisted error logs, and the existing API image/build path. | Add the real tRPC adapter/context, diagnostic schemas, adapter error tests and a type-only router export; rebuild the same image. |
-| Step 6 | Parity stack suite (`pnpm test:stack`), exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions. | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
+| Step 5 | `buildApp` composition root (register the adapter with `app.register`), `database.db` through `AppDependencies`, fixed client errors with allowlisted error logs, and the existing API image/build path. | Delivered in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114). |
+| Step 6 | Parity stack suite (`pnpm test:stack`), exact health/exits/deadlines, guarded process tests, task graph and setup/log/stop instructions; the [Step 5 handoff](#handoff-to-step-6). | Add valid/invalid tRPC HTTP checks, reproduce Steps 1–5 from a clean checkout and recheck affected cache/integration evidence. |
 
 Business routes, Firebase/bootstrap, Membership authorization, frontend,
 production and CI remain under their existing decision and delivery owners.
@@ -424,6 +424,13 @@ settles P5-01–P5-10: packages, transport, body limits, error envelope, logs,
 context, procedure, type export, layout and tests. Implement it as written and
 bring any deviation back for approval.
 
+**Implemented (2026-11-01):** [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114)
+meets the five completion criteria with the plan's evidence, as recorded in the
+[approval record](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01).
+The record also lists six implementation-time approvals: the adapter route, the
+query JSON code, HEAD, oversized uploads, the JSON content type and the
+TypeScript peer.
+
 ### Research and planning focus
 
 Read the proposal's [tRPC/Zod step](t06-foundation-proposal-2026-10-24.md#7-step-4--trpc-with-zod)
@@ -455,6 +462,27 @@ Step 6 receives a concrete HTTP success/failure contract for end-to-end smoke
 checks. Future frontend work can consume API types, and future protected routers
 can add approved authorization to a proven adapter rather than inventing a second
 transport or resource lifecycle.
+
+### Handoff to Step 6
+
+- **HTTP contract:** the `/trpc` rows and documented exceptions in the
+  [HTTP contract](local-development.md#trpc-http-contract). For example,
+  `GET /trpc/diagnostics.echo?input=%7B%22message%22%3A%22ok%22%7D` returns 200
+  `{"result":{"data":{"message":"ok"}}}`, and an empty `message` returns 400
+  `BAD_REQUEST` with `issues: [{"path":["message"],"code":"too_small"}]`.
+- **Client:** `@trpc/client` 11.22.1 is an API devDependency, usable with
+  `httpLink` and `type AppRouter` from `@storage-minis/api/types` for smoke checks
+  against the built process or the parity stack (port 3100). It is not in the
+  image.
+- **Logs:** `request_completed` and `request_failed` carry `procedure` only for
+  matched procedures. Each tRPC failure logs one `request_failed` with a category
+  named after the code (`bad_request`, `not_found`, `internal_error`, …).
+- **Tests already in place:** `apps/api/src/trpc/plugin.test.ts` runs cases 1–22
+  through `app.inject()` plus one loopback client test; `src/types.test.ts`
+  compiles the browser-profile consumer. Step 6 adds the built-process and
+  parity-stack checks, which this step deliberately left out.
+- **Task graph:** `//#test` depends on `@storage-minis/api#build`, so an API
+  source edit reruns root tests.
 
 ## Step 6 — Repeatable verification and handoff
 

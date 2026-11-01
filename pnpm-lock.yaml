@@ -162,6 +162,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-y/M5gU93yKYFDS8eVPCbTx8rRNN7CvVhzBGQ18tr+us=
+
 importers:
 
   .:
@@ -214,12 +216,19 @@ importers:
       '@storage-minis/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@trpc/server':
+        specifier: 11.22.1
+        version: 11.22.1(typescript@6.0.3)
       fastify:
         specifier: 5.12.7
         version: 5.12.7
       zod:
         specifier: 4.6.7
         version: 4.6.7
+    devDependencies:
+      '@trpc/client':
+        specifier: 11.22.1
+        version: 11.22.1(@trpc/server@11.22.1(typescript@6.0.3))(typescript@6.0.3)
 
   packages/db:
     dependencies:
@@ -899,6 +908,22 @@ packages:
 
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+
+  '@trpc/client@11.22.1':
+    resolution: {integrity: sha512-flkAwF8bzzNCVJ5xcTMS+Az6Go/XK30ZIOGT94UJBYAmMq1w2tY7gk7+CIMiRUdvHzOYAVPitX2H+20qcIIomA==}
+    hasBin: true
+    peerDependencies:
+      '@trpc/server': 11.22.1
+      typescript: '>=5.7.2'
+
+  '@trpc/server@11.22.1':
+    resolution: {integrity: sha512-9SjWTS5iwENHOVPqpTjm0I1Os/CtuT6p8kDlovyEm00pXhpHX55tQM2vszJTEpcQhm/JfUz4ut/7Y9JZZQZo6A==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=5.7.2'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@turbo/darwin-64@2.11.10':
     resolution: {integrity: sha512-By4idRap5+nLnMuRzLB4qkOPRlvNdyY1ne4VJYDyUoUB11H94k7uif9mbe3JT8JSNXs1D68uMcBj6hJ/jMQRvA==}
@@ -2263,6 +2288,15 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.1': {}
+
+  '@trpc/client@11.22.1(@trpc/server@11.22.1(typescript@6.0.3))(typescript@6.0.3)':
+    dependencies:
+      '@trpc/server': 11.22.1(typescript@6.0.3)
+      typescript: 6.0.3
+
+  '@trpc/server@11.22.1(typescript@6.0.3)':
+    optionalDependencies:
+      typescript: 6.0.3
 
   '@turbo/darwin-64@2.11.10':
     optional: true
