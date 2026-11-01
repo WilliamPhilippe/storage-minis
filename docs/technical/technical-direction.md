@@ -1196,6 +1196,36 @@ development, and no database password or `DATABASE_URL` in any process output.
 for a 500, a 413 and a startup database failure in both modes are in the PR. This
 is tooling evidence, not business acceptance.
 
+## Step 5 tRPC and Zod plan approval (2026-11-01)
+
+**Owner approval:** On 2026-11-01 the owner approved the
+[Step 5 plan](step-5-trpc-plan-2026-11-01.md) as recommended, P5-01–P5-10.
+Implementation is pending; the implementing PR adds its outcome and evidence to
+this record. Choices the plan does not settle, and deviations that implementation
+forces, still need approval.
+
+**Rationale.** The plan keeps Step 5 diagnostic and table-free on the reworked
+composition root and the approved planning inputs. It also prepares the transport
+for later business mutations: a realistic body limit, mutations without input, and
+one error format the client understands. It gives the React client a types-only
+contract. Reading tRPC 11.22.1's source showed two problems the plan addresses:
+its client sends a JSON content type with no body for mutations without input,
+which Fastify's default parser rejects, and its own error messages repeat text the
+client controls.
+
+| Item | Approved outcome |
+| --- | --- |
+| P5-01 Packages | `@trpc/server` 11.22.1 (API dependency) and `@trpc/client` 11.22.1 (API devDependency, tests only), exact pins. |
+| P5-02 Transport | `/trpc`; plain JSON without a transformer; `allowBatching: false`; no method override; no subscriptions; clients use `httpLink`. |
+| P5-03 Bodies | 1 MiB on the tRPC route through an `onRoute` hook, 16 KiB elsewhere; a JSON parser scoped to tRPC accepts an empty body as no input; every array and string input has a `.max()`. |
+| P5-04 Errors | One tRPC envelope for everything under `/trpc`: fixed messages, `data` limited to `code`, `httpStatus` and validation `issues` (`path`, `code`), and no stack, cause or path. Failures handled before routing keep Fastify's client-error body. |
+| P5-05 Logs | `procedure` in request logs for matched procedures only, recorded by a base middleware; one `request_failed` per tRPC failure with the allowlisted `err`; input never logged. |
+| P5-06 Context | `{ db: database.db, requestId }`; a module-private diagnostic builder; no exported unguarded builder. T02 later adds identity verification in `createContext` and authorization middleware. |
+| P5-07 Procedure | `diagnostics.echo`, a query with a strict `{ message }` of 1–100 characters as input and output. |
+| P5-08 Type export | `@storage-minis/api/types`, a types-only export of `AppRouter`. |
+| P5-09 Layout | `apps/api/src/trpc/` (`init`, `context`, `errors`, `plugin`, `router`, `routers/`) and `src/types.ts`. |
+| P5-10 Tests | An `app.inject()` matrix, a loopback test with `@trpc/client`, and a compiled browser-profile consumer; `//#test` depends on `@storage-minis/api#build`. |
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
