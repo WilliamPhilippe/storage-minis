@@ -134,8 +134,8 @@ implementation remains T04 work.
 ## 4a. Plan review amendments (approved 2026-10-31)
 
 The owner answered the plan-review rounds on 2026-10-31 (R1–R7 in round 1,
-R8–R11 in round 2, R12–R15 in round 3). These answers
-amend the sections that follow.
+R8–R11 in round 2, R12–R15 in round 3) and three implementation questions on
+the same date (R16–R18). These answers amend the sections that follow.
 
 | ID | Decision | Effect on the plan |
 | --- | --- | --- |
@@ -154,12 +154,16 @@ amend the sections that follow.
 | R14 | **Production Doppler keys are created later, under T04.** The plan lists the required `prd` keys (Section 6); creating them waits for deployment work. | No `prd` changes in this PR. |
 | R15 | **Parity stack ports:** the stack API publishes on `127.0.0.1:3100`; the stack's PostgreSQL is not published (only `migrate` and `api` reach it). `pnpm dev` and `pnpm stack:up` can run at the same time. `test:stack` targets the stack's published port. | Applies to R2/R10 and commit group 3. |
 | R7 | **Leave the unused Doppler configs** (`dev_personal`, `stg`) untouched. Existing configs: `dev`, `dev_personal`, `stg`, `prd`, `test` (checked 2026-10-31). | No Doppler config changes beyond keys. |
+| R16 | **Every PR leaves a working state, not every commit** (implementation question, 2026-10-31). Group 1 removes the tooling container before group 2 switches the DB package to `DATABASE_URL`, so host `pnpm dev`, `db:migrate`, `test:db` and `test:api` are unavailable between those groups. | Amends R1 and Section 7. The groups keep their order; the PR as a whole must pass Section 10. |
+| R17 | **Compose model with a stack overlay** (implementation question, 2026-10-31). Compose interpolates every `${VAR:?}` in all loaded files, including `api`/`migrate`, before merging (verified on Compose 5.6.1), so an override `env_file:` cannot supply them. Local scripts therefore pass `--env-file .env.development`; `postgres_test` loads `.env.test` through `env_file:`. A small `compose.stack.yaml` publishes the stack API on `127.0.0.1:3100`, and the stack uses `.env.test` values. `build:` lives in `compose.yaml` because group 3 drops the development target. The override puts `api`/`migrate` in a `stack` profile so a bare `docker compose up` never migrates the development database. | Amends D1, R9 (Compose side) and R15; adds `compose.stack.yaml` to Section 5. `compose.yaml` still never names a committed `.env` file (R13). |
+| R18 | **The restructure PR is stacked on PR #109** (implementation question, 2026-10-31). Branch `feat/foundation-restructure` starts at this plan's commit; GitHub retargets the PR to `main` when #109 merges. | Applies to R1. |
 
 ## 5. Target layout
 
 ```text
 compose.yaml              postgres, migrate, api, (later) web — production-shaped
 compose.override.yaml     dev only: published ports, postgres_test (tmpfs), build targets
+compose.stack.yaml        parity stack only: API on 127.0.0.1:3100 (R17)
 .env.development         committed local dev values (R8/R9)
 .env.test                committed local test values (R3/R9)
 docker/

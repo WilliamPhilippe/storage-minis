@@ -1,0 +1,33 @@
+# Local development only (owner-approved 2026-10-31, D1/R4/R17). Compose loads
+# this file automatically next to compose.yaml. The VPS (-f compose.yaml) and
+# the parity stack (-f compose.yaml -f compose.stack.yaml) never load it.
+#
+# Local commands pass --env-file .env.development, which supplies the values
+# that compose.yaml interpolates. The test database takes its own values from
+# .env.test. Both databases publish only on the loopback interface.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  # Disposable test database: same image, roles and settings as postgres, but
+  # memory-backed storage that is discarded whenever the container stops.
+  postgres_test:
+    extends:
+      file: compose.yaml
+      service: postgres
+    environment: !override
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    env_file: .env.test
+    volumes: !override
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    tmpfs:
+      - /var/lib/postgresql:size=536870912
+    ports:
+      - "127.0.0.1:5434:5432"
+
+  # The containerized API runs only in the isolated parity stack. A profile
+  # keeps a bare `docker compose up` in this project away from the dev data.
+  api:
+    profiles: [stack]

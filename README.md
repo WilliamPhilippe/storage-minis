@@ -18,124 +18,79 @@ and [technical direction](docs/technical/technical-direction.md).
 
 ## Local setup
 
-Run all commands from the repository root. The Docker workflow needs:
+Run all commands from the repository root. You need:
 
 - Git and a checkout of this repository.
-- Docker Desktop with its Linux engine running and Docker Compose available
-  (`docker compose version`). No separate `docker-compose` installation is needed.
-- Doppler CLI **3.77.1** on the host, access to project `storage-minis`, and the
-  dedicated browser login below. Doppler runs before Compose; it is not installed
-  inside the application container.
-- Network access for initial image builds, dependency installation, and Doppler.
+- Docker Desktop, or another Docker Engine with Compose v2
+  (`docker compose version`), running. PostgreSQL runs in containers; no host
+  PostgreSQL installation is needed.
+- Node.js **24.22.1** and pnpm **12.15.0** on the host. The versions are pinned in
+  [`.nvmrc`](.nvmrc) and [`package.json`](package.json); installation refuses
+  other versions.
 
-Docker supplies Node.js **24.22.1** and pnpm **12.15.0**. Host Node/pnpm are optional;
-if already installed at those versions, the `pnpm docker:*` shortcuts below are
-available. See [host setup](docs/technical/local-development.md#local-setup) for the
-approved fnm/nvm alternatives and
-[Doppler installation](docs/technical/local-development.md#doppler-host-setup-and-verification)
-for the pinned CLI. Installing tools or changing shell initialization follows the
+Use a Node.js version manager that reads `.nvmrc`. fnm and nvm both work; fnm is
+the current local setup. A shell that has not initialized the manager reports
+`node: command not found` even when Node.js is installed.
+
+```sh
+fnm install && fnm use        # or: nvm install && nvm use
+npm install --global pnpm@12.15.0
+pnpm install --frozen-lockfile
+pnpm db:up
+```
+
+`pnpm db:up` starts the development and test databases and waits until both
+are healthy. No Doppler login is needed: local database values are committed
+in [`.env.development`](.env.development) and [`.env.test`](.env.test). They
+are local-only values, not secrets; both databases publish only on
+`127.0.0.1`. Production values exist only in Doppler. Installing tools or
+changing shell initialization follows the
 [owner approval rules](AGENTS.md#owner-approval-before-decisions).
-
-### Doppler host setup and verification
-
-Ask the project owner for access and these managed entries. Password values stay
-in Doppler; development and test passwords must differ.
-
-| Project | Config | Entry | Consumer |
-| --- | --- | --- | --- |
-| `storage-minis` | `dev` | `POSTGRES_PASSWORD` | Development PostgreSQL and API |
-| `storage-minis` | `test` | `POSTGRES_TEST_PASSWORD` | Disposable test PostgreSQL and test commands |
-| `storage-minis` | `dev` | `FOUNDATION_TOOLING_PROBE=storage-minis-tooling-ok` | Optional environment verification |
-
-Create the dedicated credential directory, then complete the browser login:
-
-```sh
-mkdir -p "$HOME/.config/storage-minis/doppler"
-chmod 700 "$HOME/.config/storage-minis/doppler"
-doppler --config-dir "$HOME/.config/storage-minis/doppler" login --scope "$PWD"
-```
-
-For the standalone CLI installation, use its full executable path for login as
-shown in the reference. Helpers discover Doppler on PATH, then at that approved
-location. They choose `dev` or `test` automatically; no `doppler setup`, exported
-passwords, service token, or copied secret `.env` file is needed. Contradictory
-`DOPPLER_PROJECT`/`DOPPLER_CONFIG` overrides and `DOPPLER_TOKEN` are rejected.
-Only selected credentials enter containers; browser credentials remain on the host.
-
-### Docker tooling
-
-For a fresh checkout, run this sequence once; it requires no host Node/pnpm:
-
-```sh
-./scripts/configure-local.sh
-docker compose --env-file .env.compose --file compose.yaml build tooling
-docker compose --env-file .env.compose --file compose.yaml pull postgres
-docker compose --env-file .env.compose --file compose.yaml run --rm --no-deps tooling-init
-./scripts/tooling.sh run pnpm install --frozen-lockfile
-./scripts/database.sh up dev
-```
-
-The first command asks for a **unique Compose project name** and two unused,
-distinct database ports (defaults `5433`/`5434`). For an existing checkout, retain
-its saved settings and project name to reuse its data. `.env.compose` is Git-ignored
-and stores only `COMPOSE_PROJECT_NAME`, `POSTGRES_PORT`, and `POSTGRES_TEST_PORT`.
-A different project name selects different volumes. Run one setup/install at a time.
-
-With pinned host Node/pnpm, `pnpm docker:setup` runs that same sequence. Repeating
-setup preserves existing settings and development data. It applies no migrations.
-Dependencies/cache live in checkout-specific Linux volumes; host editors cannot
-resolve those dependencies without the separately approved editor/host setup.
-
-After reviewing the committed migrations, have the owner perform the first
-application to development, as required by the existing migration approval gate:
-
-```sh
-./scripts/tooling.sh run-db dev pnpm db:migrate
-```
-
-The host shortcut is `pnpm docker:migrate`. This creates the approved application
-schema and migration history; it performs no seed, administrator bootstrap, or
-legacy import. Later explicit applications skip migrations already recorded.
-
-Build the API images once, then check the workspace:
-
-```sh
-docker compose --env-file .env.compose --file compose.yaml build api api-dev
-./scripts/tooling.sh run pnpm check
-# Optional Doppler-to-container probe:
-./scripts/tooling.sh verify-env
-```
-
-Continue with the daily loop below. Default startup starts PostgreSQL only.
 
 ## Local PostgreSQL
 
-Start or verify the database without repeating setup:
+| Database | Host address | Database name | Storage |
+| --- | --- | --- | --- |
+| Development (`postgres`) | `127.0.0.1:5433` | `storage_minis_dev` | Named volume; survives `db:down`/`db:up` |
+| Test (`postgres_test`) | `127.0.0.1:5434` | `storage_minis_test` | Memory (tmpfs); discarded whenever it stops |
+
+Both run PostgreSQL **18.6** in UTC. On first initialization each creates two
+roles:
+
+- `storage_minis_owner` owns the database and runs migrations
+  (`MIGRATION_DATABASE_URL`).
+- `storage_minis_app` is the application's least-privilege role
+  (`DATABASE_URL`). It can read and write table rows but cannot change the
+  schema.
+
+| Command | Effect |
+| --- | --- |
+| `pnpm db:up` | Start both databases and wait for health (60 s limit). |
+| `pnpm db:down` | Stop both. Development data is kept; test data is discarded. |
+| `pnpm db:psql` | Open `psql` in the development container as the owner. Add `-c 'SQL'` for one statement. |
+| `pnpm db:reset` | **Destructive.** Remove the project's containers, network and development volume. Run `pnpm db:up` afterwards for empty databases. |
+
+Raw Compose commands need the same values file, for example
+`docker compose --env-file .env.development logs --follow postgres` or
+`docker compose --env-file .env.development ps`. Without it, Compose stops
+with a `required variable ... is missing a value` error and changes nothing.
+
+The project name is the checkout's directory name, so separate checkouts in
+directories with different names get separate volumes. The published ports
+are fixed, so stop one checkout's databases before starting another's.
+
+Roles are created only when a volume is first initialized. If you change a
+password in `.env.development` for an existing development volume, either run
+`pnpm db:reset` or change it in place as the `postgres` superuser:
 
 ```sh
-./scripts/database.sh up dev
-./scripts/database.sh check dev
-./scripts/database.sh psql dev -c 'SELECT current_database(), current_user;'
+docker compose --env-file .env.development exec postgres \
+  psql -U postgres -d storage_minis_dev \
+  -c "ALTER ROLE storage_minis_app PASSWORD 'new-value'"
 ```
 
-`up dev` (host alias `pnpm docker:up`) waits for health and verifies authenticated
-DB identity. `psql` runs in a disposable container; use `-c SQL`, not an interactive
-prompt. A host PostgreSQL installation is unnecessary.
-
-| Target | Host address with default ports | Container address | Database | Storage |
-| --- | --- | --- | --- | --- |
-| `dev` | `127.0.0.1:5433` | `postgres:5432` | `storage_minis_dev` | Named volume; survives stop/start and ordinary teardown |
-| `test` | `127.0.0.1:5434` | `postgres_test:5432` | `storage_minis_test` | Temporary memory storage; discarded on stop/restart |
-
-Both use PostgreSQL **18.6**, user `postgres`, and timezone `UTC`. Saved host ports
-may differ. Containers use service names and port `5432`, never host ports.
-The helpers construct the connection tuple; Doppler supplies the matching password.
-
-Start test storage only when needed with `./scripts/database.sh up test`
-(`pnpm docker:up:test`). Tests and image probes share this target and run
-**sequentially**. Never point disposable tests at development. Changing a Doppler
-password does not change the password in an initialized development volume; follow
-the [credential recovery instructions](docs/technical/local-development.md#database-lifecycle-and-reset).
+The test database is recreated on every start, so it always uses the current
+`.env.test` values.
 
 ## API development and reload
 
@@ -411,28 +366,6 @@ Builds/finite checks use local `.turbo/cache`; live DB commands, generation,
 migrations, process tests, and watchers are uncached. Use
 `./scripts/tooling.sh run pnpm check --dry=json` to inspect tasks. Forced runs and
 cache diagnostics are in the [cache reference](docs/technical/local-development.md#turborepo-checks-and-cache).
-
-## Docker lifecycle commands
-
-These native operations need Docker, but no Doppler login. Ctrl+C stops foreground
-development; use the API stop command when switching modes.
-
-| Task | Command from the repository root | Effect |
-| --- | --- | --- |
-| Inspect all services | `docker compose --env-file .env.compose --file compose.yaml --profile '*' ps --all` | Includes optional/test services |
-| Follow DB logs | `docker compose --env-file .env.compose --file compose.yaml logs --follow postgres` | Ctrl+C exits the log viewer |
-| Follow development logs | `docker compose --env-file .env.compose --file compose.yaml logs --follow api-dev` | Leaves the API running |
-| Stop API modes | `docker compose --env-file .env.compose --file compose.yaml stop api api-dev` | Preserves PostgreSQL |
-| Stop all services | `docker compose --env-file .env.compose --file compose.yaml --profile '*' stop` | Preserves named volumes; test tmpfs is discarded |
-| Remove project containers/network | `docker compose --env-file .env.compose --file compose.yaml --profile '*' down --remove-orphans` | Preserves named development/dependency/cache volumes |
-
-Host shortcuts include `pnpm docker:ps`, `pnpm docker:logs`, `pnpm docker:api:stop`,
-`pnpm docker:stop`, and `pnpm docker:prune`. Always retain the explicit env-file/file
-selection with raw Compose commands. To deliberately erase development data and
-all dependency/cache volumes, use `./scripts/reset-volumes.sh --confirm PROJECT`
-with the exact saved project name; see the
-[reset reference](docs/technical/local-development.md#shutdown-and-explicit-storage-removal).
-Ordinary development does not require a reset.
 
 ## Code conventions
 

@@ -162,6 +162,11 @@ implementation evidence remains pending.
 
 ## Environment configuration — Doppler (2026-10-24)
 
+**Partly superseded (2026-10-31):** The provider choice stands. Local
+development and tests use committed values and no Doppler (R3/R8/R12); the VPS
+uses a `prd` service token (A3). The wrapped, checkout-scoped launch path is
+removed. See [Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner decision:** Use Doppler to manage environment variables. This selects the
 provider and supersedes the foundation proposal's copied-local-`.env` and native
 env-file-loading approach. Application/CLI code receives environment values and
@@ -196,6 +201,10 @@ were made when recording this decision.
 
 ## Local tooling preference (2026-10-24)
 
+**Superseded (2026-10-31) by A4:** Node.js and pnpm run on the host with the
+pinned versions; only PostgreSQL runs in containers during development. See
+[Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner instruction:** Prefer Docker images for tools and supporting services
 where practical, avoiding direct machine installations. A tool may run on the
 host when it needs host access; explain that need and obtain approval before
@@ -216,6 +225,11 @@ items. No host tooling replacement or application setup is authorized by this
 record.
 
 ## Step 1 Docker tooling (2026-10-24)
+
+**Superseded (2026-10-31):** A4 removes the tooling image, its five
+dependency volumes, the launcher and the wrapped Doppler path. The decisions
+and evidence below are historical. See
+[Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** The owner explicitly requested implementation of the
 [Step 1 plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-1-tooling-plan-2026-10-24.md), preferred Docker Official
@@ -256,7 +270,7 @@ store `/pnpm/store/v11`. No Git executable was installed.
 These are tooling checks, not application, persistence, authorization or business
 acceptance. No schema, PostgreSQL, new workspace dependency/task, dummy test,
 frontend, CI or production configuration is introduced. Setup and variable
-inventory live in [README](../../README.md#docker-tooling). The dedicated host credential directory has mode 700; browser login completed
+inventory live in [historical README](https://github.com/WilliamPhilippe/storage-minis/blob/3f1ae6c8c105a56663d002e06f97f7843c57880c/README.md#docker-tooling). The dedicated host credential directory has mode 700; browser login completed
 with scope set to this absolute checkout. The Homebrew CLI was exercised; the
 standalone checksum installer is documented but was not executed. Probe files
 and secondary resources were removed, and only the renamed primary tooling
@@ -265,6 +279,14 @@ contains the Step 1 handoff and was merged on 2026-10-24 as
 `17771994adef99e6f575385266970d472c65b8b0`. T06 stays open.
 
 ## Step 2 local PostgreSQL planning (2026-10-24)
+
+**Partly superseded (2026-10-31):** The separate development and test
+services, the digest-pinned image, loopback-only ports, UTC, the persistent
+development volume and the test tmpfs remain (R4). Superuser-only access,
+Doppler-held passwords, `scripts/database.sh` and its SQL client container are
+replaced by the D2/D3 roles, committed local values (R3/R8) and `db:*` package
+scripts. The evidence below is historical. See
+[Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner-approved scope:** PostgreSQL runs separately from the tooling container,
 with Compose definitions delivered in Step 2. The existing DBML is not applied;
@@ -417,6 +439,10 @@ business atomicity, Organization authorization, schema constraints or T06 comple
 
 ## Docker lifecycle commands (2026-10-25)
 
+**Superseded (2026-10-31):** The `docker:*` scripts are replaced by `db:*`
+and `stack:*` package scripts using native Compose. See
+[Foundation restructure](#foundation-restructure-2026-10-31).
+
 **Owner approval:** The owner approved phase 1 and the staged approach in the
 [application-container and lifecycle plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/docker-application-lifecycle-plan-2026-10-25.md),
 then asked whether Docker Compose needs local installation. Docker Desktop
@@ -455,10 +481,16 @@ The startup/deadline/credential mechanics remain the previously verified databas
 launcher's contract; they were reused rather than reimplemented. These results
 establish local lifecycle behavior, not business schema, authorization,
 transaction/concurrency invariants, production readiness or T06 completion.
-Read [Docker lifecycle commands](../../README.md#docker-lifecycle-commands) for
+Read [historical Docker lifecycle commands](https://github.com/WilliamPhilippe/storage-minis/blob/3f1ae6c8c105a56663d002e06f97f7843c57880c/README.md#docker-lifecycle-commands) for
 host/direct-shell usage and the storage-deletion warning.
 
 ## Standard infrastructure tooling direction (2026-10-25)
+
+**Direction reaffirmed, implementation superseded (2026-10-31):** The owner
+reaffirmed the preference for standard tools on 2026-10-31. Every retained
+custom helper listed below is removed; the only remaining infrastructure
+script is the role init script (D3). See
+[Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** After reviewing the lifecycle implementation, the owner
 approved replacing the general lifecycle wrapper with standard Compose commands,
@@ -535,6 +567,11 @@ and migration gate is preserved. These checks establish local tooling behavior,
 not completion of T06 or business persistence invariants.
 
 ## One-time local setup (2026-10-25)
+
+**Superseded (2026-10-31):** `.env.compose`, `configure-local.sh`,
+`docker:setup`, `docker:up` and `docker:migrate` are removed. A fresh checkout
+now needs `pnpm install` and `pnpm db:up`, with migrations applied by
+`pnpm db:migrate`. See [Foundation restructure](#foundation-restructure-2026-10-31).
 
 **Owner approval:** After reviewing the exact command expansion, the owner approved
 implementing `docker:setup`, `docker:migrate`, and export-free `docker:up`. This
@@ -1002,6 +1039,36 @@ valid/invalid tRPC HTTP requests, reproduces clean setup and rechecks affected
 cache/integration proof. Read the [current guide](technical-foundation-implementation-guide.md#step-4--fastify-server-foundation)
 for these inherited contracts. Rerun affected proof after source/task/image changes;
 shared test consumers remain exclusive and sequential.
+
+## Foundation restructure (2026-10-31)
+
+**Owner approval:** On 2026-10-31 the owner approved the
+[foundation restructure plan](foundation-restructure-plan-2026-10-31.md)
+(PR #109): core decisions A1–A5, detailed decisions D1–D10, plan-review
+amendments R1–R15 and the final verification V1–V7. During implementation the
+owner answered three further questions on the same date (R16–R18). The plan
+is the authoritative record of alternatives and wording; its Section 4a
+amendments win where wording conflicts. Rationale: prefer standard tool
+workflows over custom code (owner direction 2026-10-25, reaffirmed
+2026-10-31), make the same images and Compose model deployable to a single
+Hostinger VPS, and give developers a fast host loop with working editor
+tooling.
+
+| Area | Approved outcome |
+| --- | --- |
+| Execution model (A4) | Node.js 24.22.1 and pnpm 12.15.0 run on the host, pinned by `.nvmrc` and `package.json`. The tooling image, its five dependency volumes and every Bash launcher are removed. PostgreSQL runs in containers locally; the API, a later `web` image and PostgreSQL run in containers in production and in the parity stack. |
+| Database configuration (A1) | The DB package reads a standard `DATABASE_URL` (migrations: `MIGRATION_DATABASE_URL`), with TLS through `sslmode`. Hard-coded host/user/port/database literals are removed; tests are protected by a guard that requires a database name ending in `_test`. |
+| Roles (A2, D2, D3, R6) | `storage_minis_owner` owns the database and schemas and runs migrations. `storage_minis_app` receives `SELECT, INSERT, UPDATE, DELETE` on tables, `USAGE, SELECT` on sequences and `EXECUTE` on functions through `ALTER DEFAULT PRIVILEGES`. The `postgres` superuser is used only by the image's init script, `docker/postgres/init/10-roles.sh`, a retained custom exception because SQL init files cannot read environment variables. Uniform app privileges; per-table restrictions are a T01 candidate. |
+| Compose layout (D1, R2, R4, R13, R15, R17) | `compose.yaml` holds production-shaped `postgres`, `migrate` and `api` (later `web`) and is the only file used on the VPS. `compose.override.yaml` adds loopback ports, `postgres_test` (tmpfs) and a `stack` profile for `api`/`migrate`. `compose.stack.yaml` publishes the parity stack's API on `127.0.0.1:3100`; that stack runs as project `storage-minis-stack` with a throwaway volume and an unpublished database. |
+| Values and secrets (A3, D4, R3, R8, R9, R12, R14) | Local development and test database values are committed in `.env.development` and `.env.test`; `.gitignore` allows exactly those names and `.dockerignore` excludes every `.env*` file. Local Compose commands pass `--env-file .env.development`; host Node loads the files with `--env-file-if-exists` or `process.loadEnvFile`, and real environment values take precedence. No Doppler is used locally until a real development secret exists. The VPS uses a read-only `prd` service token with `doppler run`; `prd` keys are created later under T04. |
+| Migrations (A5, D6, D7, D8, R5) | Schema and migrations may be reset freely. The baseline is regenerated as a Drizzle custom migration for `inventory_id_base36` followed by one generated migration. A `migrate` service runs the compiled `dist/migrate.js` from the API image as the owner role; `api` waits for it to complete successfully and never migrates itself. Brief deploy downtime is acceptable; a failed `migrate` leaves the running API in place. Drizzle stays on 0.45.4 / Kit 0.31.11. |
+| Parity check (R10) | `pnpm stack:up` / `stack:down` run the production model locally; `pnpm test:stack` is an opt-in Vitest smoke suite outside `pnpm check`. |
+| Delivery (R1, R16, R18) | One PR in four ordered commit groups, stacked on PR #109. Each PR, not each commit, must leave a working state; host DB commands are unavailable between commit groups 1 and 2. |
+| Direction only (D5, D9, D10) | A Caddy-based `web` image for the client-side SPA, image distribution through GitHub Container Registry and daily `pg_dump` backups with a tested restore. These remain T04 implementation work. |
+
+The implementation and its verification evidence are recorded in the
+restructure PR. The sections below marked superseded keep their historical
+evidence; this record owns the current local workflow.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
