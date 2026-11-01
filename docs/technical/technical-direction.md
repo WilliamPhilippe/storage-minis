@@ -1333,8 +1333,8 @@ re-verifies its pins.
 **Owner approval:** On 2026-11-01 the owner approved the
 [web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
-with the changes listed after the table. Implemented on branch `feat/web-shell`
-(the web shell PR); the outcome, three implementation-time decisions and the
+with the changes listed after the table. Implemented in
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, three implementation-time decisions and the
 evidence follow the design reference. Choices the plan does not settle, and
 deviations that implementation forces, still need approval.
 

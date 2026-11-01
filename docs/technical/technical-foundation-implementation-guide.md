@@ -20,7 +20,7 @@ needs its own plan. They come before Step 6, which the owner left TBD until the
 app is validated locally (2026-11-01). The
 [PR 1 web shell plan](web-shell-plan-2026-11-01.md) was
 [approved on 2026-11-01](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01)
-and is implemented on branch `feat/web-shell`: `apps/web` with antd, the
+and is implemented in [PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121): `apps/web` with antd, the
 languages, the responsive shell, placeholder pages, the Login page without
 sign-in, and `diagnostics.echo` through the Vite proxy. Playwright (PR 2),
 sign-in (PR 3) and the web image (PR 4) remain.

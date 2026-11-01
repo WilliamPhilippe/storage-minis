@@ -1,8 +1,8 @@
 # Frontend PR 1 plan — web shell (2026-11-01)
 
 **Status: approved by the owner on 2026-11-01, with the changes listed under
-[Approval](#approval-2026-11-01); implemented on branch `feat/web-shell` (the
-web shell PR).** The approval record, three implementation-time decisions, the
+[Approval](#approval-2026-11-01); implemented in
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121).** The approval record, three implementation-time decisions, the
 outcome and the evidence are in
 [technical direction](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01).
 Where this plan's text and that record differ (heading tokens, the QueryClient's
