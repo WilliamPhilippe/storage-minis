@@ -173,7 +173,7 @@ Use the [README](README.md) for local setup, the daily loop, migrations and chec
 - Generate migrations offline with `pnpm db:generate` and confirm Drizzle Kit's final line; it can exit 0 after an error. Review and commit SQL, snapshots and journal together. Preserve applied history and correct it with forward migrations.
 - Stop `pnpm dev` before finite builds or checks; both write the DB package's `dist`.
 - `pnpm dev` also serves the web app on `http://localhost:5173` (bound to `127.0.0.1`, `strictPort`), with `/trpc/` proxied to the API on port 3000. The router plugin regenerates `apps/web/src/routeTree.gen.ts` during `pnpm dev` and `pnpm build`; commit it with any route change.
-- `pnpm check` includes the `web-unit` Vitest project: jsdom in `America/Sao_Paulo`, a fresh app per test, and a harness that fails a test on an unstubbed `fetch` or undeclared console output (`expectConsole`).
+- `pnpm check` includes the `web-unit` Vitest project: jsdom in `America/Sao_Paulo`, a fresh app per test, and a harness that fails a test on an unstubbed `fetch` or on an undeclared `console.error` or `console.warn` (`expectConsole`).
 - Shared `skipLibCheck: true` is owner-approved for Drizzle declaration compatibility; all source strictness remains.
 - Rerun the affected live suites after source, task, image or Compose changes. Report tooling and connection validation separately from business acceptance evidence.
 

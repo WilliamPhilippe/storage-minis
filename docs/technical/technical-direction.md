@@ -1394,7 +1394,7 @@ decided each on 2026-11-01:
 | --- | --- | --- |
 | Heading size and spacing | `components.Typography` sets `fontSizeHeading1: 22`, `lineHeightHeading1: 30 / 22` and `titleMarginBottom: 0`, so every h1 is a `title-lg` page title. CSS Modules set the gaps; where a gap sets the spacing, a two-class selector on our own classes removes a Paragraph's margin. The Login lead's `body-lg` (phones) and `body` (desktop) size is a CSS Module class. No `.ant-*` selector. | antd styles titles as `h1.ant-typography` (38 px, 0.5 em bottom margin) and paragraphs with a 1 em margin, which a single CSS Module class cannot override. The design asks for `title-lg` h1s spaced by gaps. |
 | QueryClient instance | `lib/trpc.ts` exports the app's `queryClient = createQueryClient()` beside the `trpc` options proxy, as in tRPC's Vite SPA setup; `main.tsx` imports it. Tests still create a fresh client per test. | The proxy needs its QueryClient when it is created. Its `queryOptions()` never uses that client (checked in the 11.22.1 source), so each test's client runs every query. |
-| Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays. Three design details are affected: the MenuFab keeps antd's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu keeps antd's 14 px text instead of 16 px; and the inline Menu keeps its own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, and draws the inline Menu's border with a three-class selector. |
+| Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays; where a component token is enough, the design is followed (the FAB's icon is 24 px through FloatButton's `fontSizeIcon`). Four design details keep antd's default: the MenuFab's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu's 14 px text instead of 16 px; the drawer's square top corners instead of `radius-lg`; and the inline Menu's own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, draws the inline Menu's border with a three-class selector, and rounding the drawer needs a class on its wrapper. |
 
 While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
 byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
@@ -1442,24 +1442,29 @@ Implementation notes, not decisions: the home page's title is "Home"; the
 pt-BR strings are first translations for the owner's review;
 `viewport-fit=cover` lets the content's bottom padding include the safe-area
 inset; and the generic error page shows a server message only for tRPC errors.
-The design's `theme.ts` does not list the Typography tokens yet, so a later
-refresh of the originals should add them.
+The design's `theme.ts` does not list the Typography tokens or FloatButton's
+`fontSizeIcon` yet, and `ant-design.md` still names `main.tsx` as the
+ConfigProvider's owner (the code puts it in `ui/AppProviders.tsx`, switching
+between `theme` and `phoneTheme`), so a later refresh of the originals should
+add them. The logo links and the not-found page's home link are current
+(`aria-current`) only on `/app` itself.
 
 **Evidence (2026-11-01, branch `feat/web-shell`):**
 
 - `pnpm install --frozen-lockfile` passes. `pnpm-workspace.yaml` is unchanged:
   no `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers
   check` finds no issue. The TanStack and tRPC agent skills stay unapproved.
-- `pnpm check`: 9 tasks, 184 unit tests in 21 files (from 120 in 12). The
-  `web-unit` project adds 64 tests in 9 files: money, dates, languages, a
-  failed switch, the pending page, the shell, routes, the Login page and the
-  echo card.
+- `pnpm check`: 9 tasks, 186 unit tests in 22 files (from 120 in 12). The
+  `web-unit` project adds 66 tests in 10 files: money, dates, languages, a
+  failed switch, the pending page, the shell, the document title, routes, the
+  Login page and the echo card.
 - `pnpm check --dry=json` lists `@storage-minis/web#typecheck`, and `//#lint`
   depends on `@storage-minis/api#build` and `@storage-minis/db#build`.
 - Each guard was broken on purpose and failed: an undeclared console warning,
-  an unstubbed `fetch`, a removed `aria-hidden` on a menu icon, and in `tsc` a
-  missing pt-BR key, an extra key, a missing `_many`, a wrong `t()` key and a
-  wrong title key.
+  an unstubbed `fetch`, a removed `aria-hidden` on a menu icon, the
+  last-switch-wins check, the title fallback when the `app` strings fail, and
+  in `tsc` a missing pt-BR key, an extra key, a missing `_many`, a wrong `t()`
+  key and a wrong title key.
 - `pnpm build` builds `apps/web/dist`. First catalog visit: about 282 KiB
   (gzip −9) of JavaScript and CSS (252.6 initial JavaScript, 2.2 CSS, 27.2 for
   the catalog page, plus the string chunks). The 22.5 KiB shell chunk loads
@@ -1481,7 +1486,9 @@ refresh of the originals should add them.
   SideNav collapsed at 900 and expanded at 1280; one h1 per page; no console
   warning.
 - The Login page at 390 × 844 and 1280 × 800 matches `screens/1-sign-in.png`
-  and `screens/5-desktop.png`, apart from the "G" placeholder. Its button does
+  and `screens/5-desktop.png`, apart from the "G" placeholder: h1 22/30/600,
+  lead 16 px then 14 px, button 44 then 40 px, a 400 px card on desktop. At
+  390 px it has no sideways scroll (`scrollWidth` 390). Its button does
   nothing, and the network list shows no external request.
 - Under emulated dark mode, the page and the browser's controls stay light.
 - On `vite preview`, `/catalog/demo` and `/app` load only the en-US string
