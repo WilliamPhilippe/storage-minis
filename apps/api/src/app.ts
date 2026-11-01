@@ -6,6 +6,14 @@ import type { PinoLoggerOptions } from "fastify/types/logger.js";
 import type { ApiConfig } from "./config.js";
 import { serializeError } from "./error-log.js";
 import { healthRoutes } from "./health.js";
+import {
+  isTrpcUrl,
+  procedureField,
+  sendTrpcFailure,
+  trpcPrefix,
+  trpcRoutes,
+} from "./trpc/plugin.js";
+import { appRouter } from "./trpc/router.js";
 
 /**
  * What the app may use from its owner. The lifecycle owns the pool; `close`
@@ -57,7 +65,7 @@ function sendFailure(
 ) {
   const { status, category } = safeFailure(error);
   // Like Fastify's default: client errors are info, server errors error.
-  const fields = { category, status, err: error };
+  const fields = { category, status, ...procedureField(request), err: error };
   if (status >= 500) request.log.error(fields, "request_failed");
   else request.log.info(fields, "request_failed");
   void reply.code(status).send({ error: category });
@@ -96,8 +104,15 @@ export function buildApp(
       redact: ["req.headers.authorization", "req.headers.cookie"],
       serializers,
     },
-    frameworkErrors: sendFailure,
+    // Failures before routing (malformed URL) under /trpc keep its envelope.
+    frameworkErrors: (error, request, reply) => {
+      if (isTrpcUrl(request.url)) sendTrpcFailure(error, request, reply);
+      else sendFailure(error, request, reply);
+    },
   });
+
+  // Set by the tRPC procedure middleware; read by the request logs below.
+  app.decorateRequest("trpcProcedure", null);
 
   app.setErrorHandler(sendFailure);
   app.setNotFoundHandler((_request, reply) =>
@@ -108,6 +123,7 @@ export function buildApp(
       {
         method: request.method,
         route: request.routeOptions.url ?? "unmatched",
+        ...procedureField(request),
         status: reply.statusCode,
         elapsedMs: reply.elapsedTime,
       },
@@ -121,6 +137,11 @@ export function buildApp(
   void app.register(healthRoutes, {
     database: dependencies.database,
     isClosing: dependencies.isClosing,
+  });
+  void app.register(trpcRoutes, {
+    prefix: trpcPrefix,
+    router: appRouter,
+    db: dependencies.database.db,
   });
 
   return app;
