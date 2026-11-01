@@ -9,8 +9,8 @@ import {
 } from "@storage-minis/db";
 import type { Database } from "@storage-minis/db";
 import { afterAll, afterEach, beforeAll, it } from "vitest";
-import { ownProcess } from "../scripts/owned-process.js";
-import type { OwnedProcess } from "../scripts/owned-process.js";
+import { ownProcess } from "./owned-process.js";
+import type { OwnedProcess } from "./owned-process.js";
 
 // Guard even direct imports before acquiring any controller or cleanup owner.
 const config = readDatabaseConfig(process.env);

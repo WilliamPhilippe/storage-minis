@@ -27,7 +27,9 @@ services:
     ports:
       - "127.0.0.1:5434:5432"
 
-  # The containerized API runs only in the isolated parity stack. A profile
-  # keeps a bare `docker compose up` in this project away from the dev data.
+  # The containerized migrator and API run only in the isolated parity stack.
+  # A profile keeps a bare `docker compose up` here from migrating dev data.
+  migrate:
+    profiles: [stack]
   api:
     profiles: [stack]

@@ -1,3 +1,6 @@
+# API image (owner-approved 2026-10-31, A4/D6). The same image runs the API
+# (default command) and the `migrate` Compose service, which executes the
+# compiled DB migrator: node node_modules/@storage-minis/db/dist/migrate.js.
 FROM node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS build
 
 RUN npm install --global pnpm@12.15.0 \
@@ -9,23 +12,24 @@ WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .nvmrc ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/db/package.json ./packages/db/package.json
-RUN pnpm install --frozen-lockfile
+# BuildKit cache mount: the pnpm store persists across builds on the builder
+# but never enters an image layer.
+RUN --mount=type=cache,id=storage-minis-pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile --store-dir /pnpm/store
 
 COPY tsconfig*.json turbo.json eslint.config.mjs .prettierrc.json .prettierignore vitest.config.mts ./
 COPY apps/api/tsconfig*.json ./apps/api/
 COPY packages/db/tsconfig*.json ./packages/db/
 COPY apps/api/src ./apps/api/src
 COPY packages/db/src ./packages/db/src
+COPY packages/db/drizzle ./packages/db/drizzle
 RUN pnpm build
 
-FROM build AS development
-ENV PNPM_CONFIG_STORE_DIR=/pnpm/store
-USER node
-EXPOSE 3000
-CMD ["pnpm", "dev"]
-
 FROM build AS package
-RUN pnpm --filter=@storage-minis/api --prod deploy /out
+# Production dependencies plus each workspace package's `files` (DB: dist and
+# drizzle migrations).
+RUN --mount=type=cache,id=storage-minis-pnpm-store,target=/pnpm/store \
+    pnpm --filter=@storage-minis/api --prod deploy --store-dir /pnpm/store /out
 
 FROM node:24.22.1-bookworm-slim@sha256:55fb5f5a527ea2c5c4a95f963e48ef90aa38c7b346054fdc8ee9957a2b55d205 AS runtime
 WORKDIR /app

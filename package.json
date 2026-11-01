@@ -28,7 +28,10 @@
     "db:up": "docker compose --env-file .env.development up --detach --wait --wait-timeout 60 postgres postgres_test",
     "db:down": "docker compose --env-file .env.development stop postgres postgres_test",
     "db:psql": "docker compose --env-file .env.development exec postgres psql -U storage_minis_owner -d storage_minis_dev",
-    "db:reset": "docker compose --env-file .env.development down --volumes"
+    "db:reset": "docker compose --env-file .env.development down --volumes",
+    "stack:up": "docker compose --project-name storage-minis-stack --file compose.yaml --file compose.stack.yaml --env-file .env.test run --rm --build migrate && docker compose --project-name storage-minis-stack --file compose.yaml --file compose.stack.yaml --env-file .env.test up --detach --wait --wait-timeout 60",
+    "stack:down": "docker compose --project-name storage-minis-stack --file compose.yaml --file compose.stack.yaml --env-file .env.test down --volumes --remove-orphans",
+    "test:stack": "pnpm --filter @storage-minis/api test:stack"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
