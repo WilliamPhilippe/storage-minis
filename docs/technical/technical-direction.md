@@ -2,7 +2,7 @@
 
 **Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: Steps 1–4 are complete (Step 4 with all eighteen criteria, evidence on PR #107), and the [foundation restructure](#foundation-restructure-2026-10-31) of 2026-10-31 (PR #110) replaced their tooling container and Doppler launchers with host Node, standard Compose, committed local values, owner/app database roles, a regenerated migration baseline and a parity stack. Steps 5/6 and full T06/business/production acceptance remain pending.
 
-This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.7 requirements](../requirements/requirements-v0.7.md), [entity map](../entities/entity-map-v0.7.md), and [ownership index](../requirements/requirements-coverage-v0.7.md). It does not replace the business baseline or close delivery issues. The [current entity map](../entities/entity-map-v0.8.md), [approved updates](../requirement-updates/README.md) and [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) govern domain invariants.
+This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.8 requirements](../requirements/requirements-v0.8.md), [entity map v0.9](../entities/entity-map-v0.9.md), and [ownership index](../requirements/requirements-coverage-v0.8.md). It does not replace the business baseline or close delivery issues. Those documents, the [approved updates](../requirement-updates/README.md) and the [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) govern domain invariants.
 
 ## Workspace bootstrap progress (2026-10-23)
 
@@ -1582,14 +1582,14 @@ Examples: while the administrator is using the system, token expiry triggers ref
 
 Accepted choices:
 
-- All operational amounts remain BRL, consistent with REQ-008; visitor timezone or locale does not introduce currency conversion.
+- Each Organization's amounts are in its own currency, chosen once when the Organization is created: BRL by default, or USD (REQ-008, ORG-010; owner, 2026-11-01). Amounts carry no currency themselves, and visitor timezone or locale does not introduce currency conversion.
 - Store timestamp instants in UTC. The UI converts them for display in the visitor's timezone.
 - Daily/monthly financial reports use the fixed business timezone `UTC` for all viewers, as confirmed by the owner on 2026-10-21. Visitor-local timestamp display does not change report periods.
 - Preserve the distinction between the business event date and its recorded timestamp, as required by REQ-011, FIN-011, CALC-018, and the accepted shared-history model. Calendar-date input/storage semantics remain T03 work.
 
 Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor in UTC-03:00. A business event dated November 1 in UTC remains in November's report for every viewer. Report membership follows UTC and the applicable source business date rather than the viewer's display timezone.
 
-[T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) still needs exact BRL representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
+[T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) still needs exact integer-cent representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
 
 ## Step 3B structural schema (2026-10-25)
 

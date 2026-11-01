@@ -363,10 +363,10 @@ Use the pinned pnpm versions/lockfile, Prettier, and Conventional Commits.
 Read [AGENTS.md](AGENTS.md) and approved updates with the published requirements;
 later approved decisions take precedence over conflicting baseline text.
 
-- [Requirements v0.7](docs/requirements/requirements-v0.7.md)
-- [Entity map v0.8](docs/entities/entity-map-v0.8.md)
+- [Requirements v0.8](docs/requirements/requirements-v0.8.md)
+- [Entity map v0.9](docs/entities/entity-map-v0.9.md)
 - [Approved updates and propagation status](docs/requirement-updates/README.md)
-- [Requirement ownership v0.7](docs/requirements/requirements-coverage-v0.7.md)
+- [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
 - [Shared PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md)
 - Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
