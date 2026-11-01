@@ -1334,7 +1334,7 @@ re-verifies its pins.
 [web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
 with the changes listed after the table. Implemented in
-[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, three implementation-time decisions and the
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, four implementation-time decisions and the
 evidence follow the design reference. Choices the plan does not settle, and
 deviations that implementation forces, still need approval.
 
@@ -1387,7 +1387,7 @@ disagree, and each implementation still follows its own approved plan.
 
 ### Implementation-time decisions (2026-11-01)
 
-Building the shell raised three points the plan did not settle. The owner
+Building the shell raised four points the plan did not settle. The owner
 decided each on 2026-11-01:
 
 | Topic | Decided outcome | Why |
@@ -1395,6 +1395,7 @@ decided each on 2026-11-01:
 | Heading size and spacing | `components.Typography` sets `fontSizeHeading1: 22`, `lineHeightHeading1: 30 / 22` and `titleMarginBottom: 0`, so every h1 is a `title-lg` page title. CSS Modules set the gaps; where a gap sets the spacing, a two-class selector on our own classes removes a Paragraph's margin. The Login lead's `body-lg` (phones) and `body` (desktop) size is a CSS Module class. No `.ant-*` selector. | antd styles titles as `h1.ant-typography` (38 px, 0.5 em bottom margin) and paragraphs with a 1 em margin, which a single CSS Module class cannot override. The design asks for `title-lg` h1s spaced by gaps. |
 | QueryClient instance | `lib/trpc.ts` exports the app's `queryClient = createQueryClient()` beside the `trpc` options proxy, as in tRPC's Vite SPA setup; `main.tsx` imports it. Tests still create a fresh client per test. | The proxy needs its QueryClient when it is created. Its `queryOptions()` never uses that client (checked in the 11.22.1 source), so each test's client runs every query. |
 | Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays; where a component token is enough, the design is followed (the FAB's icon is 24 px through FloatButton's `fontSizeIcon`). Four design details keep antd's default: the MenuFab's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu's 14 px text instead of 16 px; the drawer's square top corners instead of `radius-lg`; and the inline Menu's own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, draws the inline Menu's border with a three-class selector, and rounding the drawer needs a class on its wrapper. |
+| Selected backgrounds | `colorPrimaryBg` is `surface-sunken` (`#eef0f3`) and `colorPrimaryBgHover` is `line` (`#e3e6ea`). They feed `controlItemBgActive` and `controlItemBgActiveHover`, so a selected dropdown item is ink on `surface-sunken` (15.6:1) and a hovered one ink on `line` (about 14:1). A `theme.test.ts` case checks both values and their contrast in both themes. | antd derives these from steps 1 and 2 of `colorPrimary`'s palette. For ink they come out as `#5b5f61` and `#4f5254`, so the language switch's selected item read ink on mid-grey (2.7:1, below 4.5:1). The same tokens style selected rows, nodes and cells in Table, Tree, Cascader, DatePicker, Calendar, Transfer and Steps. Owner, 2026-11-01, after reviewing the PR. |
 
 While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
 byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
@@ -1442,8 +1443,8 @@ Implementation notes, not decisions: the home page's title is "Home"; the
 pt-BR strings are first translations for the owner's review;
 `viewport-fit=cover` lets the content's bottom padding include the safe-area
 inset; and the generic error page shows a server message only for tRPC errors.
-The design's `theme.ts` does not list the Typography tokens or FloatButton's
-`fontSizeIcon` yet, and `ant-design.md` still names `main.tsx` as the
+The design's `theme.ts` does not list the Typography tokens, FloatButton's
+`fontSizeIcon` or the `colorPrimaryBg` pair yet, and `ant-design.md` still names `main.tsx` as the
 ConfigProvider's owner (the code puts it in `ui/AppProviders.tsx`, switching
 between `theme` and `phoneTheme`), so a later refresh of the originals should
 add them. The logo links and the not-found page's home link are current
@@ -1454,15 +1455,16 @@ add them. The logo links and the not-found page's home link are current
 - `pnpm install --frozen-lockfile` passes. `pnpm-workspace.yaml` is unchanged:
   no `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers
   check` finds no issue. The TanStack and tRPC agent skills stay unapproved.
-- `pnpm check`: 9 tasks, 186 unit tests in 22 files (from 120 in 12). The
-  `web-unit` project adds 66 tests in 10 files: money, dates, languages, a
-  failed switch, the pending page, the shell, the document title, routes, the
-  Login page and the echo card.
+- `pnpm check`: 9 tasks, 190 unit tests in 23 files (from 120 in 12). The
+  `web-unit` project adds 70 tests in 11 files: money, dates, languages, a
+  failed switch, the theme's selected backgrounds, the pending page, the
+  shell, the document title, routes, the Login page and the echo card.
 - `pnpm check --dry=json` lists `@storage-minis/web#typecheck`, and `//#lint`
   depends on `@storage-minis/api#build` and `@storage-minis/db#build`.
 - Each guard was broken on purpose and failed: an undeclared console warning,
   an unstubbed `fetch`, a removed `aria-hidden` on a menu icon, the
-  last-switch-wins check, the title fallback when the `app` strings fail, and
+  last-switch-wins check, the title fallback when the `app` strings fail, the
+  selected-background tokens (the old theme gave `#5b5f61`), and
   in `tsc` a missing pt-BR key, an extra key, a missing `_many`, a wrong `t()`
   key and a wrong title key.
 - `pnpm build` builds `apps/web/dist`. First catalog visit: about 282 KiB
@@ -1490,6 +1492,8 @@ add them. The logo links and the not-found page's home link are current
   lead 16 px then 14 px, button 44 then 40 px, a 400 px card on desktop. At
   390 px it has no sideways scroll (`scrollWidth` 390). Its button does
   nothing, and the network list shows no external request.
+- The language switch's selected item renders ink on `rgb(238, 240, 243)`,
+  and on `rgb(227, 230, 234)` when hovered (it was `rgb(91, 95, 97)`).
 - Under emulated dark mode, the page and the browser's controls stay light.
 - On `vite preview`, `/catalog/demo` and `/app` load only the en-US string
   chunks. A switch to pt-BR adds only the pt-BR `common` and `app` strings and

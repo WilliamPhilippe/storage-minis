@@ -8,6 +8,7 @@ const inkMuted = "#57606a";
 const surface = "#ffffff";
 const surfacePage = "#f6f7f9";
 const surfaceSunken = "#eef0f3";
+const line = "#e3e6ea";
 const focusRing = "#1d5fc2";
 const shadowOverlay =
   "0 8px 24px rgba(22, 27, 33, 0.14), 0 2px 6px rgba(22, 27, 33, 0.08)";
@@ -17,6 +18,12 @@ const shadowFab =
 const token: ThemeConfig["token"] = {
   colorPrimary: ink,
   colorPrimaryHover: "#2c343d",
+  // Selected backgrounds (dropdown and table rows, tree nodes, date cells).
+  // antd derives them from colorPrimary's palette, which for ink is a mid-grey
+  // (#5b5f61, 2.7:1 with ink text), so they follow the design's surface-sunken,
+  // then line on hover (owner, 2026-11-01).
+  colorPrimaryBg: surfaceSunken,
+  colorPrimaryBgHover: line,
   colorInfo: focusRing,
   colorLink: focusRing,
   colorInfoBg: "#e8f0fc",
@@ -40,8 +47,8 @@ const token: ThemeConfig["token"] = {
   colorFillSecondary: surfaceSunken,
   colorBgContainerDisabled: surfaceSunken,
   colorBorder: "#7f8791",
-  colorBorderSecondary: "#e3e6ea",
-  colorSplit: "#e3e6ea",
+  colorBorderSecondary: line,
+  colorSplit: line,
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
   fontFamilyCode:
