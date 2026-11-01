@@ -55,10 +55,10 @@
       "dependsOn": ["build"],
       "outputs": []
     },
-    "db:generate": {
+    "@storage-minis/db#db:generate": {
       "cache": false
     },
-    "db:migrate": {
+    "@storage-minis/db#db:migrate": {
       "dependsOn": ["build"],
       "cache": false,
       "passThroughEnv": ["MIGRATION_DATABASE_URL", "TZ"]
@@ -76,7 +76,7 @@
         "TZ"
       ]
     },
-    "test:integration": {
+    "@storage-minis/db#test:integration": {
       "dependsOn": ["build"],
       "cache": false,
       "passThroughEnv": ["DATABASE_URL", "MIGRATION_DATABASE_URL"],

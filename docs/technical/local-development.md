@@ -228,9 +228,9 @@ an unpublished database, SIGTERM exit 143 within 10 s, and no API start when
 | `build` | `^build` | `dist/**` | Nothing |
 | `typecheck`, `//#lint`, `//#test` | DB `build` | Yes | `NODE_ENV`, `TZ` hashed for `//#test` |
 | `//#typecheck:root`, `//#format:check` | None | Yes | Nothing |
-| `db:generate` | None | No | Nothing |
-| `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
-| `test:integration` (`pnpm test:db`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL` |
+| DB `db:generate` | None | No | Nothing |
+| DB `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
+| DB `test:integration` (`pnpm test:db`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL` |
 | API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | DB `dev` | `build` | No, persistent | Nothing |
