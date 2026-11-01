@@ -1,4 +1,4 @@
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { once } from "node:events";
 import { sql } from "drizzle-orm";
@@ -9,6 +9,8 @@ import {
   requireTestDatabase,
 } from "../dist/index.js";
 
+// The app role from DATABASE_URL. Global setup already refused any database
+// not named *_test; repeat the guard for direct imports of this file.
 const config = readDatabaseConfig(process.env);
 requireTestDatabase(config);
 const database = createDatabase(config);
@@ -133,50 +135,6 @@ it("bounds shutdown and ends the socket when a caller leaks a checked-out client
   }
 });
 
-it.each(["SIGINT", "SIGTERM"] as const)(
-  "closes owned work and exits after %s",
-  async (signal) => {
-    const child = spawn(
-      process.execPath,
-      ["--import", "tsx", "tests/fixtures/active-command.ts"],
-      {
-        cwd: new URL("..", import.meta.url),
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
-    const exited = new Promise<{
-      code: number | null;
-      signal: NodeJS.Signals | null;
-    }>((resolve, reject) => {
-      child.once("exit", (code, signal) => {
-        resolve({ code, signal });
-      });
-      child.once("error", reject);
-    });
-    const deadline = setTimeout(() => {
-      child.kill("SIGKILL");
-    }, 12_000);
-    try {
-      let output = "";
-      for await (const chunk of child.stdout) {
-        output += String(chunk);
-        if (output.includes("active")) break;
-      }
-      expect(output).toContain("active");
-      const started = performance.now();
-      child.kill(signal);
-      const { code, signal: killed } = await exited;
-      expect(code).toBe(signal === "SIGINT" ? 130 : 143);
-      expect(killed).toBeNull();
-      expect(performance.now() - started).toBeLessThan(10_000);
-    } finally {
-      clearTimeout(deadline);
-      if (child.exitCode === null && child.signalCode === null)
-        child.kill("SIGKILL");
-    }
-  },
-);
-
 it("a plain Node consumer checks and closes without leaked handles", async () => {
   const result = await execute(
     process.execPath,
@@ -191,4 +149,33 @@ it("a plain Node consumer checks and closes without leaked handles", async () =>
     },
   );
   expect(result.stdout.trim()).toBe("checked");
+});
+
+it("connects only to the URL's components despite ambient libpq settings", async () => {
+  const result = await execute(
+    process.execPath,
+    [
+      "--input-type=module",
+      "-e",
+      "import { sql } from 'drizzle-orm'; import { createDatabase, readDatabaseConfig } from '@storage-minis/db'; const db = createDatabase(readDatabaseConfig(process.env)); try { await db.check(); const r = await db.db.execute(sql`SELECT current_setting('search_path') AS path, current_setting('statement_timeout') AS timeout`); console.log('checked', r.rows[0].path, r.rows[0].timeout); } finally { await db.close(); }",
+    ],
+    {
+      cwd: new URL("..", import.meta.url),
+      env: {
+        PATH: process.env.PATH,
+        DATABASE_URL: process.env.DATABASE_URL,
+        PGHOST: "ambient-host.invalid",
+        PGPORT: "1",
+        PGUSER: "ambient_user",
+        PGPASSWORD: "ambient-password",
+        PGDATABASE: "ambient_database",
+        PGSSLMODE: "verify-full",
+        PGSSLNEGOTIATION: "direct",
+        PGOPTIONS: "-c search_path=ambient_schema -c statement_timeout=1",
+        PGCLIENT_ENCODING: "latin1",
+      },
+      timeout: 10_000,
+    },
+  );
+  expect(result.stdout.trim()).toBe("checked public 3s");
 });

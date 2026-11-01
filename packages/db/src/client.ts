@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import type { Client, PoolClient } from "pg";
+import type { Client, PoolClient, PoolConfig } from "pg";
 import { validateDatabaseConfig } from "./config.js";
 import type { DatabaseConfig } from "./config.js";
 import * as schema from "./schema/index.js";
@@ -15,16 +15,34 @@ export const databaseLimits = {
   closeMs: 10_000,
 } as const;
 
-export function createDatabase(input: DatabaseConfig) {
-  const config = validateDatabaseConfig(input);
-  const pool = new Pool({
+/**
+ * pg options for an explicit configuration. pg 8.23.1 falls back to an ambient
+ * libpq variable for every option that is unset or empty, so this pins each
+ * one it would otherwise read (PGHOST, PGPORT, PGDATABASE, PGUSER, PGPASSWORD,
+ * PGSSLMODE, PGSSLNEGOTIATION, PGOPTIONS, PGCLIENT_ENCODING). PGBINARY and
+ * PGREPLICATION have no non-empty neutral value; leave them unset.
+ */
+export function connectionOptions(config: DatabaseConfig): PoolConfig {
+  return {
     host: config.host,
     port: config.port,
     database: config.database,
     user: config.user,
     password: config.password,
-    ssl: false,
-    options: "",
+    // `true` makes pg verify the certificate chain and host name (verify-full).
+    ssl: config.sslmode === "verify-full",
+    sslnegotiation: "postgres",
+    // Every schema object lives in public; a non-empty value also stops an
+    // ambient PGOPTIONS from changing search_path or timeouts.
+    options: "-c search_path=public",
+    client_encoding: "utf8",
+  };
+}
+
+export function createDatabase(input: DatabaseConfig) {
+  const config = validateDatabaseConfig(input);
+  const pool = new Pool({
+    ...connectionOptions(config),
     application_name: "storage-minis",
     max: databaseLimits.connections,
     idleTimeoutMillis: databaseLimits.idleMs,
@@ -93,7 +111,7 @@ export function createDatabase(input: DatabaseConfig) {
       ready = false;
       release(true);
       throw new Error(
-        "Database check failed. Verify target, credentials and availability.",
+        "Database check failed. Verify the database URL, credentials and availability.",
         { cause: error },
       );
     } finally {
@@ -106,7 +124,6 @@ export function createDatabase(input: DatabaseConfig) {
     closing ??= new Promise<void>((resolve, reject) => {
       const timer = setTimeout(() => {
         // End sockets even when a caller failed to finish a checked-out transaction.
-        // Commands also enforce a process deadline and redact logged diagnostics.
         for (const client of clients) void client.end().catch(() => {});
         reject(
           new Error(

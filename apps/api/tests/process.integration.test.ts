@@ -9,13 +9,24 @@ import {
 } from "@storage-minis/db";
 import type { Database } from "@storage-minis/db";
 import { afterAll, afterEach, beforeAll, it } from "vitest";
-import { ownProcess } from "../scripts/owned-process.js";
-import type { OwnedProcess } from "../scripts/owned-process.js";
+import { ownProcess } from "./owned-process.js";
+import type { OwnedProcess } from "./owned-process.js";
 
 // Guard even direct imports before acquiring any controller or cleanup owner.
 const config = readDatabaseConfig(process.env);
 requireTestDatabase(config);
 const cwd = new URL("..", import.meta.url);
+
+/**
+ * The validated test DATABASE_URL, optionally redirected to an owned loopback
+ * port. Only the host and port change; credentials and sslmode are kept.
+ */
+function databaseUrl(port = config.port, host = config.host) {
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  url.hostname = host.includes(":") ? `[${host}]` : host;
+  url.port = String(port);
+  return url.href;
+}
 const children = new Set<OwnedProcess>();
 const listeners = new Set<Server>();
 const sockets = new Set<Socket>();
@@ -128,7 +139,6 @@ async function reservePort() {
 
 async function startChild(
   overrides: NodeJS.ProcessEnv = {},
-  preload = false,
   occupied?: Awaited<ReturnType<typeof reservePort>>,
   fixture?: string,
 ) {
@@ -139,9 +149,6 @@ async function startChild(
   const child = ownProcess(
     [
       "--enable-source-maps",
-      ...(preload
-        ? ["--import", "./tests/fixtures/unavailable-database.ts"]
-        : []),
       ...(fixture
         ? ["tests/fixtures/shutdown.ts", fixture]
         : ["dist/server.js"]),
@@ -149,12 +156,7 @@ async function startChild(
     {
       cwd,
       env: {
-        DB_TARGET: config.target,
-        PGHOST: config.host,
-        PGPORT: String(config.port),
-        PGDATABASE: config.database,
-        PGUSER: config.user,
-        PGPASSWORD: config.password,
+        DATABASE_URL: databaseUrl(),
         HOST: "127.0.0.1",
         PORT: String(reservation.port),
         LOG_LEVEL: "silent",
@@ -224,12 +226,7 @@ function onceClosed(child: OwnedProcess, marker: string) {
 }
 
 it("cancels pending startup, owns the late completion and never listens", async () => {
-  const { child, port } = await startChild(
-    {},
-    false,
-    undefined,
-    "startup-finite",
-  );
+  const { child, port } = await startChild({}, undefined, "startup-finite");
   await child.waitForOutput("Shutdown fixture: startup_pending.");
   const start = performance.now();
   child.child.kill("SIGTERM");
@@ -247,7 +244,7 @@ it("cancels pending startup, owns the late completion and never listens", async 
 it.each(["SIGINT", "SIGTERM"] as const)(
   "drains an in-flight request with repeated %s and shares one pool close",
   async (signal) => {
-    const { child, port } = await startChild({}, false, undefined, "drain");
+    const { child, port } = await startChild({}, undefined, "drain");
     await child.waitForOutput("API lifecycle: listening.");
     const response = fetch(`http://127.0.0.1:${port}/fixture/drain`, {
       signal: AbortSignal.timeout(8_000),
@@ -281,7 +278,7 @@ it.each(["SIGINT", "SIGTERM"] as const)(
 it.each(["fail-http", "fail-database"])(
   "forces failure after attempting both owners for %s",
   async (mode) => {
-    const { child, port } = await startChild({}, false, undefined, mode);
+    const { child, port } = await startChild({}, undefined, mode);
     await child.waitForOutput("API lifecycle: listening.");
     const start = performance.now();
     child.child.kill("SIGTERM");
@@ -302,7 +299,7 @@ it.each(["fail-http", "fail-database"])(
 it.each(["hang-http", "hang-database", "startup-hang"])(
   "enforces one real 10s shutdown watchdog for %s",
   async (mode) => {
-    const { child, port } = await startChild({}, false, undefined, mode);
+    const { child, port } = await startChild({}, undefined, mode);
     await child.waitForOutput(
       mode === "startup-hang"
         ? "Shutdown fixture: startup_pending."
@@ -342,12 +339,7 @@ it.each(["hang-http", "hang-database", "startup-hang"])(
 
 it("enforces the real 17s startup watchdog without a harness kill", async () => {
   const start = performance.now();
-  const { child, port } = await startChild(
-    {},
-    false,
-    undefined,
-    "startup-watchdog",
-  );
+  const { child, port } = await startChild({}, undefined, "startup-watchdog");
   await child.waitForOutput("Shutdown fixture: startup_pending.");
   await exited(child, 1);
   const elapsed = performance.now() - start;
@@ -361,12 +353,13 @@ it("enforces the real 17s startup watchdog without a harness kill", async () => 
 });
 
 it("recovers exact HTTP readiness after an owned real DB socket disruption", async () => {
-  // The existing child-only DNS preload routes the exact validated test host to
-  // this gate. Forward real authenticated traffic; never replace DB responses.
-  // Owners are registered before connect/terminate, including failure cleanup.
+  // The child's DATABASE_URL points at this owned loopback gate, which forwards
+  // real authenticated traffic to the test database; it never replaces DB
+  // responses. Owners are registered before connect/terminate, including
+  // failure cleanup.
   let forwarding = true;
   let refused = 0;
-  const gate = await listen(5432, (socket) => {
+  const gate = await listen(0, (socket) => {
     if (!forwarding) {
       refused++;
       socket.destroy();
@@ -383,7 +376,9 @@ it("recovers exact HTTP readiness after an owned real DB socket disruption", asy
     upstream.on("error", () => socket.destroy());
     socket.pipe(upstream).pipe(socket);
   });
-  const { child, port } = await startChild({}, true);
+  const { child, port } = await startChild({
+    DATABASE_URL: databaseUrl(gate.port, "127.0.0.1"),
+  });
   await child.waitForOutput("API lifecycle: listening.");
   const pid = child.child.pid;
   assert.ok(pid);
@@ -459,11 +454,21 @@ it.each([
   { HOST: "config-secret-sentinel" },
   { LOG_LEVEL: "config-secret-sentinel" },
   { NODE_ENV: "" },
-  { DB_TARGET: undefined },
-  { PGPASSWORD: undefined },
-  { PGPASSWORD: "" },
-  { PGHOST: "postgres" },
+  { DATABASE_URL: undefined },
+  { DATABASE_URL: "" },
   { DATABASE_URL: "postgres://config-secret-sentinel@host/database" },
+  {
+    DATABASE_URL:
+      "postgres://storage_minis_app:config-secret-sentinel@127.0.0.1/storage_minis_test",
+  },
+  {
+    DATABASE_URL:
+      "mysql://storage_minis_app:config-secret-sentinel@127.0.0.1:5434/storage_minis_test",
+  },
+  {
+    DATABASE_URL:
+      "postgres://storage_minis_app:config-secret-sentinel@127.0.0.1:5434/storage_minis_test?sslmode=require",
+  },
 ])("rejects invalid configuration before listening %#", async (overrides) => {
   const { child, port } = await startChild(overrides);
   const start = performance.now();
@@ -477,8 +482,10 @@ it.each([
 });
 
 it("fails wrong credentials with safe bounded startup cleanup", async () => {
+  const wrongPassword = new URL(databaseUrl());
+  wrongPassword.password = "invalid-credential-sentinel";
   const { child, port } = await startChild({
-    PGPASSWORD: "invalid-credential-sentinel",
+    DATABASE_URL: wrongPassword.href,
   });
   const start = performance.now();
   await exited(child, 1);
@@ -492,11 +499,13 @@ it("fails wrong credentials with safe bounded startup cleanup", async () => {
 
 it("fails unavailable DB startup using an owned real TCP refusal fixture", async () => {
   let connections = 0;
-  const refusal = await listen(5432, (socket) => {
+  const refusal = await listen(0, (socket) => {
     connections++;
     socket.destroy();
   });
-  const { child, port } = await startChild({}, true);
+  const { child, port } = await startChild({
+    DATABASE_URL: databaseUrl(refusal.port, "127.0.0.1"),
+  });
   const start = performance.now();
   await exited(child, 1);
   assert.ok(
@@ -517,7 +526,7 @@ it("fails an occupied port without probing or closing the competing listener", a
   occupied.server.on("connection", () => {
     connections++;
   });
-  const { child } = await startChild({}, false, occupied);
+  const { child } = await startChild({}, occupied);
   const start = performance.now();
   await exited(child, 1);
   assert.ok(

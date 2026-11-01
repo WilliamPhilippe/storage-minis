@@ -5,15 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1792958166735,
-      "tag": "0000_base",
+      "when": 1793501414049,
+      "tag": "0000_inventory_id_base36",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1792958549753,
-      "tag": "0001_customer_name_whitespace",
+      "when": 1793501423921,
+      "tag": "0001_baseline",
       "breakpoints": true
     }
   ]

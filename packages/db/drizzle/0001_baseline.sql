@@ -1,25 +1,3 @@
--- S04, approved 2026-10-25: integer identity -> unpadded uppercase base36.
--- Drizzle Kit 0.31.11 does not manage functions. Keep this dependency before
--- inventory_items; subsequent schema generation retains its generated expression.
-CREATE FUNCTION public.inventory_id_base36(value integer) RETURNS text
-LANGUAGE plpgsql IMMUTABLE STRICT PARALLEL SAFE
-AS $function$
-DECLARE
-  remaining integer := value;
-  encoded text := '';
-BEGIN
-  IF remaining <= 0 THEN
-    RAISE EXCEPTION 'Inventory identity must be positive' USING ERRCODE = '22023';
-  END IF;
-  LOOP
-    encoded := pg_catalog.substr('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', (remaining % 36) + 1, 1) || encoded;
-    remaining := remaining / 36;
-    EXIT WHEN remaining = 0;
-  END LOOP;
-  RETURN encoded;
-END;
-$function$;
---> statement-breakpoint
 CREATE TYPE "public"."acquisition_allocation_method" AS ENUM('proportional_to_value', 'equal_per_unit', 'manual');--> statement-breakpoint
 CREATE TYPE "public"."business_event_scope" AS ENUM('organization', 'global_product');--> statement-breakpoint
 CREATE TYPE "public"."customer_settlement_outcome" AS ENUM('refund', 'reassignment', 'retained_income');--> statement-breakpoint
@@ -323,7 +301,7 @@ CREATE TABLE "customers" (
 	"created_event_id" integer NOT NULL,
 	CONSTRAINT "customers_key_1" UNIQUE("organization_id","id"),
 	CONSTRAINT "customers_positive_id" CHECK ("customers"."id" > 0),
-	CONSTRAINT "customer_nonblank_name" CHECK (length(btrim("customers"."name")) > 0)
+	CONSTRAINT "customer_nonblank_name" CHECK ("customers"."name" ~ '[^[:space:]]')
 );
 --> statement-breakpoint
 CREATE TABLE "return_items" (

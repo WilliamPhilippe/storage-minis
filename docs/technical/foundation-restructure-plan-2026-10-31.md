@@ -3,10 +3,12 @@
 **Status:** **Approved by the owner on 2026-10-31.** The owner approved A1–A5
 in response to the infrastructure review, then reviewed the full plan and
 approved every recommendation in D1–D10 and the final verification in
-Section 10. The plan is approved but **not yet implemented**. Implementation
-evidence is recorded in the restructure PR. Choices not listed here (for example CI) still need
-their own approval. The owner's answers in the plan review (R1–R7, Section 4a)
-(R1–R15) amend the plan on the same date; where wording conflicts, Section 4a wins.
+Section 10. The plan is **implemented** in
+[PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), which records
+the evidence for each commit group and for V1–V7. Choices not listed here (for
+example CI) still need their own approval. The owner's answers in the plan
+review and during implementation (R1–R20, Section 4a) amend the plan; where
+wording conflicts, Section 4a wins.
 
 **Supersedes, once the restructure PR merges:** the Step 1 container-only Node execution model, the
 wrapped Doppler launch path, the local-only database configuration contract and
@@ -134,8 +136,10 @@ implementation remains T04 work.
 ## 4a. Plan review amendments (approved 2026-10-31)
 
 The owner answered the plan-review rounds on 2026-10-31 (R1–R7 in round 1,
-R8–R11 in round 2, R12–R15 in round 3). These answers
-amend the sections that follow.
+R8–R11 in round 2, R12–R15 in round 3) and implementation questions on
+2026-10-31 and 2026-11-01 (R16–R19), and on 2026-11-01 approved the remaining
+implementation choices as recommended (R20). These answers amend the sections
+that follow.
 
 | ID | Decision | Effect on the plan |
 | --- | --- | --- |
@@ -154,12 +158,18 @@ amend the sections that follow.
 | R14 | **Production Doppler keys are created later, under T04.** The plan lists the required `prd` keys (Section 6); creating them waits for deployment work. | No `prd` changes in this PR. |
 | R15 | **Parity stack ports:** the stack API publishes on `127.0.0.1:3100`; the stack's PostgreSQL is not published (only `migrate` and `api` reach it). `pnpm dev` and `pnpm stack:up` can run at the same time. `test:stack` targets the stack's published port. | Applies to R2/R10 and commit group 3. |
 | R7 | **Leave the unused Doppler configs** (`dev_personal`, `stg`) untouched. Existing configs: `dev`, `dev_personal`, `stg`, `prd`, `test` (checked 2026-10-31). | No Doppler config changes beyond keys. |
+| R16 | **Every PR leaves a working state, not every commit** (implementation question, 2026-10-31). Group 1 removes the tooling container before group 2 switches the DB package to `DATABASE_URL`, so host `pnpm dev`, `db:migrate`, `test:db` and `test:api` are unavailable between those groups. | Amends R1 and Section 7. The groups keep their order; the PR as a whole must pass Section 10. |
+| R17 | **Compose model with a stack overlay** (implementation question, 2026-10-31). Compose interpolates every `${VAR:?}` in all loaded files, including `api`/`migrate`, before merging (verified on Compose 5.6.1), so an override `env_file:` cannot supply them. Local scripts therefore pass `--env-file .env.development`; `postgres_test` loads `.env.test` through `env_file:`. A small `compose.stack.yaml` publishes the stack API on `127.0.0.1:3100`, and the stack uses `.env.test` values. `build:` lives in `compose.yaml` because group 3 drops the development target. The override puts `api`/`migrate` in a `stack` profile so a bare `docker compose up` never migrates the development database. | Amends D1, R9 (Compose side) and R15; adds `compose.stack.yaml` to Section 5. `compose.yaml` still never names a committed `.env` file (R13). |
+| R18 | **The restructure PR is stacked on PR #109** (implementation question, 2026-10-31). Branch `feat/foundation-restructure` starts at this plan's commit; GitHub retargets the PR to `main` when #109 merges. | Applies to R1. |
+| R19 | **Run `migrate` first as a one-off, then `up`** (implementation question, 2026-11-01). Verified on Compose 5.6.1: a single `up` recreates, and so stops, the running `api` before `migrate` finishes, so a failed migration in a new image left no API running, contrary to R5. `docker compose run --rm --build migrate` followed by `up -d --wait` kept the running API serving when a temporary failing migration was deployed. `up --wait migrate` cannot replace the one-off: it exits 1 even when `migrate` succeeds. Separately, changing `DB_OWNER_PASSWORD` or `DB_APP_PASSWORD` also changes the `postgres` service, so Compose recreates it and stops the API: rotate a role password with `ALTER ROLE` before changing the secret. | Amends R5 and D6. `stack:up` runs both steps, and the T04 deploy uses the same sequence. The `migrate` service and `depends_on` remain, so a bare `up` never starts the API on an unmigrated database. |
+| R20 | **Implementation choices approved as recommended** (owner, 2026-11-01; completes V6). (1) `DATABASE_URL` spells out user, password, host and port; only `sslmode=disable` or `verify-full`; other parameters are rejected. (2) Committed URLs use `127.0.0.1`. (3) Host ports are fixed at 5433/5434. (4) Migrations are `0000_inventory_id_base36` (custom) and `0001_baseline`. (5) `db:check` is removed. (6) The API process suite guards in its Vitest config; `owned-process.ts` lives in `apps/api/tests/`. (7) Migration-behavior tests use the owner role; the test reset recreates `public`; default privileges are database-wide. (8) The migrator keeps Node's default signal handling. (9) `test:stack` asserts beyond R10; `db:up`/`stack:up` use `--wait-timeout 60`; the Dockerfile has no `# syntax=` line. (10) Restart policies stay with T04; Doppler CLI 3.77.1 or later. (11) Every pool pins `search_path=public`, UTF-8 client encoding and standard SSL negotiation. (12) The R19 smoke test simulates a failing redeploy with a held history lock and a changed `LOG_LEVEL`. | Recorded as implemented in PR #110; no further change. |
 
 ## 5. Target layout
 
 ```text
 compose.yaml              postgres, migrate, api, (later) web — production-shaped
 compose.override.yaml     dev only: published ports, postgres_test (tmpfs), build targets
+compose.stack.yaml        parity stack only: API on 127.0.0.1:3100 (R17)
 .env.development         committed local dev values (R8/R9)
 .env.test                committed local test values (R3/R9)
 docker/

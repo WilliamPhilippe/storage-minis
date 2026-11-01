@@ -1,5 +1,11 @@
 # T06 foundation proposal — 2026-10-24
 
+**Historical (2026-10-31):** Steps 1–4 were implemented from this proposal, and the
+[foundation restructure](technical-direction.md#foundation-restructure-2026-10-31)
+superseded its container execution model, Doppler launch path and command-wrapper
+contracts, including `drizzle.migrate.config.ts`. Read the current
+[local development reference](local-development.md) for implemented behavior.
+
 **Status: proposed; awaiting owner approval.** This document recommends the five
 steps in the [planning checklist](technical-direction.md#next-foundation-steps--planning-checklist-2026-10-24).
 It authorizes no installation, application configuration, schema migration or
@@ -65,8 +71,8 @@ executable; no PATH/profile change is needed to run them. No images were pulled,
 containers started or PostgreSQL connections attempted by these checks.
 
 Read the repository guidance, technical direction/checklist, issue-tracker
-conventions, [database design](database/design.md),
-[approved logs](requirement-updates/README.md), relevant entity-map constraints,
+conventions, [database design](../database/design.md),
+[approved logs](../requirement-updates/README.md), relevant entity-map constraints,
 ownership and acceptance scenarios. Later approvals take precedence in this order:
 October 22 schema review; October 23 field review; index/candidate follow-up;
 partial-expense-payment clarification. In particular, keep authoritative expense

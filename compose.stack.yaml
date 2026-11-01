@@ -1,0 +1,13 @@
+# Parity stack only (owner-approved 2026-10-31, R2/R15/R17). The stack runs
+# the production model from compose.yaml as its own project with a throwaway
+# database volume:
+#
+#   docker compose --project-name storage-minis-stack \
+#     --file compose.yaml --file compose.stack.yaml --env-file .env.test ...
+#
+# Only the API is published, on the loopback interface; the stack's
+# PostgreSQL stays private to migrate and api.
+services:
+  api:
+    ports:
+      - "127.0.0.1:3100:3000"

@@ -5,28 +5,22 @@
 StorageMinis manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
 This repository contains the full application's TypeScript workspace, specifications,
-a synchronized DBML diagram, local PostgreSQL and the completed diagnostic Fastify
-foundation. Steps 1–4 deliver Docker tooling, the Drizzle connection/schema/migrations,
-API configuration and lifecycle, nonroot runtime/development images, reload, guarded
-process tests and bounded image verification. All eighteen Step 4 criteria passed;
-see the [final verification and handoff](docs/technical/technical-direction.md#step-411-final-verification-and-handoff-2026-10-29).
-Read the [API runtime](README.md#api-runtime-image),
-[development/recovery](README.md#api-development-and-reload) and
-[automated verification](README.md#automated-api-image-smoke) instructions before
-using those workflows. Keep schema/process/smoke/outage consumers exclusive and
-sequential on the shared test target. Restore interrupted test outages with
-`./scripts/database.sh up test`. Rerun affected proof after source/task/image changes.
-Steps 5/6, business operations, authentication, frontend, production and CI remain pending.
+a synchronized DBML diagram, the Drizzle schema and migrations, and the diagnostic
+Fastify API. Node.js and pnpm run on the host; PostgreSQL runs in Docker. The
+[foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31)
+(2026-10-31) replaced the earlier tooling container and Doppler launchers with
+standard Compose, committed local database values, owner/app database roles and a
+production-shaped parity stack. Steps 5/6, business operations, authentication,
+frontend, production and CI remain pending.
 
-Step 2 supplies separate local development/test PostgreSQL services. Read
-[local PostgreSQL](README.md#local-postgresql) before starting, connecting to,
-stopping or resetting them. Development storage persists; test tmpfs is discarded
-on stop. Read [Drizzle tooling](README.md#drizzle-tooling) before changing DB
-configuration, exports, migration commands or integration tests. Doppler `dev` and
-`test` configs must match the selected target. The owner approved Step 3B on
-2026-10-25; read its [implementation and deferred writers](docs/database/step-3b-implementation-2026-10-25.md)
-before changing schema or migrations. First development application remains an
-explicit owner action; test replay does not apply development migrations.
+Read the [README](README.md) before running, testing or changing the local
+workflow, and the [local development reference](docs/technical/local-development.md)
+before changing configuration, Compose files, database roles, migrations or test
+harnesses. The owner approved Step 3B on 2026-10-25; read its
+[implementation and deferred writers](docs/database/step-3b-implementation-2026-10-25.md)
+before changing schema or migrations. Migrations apply only on explicit request
+(`pnpm db:migrate`, or the parity stack's `migrate` service); test setup migrates only
+the disposable test database.
 
 Use this file as a navigation and implementation guide. Detailed business rules and acceptance scenarios live in the versioned documents below. Update this guide when approved decisions or actual tooling change.
 
@@ -39,7 +33,7 @@ The owner requires prior approval for every new or changed technical or implemen
 - Research, inspect existing state, and prepare comparisons while awaiting approval; continue independent work covered by existing approval. Execute previously approved choices within their recorded scope, and ask again when a new or changed decision is needed.
 - Record approved outcomes with their date and rationale in the relevant documentation. Keep proposals distinct from approved decisions and implemented behavior.
 
-Prefer standard infrastructure tools and declarative configuration over custom infrastructure code, as directed by the owner on 2026-10-25. Keep helpers limited to behavior the selected tools do not provide; explain each retained exception. Read the [approved Compose direction](docs/technical/technical-direction.md#standard-infrastructure-tooling-direction-2026-10-25) and its [approved one-time setup amendment](docs/technical/technical-direction.md#one-time-local-setup-2026-10-25) before changing local container commands or configuration.
+Prefer standard infrastructure tools and declarative configuration over custom infrastructure code, as directed by the owner on 2026-10-25 and reaffirmed on 2026-10-31. Keep helpers limited to behavior the selected tools do not provide; explain each retained exception next to it. Read the [foundation restructure record](docs/technical/technical-direction.md#foundation-restructure-2026-10-31) before changing local commands, Compose files or configuration.
 
 For Node.js version management, fnm and nvm are both compatible with the repository's `.nvmrc`; the repository requires the pinned Node.js/pnpm versions. fnm is the current local setup, not a mandatory project tool. Read [local setup](README.md#local-setup) before changing or troubleshooting the version manager, and obtain approval before replacing it or changing shell initialization.
 
@@ -54,19 +48,19 @@ The owner confirmed the stack on 2026-10-21 and refined money, identity, and dat
 | Backend | Node.js with Fastify and tRPC. |
 | Frontend | React with Vite, TanStack Router, and TanStack Query. |
 | Forms and validation | React Hook Form and Zod; runtime API validation with Zod. |
-| Database and persistence | PostgreSQL with Drizzle ORM; Docker Compose for development PostgreSQL. Production hosting remains open. |
+| Database and persistence | PostgreSQL with Drizzle ORM; Docker Compose locally and, by the 2026-10-31 direction, on a single Hostinger VPS. Hosting and operations details remain T04 work. |
 | Authentication | Firebase Authentication with Google sign-in only and Firebase ID tokens; refresh during active use, no refresh while inactive, and explicit logout. |
 | Initial administrator | Owner's Google email is recorded in the technical direction document; setup/bootstrap mechanism remains pending. |
 | Package manager | pnpm. |
 | Build tasks | Turborepo. |
-| Environment variables | Doppler, selected on 2026-10-24; Step 1 supplies host Compose verification for `storage-minis` / `dev`; application/test/production mapping remains later work. Read [environment configuration](docs/technical/technical-direction.md#environment-configuration--doppler-2026-10-24). |
+| Environment variables | Doppler for production values (config `prd`, read-only service token on the VPS; keys created under T04). Local development and test database values are committed in `.env.development` and `.env.test` (2026-10-31); Doppler enters local development only with its first real secret. Read the [configuration reference](docs/technical/local-development.md#configuration). |
 | Tests | Vitest for unit/integration tests; real PostgreSQL for persistence invariants; Playwright for core browser workflows. |
 | Money | BRL integer centavos; exact largest-remainder cost allocation with permanent Item ID tie-breaking. Step 3B selects int32 storage; exact allocation code, overflow rejection and API/period contracts remain T03 work. |
 | Dates | Actual occurrence timestamps distinct from recording time, converted from input timezone to UTC; visitor-local display and UTC report periods. Original-period Sale/Loss results recalculate from current sources. |
 
 Ant Design is the owner's preferred design system, pending final confirmation. Use pnpm for dependency changes. Toolchain pins live in `.nvmrc` and `package.json`; see [local setup](README.md#local-setup) for verified installation commands. The owner approved initial `apps/api` and `packages/db` workspace directories, the [tooling setup decisions](docs/technical/technical-direction.md#tooling-setup-decisions-2026-10-23), and the [Turborepo setup decisions](docs/technical/technical-direction.md#turborepo-setup-decisions-2026-10-23) on 2026-10-23. Read those records and the [Step 3A amendments](docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25) before changing shared configuration, module conventions, or task caching. Step 3A selects compiled DB exports and a generate/review/apply workflow; Step 3B implements the approved structural schema. Concrete business transaction/concurrency writers remain T01/T06 work. Tooling is not business acceptance evidence.
 
-Hosting, deployment, backups, and operational targets remain T04 work. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
+Hosting, deployment, backups, and operational targets remain T04 work. The 2026-10-31 restructure sets their direction only: a Caddy `web` image for the SPA, images from GitHub Container Registry, daily `pg_dump` backups with a tested restore, and a deploy that runs `migrate` as a one-off before `up`. Database hosting remains separate from Firebase Authentication. T02 still owns bootstrap details, browser session persistence, activity detection, return-after-inactivity behavior, logout scope/revocation, and recovery behavior. Token expiry during active use does not require hourly sign-in. The application must enforce Membership and Organization authorization for business operations regardless of authentication provider.
 
 ## Read before making changes
 
@@ -154,11 +148,14 @@ Use `gh issue view <number> --repo WilliamPhilippe/storage-minis --comments` for
 
 For documentation changes, check changed relative links, Markdown fences/tables, referenced IDs, and consistency with the current baseline and affected issues. For baseline changes, verify active/retired IDs and unique primary ownership. Report what was checked and any unresolved gaps.
 
-Use `./scripts/tooling.sh run <command>` with the explicit checkout project and initialized volumes from [Docker setup](README.md#docker-tooling). The owner installed Doppler 3.77.1 through Homebrew; its explicit launcher override and dedicated browser login are documented there.
+Use the [README](README.md) for local setup, the daily loop, migrations and checks; `package.json` lists every script. Points the scripts do not show:
 
-For container startup, stop, status, logs, or cleanup, read [Docker lifecycle commands](README.md#docker-lifecycle-commands). Run `pnpm docker:setup` once to save nonsecret `.env.compose` settings and prepare/start the existing services; later `pnpm docker:up` needs no exports. `pnpm docker:migrate` separately applies pending committed development migrations. Run `docker:*` package scripts on the host, or use the documented raw Compose equivalents without host Node/pnpm. The canonical `compose.yaml` owns all local services; optional test/tools use profiles. Default startup selects PostgreSQL only; the optional API runtime starts separately through the documented Doppler operation. Project pruning preserves named volumes; `scripts/reset-volumes.sh --confirm PROJECT` verifies declared volume ownership before native full-profile deletion of development data and dependencies. Docker Desktop supplies Compose; no standalone `docker-compose` installation is needed.
-
-With the pinned toolchain active, `pnpm install --frozen-lockfile` verifies installation and `pnpm list --recursive --depth -1` lists the root, API, and database workspace packages. Use [development checks](README.md#development-checks) for typecheck, lint, format, and Vitest commands, and [Turborepo checks](README.md#turborepo-checks-and-cache) for dry runs, cache reuse, and forced execution. `pnpm check` builds the DB package and checks source/configuration types, lint, formatting and unit tests. `pnpm test:db` runs separately, uncached, with the explicit PostgreSQL test target. Shared `skipLibCheck: true` is owner-approved for Drizzle declaration compatibility; all source strictness remains. Generate offline with `./scripts/tooling.sh run pnpm db:generate`; review and commit SQL/snapshots/journal together before explicit application. Preserve applied history and use forward migrations. Integration tests reset only disposable test schemas. API finite build/start declarations and offline lifecycle checks are implemented. Stage 4.4 guarded process tests are complete with real startup/failure/basic-signal proof. Run `./scripts/tooling.sh run-db test pnpm test:api` only after the schema suite releases the shared target; read the README process-test instructions for ownership/deadlines. Stage 4.7 development reload is verified; stop watchers before finite clean builds. Stage 4.8 automated image smoke is verified and runs uncached after other test consumers release the target; deployment and CI remain pending. Report connection/tooling validation separately from business acceptance evidence.
+- `pnpm check` needs no database. `pnpm test:db` and `pnpm test:api` need `pnpm db:up` and share the test database, so run them one at a time; both refuse any database not named `*_test`. Run `pnpm test:stack` (Docker) after changes to the image, Compose files or migrations.
+- Raw `docker compose` commands need `--env-file .env.development`. The parity stack uses its own project and file flags; see the [parity stack reference](docs/technical/local-development.md#parity-stack).
+- Generate migrations offline with `pnpm db:generate` and confirm Drizzle Kit's final line; it can exit 0 after an error. Review and commit SQL, snapshots and journal together. Preserve applied history and correct it with forward migrations.
+- Stop `pnpm dev` before finite builds or checks; both write the DB package's `dist`.
+- Shared `skipLibCheck: true` is owner-approved for Drizzle declaration compatibility; all source strictness remains.
+- Rerun the affected live suites after source, task, image or Compose changes. Report tooling and connection validation separately from business acceptance evidence.
 
 For future implementation, use the affected issue's acceptance criteria and requirements Section 15 to select tests. Include rollback on failure, real concurrent persistence operations, cross-Organization/Customer rejection, shared Product reuse without private-data leakage, exact allocation reconciliation, dated reversals, and catalog eligibility where relevant. Record evidence before claiming a workflow is delivered.
 
