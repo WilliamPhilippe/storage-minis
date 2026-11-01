@@ -24,7 +24,7 @@
     },
     "//#lint": {
       "outputs": [],
-      "dependsOn": ["@storage-minis/db#build"]
+      "dependsOn": ["@storage-minis/db#build", "@storage-minis/api#build"]
     },
     "//#format:check": {
       "outputs": []
@@ -97,6 +97,10 @@
     },
     "@storage-minis/db#dev": {
       "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@storage-minis/web#dev": {
       "cache": false,
       "persistent": true
     }
