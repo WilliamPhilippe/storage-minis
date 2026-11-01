@@ -2,12 +2,12 @@
 
 **Status: approved by the owner on 2026-11-01, with the changes listed under
 [Approval](#approval-2026-11-01); implemented in
-[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121).** The approval record, four implementation-time decisions, the
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121).** The approval record, five implementation-time decisions, the
 outcome and the evidence are in
 [technical direction](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01).
 Where this plan's text and that record differ (heading tokens, the QueryClient's
-module, antd defaults kept where an override is not simple, and the selected
-backgrounds), the record
+module, antd defaults kept where an override is not simple, the selected
+backgrounds, and the language switch's place in the shell), the record
 applies. The plan text below is kept as approved. This is the
 plan for PR 1 of the
 [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)

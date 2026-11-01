@@ -4,6 +4,6 @@ declare const styles: {
   readonly logoLink: string;
   readonly markLink: string;
   readonly nav: string;
-  readonly toggle: string;
+  readonly footer: string;
 };
 export default styles;

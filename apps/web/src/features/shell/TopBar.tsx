@@ -2,12 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Layout, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import logoUrl from "../../ui/assets/logo.png";
-import { LanguageSwitch } from "../../ui/LanguageSwitch";
 import styles from "./TopBar.module.css";
 
 // Phones: the logo, linking to /app. From bp-md: the page title (the logo
-// lives in the SideNav). Until PR 3 builds the account menu, the language
-// switch stands alone on the right (WS-07 #10).
+// lives in the SideNav). The language switch lives in the SideNav and the
+// MenuFab's drawer (owner, 2026-11-01).
 export function TopBar({
   isPhone,
   title,
@@ -37,9 +36,6 @@ export function TopBar({
           <Typography.Title level={1}>{title}</Typography.Title>
         )
       )}
-      <div className={styles.actions}>
-        <LanguageSwitch />
-      </div>
     </Layout.Header>
   );
 }

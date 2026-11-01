@@ -39,10 +39,12 @@
   overflow-y: auto;
 }
 
-.toggle {
+.footer {
   display: flex;
   flex: none;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
   padding: var(--space-2);
   border-top: 1px solid var(--line);
 }

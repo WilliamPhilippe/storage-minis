@@ -4,12 +4,14 @@ import { Button, Layout } from "antd";
 import { useTranslation } from "react-i18next";
 import logoUrl from "../../ui/assets/logo.png";
 import markUrl from "../../ui/assets/mark.png";
+import { LanguageSwitch } from "../../ui/LanguageSwitch";
 import { NavMenu } from "./NavMenu";
 import styles from "./SideNav.module.css";
 
 // From bp-md. antd's built-in trigger is a div with no role, focus or label,
 // so the toggle is our own button (WS-07 #6): "Collapse" with its icon when
-// expanded, an icon-only "Expand menu" when collapsed.
+// expanded, an icon-only "Expand menu" when collapsed. The language switch
+// sits right above it: the globe and "EN", or the globe alone when collapsed.
 export function SideNav({
   collapsed,
   onToggle,
@@ -43,7 +45,11 @@ export function SideNav({
         <nav aria-label={tApp("nav.label")} className={styles.nav}>
           <NavMenu />
         </nav>
-        <div className={styles.toggle}>
+        <div className={styles.footer}>
+          <LanguageSwitch
+            label={collapsed ? "none" : "code"}
+            placement="topLeft"
+          />
           {collapsed ? (
             <Button
               type="text"

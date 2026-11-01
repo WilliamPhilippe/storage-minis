@@ -12,8 +12,3 @@
 .logo {
   display: block;
 }
-
-.actions {
-  display: flex;
-  margin-inline-start: auto;
-}

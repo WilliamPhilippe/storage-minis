@@ -16,6 +16,12 @@ export const languageNames: Record<Language, string> = {
   "pt-BR": "Português",
 };
 
+// The short label the shell's switch shows.
+export const languageCodes: Record<Language, string> = {
+  "en-US": "EN",
+  "pt-BR": "PT",
+};
+
 // pt-BR catalogs are typed against en-US: every string widens to `string`, and
 // every en-US `_other` plural key needs a `_many` key, because pt-BR's plural
 // rules add a `many` category (exact millions) and i18next shows the raw key

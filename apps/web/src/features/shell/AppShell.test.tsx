@@ -3,7 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import app from "../../i18n/en-US/app";
 import common from "../../i18n/en-US/common";
-import { languageNames } from "../../i18n/i18n";
+import { languageCodes, languageNames } from "../../i18n/i18n";
 import ptApp from "../../i18n/pt-BR/app";
 import { setViewportWidth } from "../../test/harness";
 import { documentTitle, languageSwitchName } from "../../test/names";
@@ -127,6 +127,78 @@ describe("the SideNav from bp-md", () => {
     ).toBeNull();
     const logo = screen.getByRole("link", { name: common.brand });
     expect(logo.getAttribute("aria-current")).toBeNull();
+  });
+});
+
+describe("the language switch in the shell", () => {
+  it("sits in the MenuFab's drawer below bp-md, not in the top bar", async () => {
+    const user = userEvent.setup();
+    await renderInventory(375);
+    expect(
+      screen.queryByRole("button", { name: languageSwitchName() }),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: nav.open }));
+    const drawer = screen.getByRole("dialog", { name: nav.menu });
+    const languageSwitch = within(drawer).getByRole("button", {
+      name: languageSwitchName(),
+    });
+    expect(languageSwitch.textContent).toBe(languageCodes["en-US"]);
+    expect(
+      within(screen.getByRole("banner")).queryByRole("button", {
+        name: languageSwitchName(),
+      }),
+    ).toBeNull();
+  });
+
+  it("switches the language from the drawer", async () => {
+    const user = userEvent.setup();
+    await renderInventory(375);
+    await user.click(screen.getByRole("button", { name: nav.open }));
+    await user.click(
+      within(screen.getByRole("dialog", { name: nav.menu })).getByRole(
+        "button",
+        { name: languageSwitchName() },
+      ),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: languageNames["pt-BR"] }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: ptApp.titles.inventory,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("sits at the bottom of the SideNav, right above the collapse button", async () => {
+    await renderInventory(1280);
+    expect(
+      within(screen.getByRole("banner")).queryByRole("button", {
+        name: languageSwitchName(),
+      }),
+    ).toBeNull();
+    const sideNav = screen.getByRole("complementary");
+    const languageSwitch = within(sideNav).getByRole("button", {
+      name: languageSwitchName(),
+    });
+    expect(languageSwitch.textContent).toBe(languageCodes["en-US"]);
+    expect(languageSwitch.nextElementSibling).toBe(
+      within(sideNav).getByRole("button", { name: nav.collapse }),
+    );
+  });
+
+  it("shows only the globe in the collapsed SideNav, keeping its name", async () => {
+    await renderInventory(900);
+    const sideNav = screen.getByRole("complementary");
+    const languageSwitch = within(sideNav).getByRole("button", {
+      name: languageSwitchName(),
+    });
+    expect(languageSwitch.textContent).toBe("");
+    expect(languageSwitch.nextElementSibling).toBe(
+      within(sideNav).getByRole("button", { name: nav.expand }),
+    );
   });
 });
 

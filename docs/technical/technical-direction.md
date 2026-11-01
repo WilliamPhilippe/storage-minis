@@ -1334,7 +1334,7 @@ re-verifies its pins.
 [web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
 with the changes listed after the table. Implemented in
-[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, four implementation-time decisions and the
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, five implementation-time decisions and the
 evidence follow the design reference. Choices the plan does not settle, and
 deviations that implementation forces, still need approval.
 
@@ -1387,7 +1387,7 @@ disagree, and each implementation still follows its own approved plan.
 
 ### Implementation-time decisions (2026-11-01)
 
-Building the shell raised four points the plan did not settle. The owner
+Building the shell raised five points the plan did not settle. The owner
 decided each on 2026-11-01:
 
 | Topic | Decided outcome | Why |
@@ -1396,6 +1396,7 @@ decided each on 2026-11-01:
 | QueryClient instance | `lib/trpc.ts` exports the app's `queryClient = createQueryClient()` beside the `trpc` options proxy, as in tRPC's Vite SPA setup; `main.tsx` imports it. Tests still create a fresh client per test. | The proxy needs its QueryClient when it is created. Its `queryOptions()` never uses that client (checked in the 11.22.1 source), so each test's client runs every query. |
 | Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays; where a component token is enough, the design is followed (the FAB's icon is 24 px through FloatButton's `fontSizeIcon`). Four design details keep antd's default: the MenuFab's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu's 14 px text instead of 16 px; the drawer's square top corners instead of `radius-lg`; and the inline Menu's own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, draws the inline Menu's border with a three-class selector, and rounding the drawer needs a class on its wrapper. |
 | Selected backgrounds | `colorPrimaryBg` is `surface-sunken` (`#eef0f3`) and `colorPrimaryBgHover` is `line` (`#e3e6ea`). They feed `controlItemBgActive` and `controlItemBgActiveHover`, so a selected dropdown item is ink on `surface-sunken` (15.6:1) and a hovered one ink on `line` (about 14:1). A `theme.test.ts` case checks both values and their contrast in both themes. | antd derives these from steps 1 and 2 of `colorPrimary`'s palette. For ink they come out as `#5b5f61` and `#4f5254`, so the language switch's selected item read ink on mid-grey (2.7:1, below 4.5:1). The same tokens style selected rows, nodes and cells in Table, Tree, Cascader, DatePicker, Calendar, Transfer and Steps. Owner, 2026-11-01, after reviewing the PR. |
+| Language switch placement | In the shell, the switch leaves the TopBar (WS-07 #10's interim place) for the bottom of the SideNav, right above the collapse button, and the footer of the MenuFab's drawer, below the menu list. It shows the globe and the language code, "EN" or "PT", and the globe alone in the collapsed SideNav; its accessible name stays "Language: English", and the dropdown opens upward. The Login and catalog pages keep the switch in their header with the language's name. PR 3's account menu therefore no longer takes the switch. | The owner's direction after reviewing the PR (2026-11-01). The TopBar holds only the logo on phones and the page title from `bp-md`. |
 
 While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
 byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
@@ -1429,7 +1430,8 @@ includes `header-height` and `header-height-phone`.
   `color-scheme: light`.
 - **Shell.** TopBar, SideNav with its own toggle and a remembered choice
   (`storage-minis.sideNav`), MenuFab with a bottom drawer, and link-based menus
-  in `nav` "Main menu" landmarks. The logo, mark and favicon are resized
+  in `nav` "Main menu" landmarks. The language switch ("EN" or "PT") sits at
+  the bottom of the SideNav and in the drawer's footer. The logo, mark and favicon are resized
   copies.
 - **Login page.** State 1 on phones and in the 400 px desktop card. The button
   has no action, nothing imports Firebase, and Google's "G" waits for PR 3.
@@ -1444,7 +1446,8 @@ pt-BR strings are first translations for the owner's review;
 `viewport-fit=cover` lets the content's bottom padding include the safe-area
 inset; and the generic error page shows a server message only for tRPC errors.
 The design's `theme.ts` does not list the Typography tokens, FloatButton's
-`fontSizeIcon` or the `colorPrimaryBg` pair yet, and `ant-design.md` still names `main.tsx` as the
+`fontSizeIcon` or the `colorPrimaryBg` pair yet, TopBar.md, SideNav.md and
+MenuFab.md still place the language switch in the TopBar, and `ant-design.md` still names `main.tsx` as the
 ConfigProvider's owner (the code puts it in `ui/AppProviders.tsx`, switching
 between `theme` and `phoneTheme`), so a later refresh of the originals should
 add them. The logo links and the not-found page's home link are current
@@ -1455,8 +1458,8 @@ add them. The logo links and the not-found page's home link are current
 - `pnpm install --frozen-lockfile` passes. `pnpm-workspace.yaml` is unchanged:
   no `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers
   check` finds no issue. The TanStack and tRPC agent skills stay unapproved.
-- `pnpm check`: 9 tasks, 190 unit tests in 23 files (from 120 in 12). The
-  `web-unit` project adds 70 tests in 11 files: money, dates, languages, a
+- `pnpm check`: 9 tasks, 194 unit tests in 23 files (from 120 in 12). The
+  `web-unit` project adds 74 tests in 11 files: money, dates, languages, a
   failed switch, the theme's selected backgrounds, the pending page, the
   shell, the document title, routes, the Login page and the echo card.
 - `pnpm check --dry=json` lists `@storage-minis/web#typecheck`, and `//#lint`
@@ -1492,6 +1495,9 @@ add them. The logo links and the not-found page's home link are current
   lead 16 px then 14 px, button 44 then 40 px, a 400 px card on desktop. At
   390 px it has no sideways scroll (`scrollWidth` 390). Its button does
   nothing, and the network list shows no external request.
+- The language switch sits above "Collapse" in the SideNav at 1280 ("EN"),
+  as a 40 px globe-only button above "Expand menu" at 900, and as a 44 px
+  "EN" button in the drawer's footer at 375; the TopBar has no button.
 - The language switch's selected item renders ink on `rgb(238, 240, 243)`,
   and on `rgb(227, 230, 234)` when hovered (it was `rgb(91, 95, 97)`).
 - Under emulated dark mode, the page and the browser's controls stay light.
