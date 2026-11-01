@@ -41,7 +41,7 @@ requirement or F-decision IDs. Existing issue ownership and dependencies remain.
 | 4 | Fastify server foundation | Steps 1–3 | Complete: all eighteen criteria passed with [final verification/handoff](technical-direction.md#step-411-final-verification-and-handoff-2026-10-29) and authorized evidence on [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107). Steps 5/6 and full T06 remain pending. |
 | — | [Foundation restructure](foundation-restructure-plan-2026-10-31.md) (not a numbered step) | Steps 1–4 | Implemented in [PR #110](https://github.com/WilliamPhilippe/storage-minis/pull/110), stacked on #109; per-group evidence, V1–V7 and superseded-versus-re-proven Step 1–4 evidence are in the PR and the [technical direction record](technical-direction.md#foundation-restructure-2026-10-31). |
 | — | [API composition and error-log rework](technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (not a numbered step) | Steps 1–4, restructure | Implemented in [PR #112](https://github.com/WilliamPhilippe/storage-minis/pull/112): plugin composition root, `registerRoutes` removed, allowlisted error logs and JSON lifecycle lines; evidence in the record and the PR. |
-| 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | Not started; re-plan against the reworked API and its [Step 5 planning inputs](#step-5--trpc-and-zod-integration) |
+| 5 | tRPC and Zod integration | Steps 1–4, restructure, API rework | [Plan](step-5-trpc-plan-2026-11-01.md) approved on 2026-11-01 (P5-01–P5-10; [approval record](technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)); implementation pending. |
 | 6 | Repeatable verification and handoff | Steps 1–5 | Not started; re-plan against the restructured foundation |
 
 Begin the next assignment from the previous step's merged result, unless the
@@ -418,6 +418,11 @@ Completion requires evidence that:
 - The tRPC context exposes `database.db`, never the whole `Database`.
 - Request logs include the tRPC procedure name. Failures keep the existing
   allowlisted `err` record and fixed client bodies.
+
+**Approved plan (2026-11-01):** the [Step 5 plan](step-5-trpc-plan-2026-11-01.md)
+settles P5-01–P5-10: packages, transport, body limits, error envelope, logs,
+context, procedure, type export, layout and tests. Implement it as written and
+bring any deviation back for approval.
 
 ### Research and planning focus
 
