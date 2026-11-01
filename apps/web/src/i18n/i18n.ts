@@ -16,7 +16,7 @@ export const languageNames: Record<Language, string> = {
   "pt-BR": "Português",
 };
 
-// The short label the shell's switch shows.
+// The short label the language switch shows.
 export const languageCodes: Record<Language, string> = {
   "en-US": "EN",
   "pt-BR": "PT",

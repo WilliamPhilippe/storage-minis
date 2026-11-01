@@ -28,7 +28,7 @@ export function MenuFab() {
         open={open}
         onClose={() => setOpen(false)}
         title={t("nav.menu")}
-        footer={<LanguageSwitch label="code" placement="topLeft" />}
+        footer={<LanguageSwitch placement="topLeft" />}
       >
         <nav aria-label={t("nav.label")}>
           <NavMenu onNavigate={() => setOpen(false)} />

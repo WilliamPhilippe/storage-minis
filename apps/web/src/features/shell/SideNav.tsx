@@ -46,10 +46,7 @@ export function SideNav({
           <NavMenu />
         </nav>
         <div className={styles.footer}>
-          <LanguageSwitch
-            label={collapsed ? "none" : "code"}
-            placement="topLeft"
-          />
+          <LanguageSwitch iconOnly={collapsed} placement="topLeft" />
           {collapsed ? (
             <Button
               type="text"

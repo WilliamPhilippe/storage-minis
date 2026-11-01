@@ -11,7 +11,7 @@ export function CatalogPlaceholder() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <LanguageSwitch />
+        <LanguageSwitch placement="bottomRight" />
       </header>
       <main className={styles.main}>
         <img

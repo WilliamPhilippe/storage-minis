@@ -16,7 +16,7 @@ export function LoginPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <LanguageSwitch />
+        <LanguageSwitch placement="bottomRight" />
       </header>
       <main className={styles.main}>
         <section aria-labelledby={titleId} className={styles.card}>

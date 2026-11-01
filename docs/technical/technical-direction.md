@@ -1396,7 +1396,7 @@ decided each on 2026-11-01:
 | QueryClient instance | `lib/trpc.ts` exports the app's `queryClient = createQueryClient()` beside the `trpc` options proxy, as in tRPC's Vite SPA setup; `main.tsx` imports it. Tests still create a fresh client per test. | The proxy needs its QueryClient when it is created. Its `queryOptions()` never uses that client (checked in the 11.22.1 source), so each test's client runs every query. |
 | Hard-to-override styles | In the owner's words: "We don't really need to overwrite so many styles. If it's not easy to overwrite, just ignore." Where antd's own styling needs more than a theme token or a single CSS Module class, antd's default stays; where a component token is enough, the design is followed (the FAB's icon is 24 px through FloatButton's `fontSizeIcon`). Four design details keep antd's default: the MenuFab's position (24 px from the right, 48 px from the bottom, clear of the iPhone home indicator) instead of `fab-offset` plus the safe-area inset; the drawer menu's 14 px text instead of 16 px; the drawer's square top corners instead of `radius-lg`; and the inline Menu's own right border next to the SideNav's. | antd positions the FloatButton with a two-class selector and internal tokens, draws the inline Menu's border with a three-class selector, and rounding the drawer needs a class on its wrapper. |
 | Selected backgrounds | `colorPrimaryBg` is `surface-sunken` (`#eef0f3`) and `colorPrimaryBgHover` is `line` (`#e3e6ea`). They feed `controlItemBgActive` and `controlItemBgActiveHover`, so a selected dropdown item is ink on `surface-sunken` (15.6:1) and a hovered one ink on `line` (about 14:1). A `theme.test.ts` case checks both values and their contrast in both themes. | antd derives these from steps 1 and 2 of `colorPrimary`'s palette. For ink they come out as `#5b5f61` and `#4f5254`, so the language switch's selected item read ink on mid-grey (2.7:1, below 4.5:1). The same tokens style selected rows, nodes and cells in Table, Tree, Cascader, DatePicker, Calendar, Transfer and Steps. Owner, 2026-11-01, after reviewing the PR. |
-| Language switch placement | In the shell, the switch leaves the TopBar (WS-07 #10's interim place) for the bottom of the SideNav, right above the collapse button, and the footer of the MenuFab's drawer, below the menu list. It shows the globe and the language code, "EN" or "PT", and the globe alone in the collapsed SideNav; its accessible name stays "Language: English", and the dropdown opens upward. The Login and catalog pages keep the switch in their header with the language's name. PR 3's account menu therefore no longer takes the switch. | The owner's direction after reviewing the PR (2026-11-01). The TopBar holds only the logo on phones and the page title from `bp-md`. |
+| Language switch placement | In the shell, the switch leaves the TopBar (WS-07 #10's interim place) for the bottom of the SideNav, right above the collapse button, and the footer of the MenuFab's drawer, below the menu list. Every switch, including the Login and catalog pages' header switch, shows the globe and the language code, "EN" or "PT"; the collapsed SideNav shows the globe alone. Its accessible name stays "Language: English", the dropdown still lists "English" and "Português", and it opens upward in the shell. PR 3's account menu therefore no longer takes the switch. | The owner's direction after reviewing the PR (2026-11-01). The TopBar holds only the logo on phones and the page title from `bp-md`. |
 
 While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
 byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
@@ -1447,7 +1447,8 @@ pt-BR strings are first translations for the owner's review;
 inset; and the generic error page shows a server message only for tRPC errors.
 The design's `theme.ts` does not list the Typography tokens, FloatButton's
 `fontSizeIcon` or the `colorPrimaryBg` pair yet, TopBar.md, SideNav.md and
-MenuFab.md still place the language switch in the TopBar, and `ant-design.md` still names `main.tsx` as the
+MenuFab.md still place the language switch in the TopBar, the Login page's
+README still labels it "English", and `ant-design.md` still names `main.tsx` as the
 ConfigProvider's owner (the code puts it in `ui/AppProviders.tsx`, switching
 between `theme` and `phoneTheme`), so a later refresh of the originals should
 add them. The logo links and the not-found page's home link are current
@@ -1491,7 +1492,8 @@ add them. The logo links and the not-found page's home link are current
   SideNav collapsed at 900 and expanded at 1280; one h1 per page; no console
   warning.
 - The Login page at 390 × 844 and 1280 × 800 matches `screens/1-sign-in.png`
-  and `screens/5-desktop.png`, apart from the "G" placeholder: h1 22/30/600,
+  and `screens/5-desktop.png`, apart from the "G" placeholder and the
+  switch's "EN" label: h1 22/30/600,
   lead 16 px then 14 px, button 44 then 40 px, a 400 px card on desktop. At
   390 px it has no sideways scroll (`scrollWidth` 390). Its button does
   nothing, and the network list shows no external request.

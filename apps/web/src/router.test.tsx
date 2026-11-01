@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import app from "./i18n/en-US/app";
 import catalog from "./i18n/en-US/catalog";
 import common from "./i18n/en-US/common";
+import { languageCodes } from "./i18n/i18n";
 import { documentTitle, languageSwitchName } from "./test/names";
 import { echoResponse, renderApp } from "./test/renderApp";
 
@@ -28,8 +29,8 @@ describe("routes", () => {
       }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: languageSwitchName() }),
-    ).toBeTruthy();
+      screen.getByRole("button", { name: languageSwitchName() }).textContent,
+    ).toBe(languageCodes["en-US"]);
     expect(screen.queryByRole("navigation")).toBeNull();
     expect(document.title).toBe(common.brand);
   });

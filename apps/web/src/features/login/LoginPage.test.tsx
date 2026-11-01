@@ -3,7 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import common from "../../i18n/en-US/common";
 import login from "../../i18n/en-US/login";
-import { languageNames } from "../../i18n/i18n";
+import { languageCodes, languageNames } from "../../i18n/i18n";
 import ptLogin from "../../i18n/pt-BR/login";
 import { setViewportWidth } from "../../test/harness";
 import { languageSwitchName } from "../../test/names";
@@ -31,8 +31,8 @@ describe("the Login page", () => {
     expect(screen.getByText(login.helper)).toBeTruthy();
     expect(screen.getByText(login.footer)).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: languageSwitchName() }),
-    ).toBeTruthy();
+      screen.getByRole("button", { name: languageSwitchName() }).textContent,
+    ).toBe(languageCodes["en-US"]);
     expect(screen.getByRole("img", { name: common.brand })).toBeTruthy();
   });
 

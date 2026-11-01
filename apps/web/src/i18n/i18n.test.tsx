@@ -11,6 +11,7 @@ import { languageSwitchName } from "../test/names";
 import {
   detectLanguage,
   getLocaleState,
+  languageCodes,
   languageNames,
   subscribeLocale,
   switchLanguage,
@@ -54,8 +55,8 @@ describe("languages", () => {
     expect(
       screen.getByRole("button", {
         name: languageSwitchName("pt-BR", pt.language.switch),
-      }),
-    ).toBeTruthy();
+      }).textContent,
+    ).toBe(languageCodes["pt-BR"]);
     expect(document.documentElement.lang).toBe("pt-BR");
     expect(localStorage.getItem("storage-minis.language")).toBe("pt-BR");
   });

@@ -9,15 +9,15 @@ import {
 } from "../i18n/i18n";
 import { useLocale } from "../i18n/useLocale";
 
-// A text button with the globe and the current language: its name
-// ("English") on the Login and catalog pages, its code ("EN") in the shell,
-// or the globe alone in the collapsed SideNav. Its accessible name is always
-// "Language: English". Each option is written in its own language.
+// A text button with the globe and the current language's code ("EN"), or
+// the globe alone in the collapsed SideNav (owner, 2026-11-01). Its accessible
+// name is always "Language: English". Each option is written in its own
+// language.
 export function LanguageSwitch({
-  label = "name",
+  iconOnly = false,
   placement = "bottomLeft",
 }: {
-  label?: "name" | "code" | "none";
+  iconOnly?: boolean;
   placement?: DropdownProps["placement"];
 }) {
   const { t } = useTranslation();
@@ -50,13 +50,7 @@ export function LanguageSwitch({
         icon={<GlobalOutlined aria-hidden />}
         aria-label={t("language.switch", { name: languageNames[language] })}
       >
-        {label !== "none" && (
-          <span lang={language}>
-            {label === "code"
-              ? languageCodes[language]
-              : languageNames[language]}
-          </span>
-        )}
+        {!iconOnly && <span lang={language}>{languageCodes[language]}</span>}
       </Button>
     </Dropdown>
   );
