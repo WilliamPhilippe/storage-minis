@@ -134,7 +134,7 @@ no new business contract.
 | --- | --- |
 | Columns, enums, constraints, indexes | Existing domain file in `packages/db/src/schema/`; exports in `schema/index.ts` |
 | Reviewed database upgrade | Generated SQL and metadata in `packages/db/drizzle/` |
-| HTTP/lifecycle integration | `apps/api/src/`; preserve `app.ts`, `lifecycle.ts`, and `server.ts` ownership |
+| HTTP/lifecycle integration | `apps/api/src/`; add routes as plugins registered in `app.ts` (see `health.ts`); preserve `lifecycle.ts` and `server.ts` ownership |
 | New API procedure | Future tRPC router in `apps/api`; adapter/context conventions remain Step 5 work |
 | Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior |
 
@@ -212,8 +212,8 @@ type CustomerRow = typeof schema.customers.$inferSelect;
 type CustomerInsert = typeof schema.customers.$inferInsert;
 ```
 
-Use the `Database` passed by the API lifecycle and its `database.db` Drizzle handle
-for queries/transactions. Do not import `packages/db/src` through source aliases,
+Use the database the API lifecycle passes to `buildApp`: application code receives its
+`database.db` Drizzle handle for queries/transactions, never the pool's `close`. Do not import `packages/db/src` through source aliases,
 create another pool per request, or manually edit generated `dist` files.
 Builds refresh code/types; migrations update the database. Neither substitutes for
 the other. If a migration run is interrupted, inspect `drizzle.__drizzle_migrations`
@@ -229,11 +229,15 @@ first needs approved dependency pins, the Fastify adapter, request context, boun
 Zod input/output schemas, safe errors, and a type-only router export. Its initial
 procedures are diagnostic and table-free. Business authorization remains T02 work.
 
-The existing integration point is
-[`startLifecycle`'s `registerRoutes(app, database)` callback](apps/api/src/lifecycle.ts).
-Step 5 must wire that callback from `server.ts`, register the adapter before
-readiness/listen, and give request context the **same owned `Database`** and request
-information. Keep pool creation, listening, signals, and cleanup in the lifecycle.
+The integration point is [`buildApp`](apps/api/src/app.ts), the single composition
+root: it registers each route group as a Fastify plugin with `app.register`, as the
+[health routes](apps/api/src/health.ts) do, and production and `app.inject()` tests
+build the same app. Step 5 registers the adapter there, and Fastify loads it during
+the lifecycle's `app.ready()`, before the database check and listen. The request
+context exposes the **same owned** `database.db` Drizzle handle, never the whole
+`Database`, plus request information. Request logs gain the tRPC procedure name.
+Keep pool creation, listening, signals and cleanup in
+[the lifecycle](apps/api/src/lifecycle.ts).
 The [official Fastify adapter documentation](https://trpc.io/docs/server/adapters/fastify)
 explains adapter registration; local paths, URL prefix, and exports await that step.
 
@@ -247,11 +251,14 @@ implementation follows this sequence:
    approved authenticated context and verify Membership/Organization scope before
    accessing private records. A submitted Organization ID is not authorization;
    public catalog queries require their explicit field allowlist.
-3. Read through `ctx.database.db`. For a business write, perform source, inventory,
-   funding, financial, and audit changes in one transaction, including the required
-   locks, scope checks, and invariant enforcement.
-4. Return only the declared output and translate expected failures safely. Preserve
-   the API's redacted error/log boundary for unexpected failures.
+3. Read through the context's Drizzle handle (`ctx.db` below). For a business
+   write, perform source, inventory, funding, financial, and audit changes in one
+   transaction, including the required locks, scope checks, and invariant
+   enforcement.
+4. Return only the declared output and translate expected failures safely. Unexpected
+   failures keep a fixed client body; their log records the error type, code
+   (for example SQLSTATE `23505`) and stack frames, with messages only in
+   development. Never log inputs or extra error properties.
 5. Test the procedure through the actual Fastify/tRPC HTTP adapter, including invalid
    input/output and denied access. Writes also need real PostgreSQL rollback,
    reconciliation, and relevant concurrency tests.
@@ -266,14 +273,14 @@ const read = authorizedProcedure
   .input(readInputSchema)
   .output(readOutputSchema)
   .query(({ ctx, input }) =>
-    readScopedData(ctx.database.db, ctx.organizationId, input),
+    readScopedData(ctx.db, ctx.organizationId, input),
   );
 
 const write = authorizedProcedure
   .input(writeInputSchema)
   .output(writeOutputSchema)
   .mutation(({ ctx, input }) =>
-    ctx.database.db.transaction((tx) =>
+    ctx.db.transaction((tx) =>
       writeScopedDataAndAudit(tx, ctx.organizationId, ctx.actor, input),
     ),
   );

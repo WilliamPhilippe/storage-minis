@@ -88,18 +88,11 @@ function fixture() {
     order.push("app.build");
     return fullApp;
   });
-  const registerRoutes = vi.fn<NonNullable<LifecycleOptions["registerRoutes"]>>(
-    () => {
-      order.push("register");
-      return Promise.resolve();
-    },
-  );
   function start(overrides: LifecycleOptions = {}) {
     return startLifecycle(readConfig, {
       runtime,
       createDatabase,
       buildApp: constructApp,
-      registerRoutes,
       ...overrides,
     });
   }
@@ -113,7 +106,6 @@ function fixture() {
     readConfig,
     createDatabase,
     constructApp,
-    registerRoutes,
     start,
   };
 }
@@ -130,7 +122,7 @@ afterEach(() => {
 });
 
 describe("lifecycle ownership and extension", () => {
-  it("installs early handlers and orders the same DB/app through registration, readiness and listen", async () => {
+  it("installs early handlers and orders the same DB/app through readiness and listen", async () => {
     const f = fixture();
     const owner = f.start();
     expect(f.order).toEqual(["on:SIGINT", "on:SIGTERM"]);
@@ -141,7 +133,6 @@ describe("lifecycle ownership and extension", () => {
       "config",
       "database.create",
       "app.build",
-      "register",
       "app.ready",
       "database.check",
       "app.listen",
@@ -150,10 +141,6 @@ describe("lifecycle ownership and extension", () => {
     expect(f.constructApp).toHaveBeenCalledTimes(1);
     expect(f.constructApp.mock.calls[0]?.[0]).toBe(config.http);
     expect(f.constructApp.mock.calls[0]?.[1].database).toBe(f.database);
-    expect(f.registerRoutes).toHaveBeenCalledExactlyOnceWith(
-      f.fullApp,
-      f.database,
-    );
     expect(f.app.listen).toHaveBeenCalledExactlyOnceWith({
       host: "127.0.0.1",
       port: 3000,
@@ -174,48 +161,36 @@ describe("lifecycle ownership and extension", () => {
     expect(f.runtime.exit).not.toHaveBeenCalled();
   });
 
-  it("supports no registration callback", async () => {
-    const f = fixture();
-    const owner = startLifecycle(f.readConfig, {
-      runtime: f.runtime,
-      createDatabase: f.createDatabase,
-      buildApp: f.constructApp,
-    });
-    expect(await owner.started).toBe(true);
-    expect(f.registerRoutes).not.toHaveBeenCalled();
-    await owner.close();
-  });
-
-  it("registers an async test route with access to the full owned DB before app readiness", async () => {
+  it("loads the real app's plugins with the same owned DB during readiness, before the DB check and listen", async () => {
     const f = fixture();
     const gate = Promise.withResolvers<void>();
-    const registered = Promise.withResolvers<void>();
+    const loading = Promise.withResolvers<void>();
     let app: FastifyInstance | undefined;
     const owner = f.start({
       buildApp: (http, dependencies) => {
         app = buildApp(http, dependencies);
-        // Injection proves the extension seam, never an actual listener/OS signal.
+        // Injection proves the composition seam, never an actual listener/OS signal.
         vi.spyOn<
           { listen: (input: FastifyListenOptions) => Promise<string> },
           "listen"
         >(app, "listen").mockResolvedValue("unused");
-        return app;
-      },
-      registerRoutes: async (target, db) => {
-        expect(db).toBe(f.database);
-        target.get("/extension", async () => {
-          await db.check();
-          return {
-            sameDatabase: db === f.database,
-            sameDrizzle: db.db === f.database.db,
-          };
+        // A plugin registered like the health routes (and later tRPC).
+        void app.register(async (instance) => {
+          instance.get("/extension", async () => {
+            await dependencies.database.check();
+            return {
+              sameDatabase: dependencies.database === f.database,
+              sameDrizzle: dependencies.database.db === f.database.db,
+            };
+          });
+          loading.resolve();
+          await gate.promise;
         });
-        registered.resolve();
-        await gate.promise;
+        return app;
       },
     });
     try {
-      await registered.promise;
+      await loading.promise;
       expect(app?.server.listening).toBe(false);
       expect(f.database.check).not.toHaveBeenCalled();
       gate.resolve();
@@ -226,7 +201,9 @@ describe("lifecycle ownership and extension", () => {
         sameDatabase: true,
         sameDrizzle: true,
       });
-      expect(f.database.check).toHaveBeenCalledTimes(2);
+      const ready = await app?.inject("/health/ready");
+      expect(ready?.body).toBe('{"status":"ready"}');
+      expect(f.database.check).toHaveBeenCalledTimes(3);
     } finally {
       gate.resolve();
       await owner.close();
@@ -239,7 +216,6 @@ describe("partial startup failures", () => {
     ["configuration", "configuration_failed", 0, 0],
     ["acquisition", "database_acquisition_failed", 0, 0],
     ["construction", "app_construction_failed", 0, 1],
-    ["registration", "registration_failed", 1, 1],
     ["app readiness", "app_readiness_failed", 1, 1],
     ["DB readiness", "database_readiness_failed", 1, 1],
     ["listen", "listen_failed", 1, 1],
@@ -263,9 +239,6 @@ describe("partial startup failures", () => {
             throw hostile;
           });
           break;
-        case "registration":
-          f.registerRoutes.mockRejectedValue(hostile);
-          break;
         case "app readiness":
           f.app.ready.mockRejectedValue(hostile);
           break;
@@ -281,7 +254,8 @@ describe("partial startup failures", () => {
       expect(await owner.closed).toBe(1);
       expect(f.app.close).toHaveBeenCalledTimes(appCloses);
       expect(f.database.close).toHaveBeenCalledTimes(dbCloses);
-      expect(f.runtime.report.mock.calls).toEqual([[category]]);
+      // The caught error reaches the allowlist log; the writer sanitizes it.
+      expect(f.runtime.report.mock.calls).toEqual([[category, hostile]]);
       expect(f.runtime.setExitCode).toHaveBeenLastCalledWith(1);
       expect(f.runtime.exit).not.toHaveBeenCalled();
       expect(f.signals.eventNames()).toEqual([]);
@@ -339,13 +313,7 @@ describe("signals, cancellation and cleanup", () => {
     expect(f.createDatabase).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "acquisition",
-    "registration",
-    "app readiness",
-    "DB readiness",
-    "listen",
-  ] as const)(
+  it.each(["acquisition", "app readiness", "DB readiness", "listen"] as const)(
     "retains ownership until pending %s settles after cancellation",
     async (phase) => {
       const f = fixture();
@@ -361,9 +329,6 @@ describe("signals, cancellation and cleanup", () => {
             await block();
             return f.database;
           });
-          break;
-        case "registration":
-          f.registerRoutes.mockImplementation(block);
           break;
         case "app readiness":
           f.app.ready.mockImplementation(block);
@@ -426,8 +391,8 @@ describe("signals, cancellation and cleanup", () => {
       expect(f.database.close).toHaveBeenCalledTimes(1);
       expect(f.runtime.report.mock.calls).toEqual([
         ["listening"],
-        ...(phase !== "DB" ? [["http_close_failed"]] : []),
-        ...(phase !== "HTTP" ? [["database_close_failed"]] : []),
+        ...(phase !== "DB" ? [["http_close_failed", hostile]] : []),
+        ...(phase !== "HTTP" ? [["database_close_failed", hostile]] : []),
       ]);
       expect(f.runtime.setExitCode).toHaveBeenLastCalledWith(1);
       expect(f.runtime.exit).toHaveBeenCalledExactlyOnceWith(1);
@@ -462,7 +427,7 @@ describe("deadline enforcement with virtual time (no OS proof)", () => {
   it("does not replace a startup failure with later signal exit codes during cleanup", async () => {
     const f = fixture();
     const draining = Promise.withResolvers<void>();
-    f.registerRoutes.mockRejectedValue(hostile);
+    f.app.ready.mockRejectedValue(hostile);
     f.app.close.mockReturnValue(draining.promise);
     const owner = f.start();
     expect(await owner.started).toBe(false);
@@ -475,10 +440,10 @@ describe("deadline enforcement with virtual time (no OS proof)", () => {
     expect(f.runtime.exit).not.toHaveBeenCalled();
   });
 
-  it("forces failed startup at 17s even if registration is stuck", async () => {
+  it("forces failed startup at 17s even if plugin loading is stuck", async () => {
     const f = fixture();
     const gate = Promise.withResolvers<void>();
-    f.registerRoutes.mockReturnValue(gate.promise);
+    f.app.ready.mockReturnValue(gate.promise);
     const owner = f.start();
     await vi.advanceTimersByTimeAsync(lifecycleLimits.startupMs - 1);
     expect(f.runtime.exit).not.toHaveBeenCalled();
@@ -496,13 +461,13 @@ describe("deadline enforcement with virtual time (no OS proof)", () => {
 
   it("keeps the startup/failure bound armed during failed-start cleanup", async () => {
     const f = fixture();
-    const registration = Promise.withResolvers<void>();
+    const loading = Promise.withResolvers<void>();
     const draining = Promise.withResolvers<void>();
-    f.registerRoutes.mockReturnValue(registration.promise);
+    f.app.ready.mockReturnValue(loading.promise);
     f.app.close.mockReturnValue(draining.promise);
     const owner = f.start();
     await vi.advanceTimersByTimeAsync(8_000);
-    registration.reject(hostile);
+    loading.reject(hostile);
     expect(await owner.started).toBe(false);
     await vi.advanceTimersByTimeAsync(8_999);
     expect(f.runtime.exit).not.toHaveBeenCalled();

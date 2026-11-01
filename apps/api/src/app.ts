@@ -4,9 +4,15 @@ import Fastify, { LogController } from "fastify";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { PinoLoggerOptions } from "fastify/types/logger.js";
 import type { ApiConfig } from "./config.js";
+import { serializeError } from "./error-log.js";
+import { healthRoutes } from "./health.js";
 
+/**
+ * What the app may use from its owner. The lifecycle owns the pool; `close`
+ * and `healthy` stay out of reach so no route or plugin can end it.
+ */
 export interface AppDependencies {
-  database: Pick<Database, "check">;
+  database: Pick<Database, "db" | "check">;
   isClosing: () => boolean;
 }
 
@@ -50,7 +56,10 @@ function sendFailure(
   reply: FastifyReply,
 ) {
   const { status, category } = safeFailure(error);
-  request.log.error({ category, status }, "request_failed");
+  // Like Fastify's default: client errors are info, server errors error.
+  const fields = { category, status, err: error };
+  if (status >= 500) request.log.error(fields, "request_failed");
+  else request.log.info(fields, "request_failed");
   void reply.code(status).send({ error: category });
 }
 
@@ -60,6 +69,7 @@ export function buildApp(
 ) {
   // Pino permits omitting raw error fields; Fastify's specialized err type
   // unnecessarily requires message/stack. Use its exported Pino dictionary type.
+  const messages = httpConfig.nodeEnv === "development";
   const serializers: PinoLoggerOptions["serializers"] = {
     req: (request: FastifyRequest) => ({
       method: request.method,
@@ -68,7 +78,8 @@ export function buildApp(
     res: (reply: Pick<FastifyReply, "statusCode">) => ({
       status: reply.statusCode,
     }),
-    err: () => ({ category: "internal_error" }),
+    // Every `err` Fastify or a route logs passes through the allowlist.
+    err: (error: unknown) => serializeError(error, { messages }),
   };
   const app = Fastify({
     bodyLimit: 16 * 1024,
@@ -105,21 +116,11 @@ export function buildApp(
     done();
   });
 
-  app.get("/health/live", (_request, reply) => reply.send({ status: "ok" }));
-  app.get("/health/ready", async (request, reply) => {
-    if (!dependencies.isClosing()) {
-      try {
-        await dependencies.database.check();
-        // Shutdown may have begun while the current check was in flight.
-        if (!dependencies.isClosing()) return { status: "ready" };
-      } catch {
-        request.log.warn(
-          { category: "database_unavailable", status: 503 },
-          "readiness_unavailable",
-        );
-      }
-    }
-    return reply.code(503).send({ status: "unavailable" });
+  // The single composition root: production and app.inject() tests build the
+  // same plugins. Fastify loads them during app.ready(), owned by the lifecycle.
+  void app.register(healthRoutes, {
+    database: dependencies.database,
+    isClosing: dependencies.isClosing,
   });
 
   return app;

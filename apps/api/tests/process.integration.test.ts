@@ -172,18 +172,78 @@ async function startChild(
   return { child, port: reservation.port };
 }
 
+const listening = '"msg":"listening"';
+
+interface LoggedError {
+  type: string;
+  code?: string;
+  message?: string;
+  stack?: string;
+  cause?: LoggedError;
+}
+interface LifecycleLine {
+  level: number;
+  time: number;
+  msg: string;
+  err?: LoggedError;
+}
+
+/** The API's JSON lifecycle lines; fixture markers are plain text. */
+function lifecycleLines(child: OwnedProcess): LifecycleLine[] {
+  return child.output
+    .split("\n")
+    .filter((line) => line.startsWith("{"))
+    .map((line) => JSON.parse(line) as LifecycleLine);
+}
+
+function lifecycle(child: OwnedProcess, category: string) {
+  return lifecycleLines(child).filter((line) => line.msg === category);
+}
+
+/** A startup failure prints exactly one error line and nothing else. */
+function onlyFailure(child: OwnedProcess, category: string): LoggedError {
+  assert.equal(child.output.trimEnd().split("\n").length, 1);
+  const [line] = lifecycleLines(child);
+  assert.ok(line, "Expected one JSON lifecycle line.");
+  assert.deepEqual(Object.keys(line).sort(), ["err", "level", "msg", "time"]);
+  assert.equal(line.level, 50);
+  assert.equal(line.msg, category);
+  assert.ok(line.err);
+  return line.err;
+}
+
+/** The cause chain, asserting every entry holds only allowlisted fields. */
+function chain(error: LoggedError | undefined): LoggedError[] {
+  const errors: LoggedError[] = [];
+  for (let current = error; current; current = current.cause)
+    errors.push(current);
+  for (const entry of errors)
+    for (const key of Object.keys(entry))
+      assert.ok(
+        ["type", "code", "message", "stack", "cause"].includes(key),
+        `Unexpected error field ${key}.`,
+      );
+  return errors;
+}
+
 function safeOutput(child: OwnedProcess) {
   for (const secret of [
     config.password,
+    process.env.DATABASE_URL ?? "",
     "invalid-credential-sentinel",
     "config-secret-sentinel",
-    "postgres://",
   ])
     assert.equal(
       child.output.includes(secret),
       false,
       "API exposed supplied secret data.",
     );
+  // Only the fixed expected-shape text of a ConfigurationError may name a URL.
+  assert.doesNotMatch(
+    child.output,
+    /postgres(ql)?:\/\/(?!USER:PASSWORD@HOST:PORT\/DATABASE)/,
+    "API exposed a database URL.",
+  );
   assert.equal(
     child.output.includes("Error:"),
     false,
@@ -237,7 +297,7 @@ it("cancels pending startup, owns the late completion and never listens", async 
   onceClosed(child, "startup_settled");
   onceClosed(child, "database_close");
   onceClosed(child, "database_closed");
-  assert.equal(child.output.includes("API lifecycle: listening."), false);
+  assert.equal(child.output.includes(listening), false);
   await releasedPort(port);
 });
 
@@ -245,7 +305,7 @@ it.each(["SIGINT", "SIGTERM"] as const)(
   "drains an in-flight request with repeated %s and shares one pool close",
   async (signal) => {
     const { child, port } = await startChild({}, undefined, "drain");
-    await child.waitForOutput("API lifecycle: listening.");
+    await child.waitForOutput(listening);
     const response = fetch(`http://127.0.0.1:${port}/fixture/drain`, {
       signal: AbortSignal.timeout(8_000),
       headers: { Connection: "close" },
@@ -279,18 +339,21 @@ it.each(["fail-http", "fail-database"])(
   "forces failure after attempting both owners for %s",
   async (mode) => {
     const { child, port } = await startChild({}, undefined, mode);
-    await child.waitForOutput("API lifecycle: listening.");
+    await child.waitForOutput(listening);
     const start = performance.now();
     child.child.kill("SIGTERM");
     await exited(child, 1);
     assert.ok(performance.now() - start < 10_000);
     onceClosed(child, "http_close");
     onceClosed(child, "database_close");
-    assert.ok(
-      child.output.includes(
-        `API lifecycle: ${mode === "fail-http" ? "http" : "database"}_close_failed.`,
-      ),
+    const [closeFailure] = lifecycle(
+      child,
+      `${mode === "fail-http" ? "http" : "database"}_close_failed`,
     );
+    assert.equal(closeFailure?.level, 50);
+    assert.equal(closeFailure.err?.type, "Error");
+    assert.equal(closeFailure.err.message, undefined);
+    assert.match(closeFailure.err.stack ?? "", /^at /);
     if (mode === "fail-http") onceClosed(child, "database_closed");
     await releasedPort(port);
   },
@@ -303,7 +366,7 @@ it.each(["hang-http", "hang-database", "startup-hang"])(
     await child.waitForOutput(
       mode === "startup-hang"
         ? "Shutdown fixture: startup_pending."
-        : "API lifecycle: listening.",
+        : listening,
     );
     // Spending 6s draining HTTP before the hung DB close proves that DB does
     // not receive a fresh 10s budget after HTTP has consumed part of it.
@@ -321,7 +384,7 @@ it.each(["hang-http", "hang-database", "startup-hang"])(
     await request;
     const elapsed = performance.now() - start;
     assert.ok(elapsed >= 9_900 && elapsed < 11_000);
-    assert.ok(child.output.includes("API lifecycle: shutdown_timeout."));
+    assert.equal(lifecycle(child, "shutdown_timeout").length, 1);
     if (mode === "hang-database") onceClosed(child, "database_close");
     else
       assert.equal(
@@ -329,7 +392,7 @@ it.each(["hang-http", "hang-database", "startup-hang"])(
         false,
       );
     if (mode === "startup-hang")
-      assert.equal(child.output.includes("API lifecycle: listening."), false);
+      assert.equal(child.output.includes(listening), false);
     console.info(
       `${mode}: application watchdog exited 1 in ${Math.round(elapsed)}ms.`,
     );
@@ -344,8 +407,8 @@ it("enforces the real 17s startup watchdog without a harness kill", async () => 
   await exited(child, 1);
   const elapsed = performance.now() - start;
   assert.ok(elapsed >= 16_900 && elapsed < 18_000);
-  assert.ok(child.output.includes("API lifecycle: startup_timeout."));
-  assert.equal(child.output.includes("API lifecycle: listening."), false);
+  assert.equal(lifecycle(child, "startup_timeout").length, 1);
+  assert.equal(child.output.includes(listening), false);
   console.info(
     `Startup watchdog: application exited 1 in ${Math.round(elapsed)}ms.`,
   );
@@ -379,7 +442,7 @@ it("recovers exact HTTP readiness after an owned real DB socket disruption", asy
   const { child, port } = await startChild({
     DATABASE_URL: databaseUrl(gate.port, "127.0.0.1"),
   });
-  await child.waitForOutput("API lifecycle: listening.");
+  await child.waitForOutput(listening);
   const pid = child.child.pid;
   assert.ok(pid);
   await health(port, "/health/live", '{"status":"ok"}');
@@ -415,7 +478,7 @@ it("recovers exact HTTP readiness after an owned real DB socket disruption", asy
   assert.equal(child.settled, false, "API exited during DB recovery.");
   assert.equal(child.child.pid, pid);
   process.kill(pid, 0);
-  assert.equal(child.output.split("API lifecycle: listening.").length, 2);
+  assert.equal(lifecycle(child, "listening").length, 1);
   console.info(
     `Socket recovery: API pid ${pid}, backend ${backend.pid} -> ${recovered[0]?.pid}, ready 503 in ${Math.round(failedMs)}ms, reconnect refusals ${refused}.`,
   );
@@ -429,7 +492,7 @@ it.each(["SIGINT", "SIGTERM"] as const)(
   "starts built Node, answers exact HTTP and releases resources on %s",
   async (signal) => {
     const { child, port } = await startChild();
-    await child.waitForOutput("API lifecycle: listening.");
+    await child.waitForOutput(listening);
     assert.ok(
       (await otherBackends()).length > 0,
       "No authenticated API backend observed.",
@@ -477,25 +540,48 @@ it.each([
     performance.now() - start < 18_000,
     "Invalid configuration exceeded startup bound plus scheduling margin.",
   );
-  assert.equal(child.output, "API lifecycle: configuration_failed.\n");
+  // The API's own fixed configuration text is logged in every mode.
+  const [error, ...causes] = chain(onlyFailure(child, "configuration_failed"));
+  assert.equal(error?.type, "ConfigurationError");
+  assert.match(
+    error.message ?? "",
+    /^(Invalid API configuration\. Check (HOST|PORT|LOG_LEVEL|NODE_ENV)\.|DATABASE_URL is required\.|Invalid DATABASE_URL\. Expected postgres:\/\/USER:PASSWORD@HOST:PORT\/DATABASE with optional \?sslmode=disable\|verify-full\.)$/,
+  );
+  assert.deepEqual(causes, []);
   await releasedPort(port);
 });
 
-it("fails wrong credentials with safe bounded startup cleanup", async () => {
-  const wrongPassword = new URL(databaseUrl());
-  wrongPassword.password = "invalid-credential-sentinel";
-  const { child, port } = await startChild({
-    DATABASE_URL: wrongPassword.href,
-  });
-  const start = performance.now();
-  await exited(child, 1);
-  assert.ok(
-    performance.now() - start < 18_000,
-    "Startup failure exceeded 17s plus 1s scheduling margin.",
-  );
-  assert.equal(child.output, "API lifecycle: database_readiness_failed.\n");
-  await releasedPort(port);
-});
+it.each(["test", "development"])(
+  "fails wrong credentials with diagnosable safe bounded startup cleanup (NODE_ENV=%s)",
+  async (NODE_ENV) => {
+    const wrongPassword = new URL(databaseUrl());
+    wrongPassword.password = "invalid-credential-sentinel";
+    const { child, port } = await startChild({
+      DATABASE_URL: wrongPassword.href,
+      NODE_ENV,
+    });
+    const start = performance.now();
+    await exited(child, 1);
+    assert.ok(
+      performance.now() - start < 18_000,
+      "Startup failure exceeded 17s plus 1s scheduling margin.",
+    );
+    // The DB package wraps pg's DatabaseError; its SQLSTATE survives.
+    const errors = chain(onlyFailure(child, "database_readiness_failed"));
+    assert.equal(errors[0]?.type, "Error");
+    assert.equal(errors[1]?.type, "DatabaseError");
+    assert.equal(errors[1].code, "28P01");
+    assert.match(errors[1].stack ?? "", /^at /);
+    const messages = errors.flatMap((entry) => entry.message ?? []);
+    if (NODE_ENV === "development") {
+      assert.match(messages.join(" "), /password authentication failed/);
+    } else {
+      assert.deepEqual(messages, []);
+    }
+    console.info(`Wrong credentials (${NODE_ENV}): ${child.output.trimEnd()}`);
+    await releasedPort(port);
+  },
+);
 
 it("fails unavailable DB startup using an owned real TCP refusal fixture", async () => {
   let connections = 0;
@@ -513,7 +599,12 @@ it("fails unavailable DB startup using an owned real TCP refusal fixture", async
     "Unavailable startup exceeded 17s plus 1s scheduling margin.",
   );
   assert.ok(connections > 0, "Child did not reach the owned refusal listener.");
-  assert.equal(child.output, "API lifecycle: database_readiness_failed.\n");
+  const errors = chain(onlyFailure(child, "database_readiness_failed"));
+  assert.ok(errors.length >= 2, "Expected the driver failure as a cause.");
+  assert.deepEqual(
+    errors.flatMap((entry) => entry.message ?? []),
+    [],
+  );
   await releasedPort(port);
   await closeListener(refusal.server);
   // Real PostgreSQL was never stopped and remains authenticated/reachable.
@@ -533,7 +624,7 @@ it("fails an occupied port without probing or closing the competing listener", a
     performance.now() - start < 18_000,
     "Bind failure exceeded 17s plus 1s scheduling margin.",
   );
-  assert.equal(child.output, "API lifecycle: listen_failed.\n");
+  assert.equal(onlyFailure(child, "listen_failed").code, "EADDRINUSE");
   assert.equal(connections, 0, "Harness probed the competing listener.");
   assert.equal(occupied.server.listening, true);
   await closeListener(occupied.server);

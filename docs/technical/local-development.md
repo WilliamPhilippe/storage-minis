@@ -52,7 +52,7 @@ Node (owner-approved 2026-10-31, R8/R9). `.gitignore` tracks exactly these two
 | `DB_OWNER_PASSWORD`, `DB_APP_PASSWORD` | Both files | Role init script; `compose.yaml` builds in-network URLs from them |
 | `HOST`, `PORT` | Defaults `127.0.0.1`, `3000` | API; `HOST` accepts `127.0.0.1` or `0.0.0.0`, `PORT` 1–65535 |
 | `LOG_LEVEL` | Default `info` | API: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
-| `NODE_ENV` | Default `development` | API: `development`, `test` or `production` |
+| `NODE_ENV` | `development` in `.env.development`; default `production` when unset | API: `development`, `test` or `production`. Only exactly `development` adds error messages to logs (2026-11-01). |
 | `TZ` | Unset locally; `UTC` in containers | Node processes |
 
 **Loading and precedence.** Host Node processes load the files with Node's
@@ -205,10 +205,11 @@ Run `test:db` and `test:api` one at a time; `test:db` drops the test schemas.
 | --- | --- |
 | Health | `GET /health/live` returns 200 `{"status":"ok"}`. `GET /health/ready` returns 200 `{"status":"ready"}` after a fresh database check, or 503 `{"status":"unavailable"}`. A database outage keeps liveness at 200; readiness recovers without a restart. |
 | Database check | Verifies the database name, the role and `TimeZone = UTC` within 6 s. The pool holds at most 5 connections, with a 2 s connection timeout, 3 s statement timeout, 4 s query timeout and 10 s idle timeout. |
-| Startup | Configuration, database acquisition, readiness and listen must finish within 17 s, or the process exits 1. Startup failures print one fixed category, such as `API lifecycle: configuration_failed.` |
+| Startup | Configuration, database acquisition, plugin loading (`app.ready()`), the database check and listen must finish within 17 s, or the process exits 1. Fastify's 10 s plugin timeout ends a hung plugin earlier as `app_readiness_failed`. |
+| Lifecycle lines | One JSON line per event on stdout, always written regardless of `LOG_LEVEL`: `{"level":30,"time":…,"msg":"listening"}`, or level 50 with a category such as `configuration_failed`, `database_readiness_failed`, `listen_failed`, `startup_timeout` and an `err` for failures. |
 | Shutdown | SIGINT/SIGTERM drain HTTP, then close the pool, within one 10 s bound. Success exits 130/143; a failed or timed-out cleanup exits 1. Compose gives the API 15 s. |
 | HTTP limits | 16 KiB bodies, 10 s request receive time, no trusted proxy, generated request IDs. |
-| Logs | JSON lines with method, matched route, status and elapsed time only; never URLs, bodies, headers, causes, stacks or secrets. |
+| Logs | JSON lines on stdout. Request lines carry method, matched route template, status, elapsed time and a generated request ID; never URLs, bodies, headers or other request inputs. Failures add an allowlisted `err`: constructor `type`, a string `code` (Node code or Postgres SQLSTATE such as `28P01`, `23505`), `stack` frames only (at most 20) and `cause` to depth 3. Messages appear only when `NODE_ENV=development`, except the API's own `ConfigurationError`, which names only variables. 4xx failures log at info, 5xx at error. Client responses stay fixed. |
 
 ## Parity stack
 

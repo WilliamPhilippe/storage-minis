@@ -4,6 +4,8 @@ import type { FastifyInstance } from "fastify";
 import { buildApp } from "./app.js";
 import type { AppDependencies } from "./app.js";
 import type { ApiConfig } from "./config.js";
+import { isDevelopment, lifecycleLine } from "./error-log.js";
+import type { LifecycleCategory } from "./error-log.js";
 
 export const lifecycleLimits = {
   startupMs: 17_000,
@@ -11,26 +13,15 @@ export const lifecycleLimits = {
 } as const;
 
 type Signal = "SIGINT" | "SIGTERM";
-type Category =
-  | "configuration_failed"
-  | "database_acquisition_failed"
-  | "app_construction_failed"
-  | "registration_failed"
-  | "app_readiness_failed"
-  | "database_readiness_failed"
-  | "listen_failed"
-  | "http_close_failed"
-  | "database_close_failed"
-  | "startup_timeout"
-  | "shutdown_timeout"
-  | "listening";
+type Category = LifecycleCategory;
 
 export interface LifecycleRuntime {
   on: (signal: Signal, listener: () => void) => void;
   removeListener: (signal: Signal, listener: () => void) => void;
   setExitCode: (code: number) => void;
   exit: (code: number) => void;
-  report: (category: Category) => void;
+  /** Report one event; failures pass the caught error for the allowlist log. */
+  report: (category: Category, error?: unknown) => void;
 }
 
 export interface LifecycleOptions {
@@ -39,7 +30,6 @@ export interface LifecycleOptions {
     httpConfig: ApiConfig["http"],
     dependencies: AppDependencies,
   ) => FastifyInstance;
-  registerRoutes?: (app: FastifyInstance, database: Database) => Promise<void>;
   runtime?: LifecycleRuntime;
 }
 
@@ -51,9 +41,14 @@ const processRuntime: LifecycleRuntime = {
     process.exitCode = code;
   },
   exit: (code) => process.exit(code),
-  report: (category) => {
-    // Never pass an exception, configuration, address or registration input here.
-    process.stderr.write(`API lifecycle: ${category}.\n`);
+  report: (category, error) => {
+    // Configuration may be unread or invalid, so read the mode directly; the
+    // fail-closed match agrees with readApiConfig's production default.
+    process.stdout.write(
+      lifecycleLine(category, error, {
+        messages: isDevelopment(process.env),
+      }),
+    );
   },
 };
 
@@ -103,23 +98,23 @@ export function startLifecycle(
       lifecycleLimits.shutdownMs,
     );
     cleanup = (async () => {
-      // A pending acquisition/registration/readiness/listen must settle before
+      // A pending acquisition/plugin load/readiness/listen must settle before
       // handlers disappear or cleanup can claim it has released every resource.
       await startupSettled.promise;
       let cleanupFailed = false;
       try {
         await app?.close();
-      } catch {
+      } catch (error) {
         cleanupFailed = true;
         exitCode = 1;
-        runtime.report("http_close_failed");
+        runtime.report("http_close_failed", error);
       } finally {
         try {
           await database?.close();
-        } catch {
+        } catch (error) {
           cleanupFailed = true;
           exitCode = 1;
-          runtime.report("database_close_failed");
+          runtime.report("database_close_failed", error);
         }
       }
       clearTimeout(startupTimer);
@@ -169,9 +164,7 @@ export function startLifecycle(
         isClosing: () => closing,
       });
       if (closing) return false;
-      failure = "registration_failed";
-      await options.registerRoutes?.(app, database);
-      if (closing) return false;
+      // Fastify loads the app's plugins (routes, later tRPC) here.
       failure = "app_readiness_failed";
       await app.ready();
       if (closing) return false;
@@ -184,10 +177,10 @@ export function startLifecycle(
       clearTimeout(startupTimer);
       runtime.report("listening");
       return true;
-    } catch {
+    } catch (error) {
       // A check rejected during cancellation is not a second startup failure.
       if (!closing) {
-        runtime.report(failure);
+        runtime.report(failure, error);
         void close(1);
       }
       return false;

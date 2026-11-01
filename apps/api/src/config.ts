@@ -1,6 +1,7 @@
 import { readDatabaseConfig } from "@storage-minis/db";
 import type { DatabaseConfig } from "@storage-minis/db";
 import { z } from "zod";
+import { ConfigurationError } from "./error-log.js";
 
 const httpSchema = z.object({
   HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
@@ -13,9 +14,8 @@ const httpSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
+  // Fail closed: only an explicit development value logs error messages.
+  NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
 });
 
 export interface ApiConfig {
@@ -42,7 +42,19 @@ export function readApiConfig(
     const fields = ["HOST", "PORT", "LOG_LEVEL", "NODE_ENV"].filter((field) =>
       result.error.issues.some((issue) => issue.path[0] === field),
     );
-    throw new Error(`Invalid API configuration. Check ${fields.join(", ")}.`);
+    throw new ConfigurationError(
+      `Invalid API configuration. Check ${fields.join(", ")}.`,
+    );
+  }
+  let database: DatabaseConfig;
+  try {
+    database = readDatabaseConfig(environment);
+  } catch (error) {
+    // The DB package's URL failures are fixed text naming only the variable
+    // (its config tests prove no value appears); keep it, drop any cause.
+    throw new ConfigurationError(
+      error instanceof Error ? error.message : "Invalid DATABASE_URL.",
+    );
   }
   return {
     http: {
@@ -51,6 +63,6 @@ export function readApiConfig(
       logLevel: result.data.LOG_LEVEL,
       nodeEnv: result.data.NODE_ENV,
     },
-    database: readDatabaseConfig(environment),
+    database,
   };
 }
