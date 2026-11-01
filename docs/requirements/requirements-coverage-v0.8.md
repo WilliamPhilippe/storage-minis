@@ -2,15 +2,15 @@
 
 **Version:** 0.8. **Published:** 2026-11-01.
 
-**Current baseline:** requirements v0.8, tracked by a v0.8 tracker issue created with this publication. [Specification](requirements-v0.8.md) · [Entity map](../entities/entity-map-v0.9.md) · [PurchaseExpense impact](purchase-expense-impact-v0.7.md).
+**Current baseline:** [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119). [Specification](requirements-v0.8.md) · [Entity map](../entities/entity-map-v0.9.md) · [PurchaseExpense impact](purchase-expense-impact-v0.7.md).
 
 **Supersedes:** [v0.7 ownership index](requirements-coverage-v0.7.md). Historical documents and baseline issues are preserved.
 
 Every active requirement has one primary delivery owner. Other tickets may share requirements as integration constraints. Ownership is planning traceability; application acceptance evidence remains pending.
 
-**Inventory:** 309 active IDs; 13 epics; 49 delivery issues plus the new Organization settings issue; eight design issues, five of them open; eight open business decisions. Existing work identities, statuses, milestones and dependencies are preserved in [Project 2](https://github.com/users/WilliamPhilippe/projects/2).
+**Inventory:** 309 active IDs; 13 epics; 51 delivery issues, including the new #117 and the frontend foundation #118; eight design issues, five of them open; eight open business decisions. Existing work identities, statuses, milestones and dependencies are preserved in [Project 2](https://github.com/users/WilliamPhilippe/projects/2).
 
-ORG-010–011 are new in v0.8. Their primary owner is a new delivery issue under [Epic E01 / #3](https://github.com/WilliamPhilippe/storage-minis/issues/3) for Organization settings: the nickname and the currency, both set when an Organization is created. It links to [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) and [Epic E10 / #12](https://github.com/WilliamPhilippe/storage-minis/issues/12) for the catalog URL and price symbol. No other primary owner changes. The baseline is a reference item, not completed implementation.
+ORG-010–011 are new in v0.8. Their primary owner is [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117), under [Epic E01 / #3](https://github.com/WilliamPhilippe/storage-minis/issues/3): each Organization's nickname and currency, both set when the Organization is created. It links to [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) and [Epic E10 / #12](https://github.com/WilliamPhilippe/storage-minis/issues/12) for the catalog URL and price symbol. No other primary owner changes. The baseline is a reference item, not completed implementation.
 
 ## Active requirement ownership
 
@@ -23,8 +23,8 @@ ORG-010–011 are new in v0.8. Their primary owner is a new delivery issue under
 | `ORG-005` | [#27](https://github.com/WilliamPhilippe/storage-minis/issues/27) — Establish administrator access and isolated organization-scoped records |
 | `ORG-008` | [#27](https://github.com/WilliamPhilippe/storage-minis/issues/27) — Establish administrator access and isolated organization-scoped records |
 | `ORG-009` | [#27](https://github.com/WilliamPhilippe/storage-minis/issues/27) — Establish administrator access and isolated organization-scoped records |
-| `ORG-010` | New E01 issue, created with this publication — Organization settings: nickname and currency |
-| `ORG-011` | New E01 issue, created with this publication — Organization settings: nickname and currency |
+| `ORG-010` | [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117) — Set each Organization's unique nickname and currency at creation |
+| `ORG-011` | [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117) — Set each Organization's unique nickname and currency at creation |
 | `TECH-001` | [#27](https://github.com/WilliamPhilippe/storage-minis/issues/27) — Establish administrator access and isolated organization-scoped records |
 | `REQ-004` | [#27](https://github.com/WilliamPhilippe/storage-minis/issues/27) — Establish administrator access and isolated organization-scoped records |
 | `REQ-001` | [#28](https://github.com/WilliamPhilippe/storage-minis/issues/28) — Implement atomic dated business operations with preserved audit history |
@@ -354,7 +354,7 @@ The approved logs resolved or narrowed D01–D08; each issue stays open until it
 
 ## Dependency and implementation boundaries
 
-Existing native parent and prerequisite links are unchanged; the new Organization settings issue adds one parent link to E01. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. The owner selected PostgreSQL with Drizzle and the application stack in [Technical direction](../technical/technical-direction.md); physical schema design remains open. Payment batching, a Shipment entity, and event sourcing are not prescribed.
+Existing native parent and prerequisite links are unchanged; [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117) adds one parent link to E01 and is blocked by #21 and #22, and [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) adds one to E13. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. The owner selected PostgreSQL with Drizzle and the application stack in [Technical direction](../technical/technical-direction.md); physical schema design remains open. Payment batching, a Shipment entity, and event sourcing are not prescribed.
 
 ## Technical decision follow-up
 

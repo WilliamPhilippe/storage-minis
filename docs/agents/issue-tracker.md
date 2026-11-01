@@ -6,7 +6,7 @@ Issues and specs for this repository live in [WilliamPhilippe/storage-minis](htt
 
 Read the relevant live issue, including comments, acceptance criteria and dependencies, before acting. Follow the hierarchy and requirement ownership rules in [AGENTS.md](../../AGENTS.md). Consult the [current ownership index](../requirements/requirements-coverage-v0.8.md) before creating work; extend the existing delivery owner when the requirement is already assigned.
 
-The [current baseline tracker, #82](https://github.com/WilliamPhilippe/storage-minis/issues/82), is a published reference. Its closed state is not evidence that application workflows are implemented. Preserve existing issue identities, parent links, dependencies and decision boundaries.
+The [current baseline tracker, #119](https://github.com/WilliamPhilippe/storage-minis/issues/119), is a published reference; [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7. Its closed state is not evidence that application workflows are implemented. Preserve existing issue identities, parent links, dependencies and decision boundaries.
 
 ## Operations
 

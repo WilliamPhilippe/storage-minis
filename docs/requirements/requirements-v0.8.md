@@ -16,7 +16,7 @@
 
 **Repository edition:** 2026-11-01.
 
-**Current baseline tracker:** a v0.8 tracker issue, created with this publication; [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7.
+**Current baseline tracker:** [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119); [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7.
 
 **Related documents:** [Entity and relationship map v0.9](../entities/entity-map-v0.9.md); [ownership index v0.8](requirements-coverage-v0.8.md); [approved update logs](../requirement-updates/README.md); [accepted entity-model decisions](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/entities/model-review.md).
 
@@ -648,4 +648,4 @@ Before a production implementation, define the core entities and relationships, 
 
 **Owner decisions of 2026-11-01.** During the review of the frontend foundation decisions ([PR #115](https://github.com/WilliamPhilippe/storage-minis/pull/115)), the owner decided that amounts carry no currency: each Organization decides once, when it is created, which currency its amounts are in — BRL by default, or USD — with no conversion. The back office shows `$`, and the public catalog shows the Organization's symbol, `R$` or `US$`. Each Organization also has a unique nickname, defined once when it is created; regular users cannot rename it, and only a `global_admin` can. Invitations and Organization creation beyond the bootstrap wait until the website is developed.
 
-**Requirement inventory:** 309 active IDs = 307 v0.7 active + ORG-010–011. No newly retired IDs. Nine retired IDs remain SAL-029–035 (v0.5), PAY-031 and CUS-016 (v0.6); none is reused. All other v0.7 requirements carry forward. The [v0.8 ownership index](requirements-coverage-v0.8.md) assigns each active ID to one delivery issue. Historical change records remain in [v0.7](requirements-v0.7.md#16-change-record-and-requirement-continuity), [v0.6](requirements-v0.6.md#16-change-record-and-requirement-continuity) and [v0.5](requirements-v0.5.md).
+**Requirement inventory:** 309 active IDs = 307 v0.7 active + ORG-010–011. No newly retired IDs. Nine retired IDs remain SAL-029–035 (v0.5), PAY-031 and CUS-016 (v0.6); none is reused. All other v0.7 requirements carry forward. The [v0.8 ownership index](requirements-coverage-v0.8.md) assigns each active ID to one delivery issue; ORG-010–011 belong to [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117). Historical change records remain in [v0.7](requirements-v0.7.md#16-change-record-and-requirement-continuity), [v0.6](requirements-v0.6.md#16-change-record-and-requirement-continuity) and [v0.5](requirements-v0.5.md).

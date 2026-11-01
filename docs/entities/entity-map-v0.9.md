@@ -12,7 +12,7 @@
 
 **Source precedence:** Read [requirements v0.8](../requirements/requirements-v0.8.md), which consolidates the approved logs. Requirement IDs below follow v0.8, including the new ORG-010–011.
 
-**Publication scope:** Published together with requirements v0.8 and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md). The [DBML draft](../database/schema.dbml) and [database design guide](../database/design.md) reflect the 2026-10-23 decisions but not yet the Organization nickname and currency. GitHub issue acceptance criteria still need the 2026-10-23 and 2026-11-01 changes. No delivery or decision issue is closed by this document.
+**Publication scope:** Published together with requirements v0.8 and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md). The [DBML draft](../database/schema.dbml) and [database design guide](../database/design.md) reflect the 2026-10-23 decisions but not yet the Organization nickname and currency. Live issues carry a dated v0.8 inputs section for the 2026-10-23 and 2026-11-01 changes ([propagation record](../requirement-updates/2026-11-01-v08-issue-propagation.md)). No delivery or decision issue is closed by this document.
 
 **Related task:** [T01 — core entities, state dimensions, and invariants](https://github.com/WilliamPhilippe/storage-minis/issues/21).
 
@@ -470,5 +470,5 @@ Global Product identity, Organization/Customer/Supplier funding boundaries, one 
 | --- | --- |
 | Entity map v0.9, requirements v0.8 and ownership index v0.8 | Published together and reconciled with the approved logs and the 2026-11-01 decisions. No retired discussion IDs are reused. |
 | DBML draft and design guide | Reflect the 2026-10-23 decisions; the Organization nickname and currency still need adding (T01). |
-| Live issue acceptance criteria | Carry the 2026-10-22 propagation; the 2026-10-23 and 2026-11-01 changes still need propagation. |
+| Live issue acceptance criteria | Carry the 2026-10-22 propagation and a dated v0.8 inputs section for the 2026-10-23 and 2026-11-01 changes. |
 | Implementation and workflow acceptance | Pending; no application/schema enforcement or delivery completion is claimed. |
