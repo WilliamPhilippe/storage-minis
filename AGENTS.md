@@ -181,7 +181,7 @@ Technical choices also remain open; their issues define the required outputs:
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.
-- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): turn the selected frameworks into a runnable foundation, pin versions, choose layout/migration/API conventions, and demonstrate transaction/concurrency behavior; depends on T01/T02/T04. See the technical direction record for accepted choices and remaining outputs.
+- [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26): Steps 1–4 and the 2026-10-31 restructure delivered the workspace, local databases, schema and migrations, diagnostic API, image and parity stack. Remaining: Step 5 tRPC, Step 6 verification and handoff, application authorization/isolation, representative business transactions/races and CI; depends on T01/T02/T04. The live issue was closed on 2026-10-29 through PR #107's closing link, although that PR states it does not close #26. See the technical direction record for accepted choices and remaining outputs.
 
 ## Agreed conventions
 
@@ -192,7 +192,7 @@ The owner approved this baseline on 2026-10-21 and the concrete tooling setup on
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
 - Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
 
-Formatter settings and unit-runner commands are recorded in the tooling setup. Branch/review/merge policy, integration/browser test setup, and CI remain open.
+Formatter settings and unit-runner commands are recorded in the tooling setup. Branch/review/merge policy, browser test setup, and CI remain open.
 
 ## Agent skills
 
