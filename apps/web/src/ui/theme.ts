@@ -110,6 +110,9 @@ const components = {
     fontSizeIcon: 16,
   },
   Tag: { defaultBg: surfaceSunken, defaultColor: inkMuted },
+  // A tooltip's min-height is controlHeight, and its padding is sized for
+  // antd's 32px: at our 40px its text sat at the top (owner, 2026-11-01).
+  Tooltip: { controlHeight: 32 },
   // Every h1 is a page title in title-lg (22/30/600), and spacing comes from
   // layout gaps (owner, 2026-11-01).
   Typography: {
