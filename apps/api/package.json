@@ -6,6 +6,11 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    "./types": {
+      "types": "./dist/types.d.ts"
+    }
+  },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit --project tsconfig.json",
