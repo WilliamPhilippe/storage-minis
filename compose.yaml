@@ -8,7 +8,8 @@
 # Local development adds compose.override.yaml automatically. Required values
 # use ${VAR:?} with no default, so a missing secret fails before any container
 # changes. This file never names a committed .env file (R13); in-network
-# database URLs are built here from the passwords (D4).
+# database URLs are built here from the passwords (D4), which therefore must be
+# URL-safe (for example `openssl rand -hex 16`).
 x-postgres-image: &postgres-image postgres:18.6-bookworm@sha256:bbf83594798e144bff365a9c191c5d779f181fb3135902064ab8ff11918020fc
 # One API image serves both the migrator and the API.
 x-api-build: &api-build
@@ -48,6 +49,8 @@ services:
     image: storage-minis-api:local
     build: *api-build
     command: [node, node_modules/@storage-minis/db/dist/migrate.js]
+    # An init process forwards SIGTERM; Node as PID 1 would ignore it.
+    init: true
     restart: "no"
     environment:
       MIGRATION_DATABASE_URL: postgres://storage_minis_owner:${DB_OWNER_PASSWORD:?Set DB_OWNER_PASSWORD}@postgres:5432/${POSTGRES_DB:?Set POSTGRES_DB}

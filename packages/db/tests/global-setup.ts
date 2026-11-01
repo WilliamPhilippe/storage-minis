@@ -45,6 +45,8 @@ async function prepareTestDatabase(): Promise<void> {
   const owner = readDatabaseConfig(process.env, "MIGRATION_DATABASE_URL");
   requireTestDatabase(app);
   requireTestDatabase(owner);
+  // Conservative: compares the written host, port and name literally, so a
+  // mix such as localhost/127.0.0.1 is refused even when both reach one server.
   if (
     app.host !== owner.host ||
     app.port !== owner.port ||

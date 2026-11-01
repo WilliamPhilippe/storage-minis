@@ -1,4 +1,5 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterAll, beforeAll, expect, it } from "vitest";
@@ -22,6 +23,7 @@ const api = "http://127.0.0.1:3100";
 const maxBuffer = 16 * 1024 * 1024;
 
 interface Container {
+  Id: string;
   Image: string;
   Config: { User: string };
   Mounts: unknown[];
@@ -112,6 +114,95 @@ it("answers the exact health responses on 127.0.0.1:3100", async () => {
   });
 });
 
+function psql(sql: string) {
+  return docker([
+    ...compose,
+    "exec",
+    "-T",
+    "postgres",
+    "psql",
+    "-X",
+    "-At",
+    "-U",
+    "storage_minis_owner",
+    "-d",
+    "storage_minis_test",
+    "-c",
+    sql,
+  ]);
+}
+
+const historyLock =
+  "FROM pg_locks l JOIN pg_class c ON c.oid = l.relation WHERE c.relname = '__drizzle_migrations' AND l.mode = 'AccessExclusiveLock' AND l.granted";
+
+it("keeps the running API serving when a redeploy's migrate fails (R19)", async () => {
+  const before = await inspect("api");
+  expect(before.State.Running).toBe(true);
+  // Another session holds the migration-history lock, so the redeploy's
+  // one-off migrate fails at its 5 s lock timeout without any service change.
+  const holder = spawn(
+    "docker",
+    [
+      ...compose,
+      "exec",
+      "-T",
+      "postgres",
+      "psql",
+      "-X",
+      "-U",
+      "storage_minis_owner",
+      "-d",
+      "storage_minis_test",
+      "-c",
+      "BEGIN; LOCK TABLE drizzle.__drizzle_migrations IN ACCESS EXCLUSIVE MODE; SELECT pg_sleep(60); COMMIT;",
+    ],
+    { cwd: root, stdio: "ignore" },
+  );
+  const held = new Promise<void>((resolve) =>
+    holder.once("exit", () => resolve()),
+  );
+  try {
+    for (
+      let attempt = 0;
+      (await psql(`SELECT count(*) ${historyLock}`)) !== "1";
+      attempt++
+    ) {
+      if (attempt > 100)
+        throw new Error("The lock holder never acquired the lock.");
+      await delay(100);
+    }
+    // Like a real deploy, the redeploy changes the API's configuration (here
+    // LOG_LEVEL, which neither postgres nor migrate uses), so a single `up`
+    // would recreate, and so stop, the API before migrate fails.
+    const failure: unknown = await pnpm("stack:up", 180_000, {
+      ...process.env,
+      LOG_LEVEL: "warn",
+    }).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    expect(failure).toMatchObject({ code: 1 });
+    // The same container, never restarted, still answers.
+    const after = await inspect("api");
+    expect(after.Id).toBe(before.Id);
+    expect(after.State.StartedAt).toBe(before.State.StartedAt);
+    expect(after.State.Running).toBe(true);
+    expect(await health("/health/ready")).toEqual({
+      status: 200,
+      body: '{"status":"ready"}',
+    });
+    expect(String(failure)).toContain(
+      "canceling statement due to lock timeout",
+    );
+    console.info(
+      `Failed redeploy kept API container ${after.Id.slice(0, 12)} serving.`,
+    );
+  } finally {
+    await psql(`SELECT pg_terminate_backend(l.pid) ${historyLock}`);
+    await held;
+  }
+}, 180_000);
+
 it("stops the API with SIGTERM and exit code 143 within its shutdown bound", async () => {
   const started = performance.now();
   await docker([...compose, "stop", "api"]);
@@ -126,10 +217,10 @@ it("stops the API with SIGTERM and exit code 143 within its shutdown bound", asy
   console.info(`API stop: exit 143 in ${Math.round(elapsed)}ms.`);
 });
 
-it("does not start the API when migrate fails", async () => {
-  // stack:up runs migrate as a one-off before `up` (R19), so a failure stops
-  // the sequence before Compose touches the API. The database was initialized
-  // with the committed owner password; another value makes migrate fail.
+it("does not start a stopped API when migrate fails", async () => {
+  // The previous test stopped the API. The database was initialized with the
+  // committed owner password, so another value makes migrate fail, and the
+  // API must not start (D6). The R19 test above covers a running API.
   const failure: unknown = await pnpm("stack:up", 180_000, {
     ...process.env,
     DB_OWNER_PASSWORD: "deliberately-wrong-owner-password",

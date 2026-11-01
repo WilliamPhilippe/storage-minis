@@ -17,10 +17,15 @@ const config = readDatabaseConfig(process.env);
 requireTestDatabase(config);
 const cwd = new URL("..", import.meta.url);
 
-/** The test database URL, optionally redirected to an owned loopback port. */
+/**
+ * The validated test DATABASE_URL, optionally redirected to an owned loopback
+ * port. Only the host and port change; credentials and sslmode are kept.
+ */
 function databaseUrl(port = config.port, host = config.host) {
-  const credentials = `${encodeURIComponent(config.user)}:${encodeURIComponent(config.password)}`;
-  return `postgres://${credentials}@${host}:${port}/${encodeURIComponent(config.database)}`;
+  const url = new URL(process.env.DATABASE_URL ?? "");
+  url.hostname = host.includes(":") ? `[${host}]` : host;
+  url.port = String(port);
+  return url.href;
 }
 const children = new Set<OwnedProcess>();
 const listeners = new Set<Server>();

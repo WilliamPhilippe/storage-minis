@@ -22,10 +22,11 @@ COPY apps/api/tsconfig*.json ./apps/api/
 COPY packages/db/tsconfig*.json ./packages/db/
 COPY apps/api/src ./apps/api/src
 COPY packages/db/src ./packages/db/src
-COPY packages/db/drizzle ./packages/db/drizzle
 RUN pnpm build
 
 FROM build AS package
+# Copied after the build, so a migration-only change keeps the compile layer.
+COPY packages/db/drizzle ./packages/db/drizzle
 # Production dependencies plus each workspace package's `files` (DB: dist and
 # drizzle migrations).
 RUN --mount=type=cache,id=storage-minis-pnpm-store,target=/pnpm/store \

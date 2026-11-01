@@ -76,8 +76,17 @@ An optional gitignored `.env` may hold nonsecret Compose settings such as
 `postgres://USER:PASSWORD@HOST:PORT/DATABASE`, optionally followed by
 `?sslmode=disable` (the default) or `?sslmode=verify-full`. Every component is
 required, so the driver never falls back to ambient `PGHOST`, `PGUSER`,
-`PGPASSWORD`, `PGPORT` or `PGSSLMODE` values. Percent-encode special characters
-in the user, password or database name. Other parameters are rejected, and so
+`PGPASSWORD`, `PGPORT` or `PGSSLMODE` values; the pool also pins `search_path`,
+the client encoding and SSL negotiation against `PGOPTIONS`,
+`PGCLIENT_ENCODING` and `PGSSLNEGOTIATION`. Leave `PGBINARY` and
+`PGREPLICATION` unset: pg 8.23.1 honors them and they cannot be pinned.
+Percent-encode special characters in a hand-written URL.
+
+**Role passwords must be URL-safe** (letters, digits and `-._~`; for example
+`openssl rand -hex 16`). `compose.yaml` embeds `DB_OWNER_PASSWORD` and
+`DB_APP_PASSWORD` in its in-network URLs without encoding, and the init script
+sets the same raw values, so a password containing `@`, `/`, `:` or `%` breaks
+the URL or the login. Generate production values the same way (plan Section 6). Other parameters are rejected, and so
 are `sslmode=require` and `verify-ca`, which pg 8.23.1 silently treats as
 `verify-full`. Error messages name the variable and the expected shape, never
 its value.
@@ -218,7 +227,9 @@ compose.stack.yaml --env-file .env.test logs api`. `pnpm stack:down` removes the
 stack's containers, network and database volume. `pnpm test:stack` runs
 `apps/api/tests/stack.smoke.test.ts`: a clean `stack:up`, exact health bodies on
 port 3100, a nonroot API without mounts, `migrate` finishing before `api` starts,
-an unpublished database, SIGTERM exit 143 within 10 s, and no API start when
+an unpublished database, a redeploy that changes the API but whose `migrate`
+fails (a second session holds the history lock) leaving the same API container
+serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 `migrate` fails. It always ends with `stack:down`.
 
 ## Turborepo tasks and cache

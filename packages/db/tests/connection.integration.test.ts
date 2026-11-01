@@ -157,7 +157,7 @@ it("connects only to the URL's components despite ambient libpq settings", async
     [
       "--input-type=module",
       "-e",
-      "import { createDatabase, readDatabaseConfig } from '@storage-minis/db'; const db = createDatabase(readDatabaseConfig(process.env)); try { await db.check(); console.log('checked'); } finally { await db.close(); }",
+      "import { sql } from 'drizzle-orm'; import { createDatabase, readDatabaseConfig } from '@storage-minis/db'; const db = createDatabase(readDatabaseConfig(process.env)); try { await db.check(); const r = await db.db.execute(sql`SELECT current_setting('search_path') AS path, current_setting('statement_timeout') AS timeout`); console.log('checked', r.rows[0].path, r.rows[0].timeout); } finally { await db.close(); }",
     ],
     {
       cwd: new URL("..", import.meta.url),
@@ -170,9 +170,12 @@ it("connects only to the URL's components despite ambient libpq settings", async
         PGPASSWORD: "ambient-password",
         PGDATABASE: "ambient_database",
         PGSSLMODE: "verify-full",
+        PGSSLNEGOTIATION: "direct",
+        PGOPTIONS: "-c search_path=ambient_schema -c statement_timeout=1",
+        PGCLIENT_ENCODING: "latin1",
       },
       timeout: 10_000,
     },
   );
-  expect(result.stdout.trim()).toBe("checked");
+  expect(result.stdout.trim()).toBe("checked public 3s");
 });
