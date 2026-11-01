@@ -13,7 +13,11 @@ export function AppNotFoundPage() {
         <Typography.Title level={1}>{t("notFound.title")}</Typography.Title>
       }
       subTitle={t("notFound.description")}
-      extra={<Link to="/app">{t("notFound.home")}</Link>}
+      extra={
+        <Link to="/app" activeOptions={{ exact: true }}>
+          {t("notFound.home")}
+        </Link>
+      }
     />
   );
 }

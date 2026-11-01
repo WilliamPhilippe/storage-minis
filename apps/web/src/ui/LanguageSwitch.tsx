@@ -22,7 +22,7 @@ export function LanguageSwitch() {
         selectable: true,
         selectedKeys: [language],
         onClick: ({ key }) => {
-          if (!isLanguage(key) || key === language) {
+          if (!isLanguage(key)) {
             return;
           }
           switchLanguage(key).catch(() => {

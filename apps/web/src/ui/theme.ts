@@ -92,8 +92,13 @@ const components = {
     iconSize: 20,
     collapsedIconSize: 20,
   },
-  // WS-07 #9: the FAB's shadow-fab through the token FloatButton reads.
-  FloatButton: { controlHeightLG: 56, boxShadowSecondary: shadowFab },
+  // WS-07 #9: the FAB's shadow-fab through the token FloatButton reads. Its
+  // icon is fontSizeIcon x 1.5: 24px, as MenuFab.md asks.
+  FloatButton: {
+    controlHeightLG: 56,
+    boxShadowSecondary: shadowFab,
+    fontSizeIcon: 16,
+  },
   Tag: { defaultBg: surfaceSunken, defaultColor: inkMuted },
   // Every h1 is a page title in title-lg (22/30/600), and spacing comes from
   // layout gaps (owner, 2026-11-01).

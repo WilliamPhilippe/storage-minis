@@ -19,7 +19,11 @@ export function TopBar({
   return (
     <Layout.Header className={styles.header}>
       {isPhone ? (
-        <Link to="/app" className={styles.logoLink}>
+        <Link
+          to="/app"
+          activeOptions={{ exact: true }}
+          className={styles.logoLink}
+        >
           <img
             src={logoUrl}
             alt={t("brand")}

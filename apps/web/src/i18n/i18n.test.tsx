@@ -7,10 +7,14 @@ import en from "./en-US/common";
 import pt from "./pt-BR/common";
 import { AppProviders } from "../ui/AppProviders";
 import { LanguageSwitch } from "../ui/LanguageSwitch";
-import { detectLanguage, getLocaleState, switchLanguage } from "./i18n";
-
-const languageName = (template: string, name: string) =>
-  template.replace("{{name}}", name);
+import { languageSwitchName } from "../test/names";
+import {
+  detectLanguage,
+  getLocaleState,
+  languageNames,
+  subscribeLocale,
+  switchLanguage,
+} from "./i18n";
 
 function Probe() {
   const { t } = useTranslation();
@@ -37,17 +41,19 @@ describe("languages", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: languageName(en.language.switch, "English"),
+        name: languageSwitchName(),
       }),
     );
-    await user.click(screen.getByRole("menuitem", { name: "Português" }));
+    await user.click(
+      screen.getByRole("menuitem", { name: languageNames["pt-BR"] }),
+    );
 
     expect(await screen.findByText(pt.notFound.title)).toBeTruthy();
     expect(screen.getAllByText("Não há dados")).not.toHaveLength(0);
     expect(screen.queryAllByText("No data")).toHaveLength(0);
     expect(
       screen.getByRole("button", {
-        name: languageName(pt.language.switch, "Português"),
+        name: languageSwitchName("pt-BR", pt.language.switch),
       }),
     ).toBeTruthy();
     expect(document.documentElement.lang).toBe("pt-BR");
@@ -59,27 +65,52 @@ describe("languages", () => {
     renderSwitch();
     await user.click(
       screen.getByRole("button", {
-        name: languageName(en.language.switch, "English"),
+        name: languageSwitchName(),
       }),
     );
     expect(
       screen
-        .getByRole("menuitem", { name: "English" })
+        .getByRole("menuitem", { name: languageNames["en-US"] })
         .querySelector("[lang]")
         ?.getAttribute("lang"),
     ).toBe("en-US");
     expect(
       screen
-        .getByRole("menuitem", { name: "Português" })
+        .getByRole("menuitem", { name: languageNames["pt-BR"] })
         .querySelector("[lang]")
         ?.getAttribute("lang"),
     ).toBe("pt-BR");
   });
 
-  it("lets the last of overlapping switches win", async () => {
+  // Records every applied language, whichever load finishes first.
+  function recordApplied() {
+    const applied: string[] = [];
+    const stop = subscribeLocale(() => {
+      applied.push(getLocaleState().language);
+    });
+    return { applied, stop };
+  }
+
+  it("lets a request for the current language cancel a pending switch", async () => {
+    const { applied, stop } = recordApplied();
     await Promise.all([switchLanguage("pt-BR"), switchLanguage("en-US")]);
+    stop();
+    expect(applied).toEqual([]);
     expect(getLocaleState().language).toBe("en-US");
     expect(document.documentElement.lang).toBe("en-US");
+    expect(localStorage.getItem("storage-minis.language")).toBeNull();
+  });
+
+  it("lets the last of overlapping switches win", async () => {
+    const { applied, stop } = recordApplied();
+    await Promise.all([
+      switchLanguage("pt-BR"),
+      switchLanguage("en-US"),
+      switchLanguage("pt-BR"),
+    ]);
+    stop();
+    expect(applied).toEqual(["pt-BR"]);
+    expect(document.documentElement.lang).toBe("pt-BR");
   });
 });
 

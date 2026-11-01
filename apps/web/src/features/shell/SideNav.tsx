@@ -31,6 +31,7 @@ export function SideNav({
       <div className={styles.column}>
         <Link
           to="/app"
+          activeOptions={{ exact: true }}
           className={collapsed ? styles.markLink : styles.logoLink}
         >
           {collapsed ? (

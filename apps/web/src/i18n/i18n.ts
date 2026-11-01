@@ -179,9 +179,12 @@ export async function ensureNamespace(namespace: Namespace): Promise<void> {
 // Loads the new language's already loaded namespaces and its antd and dayjs
 // locales together, then switches. If loading fails, the current language
 // stays and the promise rejects. When switches overlap, the last one
-// requested wins.
+// requested wins: a request for the applied language cancels a pending one.
 export async function switchLanguage(language: Language): Promise<void> {
   const switchId = ++latestSwitch;
+  if (language === localeState.language) {
+    return;
+  }
   let loaded: LoadedLanguage;
   try {
     loaded = await loadLanguage(language, [...loadedNamespaces]);

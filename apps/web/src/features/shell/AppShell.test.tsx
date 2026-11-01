@@ -2,7 +2,11 @@ import { act, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import app from "../../i18n/en-US/app";
+import common from "../../i18n/en-US/common";
+import { languageNames } from "../../i18n/i18n";
+import ptApp from "../../i18n/pt-BR/app";
 import { setViewportWidth } from "../../test/harness";
+import { documentTitle, languageSwitchName } from "../../test/names";
 import { renderApp } from "../../test/renderApp";
 
 const { nav, titles } = app;
@@ -50,14 +54,13 @@ describe("the shell below bp-md", () => {
     expect(fab.getAttribute("aria-expanded")).toBe("false");
   });
 
-  it("links the logo to /app", async () => {
+  it("links the logo to /app, which is not the current page", async () => {
     await renderInventory(375);
-    const banner = screen.getByRole("banner");
-    expect(
-      within(banner)
-        .getByRole("link", { name: "StorageMinis" })
-        .getAttribute("href"),
-    ).toBe("/app");
+    const logo = within(screen.getByRole("banner")).getByRole("link", {
+      name: common.brand,
+    });
+    expect(logo.getAttribute("href")).toBe("/app");
+    expect(logo.getAttribute("aria-current")).toBeNull();
   });
 });
 
@@ -105,13 +108,25 @@ describe("the SideNav from bp-md", () => {
     expect(screen.getByRole("button", { name: nav.expand })).toBeTruthy();
   });
 
-  it("marks the current section", async () => {
+  it("marks the current section, and not the logo", async () => {
     await renderInventory(1280);
     const menu = screen.getByRole("navigation", { name: nav.label });
-    const current = within(menu).getByRole("menuitem", {
-      name: titles.inventory,
-    });
-    expect(current.classList.contains("ant-menu-item-selected")).toBe(true);
+    // The menu item's name excludes its icon (aria-hidden).
+    expect(
+      within(menu).getByRole("menuitem", { name: titles.inventory }),
+    ).toBeTruthy();
+    expect(
+      within(menu)
+        .getByRole("link", { name: titles.inventory })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      within(menu)
+        .getByRole("link", { name: titles.sales })
+        .getAttribute("aria-current"),
+    ).toBeNull();
+    const logo = screen.getByRole("link", { name: common.brand });
+    expect(logo.getAttribute("aria-current")).toBeNull();
   });
 });
 
@@ -129,18 +144,25 @@ describe("page titles", () => {
   it("sets document.title, and updates it on navigation and on a language switch", async () => {
     const user = userEvent.setup();
     await renderInventory(1280);
-    expect(document.title).toBe("Inventory · StorageMinis");
+    expect(document.title).toBe(documentTitle(titles.inventory));
 
     const menu = screen.getByRole("navigation", { name: nav.label });
     await user.click(within(menu).getByRole("link", { name: titles.reports }));
     await screen.findByRole("heading", { level: 1, name: titles.reports });
-    expect(document.title).toBe("Reports · StorageMinis");
+    expect(document.title).toBe(documentTitle(titles.reports));
 
-    await user.click(screen.getByRole("button", { name: "Language: English" }));
-    await user.click(screen.getByRole("menuitem", { name: "Português" }));
+    await user.click(
+      screen.getByRole("button", { name: languageSwitchName() }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: languageNames["pt-BR"] }),
+    );
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Relatórios" }),
+      await screen.findByRole("heading", {
+        level: 1,
+        name: ptApp.titles.reports,
+      }),
     ).toBeTruthy();
-    expect(document.title).toBe("Relatórios · StorageMinis");
+    expect(document.title).toBe(documentTitle(ptApp.titles.reports));
   });
 });

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import app from "./i18n/en-US/app";
 import catalog from "./i18n/en-US/catalog";
 import common from "./i18n/en-US/common";
+import { documentTitle, languageSwitchName } from "./test/names";
 import { echoResponse, renderApp } from "./test/renderApp";
 
 describe("routes", () => {
@@ -26,9 +27,11 @@ describe("routes", () => {
         name: catalog.unavailable,
       }),
     ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Language: English" }));
+    expect(
+      screen.getByRole("button", { name: languageSwitchName() }),
+    ).toBeTruthy();
     expect(screen.queryByRole("navigation")).toBeNull();
-    expect(document.title).toBe("StorageMinis");
+    expect(document.title).toBe(common.brand);
   });
 
   it("renders the public not-found page without back-office links", async () => {
@@ -72,7 +75,7 @@ describe("routes", () => {
       expect(
         screen.getByRole("heading", { level: 1, name: title }),
       ).toBeTruthy();
-      expect(document.title).toBe(`${title} · StorageMinis`);
+      expect(document.title).toBe(documentTitle(title));
     },
   );
 });
