@@ -15,12 +15,12 @@ const config: ApiConfig = {
     nodeEnv: "test",
   },
   database: {
-    target: "test",
-    host: "postgres_test",
-    port: 5432,
+    host: "127.0.0.1",
+    port: 5434,
     database: "storage_minis_test",
-    user: "postgres",
+    user: "storage_minis_app",
     password: "SECRET_PASSWORD_SENTINEL",
+    sslmode: "disable",
   },
 };
 const hostile = new Error("SECRET_PASSWORD_SENTINEL SQL STACK SENTINEL", {

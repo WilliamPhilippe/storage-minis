@@ -1,9 +1,6 @@
 // Format messages rather than dumping error objects, which can include connection
 // configuration. Keep nested driver errors: Drizzle wraps the useful PG message.
-export function formatDatabaseError(
-  error: unknown,
-  password = process.env.PGPASSWORD,
-): string {
+export function formatDatabaseError(error: unknown, password?: string): string {
   const messages: string[] = [];
   const seen = new Set<unknown>();
   let current = error;
@@ -25,7 +22,7 @@ export function formatDatabaseError(
 
 export function redactDatabaseMessage(
   message: string,
-  password = process.env.PGPASSWORD,
+  password?: string,
 ): string {
   // Also cover encoded passwords and connection URLs in upstream diagnostics.
   let result = message.replace(

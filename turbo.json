@@ -43,12 +43,6 @@
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
         "DATABASE_URL",
         "HOST",
         "PORT",
@@ -61,45 +55,19 @@
       "dependsOn": ["build"],
       "outputs": []
     },
-    "db:check": {
-      "dependsOn": ["build"],
-      "cache": false,
-      "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
-        "DATABASE_URL"
-      ]
-    },
     "db:generate": {
       "cache": false
     },
     "db:migrate": {
+      "dependsOn": ["build"],
       "cache": false,
-      "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
-        "DATABASE_URL"
-      ]
+      "passThroughEnv": ["MIGRATION_DATABASE_URL", "TZ"]
     },
     "@storage-minis/api#test:process": {
       "dependsOn": ["build"],
       "cache": false,
       "outputs": [],
       "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
         "DATABASE_URL",
         "HOST",
         "PORT",
@@ -111,15 +79,7 @@
     "test:integration": {
       "dependsOn": ["build"],
       "cache": false,
-      "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
-        "DATABASE_URL"
-      ],
+      "passThroughEnv": ["DATABASE_URL", "MIGRATION_DATABASE_URL"],
       "env": ["NODE_ENV", "TZ"]
     },
     "@storage-minis/api#dev": {
@@ -127,12 +87,6 @@
       "cache": false,
       "persistent": true,
       "passThroughEnv": [
-        "DB_TARGET",
-        "PGHOST",
-        "PGPORT",
-        "PGDATABASE",
-        "PGUSER",
-        "PGPASSWORD",
         "DATABASE_URL",
         "HOST",
         "PORT",

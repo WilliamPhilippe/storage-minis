@@ -5,13 +5,14 @@ export const migrationHistory = {
   table: "__drizzle_migrations",
 } as const;
 
+// Set on the migration connection itself (startup parameters), so the native
+// migrator's statements are bounded without a wrapping process supervisor.
 export const migrationLimits = {
-  processMs: 120_000,
+  connectMs: 2_000,
   lockMs: 5_000,
   statementMs: 30_000,
 } as const;
 
-// The physical schema was approved by the owner on 2026-10-25 (S01–S10).
 // Drizzle owns the journal format and migration loading. Refuse missing/empty
 // artifacts before connecting instead of silently treating them as an empty DB.
 export function requireMigrationArtifacts(folder: string): void {

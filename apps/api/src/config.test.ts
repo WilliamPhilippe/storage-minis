@@ -2,13 +2,9 @@ import { Server, Socket } from "node:net";
 import { describe, expect, it, vi } from "vitest";
 import { readApiConfig } from "./config.js";
 
+const password = "fixture-secret-@:$'\\\n";
 const environment = {
-  DB_TARGET: "test",
-  PGHOST: "postgres_test",
-  PGPORT: "5432",
-  PGDATABASE: "storage_minis_test",
-  PGUSER: "postgres",
-  PGPASSWORD: "fixture-secret-@:$'\\\n",
+  DATABASE_URL: `postgres://storage_minis_app:${encodeURIComponent(password)}@127.0.0.1:5434/storage_minis_test`,
 };
 
 describe("API configuration", () => {
@@ -21,17 +17,17 @@ describe("API configuration", () => {
         nodeEnv: "development",
       },
       database: {
-        target: "test",
-        host: "postgres_test",
-        port: 5432,
+        host: "127.0.0.1",
+        port: 5434,
         database: "storage_minis_test",
-        user: "postgres",
-        password: environment.PGPASSWORD,
+        user: "storage_minis_app",
+        password,
+        sslmode: "disable",
       },
     });
   });
 
-  it("accepts explicit HTTP boundaries, every level/environment, and the dev tuple", () => {
+  it("accepts explicit HTTP boundaries, every level/environment, and an in-network URL", () => {
     for (const PORT of ["1", "3000", "65535"]) {
       for (const LOG_LEVEL of [
         "fatal",
@@ -45,14 +41,12 @@ describe("API configuration", () => {
         for (const NODE_ENV of ["development", "test", "production"]) {
           expect(
             readApiConfig({
-              ...environment,
               HOST: "0.0.0.0",
               PORT,
               LOG_LEVEL,
               NODE_ENV,
-              DB_TARGET: "dev",
-              PGHOST: "postgres",
-              PGDATABASE: "storage_minis_dev",
+              DATABASE_URL:
+                "postgres://storage_minis_app:fixture@postgres:5432/storage_minis?sslmode=disable",
             }),
           ).toMatchObject({
             http: {
@@ -61,7 +55,7 @@ describe("API configuration", () => {
               logLevel: LOG_LEVEL,
               nodeEnv: NODE_ENV,
             },
-            database: { target: "dev" },
+            database: { host: "postgres", database: "storage_minis" },
           });
         }
       }
@@ -120,33 +114,28 @@ describe("API configuration", () => {
       expect(error).not.toHaveProperty("cause");
       expect(error).not.toHaveProperty("issues");
       expect(String(error)).not.toContain(sentinel);
-      expect(String(error)).not.toContain(environment.PGPASSWORD);
+      expect(String(error)).not.toContain(password);
     }
   });
 
-  it("inherits exact DB component validation and URL rejection without leaking secrets", () => {
-    for (const key of Object.keys(environment)) {
-      expect(() => readApiConfig({ ...environment, [key]: undefined })).toThrow(
-        "Invalid database configuration",
-      );
-    }
-    for (const replacement of [
-      { DB_TARGET: "production" },
-      { PGHOST: "postgres" },
-      { PGDATABASE: "storage_minis_dev" },
-      { PGPORT: "5434" },
-      { PGPORT: "05432" },
-      { PGUSER: "other" },
-      { PGPASSWORD: "  " },
-      { PGHOST: "private-sentinel" },
+  it("inherits DATABASE_URL validation without leaking secrets", () => {
+    expect(() => readApiConfig({})).toThrow("DATABASE_URL is required.");
+    for (const DATABASE_URL of [
+      "postgres://private-sentinel",
+      "postgres://storage_minis_app:private-sentinel@127.0.0.1/storage_minis_test",
+      "postgres://storage_minis_app@127.0.0.1:5434/storage_minis_test",
+      "postgres://storage_minis_app:private-sentinel@127.0.0.1:5434/",
+      "postgres://storage_minis_app:private-sentinel@127.0.0.1:5434/storage_minis_test?sslmode=require",
+      "mysql://storage_minis_app:private-sentinel@127.0.0.1:5434/storage_minis_test",
     ]) {
-      expect(() => readApiConfig({ ...environment, ...replacement })).toThrow(
-        "Invalid database configuration. Check the explicit local target and connection components.",
-      );
-    }
-    for (const DATABASE_URL of ["", "postgres://private-sentinel"]) {
-      expect(() => readApiConfig({ ...environment, DATABASE_URL })).toThrow(
-        "DATABASE_URL is not supported. Use the explicit local database target.",
+      let failure: unknown;
+      try {
+        readApiConfig({ DATABASE_URL });
+      } catch (error) {
+        failure = error;
+      }
+      expect(String(failure)).toBe(
+        "Error: Invalid DATABASE_URL. Expected postgres://USER:PASSWORD@HOST:PORT/DATABASE with optional ?sslmode=disable|verify-full.",
       );
     }
   });
