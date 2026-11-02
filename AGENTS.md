@@ -29,7 +29,12 @@ without sign-in and `diagnostics.echo` through the Vite proxy.
 page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
 (approved 2026-11-02, with the owner's changes to W9 and W11) governs
 `pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
-projects, `desktop-chrome` and `pixel-7`, before sign-in. Step 6 is TBD
+projects, `desktop-chrome` and `pixel-7`, before sign-in. The
+[web shell follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md)
+(approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
+inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
+footer inset and height; it is not yet implemented. The owner ruled the
+collapsed SideNav's hover-only labels not a defect. Step 6 is TBD
 until the app is validated locally; business
 operations, authentication, business screens, signed-in browser tests, the web
 image, production and CI remain pending.

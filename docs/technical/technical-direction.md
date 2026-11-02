@@ -1398,6 +1398,14 @@ decided each on 2026-11-01:
 | Selected backgrounds | `colorPrimaryBg` is `surface-sunken` (`#eef0f3`) and `colorPrimaryBgHover` is `line` (`#e3e6ea`). They feed `controlItemBgActive` and `controlItemBgActiveHover`, so a selected dropdown item is ink on `surface-sunken` (15.6:1) and a hovered one ink on `line` (about 14:1). A `theme.test.ts` case checks both values and their contrast in both themes. | antd derives these from steps 1 and 2 of `colorPrimary`'s palette. For ink they come out as `#5b5f61` and `#4f5254`, so the language switch's selected item read ink on mid-grey (2.7:1, below 4.5:1). The same tokens style selected rows, nodes and cells in Table, Tree, Cascader, DatePicker, Calendar, Transfer and Steps. Owner, 2026-11-01, after reviewing the PR. |
 | Language switch placement | In the shell, the switch leaves the TopBar (WS-07 #10's interim place) for the bottom of the SideNav, right above the collapse button, and the footer of the MenuFab's drawer, below the menu list. Every switch, including the Login and catalog pages' header switch, shows the globe and the language code, "EN" or "PT"; the collapsed SideNav shows the globe alone. Its accessible name stays "Language: English", the dropdown still lists "English" and "Português", and it opens upward in the shell. PR 3's account menu therefore no longer takes the switch. | The owner's direction after reviewing the PR (2026-11-01). The TopBar holds only the logo on phones and the page title from `bp-md`. |
 
+**Superseded in part (2026-11-02):** the
+[web shell follow-up plan approval](#web-shell-follow-up-plan-approval-2026-11-02)
+reverses the first default that "Hard-to-override styles" kept: the MenuFab
+moves to `fab-offset` plus the safe-area inset, through FloatButton's
+`marginLG` and `marginXXL` tokens and one CSS Module class, once implemented.
+The drawer menu's 14 px text, the drawer's square top corners and the rest of
+this table are unchanged.
+
 While the refresh was pending, `apps/web/src/ui/tokens.css` stayed a
 byte-identical copy of `docs/design/system/tokens.css` (owner, 2026-11-01).
 The owner applied the WS-07 corrections to the Claude originals during
@@ -1674,6 +1682,69 @@ The verification ran in a separate git worktree; because Compose names its
 project after the folder, `pnpm db:up` ran from the main checkout.
 
 This is tooling evidence, not business acceptance.
+
+## Web shell follow-up plan approval (2026-11-02)
+
+**Owner approval:** On 2026-11-02 the owner approved the
+[web shell follow-up plan](web-shell-follow-up-plan-2026-11-02.md), SF-02–SF-06,
+as written, after ruling on the three shell issues that the
+[PR 2 approval](#frontend-pr-2-playwright-plan-approval-2026-11-02) left to
+this follow-up. It belongs to
+[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) and is not
+yet implemented; one implementation PR follows PR 2 and adds the outcome and
+the evidence here. Choices the plan does not settle, and deviations that
+implementation forces, still need approval.
+
+**The owner's answers (2026-11-02):**
+
+1. **Hover-only labels in the collapsed SideNav are not a defect.** In the
+   owner's words: "Nothing depends on hover on mobile. The sidebar doesn't
+   appear on mobile, it's replaced by the floating button at the bottom-right
+   corner." The brand book's principle covers phones, where the MenuFab
+   replaces the SideNav. From `bp-md` the SideNav stays as built: collapsed by
+   default up to `bp-lg`, with antd's hover tooltips, as SideNav.md approved.
+   SF-01 is withdrawn, and touch tablets stay with T04's device checks.
+2. **The bottom safe area:** "Should be addressed" (SF-02, SF-03).
+3. **The drawer's height on small phones:** "Should be addressed" (SF-04).
+
+**Rationale.** antd 6.6.8 derives the FloatButton's offsets from the global
+tokens `marginLG` and `marginXXL`, which `theme.components.FloatButton` can
+set, so the design's position takes two component tokens and one CSS Module
+class. That stays within the 2026-11-01 rule: antd's own styling unless a theme
+token or one CSS Module class reaches the design. The drawer's footer and
+height each take one class, on our own element or through antd's semantic
+`classNames.section`.
+
+| Item | Approved outcome |
+| --- | --- |
+| SF-01 | Withdrawn: the collapsed SideNav is not a defect. |
+| SF-02 MenuFab position | `fab-offset` (16 px) from the right and bottom, plus `env(safe-area-inset-bottom)`: the FloatButton component tokens `marginLG: 16` and `marginXXL: 16`, and one CSS Module class that adds the inset as a bottom margin. |
+| SF-03 Drawer footer | The language switch inside our own element, whose one CSS Module class adds the inset as bottom padding. |
+| SF-04 Drawer height | At most `100dvh` minus `header-height-phone` (56 px), through one CSS Module class on antd's `classNames.section`; the menu list scrolls between the title and the footer. |
+| SF-05 Tests | No new jsdom test. After PR 2, Playwright checks of the FAB's 16 px offsets and of the drawer at 412 × 500, and a safe-area test through the experimental CDP command `Emulation.setSafeAreaInsetsOverride` only if a prototype shows that it changes `env()`. Real devices under T04. |
+| SF-06 Delivery | The owner updates the Claude originals first; the implementation PR refreshes `docs/design/` (MenuFab.md, `ant-design.md` and the items the 2026-11-01 record left pending). This docs PR, then one implementation PR after PR 2, "Part of #118". |
+
+**What approval changes in approved documents:**
+
+- The PR 1 [implementation-time decision](#implementation-time-decisions-2026-11-01)
+  "Hard-to-override styles": its first kept default, the MenuFab at antd's
+  24 px and 48 px, is reversed. The drawer menu's 14 px text and the drawer's
+  square top corners stay. Until the implementation PR, the FAB keeps antd's
+  position.
+- The design reference: MenuFab.md's account of how the FAB is placed, and two
+  additions to its drawer bullet (the footer's inset and the short-screen
+  cap); the FloatButton entry in `ant-design.md`'s theme.
+- WS-08's FAB text, which places the button `fab-offset` plus the inset from
+  the bottom, becomes true again once implemented.
+
+**Left to the implementation PR and T04.** The implementation measures the
+drawer's height (about 555 px, computed from antd's source) and prototypes the
+CDP override. T04 checks an iPhone with a home indicator in Safari, with its
+bars shown and collapsed; an Android phone on Chrome 135 or later, with gesture
+and three-button navigation; an SE-sized iPhone; and a phone in landscape below
+`bp-md`. Outside the plan, and left to T04: landscape side insets under
+`viewport-fit=cover`, and Chrome's bottom bar with content padded by the moving
+inset.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 
