@@ -27,7 +27,10 @@ sign-in, and `diagnostics.echo` through the Vite proxy. The
 [approved on 2026-11-02](technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02)
 with the owner's changes to W9 and W11: two Chromium projects, Desktop Chrome
 and Pixel 7, portrait only, with iPhone and Safari checks left to T04. It is not
-yet implemented. Sign-in (PR 3) and the web image (PR 4) remain.
+yet implemented. The [web shell follow-up plan](web-shell-follow-up-plan-2026-11-02.md),
+[approved on 2026-11-02](technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02),
+fixes the MenuFab's safe area and the drawer's footer and height in one PR
+after PR 2. Sign-in (PR 3) and the web image (PR 4) remain.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.
