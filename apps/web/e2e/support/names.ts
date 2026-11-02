@@ -50,6 +50,9 @@ export function languageSwitchName(language: Language): string {
 }
 
 // document.title for a page with a title: "Inventory · StorageMinis".
-export function documentTitle(title: string, brand = en.common.brand): string {
+export function documentTitle(
+  title: string,
+  brand: string = en.common.brand,
+): string {
   return `${title} · ${brand}`;
 }
