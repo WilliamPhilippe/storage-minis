@@ -28,10 +28,11 @@ without sign-in and `diagnostics.echo` through the Vite proxy.
 [`docs/design/`](docs/design/README.md) holds the owner-approved design system and
 page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
 (approved 2026-11-02, with the owner's changes to W9 and W11) governs
-`pnpm test:e2e` and `apps/web/e2e`; it is not yet implemented. Step 6 is TBD
+`pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
+projects, `desktop-chrome` and `pixel-7`, before sign-in. Step 6 is TBD
 until the app is validated locally; business
-operations, authentication, business screens, Playwright, the web image,
-production and CI remain pending.
+operations, authentication, business screens, signed-in browser tests, the web
+image, production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -171,7 +172,8 @@ For documentation changes, check changed relative links, Markdown fences/tables,
 
 Use the [README](README.md) for local setup, the daily loop, migrations and checks; `package.json` lists every script. Points the scripts do not show:
 
-- `pnpm check` needs no database. `pnpm test:db` and `pnpm test:api` need `pnpm db:up` and share the test database, so run them one at a time; both refuse any database not named `*_test`. Run `pnpm test:stack` (Docker) after changes to the image, Compose files or migrations.
+- `pnpm check` needs no database. `pnpm test:db`, `pnpm test:api` and `pnpm test:e2e` need `pnpm db:up` and share the test database, so run them one at a time; all three refuse any database not named `*_test`. Run `pnpm test:stack` (Docker) after changes to the image, Compose files or migrations.
+- `pnpm test:e2e` (outside `pnpm check`) needs the one-time headless shell install in the [README](README.md#local-setup) and ports 3000 and 5173 free, so stop `pnpm dev`; Playwright starts and stops its own servers and never reuses one. Specs take `test` from `e2e/support/test.ts` (signed-out) or `e2e/support/app.ts` (`/app`), read names from the catalogs through `support/names.ts`, call `tapOrClick` instead of `click()`/`tap()`, and declare expected console output with `expectConsole`. Tag layout-specific tests `@phone` or `@desktop`.
 - Raw `docker compose` commands need `--env-file .env.development`. The parity stack uses its own project and file flags; see the [parity stack reference](docs/technical/local-development.md#parity-stack).
 - Generate migrations offline with `pnpm db:generate` and confirm Drizzle Kit's final line; it can exit 0 after an error. Review and commit SQL, snapshots and journal together. Preserve applied history and correct it with forward migrations.
 - Stop `pnpm dev` before finite builds or checks; both write the DB package's `dist`.

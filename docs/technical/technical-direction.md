@@ -1519,10 +1519,11 @@ This is tooling evidence, not business acceptance.
 **Owner approval:** On 2026-11-02 the owner approved the
 [Playwright plan](playwright-plan-2026-11-02.md), PW-01–PW-14, as recommended,
 for PR 2 of the frontend decisions (W11 item 2,
-[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is not
-yet implemented; the implementation PR adds the outcome and the evidence here.
-Choices the plan does not settle, and deviations that implementation forces,
-still need approval.
+[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is
+implemented in [PR #PR_NUMBER](https://github.com/WilliamPhilippe/storage-minis/pull/PR_NUMBER);
+the [implementation-time decisions](#implementation-time-decisions-2026-11-02),
+the [outcome and the evidence](#implemented-outcome-2026-11-02) follow this
+record.
 
 **Owner changes to W9 and W11 (2026-11-02),** made before the plan:
 
@@ -1594,6 +1595,83 @@ Three known shell issues go to a separate follow-up: hover-only labels in the
 collapsed SideNav, the bottom safe area for the menu button and the drawer, and
 the drawer's height on small phones. The second revisits the 2026-11-01
 "Hard-to-override styles" decision.
+
+### Implementation-time decisions (2026-11-02)
+
+Implementation raised two points the plan did not settle. The owner decided
+both on 2026-11-02:
+
+| Topic | Decided outcome | Why |
+| --- | --- | --- |
+| Who installs the browser | The implementing session ran PW-02's `playwright install --only-shell chromium` into Playwright's default cache, `~/Library/Caches/ms-playwright` (203 MiB shell, 2.9 MiB FFmpeg), instead of the owner. | The owner chose it over running the command themself or a scratchpad-only install, which would have needed a second install for their own runs. |
+| The collapsed SideNav test's state | The test at 900 × 720 saves the `"collapsed"` choice (`storage-minis.sideNav`) with `page.addInitScript` before the page loads, instead of relying on today's default at that width. | The web shell follow-up's SF-01 proposes an expanded SideNav at every width from `bp-md`. The plan's version would have pinned today's default, which section 2 rules out. The suggestion came from the follow-up's hand-over note. |
+
+### Implemented outcome (2026-11-02)
+
+- **Packages.** `@playwright/test` 1.64.1 and `@storage-minis/db`
+  (`workspace:*`) in `apps/web`, `eslint-plugin-playwright` 2.12.1 at the
+  root. `pnpm-workspace.yaml` is unchanged.
+- **Configuration.** `apps/web/playwright.config.mts` as PW-03, PW-06 and
+  PW-08 write it; `tsconfig.e2e.json`, referenced by `apps/web/tsconfig.json`
+  and run by the web `typecheck` script; `playwright.config.mts` in
+  `tsconfig.node.json`.
+- **Task.** `@storage-minis/web#test:e2e` after `^build`, uncached, passing
+  through `PLAYWRIGHT_BROWSERS_PATH` and `DATABASE_URL`, and the root
+  `pnpm test:e2e`. `pnpm check` is unchanged.
+- **Harness.** `e2e/support/test.ts` (`tapOrClick`, the automatic console
+  fixture with `expectConsole`, `expectNoSidewaysScroll`), `support/app.ts`
+  (the `/app` specs' `test`, PR 3's plug-in point) and `support/names.ts`
+  (`en` and `pt` from the catalogs, `fill`, `languageSwitchName`,
+  `documentTitle`). The language names live in the import-free
+  `src/i18n/languages.ts`, re-exported by `i18n.ts`.
+- **Specs.** `signed-out/pages` and `signed-out/language`, and `app/navigation`,
+  `app/echo` and `app/pages`, with the PW-11 tests: 23 in `desktop-chrome`
+  and 22 in `pixel-7`.
+- **Lint and ignores.** The plugin's recommended rules for
+  `apps/web/e2e/**`, the `tapOrClick` restriction for specs, and the
+  `.gitignore`, `.prettierignore` and ESLint ignore entries of PW-08.
+
+**Evidence (2026-11-02, branch `feat/playwright`):**
+
+- `pnpm install --frozen-lockfile` passes; `pnpm-workspace.yaml` has no
+  `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers check`
+  finds no issue.
+- `pnpm check`: 9 tasks and 194 unit tests, unchanged, after each commit
+  group. Right after an end-to-end run, 9 of 9 cached.
+- `playwright test --list`: 45 tests in 5 files, 23 `desktop-chrome` and
+  22 `pixel-7`, no other project.
+- `pnpm db:up`, then `pnpm test:e2e` three times: 45 passed each time, in
+  20.4, 21.7 and 21.2 s with 5 workers. A fourth run on the finished branch,
+  with the host on `TZ=UTC`, passed 45 in 20.9 s.
+  `pnpm test:e2e -- --project=pixel-7` ran 22 tests, none in `desktop-chrome`.
+- With a failure's report (2.4 MB) and trace present, `pnpm lint` and
+  `pnpm format:check` pass.
+- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged. `pnpm test:stack` 5 on
+  an image rebuilt with the new lockfile.
+- Each guard broken on purpose failed, and passed again when restored:
+
+  | Guard | Broken by | Failed with |
+  | --- | --- | --- |
+  | Console policy | The `The above error occurred in` declaration removed; the 502 declaration removed; `height="auto"` on the drawer; an error thrown from a timer | `console output the test did not declare`, with React's error-boundary message, four `status of 502 (Bad Gateway)` errors, `` [antd: Drawer] `height` is deprecated `` and `pageerror: Error: deliberate page error` |
+  | No sideways scroll | A 480 px minimum width on the Login logo | Pixel 7 only: `the page scrolls sideways`, 496 > 412 |
+  | Time zone pin | `timezoneId` removed, host `TZ=UTC` | Both projects: `"timeZone": "UTC"` and `"day": "Nov 1"` |
+  | Project tags | `grepInvert` removed from `desktop-chrome` | The `@phone` drawer test fails on desktop |
+  | No server reuse | A server on 5173; a server on 3000 answering 200 at `/health/ready`, as `pnpm dev`'s API does | `http://localhost:5173 is already used` after `[api]` reports `listening`; `http://127.0.0.1:3000/health/ready is already used` before any server starts |
+  | Test database only | `DATABASE_URL` naming `storage_minis_dev` | `Database integration tests require a database whose name ends in _test.`, no server started |
+  | Databases stopped | `pnpm db:down` | Within about 1 s, `database_readiness_failed` with `ECONNREFUSED`, then `Process from config.webServer was not able to start. Exit code: 1` |
+  | Browser path | `PLAYWRIGHT_BROWSERS_PATH` naming an empty folder | With the pass-through, `Executable doesn't exist at <folder>/chromium_headless_shell-1248/…`; with `PLAYWRIGHT_BROWSERS_PATH` removed from `passThroughEnv`, the variable is dropped and the run passes from the default cache |
+  | Lint | `test.only`, `expect(await …isVisible()).toBe(true)`, `waitForTimeout`, a raw `.click()`, an unawaited `toBeVisible()` | `Unexpected focused test`, `Replace isVisible() with toBeVisible()`, the `waitForTimeout` warning (blocking under `--max-warnings 0`), the `tapOrClick` message, and `no-floating-promises` with `'toBeVisible' must be awaited` |
+  | Ignores | The ESLint ignores removed while a report exists | 856 lint errors |
+  | Types | A wrong catalog key in a spec | `TS2339`; a near miss such as `unavailabel` gives `TS2551` ("Did you mean") |
+
+Implementation notes, not decisions: the browser-path guard was checked with an
+empty folder rather than the prototype's custom install, so no second 206 MiB
+download was needed; a server on port 3000 that answers 404 at
+`/health/ready` is not reused either, and the API then exits on `EADDRINUSE`.
+The verification ran in a separate git worktree; because Compose names its
+project after the folder, `pnpm db:up` ran from the main checkout.
+
+This is tooling evidence, not business acceptance.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

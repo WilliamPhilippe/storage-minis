@@ -51,6 +51,20 @@ They are local-only values, not secrets; both databases publish only on
 changing shell initialization follows the
 [owner approval rules](AGENTS.md#owner-approval-before-decisions).
 
+The end-to-end tests need Playwright's Chrome Headless Shell, installed once
+(owner-approved 2026-11-02, PW-02):
+
+```sh
+pnpm --filter @storage-minis/web exec playwright install --only-shell chromium
+```
+
+It writes about 206 MiB (the shell and FFmpeg) to Playwright's default cache,
+`~/Library/Caches/ms-playwright` on macOS, outside the repository;
+`PLAYWRIGHT_BROWSERS_PATH` names another folder, and `pnpm test:e2e` passes it
+through. The browser is tied to the Playwright version: run the command again
+after a Playwright upgrade, which also removes browsers no installed Playwright
+uses.
+
 ## Local PostgreSQL
 
 | Database | Host address | Database name | Storage |
@@ -335,14 +349,47 @@ The live suites run uncached. Start the databases first with `pnpm db:up`:
 ```sh
 pnpm test:db     # schema, migration and connection tests on the test database
 pnpm test:api    # real built API processes against the test database
+pnpm test:e2e    # Playwright smoke tests in Chromium; see End-to-end tests
 pnpm test:stack  # parity stack smoke test; needs Docker
 ```
 
-`test:db` and `test:api` share the test database: run them **one at a time**.
-`test:db` drops and recreates the test schemas. Both refuse any database whose
-name does not end in `_test` before connecting. Feature work must add its
-requirement acceptance tests; the current health and schema tests do not
-establish business acceptance.
+`test:db`, `test:api` and `test:e2e` share the test database: run them **one at
+a time**. `test:db` drops and recreates the test schemas. All three refuse any
+database whose name does not end in `_test` before connecting. Feature work
+must add its requirement acceptance tests; the current health, schema and smoke
+tests do not establish business acceptance.
+
+### End-to-end tests
+
+`pnpm test:e2e` builds the API, then Playwright starts the built API on
+`127.0.0.1:3000` against the test database and the Vite dev server on
+`http://localhost:5173`, runs the specs in `apps/web/e2e` and stops both
+servers. It needs `pnpm db:up`, the headless shell from
+[Local setup](#local-setup), and ports 3000 and 5173 free, so stop `pnpm dev`
+first: Playwright never reuses a running server and fails with "is already
+used" instead. Two Chromium projects run every test, `desktop-chrome`
+(1280 × 720) and `pixel-7` (Playwright's Pixel 7 profile), both in en-US and
+`America/Sao_Paulo`; tests tagged `@phone` or `@desktop` run in one project
+only. Arguments after `--` reach `playwright test`:
+
+```sh
+pnpm test:e2e -- --project=pixel-7 e2e/app/echo.spec.ts
+```
+
+A failed run keeps its traces and screenshots in `apps/web/test-results/` and
+writes an HTML report to `apps/web/playwright-report/`, which never opens by
+itself. Serve it with
+`pnpm --filter @storage-minis/web exec playwright show-report`. Specs use
+the `tapOrClick` fixture instead of `click()` or `tap()`, and a console error
+or warning, or an uncaught page error, that a test did not declare with
+`expectConsole` fails it.
+
+After a run that was killed hard, its servers keep ports 3000 and 5173, and the
+next run fails with "is already used". `lsof -nP -iTCP:3000 -sTCP:LISTEN` (and
+`-iTCP:5173`) shows each listener's PID; `ps -o pid,command -p <PID>` shows
+whether it is the test API (`dist/server.js`) or Vite (`vite.js`); `kill <PID>`
+stops it. See the
+[end-to-end reference](docs/technical/local-development.md#end-to-end-tests).
 
 ### Parity stack
 
