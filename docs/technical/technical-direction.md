@@ -1598,13 +1598,14 @@ the drawer's height on small phones. The second revisits the 2026-11-01
 
 ### Implementation-time decisions (2026-11-02)
 
-Implementation raised two points the plan did not settle. The owner decided
-both on 2026-11-02:
+Implementation raised three points the plan did not settle. The owner decided
+each on 2026-11-02:
 
 | Topic | Decided outcome | Why |
 | --- | --- | --- |
 | Who installs the browser | The implementing session ran PW-02's `playwright install --only-shell chromium` into Playwright's default cache, `~/Library/Caches/ms-playwright` (203 MiB shell, 2.9 MiB FFmpeg), instead of the owner. | The owner chose it over running the command themself or a scratchpad-only install, which would have needed a second install for their own runs. |
 | The collapsed SideNav test's state | The test at 900 × 720 saves the `"collapsed"` choice (`storage-minis.sideNav`) with `page.addInitScript` before the page loads, instead of relying on today's default at that width. | The web shell follow-up's SF-01 proposes an expanded SideNav at every width from `bp-md`. The plan's version would have pinned today's default, which section 2 rules out. The suggestion came from the follow-up's hand-over note. |
+| ESLint and session worktrees | The root ESLint config's global ignores add `.claude/**`, beside `.context/**`. | `pnpm lint` runs `eslint .` from the root. A Claude Code session worktree under `.claude/worktrees/` is a full copy of the repository without its packages built, so the owner's `pnpm check` on this branch reported 5230 typed-lint errors, all in another session's worktree; with that folder skipped, lint was clean. The checks in this PR had run inside a worktree, which contains no `.claude/worktrees`. |
 
 ### Implemented outcome (2026-11-02)
 
@@ -1629,7 +1630,8 @@ both on 2026-11-02:
   and 22 in `pixel-7`.
 - **Lint and ignores.** The plugin's recommended rules for
   `apps/web/e2e/**`, the `tapOrClick` restriction for specs, and the
-  `.gitignore`, `.prettierignore` and ESLint ignore entries of PW-08.
+  `.gitignore`, `.prettierignore` and ESLint ignore entries of PW-08, and
+  `.claude/**` in the ESLint global ignores.
 
 **Evidence (2026-11-02, branch `feat/playwright`):**
 

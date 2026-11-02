@@ -29,6 +29,9 @@ const nodeMessage = "Browser code runs without Node.js globals and modules.";
 export default defineConfig([
   globalIgnores([
     ".context/**",
+    // Claude Code session worktrees: full repository copies inside the
+    // checkout, often without their packages built.
+    ".claude/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/coverage/**",
