@@ -103,6 +103,12 @@
     "@storage-minis/web#dev": {
       "cache": false,
       "persistent": true
+    },
+    "@storage-minis/web#test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": [],
+      "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH", "DATABASE_URL"]
     }
   }
 }
