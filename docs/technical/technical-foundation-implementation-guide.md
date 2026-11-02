@@ -27,7 +27,7 @@ sign-in, and `diagnostics.echo` through the Vite proxy. The
 [approved on 2026-11-02](technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02)
 with the owner's changes to W9 and W11: two Chromium projects, Desktop Chrome
 and Pixel 7, portrait only, with iPhone and Safari checks left to T04. It is
-implemented in [PR #PR_NUMBER](https://github.com/WilliamPhilippe/storage-minis/pull/PR_NUMBER):
+implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124):
 `pnpm test:e2e` with 45 smoke tests before sign-in. Sign-in (PR 3) and the web
 image (PR 4) remain.
 

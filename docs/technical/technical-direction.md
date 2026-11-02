@@ -1520,7 +1520,7 @@ This is tooling evidence, not business acceptance.
 [Playwright plan](playwright-plan-2026-11-02.md), PW-01–PW-14, as recommended,
 for PR 2 of the frontend decisions (W11 item 2,
 [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is
-implemented in [PR #PR_NUMBER](https://github.com/WilliamPhilippe/storage-minis/pull/PR_NUMBER);
+implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124);
 the [implementation-time decisions](#implementation-time-decisions-2026-11-02),
 the [outcome and the evidence](#implemented-outcome-2026-11-02) follow this
 record.
