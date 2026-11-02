@@ -1514,6 +1514,87 @@ add them. The logo links and the not-found page's home link are current
 
 This is tooling evidence, not business acceptance.
 
+## Frontend PR 2 Playwright plan approval (2026-11-02)
+
+**Owner approval:** On 2026-11-02 the owner approved the
+[Playwright plan](playwright-plan-2026-11-02.md), PW-01–PW-14, as recommended,
+for PR 2 of the frontend decisions (W11 item 2,
+[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is not
+yet implemented; the implementation PR adds the outcome and the evidence here.
+Choices the plan does not settle, and deviations that implementation forces,
+still need approval.
+
+**Owner changes to W9 and W11 (2026-11-02),** made before the plan:
+
+1. **Two projects instead of four, both in Chromium:** Desktop Chrome
+   (1280 × 720) and Playwright's full `devices['Pixel 7']` profile (412 × 839,
+   touch, mobile mode, device scale 2.625). No WebKit, no iPhone and no
+   Desktop Safari. Both projects pin `locale` and
+   `timezoneId: 'America/Sao_Paulo'`. This replaces W9's four projects
+   (`iPhone 15`, `Pixel 7`, Desktop Chrome and Desktop Safari) and defines
+   W11 item 2's phone and desktop projects.
+2. **Phones are portrait only:** no landscape projects or tests.
+3. **No iOS Simulator in PR 2:** Xcode with an iOS runtime takes about
+   13–20 GB, and Playwright can't drive Safari on iPhone. iPhone and Safari
+   checks stay with T04's real-device checks.
+4. **Playwright stays before sign-in:** signed-out specs (Login, catalog) stay
+   apart from the specs that will need a session (`/app`), and PR 3 plugs in a
+   setup project, storage state with IndexedDB and project dependencies. The
+   sign-in structure stays with PR 3 and T02 (W8).
+
+**Rationale.** The plan gives PR 2 a harness that PR 3 and PR 4 extend without
+restructuring, on the owner's two Chromium projects. A scratch prototype ran
+all 45 smoke tests on both projects and broke each guard on purpose, and two
+independent reviews corrected the plan before approval. The prototype showed
+where the defaults would mislead:
+
+- a reused server would run the tests against `pnpm dev` and the development
+  database;
+- loading `.env.test` into Playwright's environment would hand both servers
+  the owner role's credentials;
+- antd's and React's warnings exist only in development builds;
+- W9's `playwright/.auth` entry would not match `apps/web/playwright/.auth/`
+  from the root `.gitignore`;
+- typed lint misses Playwright's own mistakes, such as assertions that never
+  retry.
+
+| Item | Approved outcome |
+| --- | --- |
+| PW-01 Pins | `@playwright/test` 1.64.1 in `apps/web`; `eslint-plugin-playwright` 2.12.1 at the root (2.12.2 was under 24 hours old); `@storage-minis/db` as a workspace devDependency of `apps/web`. No release-age exclusion, no install script. |
+| PW-02 Browser | Chrome Headless Shell 156.0.8078.4 only, about 206 MiB with FFmpeg, installed once by the owner with `playwright install --only-shell chromium` into Playwright's default cache; `PLAYWRIGHT_BROWSERS_PATH` may name another folder. |
+| PW-03 Projects | `desktop-chrome` and `pixel-7` with the full device descriptors; `locale: "en-US"` and `timezoneId` in the shared `use`; `@phone` and `@desktop` tags with `grepInvert` for the three layout-specific tests; the collapsed SideNav at 900 × 720 in the desktop project. |
+| PW-04 Layout | `apps/web/playwright.config.mts`; `apps/web/e2e/` with `signed-out/`, `app/` and `support/`; `tsconfig.e2e.json` (Node types, DOM library, bundler resolution), referenced by the solution tsconfig and the `typecheck` script; the language names in an import-free `src/i18n/languages.ts`. |
+| PW-05 Lint | `eslint-plugin-playwright`'s recommended rules for `apps/web/e2e/**`. |
+| PW-06 Servers | Playwright starts the built API at `127.0.0.1:3000` (`NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn`) with only the test database's URL, parsed from `.env.test` with `util.parseEnv`, and the Vite dev server at `http://localhost:5173`. It never reuses a running server, refuses databases not named `*_test`, and stops the API with `SIGTERM` and 15 s, Compose's grace period. The dev server, not a built preview. |
+| PW-07 Turborepo | `@storage-minis/web#test:e2e` after `^build`, uncached, passing through `PLAYWRIGHT_BROWSERS_PATH` and `DATABASE_URL`; the root `pnpm test:e2e`, outside `pnpm check`. |
+| PW-08 Run settings | `fullyParallel`, no retries, default workers, traces and screenshots on failure, the list and HTML reporters with `open: "never"`; `test-results/`, `playwright-report/` and `**/playwright/.auth/` ignored by git, Prettier and ESLint as each needs. |
+| PW-09 Tap or click | A `tapOrClick` fixture (`tap()` with touch, `click()` without) and a `no-restricted-syntax` rule against direct `.click()` and `.tap()` in specs. |
+| PW-10 Console policy | An automatic fixture with `expectConsole(kind, pattern)`: undeclared `error`, `warn` or uncaught `pageerror` output fails the test. |
+| PW-11 Smoke tests | 23 desktop and 22 phone tests with names from the en-US catalogs: the Login page, the catalog placeholder, the language switch and its saved choice, pt-BR, the phone drawer, the expanded and collapsed SideNav, the echo round-trip, and no sideways scroll on every page. |
+| PW-12 Echo error path | The echo request answered with the Vite proxy's own 502 (`text/plain`, empty body), then "Try again" against the real API. |
+| PW-13 PR 3 plug-in | `/app` specs import `test` from `e2e/support/app.ts`. PR 3 adds a setup project with `dependencies`, saves `storageState` with `indexedDB: true` under `playwright/.auth/`, and sets it in `support/app.ts`. |
+| PW-14 Delivery | This docs PR, then one implementation PR in four commit groups, "Part of #118". |
+
+**What approval changes in approved documents:**
+
+- W9's "Every end-to-end test runs on phones and desktops": three
+  layout-specific tests run in one project only.
+- W9's "`playwright/.auth` is ignored by git": the root entry is
+  `**/playwright/.auth/`.
+- W8's "Playwright's phone projects": one phone project, Pixel 7.
+- Section 8 of the frontend decisions: `pnpm test:e2e` uses the test database
+  and `.env.test`, and runs one at a time with `test:db` and `test:api`.
+- WS-10's WebKit date-separator check moves to T04.
+
+**Left to others.** T04's real-device checks take Safari and iOS WebKit, safe
+areas, Safari's toolbars, the on-screen keyboard, a real Android phone, touch
+tablets, classic scrollbars and in-app browsers. The `web-unit` jsdom tests keep
+the exact breakpoints, the language detection order and the formatting rules.
+Three known shell issues go to a separate follow-up: hover-only labels in the
+collapsed SideNav, the bottom safe area for the menu button and the drawer, and
+the drawer's height on small phones. The second revisits the 2026-11-01
+"Hard-to-override styles" decision.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or

@@ -26,7 +26,10 @@ delivery steps; read them before frontend work. The
 responsive shell, the en-US and pt-BR catalogs, placeholder pages, the Login page
 without sign-in and `diagnostics.echo` through the Vite proxy.
 [`docs/design/`](docs/design/README.md) holds the owner-approved design system and
-page designs. Step 6 is TBD until the app is validated locally; business
+page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
+(approved 2026-11-02, with the owner's changes to W9 and W11) governs
+`pnpm test:e2e` and `apps/web/e2e`; it is not yet implemented. Step 6 is TBD
+until the app is validated locally; business
 operations, authentication, business screens, Playwright, the web image,
 production and CI remain pending.
 
