@@ -221,7 +221,7 @@ The owner approved this baseline on 2026-10-21 and the concrete tooling setup on
 - Use English for code identifiers, comments, and project documentation. The UI offers en-US (main) and pt-BR, decided on 2026-11-01.
 - Use TypeScript with strict checking for Node.js and React code, with ESLint and Prettier for linting and formatting.
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
-- Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
+- Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations. Write the description from [`.github/pull_request_template.md`](.github/pull_request_template.md); a change people can see adds phone and desktop screenshots, attached in GitHub's editor rather than committed (owner, 2026-11-03).
 
 Formatter settings and unit-runner commands are recorded in the tooling setup. Branch/review/merge policy, browser test setup, and CI remain open.
 
