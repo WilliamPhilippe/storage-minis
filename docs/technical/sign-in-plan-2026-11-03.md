@@ -3,7 +3,7 @@
 **Status: approved by the owner on 2026-11-04 as recommended; not yet
 implemented.** The approval record is in
 [technical direction](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04),
-and [Approval](#approval-2026-11-04) lists what was still open. This plan delivers [T02's record](t02-authentication-record-2026-11-03.md)
+and [Approval](#approval-2026-11-04) records the owner's answers given after it. This plan delivers [T02's record](t02-authentication-record-2026-11-03.md)
 (AU-01–AU-12) as one feature across the API, the database and the web app: frontend
 PR 3 of the [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)
 (W11 item 3), which the owner asked on 2026-11-02 to plan end to end. It follows the
@@ -39,13 +39,13 @@ references within this plan, not requirement, issue or F-decision IDs.
 
 The owner approved SI-01–SI-19, with T02's record (AU-01–AU-12), as recommended on
 2026-11-04. Before approving, they asked why the API uses `jose` rather than
-`firebase-admin`; the answer is SI-02's and SI-05's reasoning. Still open at
-approval:
+`firebase-admin`; the answer is SI-02's and SI-05's reasoning. The owner answered the
+two questions left open at approval the same day:
 
-1. **The development Organization's name and nickname,** which PR 3a's
-   `.env.development` needs (SI-03).
-2. **Requirements v0.9:** whether AU-08's role capabilities and AU-10's no-access
-   rule are published in a new requirements version
+1. **The development Organization** is named `wipminis`, with the nickname
+   `wipminis` and BRL, in PR 3a's `.env.development` (SI-03).
+2. **Requirements v0.9:** AU-08's role capabilities and AU-10's no-access rule stay
+   in T02's record only for now
    ([record, section 3](t02-authentication-record-2026-11-03.md#3-impact-on-approved-documents-and-issues)).
 
 ### What approval changes in approved documents
@@ -278,8 +278,8 @@ exited 0.
 | `FIREBASE_PROJECT_ID` | Required; Firebase project ID format | `storage-minis-dev` | `storage-minis-dev` | `${FIREBASE_PROJECT_ID:?Set FIREBASE_PROJECT_ID}` | `storage-minis` |
 | `AUTH_TEST_SIGN_IN` | Unset or `enabled`; rejected with `NODE_ENV` `production` or unset | — | `enabled` (3b) | never mapped | never set |
 | `BOOTSTRAP_OWNER_EMAIL` | An email; all three `BOOTSTRAP_*` or none | `ctt.williamphilippe@gmail.com` | — | not mapped until T04 | the same email |
-| `BOOTSTRAP_ORGANIZATION_NAME` | 1–100 characters | the owner's choice | — | not mapped until T04 | the owner's choice |
-| `BOOTSTRAP_ORGANIZATION_NICKNAME` | SI-04's provisional rule | the owner's choice | — | not mapped until T04 | the owner's choice |
+| `BOOTSTRAP_ORGANIZATION_NAME` | 1–100 characters | `wipminis` | — | not mapped until T04 | the owner's choice |
+| `BOOTSTRAP_ORGANIZATION_NICKNAME` | SI-04's provisional rule | `wipminis` | — | not mapped until T04 | the owner's choice |
 | `BOOTSTRAP_ORGANIZATION_CURRENCY` | `BRL` (default) or `USD` | — | — | not mapped until T04 | — |
 
 - `compose.yaml`'s `${FIREBASE_PROJECT_ID:?}` is interpolated for every local Compose
@@ -295,8 +295,8 @@ exited 0.
 - **Playwright's API server** (3a) gets `FIREBASE_PROJECT_ID` from `.env.test`, as it
   gets `DATABASE_URL`; 3b adds `AUTH_TEST_SIGN_IN` the same way, read from the file,
   not from the environment.
-- **Owner input:** the development Organization's name and nickname, which must pass
-  SI-04's rule, before PR 3a commits `.env.development`.
+- **Owner input (2026-11-04):** the development Organization is `wipminis`, as both
+  name and nickname; it passes SI-04's rule.
 
 **Web** (W10): `apps/web/.env.development` (the dev project) and `.env.production`
 (the production project), Vite's mode files, committed:

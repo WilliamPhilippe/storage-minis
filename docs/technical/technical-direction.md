@@ -1847,9 +1847,12 @@ a server credential this design avoids. Nothing is implemented yet: PRs 3a and 3
 follow, each adding its outcome and evidence here. Choices the plan does not settle,
 and deviations that implementation forces, still need approval.
 
-**Still open at approval:** the development Organization's name and nickname, needed
-before PR 3a; and whether AU-08's role capabilities and AU-10's no-access rule are
-published in requirements v0.9.
+**Answered after approval (2026-11-04):**
+
+- The development Organization is named `wipminis`, with the nickname `wipminis` and
+  BRL; these are the `BOOTSTRAP_*` values of `.env.development` in PR 3a.
+- AU-08's role capabilities and AU-10's no-access rule stay in T02's record only for
+  now, not in requirements v0.9.
 
 **Rationale.** The record settles the session policies that the
 [frontend decisions](#frontend-foundation-decisions-2026-11-01) left to T02, around the

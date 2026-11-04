@@ -419,8 +419,9 @@ Google account could add rows, and a row alone grants nothing.
   cross the "Business schema migrations" gate by explicit exception (AU-07).
 - **Requirements:** AU-08 and AU-10 refine ORG-005 and ORG-008 without changing them.
   Under the owner's rule that approved business rules get a new requirements version,
-  they could be published in requirements v0.9 with the next business change. That
-  question was still open at approval (2026-11-04).
+  they could be published in requirements v0.9 with the next business change. On
+  2026-11-04, after approval, the owner chose to keep them in this record only for
+  now; requirements v0.9 does not publish them yet.
 - **Issues:** #22's required outputs map to AU-01–AU-12; #117 gets its columns and its
   bootstrap creation; #26 gets the authorization seam; #118's PR 3 becomes PRs 3a and
   3b (plan SI-01).
