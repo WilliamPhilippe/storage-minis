@@ -443,7 +443,7 @@ later approved decisions take precedence over conflicting baseline text.
 - [Foundation restructure plan](docs/technical/foundation-restructure-plan-2026-10-31.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide and remaining steps](docs/technical/technical-foundation-implementation-guide.md)
-- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md), the [PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) and the [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
+- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md), the [PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) with its [follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md), and the [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
 - [Design system and page designs](docs/design/README.md)
 
 Keep links to the latest published document versions; preserve historical baselines.

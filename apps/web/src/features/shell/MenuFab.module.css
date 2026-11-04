@@ -1,0 +1,19 @@
+/* The FAB sits fab-offset from the edges (FloatButton tokens in theme.ts);
+   this margin lifts it above the home indicator or Android's gesture bar.
+   antd's own `margin: 0` is a one-class rule injected before this one. */
+.fab {
+  margin-block-end: env(safe-area-inset-bottom);
+}
+
+/* On short screens the drawer stops header-height-phone below the top, and
+   antd's body (flex: 1, min-height: 0, overflow: auto) scrolls the menu
+   between the title and the footer. */
+.drawer {
+  max-height: calc(100dvh - var(--header-height-phone));
+}
+
+/* Inside antd's footer padding (space-2): the language switch stays above
+   the home indicator or the gesture bar. */
+.drawerFooter {
+  padding-block-end: env(safe-area-inset-bottom);
+}

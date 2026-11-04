@@ -37,6 +37,7 @@ Don't target `.ant-*` classes globally, don't use `!important`, and don't copy a
 | `control-sm`, `control-md`, `control-touch` | `controlHeightSM` 32, `controlHeight` 40, `controlHeightLG` 44 |
 | `shadow-overlay` | `boxShadowSecondary` |
 | `shadow-fab` | `FloatButton` component token `boxShadowSecondary` |
+| `fab-offset` | `FloatButton` component tokens `marginLG` and `marginXXL` (16; antd's defaults are 24 and 48) |
 | `header-height`, `header-height-phone` | `Layout` component token `headerHeight` (64; 56 below `bp-md`) |
 
 ## The theme
@@ -52,6 +53,8 @@ export const theme: ThemeConfig = {
   token: {
     colorPrimary: ink,
     colorPrimaryHover: "#2c343d",
+    colorPrimaryBg: surfaceSunken, // selected items and rows: ink on surface-sunken,
+    colorPrimaryBgHover: "#e3e6ea", // then on line when hovered
     colorInfo: "#1d5fc2",
     colorLink: "#1d5fc2",
     colorInfoBg: "#e8f0fc",
@@ -96,15 +99,19 @@ export const theme: ThemeConfig = {
     Input: { activeBorderColor: ink, hoverBorderColor: ink, activeShadow: "0 0 0 2px #1d5fc2" },
     Select: { activeBorderColor: ink, hoverBorderColor: ink, optionSelectedBg: surfaceSunken },
     Layout: { headerBg: "#ffffff", bodyBg: "#f6f7f9", headerHeight: 64, headerPadding: "0 24px" },
-    Menu: { itemSelectedBg: surfaceSunken, itemSelectedColor: ink, itemHoverBg: surfaceSunken, itemHeight: 44, iconSize: 20, collapsedIconSize: 20 },
-    FloatButton: { controlHeightLG: 56, boxShadowSecondary: "0 6px 16px rgba(22, 27, 33, 0.24), 0 2px 4px rgba(22, 27, 33, 0.12)" }, // shadow-fab
+    Menu: { activeBarBorderWidth: 0, itemSelectedBg: surfaceSunken, itemSelectedColor: ink, itemHoverBg: surfaceSunken, itemHeight: 44, iconSize: 20, collapsedIconSize: 20 },
+    FloatButton: { controlHeightLG: 56, boxShadowSecondary: "0 6px 16px rgba(22, 27, 33, 0.24), 0 2px 4px rgba(22, 27, 33, 0.12)", fontSizeIcon: 16, marginLG: 16, marginXXL: 16 }, // shadow-fab, a 24px icon, fab-offset
     Tag: { defaultBg: surfaceSunken, defaultColor: "#57606a" },
+    Tooltip: { controlHeight: 32 }, // centers a tooltip's text in its box
+    Typography: { fontSizeHeading1: 22, lineHeightHeading1: 30 / 22, titleMarginBottom: 0 }, // every h1 is a title-lg page title
   },
 };
 ```
 
-- `main.tsx` wraps the app in `<ConfigProvider theme={theme} locale={…} componentSize={isPhone ? "large" : "medium"}>`. Below `bp-md`, `large` gives 44px controls and 16px input text, which avoids iOS zoom on focus. Use `"medium"`, not `"middle"`: `"middle"` is deprecated and removed in antd 7.
-- Below `bp-md`, the provider also sets the `Layout` tokens `headerHeight: 56` (`header-height-phone`) and `headerPadding: "0 16px"`.
+- `ui/AppProviders.tsx` wraps the app in `<ConfigProvider theme={isPhone ? phoneTheme : theme} locale={…} componentSize={isPhone ? "large" : "medium"}>`. Below `bp-md`, `large` gives 44px controls and 16px input text, which avoids iOS zoom on focus. Use `"medium"`, not `"middle"`: `"middle"` is deprecated and removed in antd 7.
+- Below `bp-md`, `phoneTheme` also sets the `Layout` tokens `headerHeight: 56` (`header-height-phone`) and `headerPadding: "0 16px"`.
+- `Menu.activeBarBorderWidth: 0` removes the inline Menu's own right border, which doubled the `SideNav`'s and showed inside the drawer. `FloatButton.fontSizeIcon: 16` gives the `MenuFab` its 24px icon (antd uses 1.5 times the token).
+- The `MenuFab` sits `fab-offset` from the edges through `FloatButton`'s `marginLG` and `marginXXL`; its CSS Module class adds only the safe-area inset (web shell follow-up, approved 2026-11-02).
 - There are no `siderBg` or `trigger*` tokens: they do nothing on a light `Sider`, and `SideNav` replaces the built-in trigger with its own button.
 - Keep `theme.ts` and `tokens.json` in step: a value changes in both or in neither.
 - Verified under antd 6.6.8 (web shell plan WS-07, approved 2026-11-01): the theme type-checks and renders. antd ignores token names it doesn't know without warning, so check any new name the same way.
@@ -146,7 +153,7 @@ These are the only global rules on antd classes, kept in `apps/web/src/ui/antd-o
 | Money and IDs | `Typography.Text` (`strong`, `code`), `Statistic` for totals | Formatting comes from `lib/format`. `Statistic`'s value defaults to 24px, not `money-lg`'s 20 |
 | Forms | `Form.Item` (layout `vertical`), `Input`, `InputNumber`, `Select`, `DatePicker` through our TanStack Form field wrappers | See `FormField` |
 | Search and filters | `Input` (`allowClear`, prefix icon), `Button`, `Badge`, `Drawer` (`placement="bottom"` on phones) | See `SearchBar`. The `Drawer` takes its shadow from its own `boxShadowDrawer*` tokens, not `boxShadowSecondary` |
-| Main menu, phones | `FloatButton` (bottom right) opening a `Drawer` (`placement="bottom"`, `size="auto"`) with `Menu` | See `MenuFab` |
+| Main menu, phones | `FloatButton` (bottom right) opening a `Drawer` (`placement="bottom"`, `size="auto"`, its height capped through `classNames.section`) with `Menu` | See `MenuFab` |
 | Main menu, desktop | `Layout.Sider` (`collapsible`, `trigger={null}`, `width` 240, `collapsedWidth` 72, `theme="light"`) with `Menu mode="inline"` and our own collapse button | See `SideNav` |
 | Header | `Layout.Header`, `Avatar`, `Dropdown` | See `TopBar` |
 | Feedback | `Alert`, `message`, `notification`, `Modal.confirm`, `Result`, `Empty`, `Skeleton` | Errors use the `error` type (racing red), always with words |

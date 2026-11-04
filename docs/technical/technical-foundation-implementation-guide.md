@@ -28,8 +28,12 @@ sign-in, and `diagnostics.echo` through the Vite proxy. The
 with the owner's changes to W9 and W11: two Chromium projects, Desktop Chrome
 and Pixel 7, portrait only, with iPhone and Safari checks left to T04. It is
 implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124):
-`pnpm test:e2e` with 45 smoke tests before sign-in. Sign-in (PR 3) and the web
-image (PR 4) remain.
+`pnpm test:e2e` with 45 smoke tests before sign-in. The
+[web shell follow-up plan](web-shell-follow-up-plan-2026-11-02.md),
+[approved on 2026-11-02](technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02),
+fixes the MenuFab's safe area and the drawer's footer and height, with three
+more phone tests, in [PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125).
+Sign-in (PR 3) and the web image (PR 4) remain.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.

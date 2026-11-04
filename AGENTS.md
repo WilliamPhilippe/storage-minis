@@ -29,7 +29,13 @@ without sign-in and `diagnostics.echo` through the Vite proxy.
 page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
 (approved 2026-11-02, with the owner's changes to W9 and W11) governs
 `pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
-projects, `desktop-chrome` and `pixel-7`, before sign-in. Step 6 is TBD
+projects, `desktop-chrome` and `pixel-7`, before sign-in. The
+[web shell follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md)
+(approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
+inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
+footer inset and height, as implemented in
+[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125). The owner ruled the
+collapsed SideNav's hover-only labels not a defect. Step 6 is TBD
 until the app is validated locally; business
 operations, authentication, business screens, signed-in browser tests, the web
 image, production and CI remain pending.
@@ -215,7 +221,7 @@ The owner approved this baseline on 2026-10-21 and the concrete tooling setup on
 - Use English for code identifiers, comments, and project documentation. The UI offers en-US (main) and pt-BR, decided on 2026-11-01.
 - Use TypeScript with strict checking for Node.js and React code, with ESLint and Prettier for linting and formatting.
 - Use Vitest for unit/integration tests. Test database transactions, constraints, rollback, and concurrency against real PostgreSQL; mocks alone cannot demonstrate those invariants. Use Playwright for core administrator and public-catalog browser workflows.
-- Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations.
+- Use Conventional Commits. PRs should explain the resulting behavior, link the relevant issues/requirement IDs, and record validation results and remaining limitations. Write the description from [`.github/pull_request_template.md`](.github/pull_request_template.md); a change people can see adds phone and desktop screenshots, attached in GitHub's editor rather than committed (owner, 2026-11-03).
 
 Formatter settings and unit-runner commands are recorded in the tooling setup. Branch/review/merge policy, browser test setup, and CI remain open.
 
