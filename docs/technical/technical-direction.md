@@ -1830,6 +1830,88 @@ came from a local, uncommitted `.claude/launch.json`.
 
 This is tooling evidence, not business acceptance.
 
+## T02 record and sign-in plan approval (2026-11-04)
+
+**Owner approval:** On 2026-11-04 the owner approved, as recommended:
+
+- [T02's record](t02-authentication-record-2026-11-03.md), AU-01–AU-12, for
+  [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22);
+- the [sign-in plan](sign-in-plan-2026-11-03.md), SI-01–SI-19, for frontend PR 3
+  ([#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)), planned at
+  the owner's request of 2026-11-02 as one feature across the API and the web app.
+
+Before approving, the owner asked why the API verifies tokens with `jose` rather
+than `firebase-admin`: it needs only verification. `firebase-admin` would add about
+67 MiB and 172 packages to the API image, and its revocation and admin features need
+a server credential this design avoids. Nothing is implemented yet: PRs 3a and 3b
+follow, each adding its outcome and evidence here. Choices the plan does not settle,
+and deviations that implementation forces, still need approval.
+
+**Still open at approval:** the development Organization's name and nickname, needed
+before PR 3a; and whether AU-08's role capabilities and AU-10's no-access rule are
+published in requirements v0.9.
+
+**Rationale.** The record settles the session policies that the
+[frontend decisions](#frontend-foundation-decisions-2026-11-01) left to T02, around the
+approved Google-only Firebase sign-in, and the plan splits delivery so each PR works
+on its own. A scratch prototype against `storage-minis-dev` (2026-11-03) confirmed:
+
+- Google popup sign-in and keyless custom tokens, signed through IAM as the no-role
+  `e2e-custom-tokens` service account with the owner's gcloud login;
+- that the SDK refreshes a saved session before the app sees it, hence the startup
+  check;
+- that `jose` accepts a future `iat` unless checked;
+- that `user.metadata.lastSignInTime` is not a reliable sign-in time.
+
+An independent review against the sources and the prototype corrected both documents
+before approval.
+
+| Item | Approved outcome |
+| --- | --- |
+| AU-01 Identity | Firebase ID tokens of the configured project only; a User is its `firebase_uid`; email is never an authorization key after the bootstrap; providers `google.com`, and `custom` only under the test opt-in. |
+| AU-02 Persistence | Local: IndexedDB, then localStorage; sessions survive browser restarts until sign-out, revocation or the 7-day limit. |
+| AU-03 Session limit | Checked before Firebase loads a saved session, before each request, and by the API; no idle timeout. |
+| AU-04 Logout | This browser only; other tabs follow. |
+| AU-05 Revocation | `users.sessions_valid_after`, set by "Sign out of all devices" or an operator; Membership deletion revokes that Organization at the next request. |
+| AU-06 Recovery | Google's own; an operator procedure rebinds a lost account's new uid. |
+| AU-07 Bootstrap | The configured owner email's first verified Google sign-in, while no Organization exists, creates the `global_admin` User with `can_edit_products`, the first Organization (name, nickname, BRL), the owner Membership and audit, in one transaction. |
+| AU-08 Roles | Membership `viewer` reads, `editor` writes, `owner` also manages settings; `global_admin` holds platform actions only, with no implicit Organization access; global `editor` grants nothing yet; `can_edit_products` alone governs existing-Product edits. |
+| AU-09 Procedures | Identity, User, Organization (minimum role) and platform builders; public builders stay module-private; the Organization comes from `x-organization-id` checked against Membership; another Organization's records behave as nonexistent. |
+| AU-10 No Membership | No User row; the Login page's "No access" state; signed out of Firebase. |
+| AU-11 Test sign-in | `AUTH_TEST_SIGN_IN=enabled` in `.env.test` only, refused with `NODE_ENV` `production` or unset, `e2e-` uids only, tokens minted by Playwright through keyless IAM signing. |
+| AU-12 Acceptance | 25 cases mapped to tests. |
+| SI-01 Delivery | PR 3a (API identity and authorization) and PR 3b (web sign-in and the Playwright session). |
+| SI-02 Pins | `jose` 6.2.15 (API), `firebase` 13.2.0 (web), `firebase-admin` 14.5.0 and `zod` 4.6.7 (web devDependencies); `allowBuilds: false` for `@firebase/util@1.15.3` and `protobufjs@7.6.6`. |
+| SI-03 Configuration | `FIREBASE_PROJECT_ID` (required), `AUTH_TEST_SIGN_IN`, `BOOTSTRAP_*` (development only until T04); committed `apps/web/.env.development` and `.env.production`, checked by `vite.config.mts`. |
+| SI-04 Schema | `organizations.nickname` (unique; provisional rule until D04) and `currency` (`BRL` default, `USD`); `users.sessions_valid_after`. |
+| SI-05–SI-08 API | `jose` verification against Google's JWK set with the claim, 7-day, provider and revocation checks; an identity store injected by the lifecycle; `session.get` and `session.signOutEverywhere`; the bootstrap under an advisory lock. |
+| SI-09–SI-13 Web | Firebase loaded lazily with no resolver at startup; the startup check; popup unless `authDomain` is the app's host and the pointer is coarse; Login states 2–4; the `/app` guard and request headers; the account menu with the user badge (#1), Sign out and Sign out of all devices. |
+| SI-14 Keys | Both browser keys restricted to their sites and to the Identity Toolkit and Token Service APIs, applied by the owner during PR 3b. |
+| SI-15 Credential | Each developer's gcloud Application Default Credentials and Service Account Token Creator on `e2e-custom-tokens`; no key file, no Doppler locally. |
+| SI-16–SI-17 Tests | Verifier and config unit tests; an auth suite in `test:api`; a shared test-database helper kept out of the image; a Playwright setup project that seeds, mints, signs in and saves IndexedDB state. |
+| SI-18 PR 4 | The `/__/auth/` proxy, the `authDomain` switch, the OAuth redirect URI, authorized domains, key referrers and the CSP. |
+
+**What approval changes in approved documents:**
+
+- **W11:** PR 3 becomes PRs 3a and 3b.
+- **W6:** firebase 13.2.0 raised the SDK's refresh margin from 30 seconds to 5
+  minutes.
+- **W8:**
+  - the startup mechanism is confirmed;
+  - the custom-token opt-in narrows to `.env.test`, gains the `NODE_ENV` lock and
+    the `e2e-` uid rule;
+  - redirect follows a coarse primary pointer.
+- **W10:** the web values live in Vite's committed mode files rather than in Turbo's
+  `env` list.
+- **P5-06:** identity is verified in guarded middleware, not in `createContext`;
+  tRPC modules keep importing only types from `@storage-minis/db`.
+- **Implementation guide gates:** T02's decisions are made. The nickname, currency and
+  revocation columns cross the T01 gate for business schema migrations by this
+  explicit approval.
+- **#117:** its two columns arrive with PR 3a.
+- **Login design:** state 4 omits the email for a test user without one, and the
+  account menu adds "Sign out of all devices".
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -2070,7 +2152,7 @@ Accepted choices:
 - Use Firebase ID tokens for API authentication. The API verifies those tokens and enforces User/Membership/Organization authorization for business access.
 - Keep the user signed in through token refresh when a token expires during active use. Inactive users receive no refresh. Token expiry during active use does not require signing in again each hour.
 - Support explicit logout.
-- The initial administrator is the owner's personal Google account, `ctt.williamphilippe@gmail.com`, supplied on 2026-10-21 as the setup identity. The bootstrap/configuration mechanism remains pending. Firebase credentials have not been supplied.
+- The initial administrator is the owner's personal Google account, `ctt.williamphilippe@gmail.com`, supplied on 2026-10-21 as the setup identity. The bootstrap is configured and runs on that account's first verified sign-in ([T02's record](t02-authentication-record-2026-11-03.md), AU-07, approved 2026-11-04). The owner created the Firebase projects `storage-minis` (production) and `storage-minis-dev` (development) on 2026-11-03.
 
 Firebase documents that ID tokens last for an hour and refresh tokens can obtain new ones. Browser persistence is a separate setting. The public `getIdToken()` method can also refresh an expired or soon-expiring token when called; T02 must design token acquisition and any background activity around the accepted active-use policy. See [Firebase session management](https://firebase.google.com/docs/auth/admin/manage-sessions), [authentication-state persistence](https://firebase.google.com/docs/auth/web/auth-state-persistence), and [token acquisition](https://firebase.google.com/docs/reference/js/auth.user#usergetidtoken).
 
@@ -2078,7 +2160,7 @@ Examples: while the administrator is using the system, token expiry triggers ref
 
 **Session decisions (2026-11-01):** the [frontend foundation decisions](#frontend-foundation-decisions-2026-11-01) settled token acquisition and return after inactivity. The client requests a token only when a request needs one, and requests follow user activity only, so tokens refresh only while the user is active. Returning after inactivity refreshes on the first action. A session ends 7 days after the last Google sign-in: the API rejects ID tokens whose `auth_time` is older, and the client does not refresh such a session. There is no idle timeout. Until then no absolute or idle session timeout had been chosen.
 
-[T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) still needs the administrator bootstrap mechanism, browser persistence policy, logout scope/revocation, Google-account recovery expectations, and expiry/recovery acceptance cases, in its own approved record before the frontend's sign-in step. Initial-admin selection must use the configured owner identity; an arbitrary first Google sign-in is not authorization.
+**T02 record (2026-11-04):** the owner approved [T02's record](t02-authentication-record-2026-11-03.md), which settles the administrator bootstrap, browser persistence, logout scope and revocation, Google-account recovery, role capabilities, procedure classes and the expiry/recovery acceptance cases ([approval record](#t02-record-and-sign-in-plan-approval-2026-11-04)). Initial-admin selection uses the configured owner identity; an arbitrary first Google sign-in is not authorization.
 
 ## Money and dates
 
@@ -2188,7 +2270,7 @@ artifacts and dependency versions are unchanged.
 | Work item | Still required |
 | --- | --- |
 | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
-| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | Complete bootstrap, persistence, activity/inactivity handling, return behavior, logout scope/revocation, and recovery around the accepted Google/ID-token/active-use-refresh/logout choices and supplied administrator email. |
+| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PRs 3a and 3b implement it. Invitations, role management, D06's exceptional privileges and typed identity audit remain. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
