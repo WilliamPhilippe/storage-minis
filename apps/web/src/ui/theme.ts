@@ -103,11 +103,16 @@ const components = {
     collapsedIconSize: 20,
   },
   // WS-07 #9: the FAB's shadow-fab through the token FloatButton reads. Its
-  // icon is fontSizeIcon x 1.5: 24px, as MenuFab.md asks.
+  // icon is fontSizeIcon x 1.5: 24px, as MenuFab.md asks. antd places it
+  // marginLG from the right and marginXXL from the bottom (24 and 48px by
+  // default): fab-offset, plus the safe-area inset in MenuFab.module.css
+  // (SF-02).
   FloatButton: {
     controlHeightLG: 56,
     boxShadowSecondary: shadowFab,
     fontSizeIcon: 16,
+    marginLG: 16,
+    marginXXL: 16,
   },
   Tag: { defaultBg: surfaceSunken, defaultColor: inkMuted },
   // A tooltip's min-height is controlHeight, and its padding is sized for
