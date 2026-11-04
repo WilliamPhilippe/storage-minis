@@ -1854,6 +1854,26 @@ and deviations that implementation forces, still need approval.
 - AU-08's role capabilities and AU-10's no-access rule stay in T02's record only for
   now, not in requirements v0.9.
 
+**Owner changes after the gap review (2026-11-04):**
+
+- **New epic:** [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127),
+  "Sign-in and session features", takes the follow-ups:
+  - failed token refreshes in the browser ([#128](https://github.com/WilliamPhilippe/storage-minis/issues/128));
+  - records of revocations and identity rebinds ([#129](https://github.com/WilliamPhilippe/storage-minis/issues/129));
+  - the TopBar account menu, with the user badge (#1), "Sign out of all devices",
+    `session.signOutEverywhere` and the design documents' update
+    ([#130](https://github.com/WilliamPhilippe/storage-minis/issues/130));
+  - Google's consent screen for production ([#131](https://github.com/WilliamPhilippe/storage-minis/issues/131)).
+- **PR 3b's sign-out:** only a Sign out button, top right on desktop and at the bottom
+  of the menu drawer on phones.
+- **Google outages:** accepted; `/health/ready` stays database-only.
+- **Translations:** every en-US string a PR creates gets its pt-BR translation in the
+  same PR, written by the implementing agent (now in AGENTS.md's conventions).
+- **Assumptions:** the plan's unverified assumptions are accepted, and PR 3b still
+  checks them.
+- **Personal data:** deletion on request is out of scope, because the system is for
+  internal use.
+
 **Rationale.** The record settles the session policies that the
 [frontend decisions](#frontend-foundation-decisions-2026-11-01) left to T02, around the
 approved Google-only Firebase sign-in, and the plan splits delivery so each PR works
@@ -1875,7 +1895,7 @@ before approval.
 | AU-02 Persistence | Local: IndexedDB, then localStorage; sessions survive browser restarts until sign-out, revocation or the 7-day limit. |
 | AU-03 Session limit | Checked before Firebase loads a saved session, before each request, and by the API; no idle timeout. |
 | AU-04 Logout | This browser only; other tabs follow. |
-| AU-05 Revocation | `users.sessions_valid_after`, set by "Sign out of all devices" or an operator; Membership deletion revokes that Organization at the next request. |
+| AU-05 Revocation | `users.sessions_valid_after`, set by an operator now and by "Sign out of all devices" with #130; Membership deletion revokes that Organization at the next request. |
 | AU-06 Recovery | Google's own; an operator procedure rebinds a lost account's new uid. |
 | AU-07 Bootstrap | The configured owner email's first verified Google sign-in, while no Organization exists, creates the `global_admin` User with `can_edit_products`, the first Organization (name, nickname, BRL), the owner Membership and audit, in one transaction. |
 | AU-08 Roles | Membership `viewer` reads, `editor` writes, `owner` also manages settings; `global_admin` holds platform actions only, with no implicit Organization access; global `editor` grants nothing yet; `can_edit_products` alone governs existing-Product edits. |
@@ -1888,7 +1908,7 @@ before approval.
 | SI-03 Configuration | `FIREBASE_PROJECT_ID` (required), `AUTH_TEST_SIGN_IN`, `BOOTSTRAP_*` (development only until T04); committed `apps/web/.env.development` and `.env.production`, checked by `vite.config.mts`. |
 | SI-04 Schema | `organizations.nickname` (unique; provisional rule until D04) and `currency` (`BRL` default, `USD`); `users.sessions_valid_after`. |
 | SI-05–SI-08 API | `jose` verification against Google's JWK set with the claim, 7-day, provider and revocation checks; an identity store injected by the lifecycle; `session.get` and `session.signOutEverywhere`; the bootstrap under an advisory lock. |
-| SI-09–SI-13 Web | Firebase loaded lazily with no resolver at startup; the startup check; popup unless `authDomain` is the app's host and the pointer is coarse; Login states 2–4; the `/app` guard and request headers; the account menu with the user badge (#1), Sign out and Sign out of all devices. |
+| SI-09–SI-13 Web | Firebase loaded lazily with no resolver at startup; the startup check; popup unless `authDomain` is the app's host and the pointer is coarse; Login states 2–4; the `/app` guard and request headers; a Sign out button, top right on desktop and at the bottom of the menu drawer on phones. |
 | SI-14 Keys | Both browser keys restricted to their sites and to the Identity Toolkit and Token Service APIs, applied by the owner during PR 3b. |
 | SI-15 Credential | Each developer's gcloud Application Default Credentials and Service Account Token Creator on `e2e-custom-tokens`; no key file, no Doppler locally. |
 | SI-16–SI-17 Tests | Verifier and config unit tests; an auth suite in `test:api`; a shared test-database helper kept out of the image; a Playwright setup project that seeds, mints, signs in and saves IndexedDB state. |
@@ -1912,8 +1932,8 @@ before approval.
   revocation columns cross the T01 gate for business schema migrations by this
   explicit approval.
 - **#117:** its two columns arrive with PR 3a.
-- **Login design:** state 4 omits the email for a test user without one, and the
-  account menu adds "Sign out of all devices".
+- **Login design:** state 4 omits the email for a test user without one.
+- **TopBar design:** a Sign out button stands where the account menu will go (#130).
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

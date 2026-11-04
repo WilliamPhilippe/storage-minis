@@ -27,7 +27,7 @@ lists the prototype's commands and results.
 | AU-01 | The API accepts only Firebase ID tokens from its configured project. A User is identified by the token's `sub` (`users.firebase_uid`) alone; email is never an authorization key after the bootstrap. Only `google.com` sign-ins are accepted, plus `custom` under the test opt-in (AU-11). |
 | AU-02 | Local browser persistence: IndexedDB, with localStorage as the fallback. A session survives closing the tab or the browser, until sign-out or the 7-day limit. |
 | AU-03 | The 7-day limit is enforced three times: before Firebase loads a saved session, before each request, and by the API. Within the 7 days there is no idle timeout. |
-| AU-04 | "Sign out" signs out this browser only: Firebase's `signOut`, the query cache cleared, every open tab sent to `/login`. |
+| AU-04 | "Sign out" signs out this browser only: Firebase's `signOut`, the query cache cleared, every open tab sent to `/login`. PR 3b shows it as a button; the account menu follows in #130. |
 | AU-05 | Revocation by the API: a per-User `sessions_valid_after` time rejects every older session. "Sign out of all devices" sets it for yourself; an operator can set it for anyone. Deleting a Membership revokes that Organization at the next request. |
 | AU-06 | Recovery is Google's: the app keeps no password, code or recovery email. A lost Google account is rebound to its User by a documented operator procedure. |
 | AU-07 | The first verified Google sign-in of the configured owner email, while no Organization exists, creates the administrator, the first Organization (name, nickname, BRL) and its owner Membership, with audit, in one transaction. It never runs again. |
@@ -67,7 +67,7 @@ lists the prototype's commands and results.
 - Email and display name are profile data, never an authorization key, with one
   exception: the bootstrap (AU-07) matches the configured email once. `session.get`
   copies a Google token's `email` and `name` into the User row when they differ, so
-  the account menu shows current values; custom tokens carry neither and change
+  the app shows current values; custom tokens carry neither and change
   nothing.
 - Accepted `firebase.sign_in_provider` values: `google.com` always, and `custom` only
   under the test opt-in (AU-11). Any other provider (`anonymous`, `password`, `phone`,
@@ -132,7 +132,9 @@ again." (AU-12 cases 10–11).
 
 ### AU-04 Logout scope
 
-**Recommendation: "Sign out" signs out this browser.** The account menu's Sign out:
+**Recommendation: "Sign out" signs out this browser.** Sign out (a button in PR 3b:
+top right on desktop, at the bottom of the menu drawer on phones; the account menu
+follows in [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130)):
 
 1. cancels in-flight queries and clears the query cache;
 2. calls Firebase's `signOut`, which deletes the saved session in this browser;
@@ -161,7 +163,9 @@ their phone.
   same second.
 - **"Sign out of all devices"** in the account menu sets it to now for the signed-in
   User. Every session, this one included, ends at its next request; the app then
-  signs this browser out.
+  signs this browser out. The owner moved this action from PR 3b to
+  [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130) on 2026-11-04;
+  until then only operators revoke sessions.
 - **Operators** can set it for any User with one documented SQL statement (lost phone,
   suspected compromise), until a user-management screen exists.
 - **Membership deletion** (the DBML review's revocation) removes access to that
@@ -287,7 +291,7 @@ to the implementation guide's T01 gate for business schema migrations.
 | --- | --- | --- | --- |
 | Public (module-private builders, as `diagnostics` today) | Nothing; never reads the token | — | `diagnostics.echo`; the catalog later, which returns only allowlisted fields (ORG-007) |
 | Identity | A valid token | `identity` (uid, email, provider, `auth_time`) | `session.get` only, which must answer for Google accounts without a User row |
-| User | Identity, plus a User row, plus `auth_time` not before `sessions_valid_after` | `user` (id, role, `can_edit_products`) | `session.signOutEverywhere`; Product edits (with a `can_edit_products` check) |
+| User | Identity, plus a User row, plus `auth_time` later than `sessions_valid_after` (AU-05) | `user` (id, role, `can_edit_products`) | `session.signOutEverywhere` (#130); Product edits (with a `can_edit_products` check) |
 | Organization (minimum role) | User, plus a valid `x-organization-id` header, plus a Membership in that Organization with at least the role | `organization` (id, currency), `membership` (role) | Every business procedure |
 | Platform | User with `role = global_admin` | — | Nickname rename and future administration |
 
@@ -381,7 +385,7 @@ Google account could add rows, and a row alone grants nothing.
 | 10 | Return after 8 days | The saved session is deleted before Firebase loads it; no Google request; `/login` with "Your session ended" | Playwright clock + network listener |
 | 11 | The 7 days pass while a tab is open | The next action signs out without a refresh; a token that still reaches the API gets 401 | Web unit test; `test:api` |
 | 12 | Sign out | This browser and its other tabs signed out; another browser stays signed in | Playwright, two contexts |
-| 13 | Sign out of all devices | Every session's next request gets 401, this one included | `test:api`; Playwright, two contexts |
+| 13 | Sign out of all devices | Every session's next request gets 401, this one included | #130: `test:api`; Playwright, two contexts |
 | 14 | An operator sets `sessions_valid_after` | That User's sessions end at their next request | `test:api` |
 | 15 | A Membership is deleted while signed in | The next Organization request gets 403; the app reloads the session and shows "No access" | `test:api`; web unit test |
 | 16 | The header names another or a nonexistent Organization | 403 with identical bodies | `test:api` |
@@ -438,6 +442,16 @@ Google account could add rows, and a row alone grants nothing.
   no-role service account without keys.
 - **Active Organization persistence:** W5's deferred decision, once a User has several
   Memberships.
+- **Epic E14 ([#127](https://github.com/WilliamPhilippe/storage-minis/issues/127),
+  owner, 2026-11-04):**
+  - failed token refreshes in the browser (#128);
+  - records of revocations and identity rebinds (#129);
+  - the account menu with the user badge and "Sign out of all devices" (#130);
+  - Google's consent screen for production (#131).
+- **Deleting personal data on request:** out of scope; the system is for internal
+  use (owner, 2026-11-04).
+- **Google outages:** accepted; the app depends on Google's availability (owner,
+  2026-11-04).
 
 ## Sources
 

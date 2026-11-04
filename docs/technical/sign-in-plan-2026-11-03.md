@@ -15,19 +15,19 @@ references within this plan, not requirement, issue or F-decision IDs.
 
 | ID | Recommendation |
 | --- | --- |
-| SI-01 | Two implementation PRs after this docs PR: **3a** API identity and authorization (API, schema, bootstrap, Vitest); **3b** web sign-in (Firebase, session, Login states, account menu, Playwright). Each leaves the repository working. |
+| SI-01 | Two implementation PRs after this docs PR: **3a** API identity and authorization (API, schema, bootstrap, Vitest); **3b** web sign-in (Firebase, session, Login states, a Sign out button, Playwright). Each leaves the repository working. |
 | SI-02 | Pins: `jose` 6.2.15 (API), `firebase` 13.2.0 (web), `firebase-admin` 14.5.0 (web devDependency, end-to-end setup only), `zod` 4.6.7 (web devDependency, config check). Two `allowBuilds: false` entries for install scripts we don't need. |
 | SI-03 | API settings `FIREBASE_PROJECT_ID` (required), `AUTH_TEST_SIGN_IN`, `BOOTSTRAP_*`; web values in committed `apps/web/.env.development` and `.env.production`, checked when Vite starts; Turborepo entries for each. |
 | SI-04 | One migration: `organizations.nickname` (unique, provisional format) and `organizations.currency` (`BRL` default, `USD`), and `users.sessions_valid_after`. |
 | SI-05 | The API verifies ID tokens with `jose` against Google's JWK set: RS256, issuer, audience, required claims, no future `iat` or `auth_time`, the 7-day limit, the provider allowlist and the revocation cutoff. |
 | SI-06 | The tRPC context carries the raw `authorization` and `x-organization-id` headers, the verifier and an identity store that the lifecycle builds, so tRPC modules still import only types from the DB package; guarded builders in `trpc/procedures.ts` verify and authorize; public builders stay module-private. |
-| SI-07 | `session.get` (query: the User, Memberships, or `noAccess`, with the bootstrap) and `session.signOutEverywhere` (mutation). |
+| SI-07 | `session.get` (query: the User, Memberships, or `noAccess`, with the bootstrap). `session.signOutEverywhere` moves to #130 (owner, 2026-11-04). |
 | SI-08 | The bootstrap as one transaction under an advisory lock, with its audit rows. |
 | SI-09 | Firebase loads lazily on `/login` and `/app` only; `initializeAuth` with local persistence and no resolver at startup; the popup and redirect resolver is passed per call on the Login page. |
 | SI-10 | The startup check reads Firebase's saved record before `initializeAuth` and deletes it past 7 days or when unreadable. |
 | SI-11 | The Login page: redirect only where `authDomain` is the page's own host and the primary pointer is coarse, otherwise popup; states 2–4; in-app browser detection; error alerts. |
 | SI-12 | The `/app` guard, the session context, the token and Organization headers in the tRPC link, and the handling of `UNAUTHORIZED` and `FORBIDDEN`. |
-| SI-13 | The account menu in the TopBar: the user badge (#1), Sign out, and Sign out of all devices with a confirmation. |
+| SI-13 | A Sign out button: top right of the TopBar on desktop, at the bottom of the menu drawer on phones. The account menu, the user badge (#1) and Sign out of all devices move to #130 (owner, 2026-11-04). |
 | SI-14 | Both browser API keys restricted to their sites and to the Identity Toolkit and Token Service APIs; the owner applies them in the console during PR 3b. |
 | SI-15 | Test custom tokens are signed through IAM as the no-role `e2e-custom-tokens` service account with each developer's gcloud Application Default Credentials. No key file and no Doppler locally. |
 | SI-16 | API tests: unit tests with a local key set inside `pnpm check`; an auth integration file in `pnpm test:api` on the migrated test database; a shared test-database helper exported by the DB package. |
@@ -47,6 +47,33 @@ two questions left open at approval the same day:
 2. **Requirements v0.9:** AU-08's role capabilities and AU-10's no-access rule stay
    in T02's record only for now
    ([record, section 3](t02-authentication-record-2026-11-03.md#3-impact-on-approved-documents-and-issues)).
+
+### Owner changes after the gap review (2026-11-04)
+
+After approval, the owner reviewed six gaps in this plan and decided:
+
+1. **Failed token refreshes in the browser** (offline versus a session Google ended)
+   become a separate feature: [#128](https://github.com/WilliamPhilippe/storage-minis/issues/128)
+   under the new [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127).
+2. **Records of revocations and identity rebinds** become
+   [#129](https://github.com/WilliamPhilippe/storage-minis/issues/129) in the same epic.
+3. **PR 3b adds only a Sign out button,** top right on desktop and at the bottom of the
+   menu drawer on phones (SI-13). The account menu, the user badge (#1), "Sign out of
+   all devices" with `session.signOutEverywhere`, and the design documents' update
+   move to [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130).
+4. **Google outages** are accepted: the app depends on Google, which is more reliable
+   than this service. `/health/ready` stays database-only.
+5. **Google's consent screen** for production becomes
+   [#131](https://github.com/WilliamPhilippe/storage-minis/issues/131).
+6. **Translations:** every en-US string a PR creates gets its pt-BR translation in
+   the same PR, written by the implementing agent. This is now a repository convention
+   (AGENTS.md).
+
+The owner also accepted the assumptions the plan listed as unverified (the
+`firebaseapp.com` key referrer, redirect with the resolver passed per call, Google's
+"G" mark, the popup spec, the outside-origin list, other blocked install scripts);
+PR 3b's verification steps still exercise them. Deleting personal data on request is
+out of scope, because the system is for internal use.
 
 ### What approval changes in approved documents
 
@@ -69,8 +96,9 @@ two questions left open at approval the same day:
   schema migrations" gate by explicit exception (SI-04).
 - **#117:** its schema dependency on T01 is delivered here for the two columns.
 - **Login design, state 4:** a custom-token test user has no email, so the alert's
-  text omits it in that case. The account menu adds "Sign out of all devices"
-  (SI-13).
+  text omits it in that case.
+- **TopBar design:** PR 3b shows a Sign out button where the account menu will go;
+  the account menu follows in #130 (SI-13).
 - **Firebase Analytics:** both projects have it enabled; the app never loads it, and
   the config omits `measurementId`.
 
@@ -151,9 +179,8 @@ docs/database/schema.dbml
 
 **Delivers:** popup sign-in and the redirect code; the startup check; the session
 context with the active Organization; the token and Organization headers; the `/app`
-guard; the Login page's states 2–4 and error alerts; the account menu with the user
-badge (#1), sign-out and sign-out of all devices; the Playwright test sign-in behind
-its opt-in; documentation.
+guard; the Login page's states 2–4 and error alerts; a Sign out button; the
+Playwright test sign-in behind its opt-in; documentation.
 
 ```text
 pnpm-workspace.yaml                   allowBuilds: false entries (SI-02)
@@ -166,7 +193,7 @@ apps/web/
 │   ├── auth.setup.ts                 migrate, seed, mint, sign in, save
 │   ├── support/app.ts  session.ts    storage state; seed and mint helpers
 │   ├── signed-out/sign-in.spec.ts    guard, popup hand-off, states 3–4
-│   └── app/session.spec.ts           badge, sign-out, all devices, expiry, idle
+│   └── app/session.spec.ts           sign-out, expiry, refresh, idle
 └── src/
     ├── vite-env.d.ts                 the four VITE_FIREBASE_* types
     ├── lib/session/
@@ -180,7 +207,7 @@ apps/web/
     ├── router.tsx                    session in the router context
     ├── routes/app/route.tsx  routes/login.tsx   guard; validated search params
     ├── features/login/               states 2–4, Google's mark, errors
-    ├── features/shell/AccountMenu.tsx  TopBar.tsx   (SI-13)
+    ├── features/shell/SignOutButton.tsx  TopBar.tsx  MenuFab.tsx   (SI-13)
     └── i18n/{en-US,pt-BR}/{login,app}.ts
 ```
 
@@ -218,7 +245,8 @@ writes.
 | [#117 E01.04](https://github.com/WilliamPhilippe/storage-minis/issues/117) | The nickname and currency columns, uniqueness, the bootstrap's creation (3a) | Rename by `global_admin` with audit, catalog resolution, D04's nickname rules, a database guard on currency changes |
 | [#26 T06](https://github.com/WilliamPhilippe/storage-minis/issues/26) (closed by PR #107's link) | Application authorization and Organization isolation seams with tests (3a) | Representative business transactions and races, CI |
 | [#118 E13.02](https://github.com/WilliamPhilippe/storage-minis/issues/118) | PR 3 (3a + 3b) | PR 4 |
-| [#1](https://github.com/WilliamPhilippe/storage-minis/issues/1) | The user badge (3b) | — |
+| [#1](https://github.com/WilliamPhilippe/storage-minis/issues/1) | Nothing: the badge moved to #130 | #130 closes it |
+| [#127 Epic E14](https://github.com/WilliamPhilippe/storage-minis/issues/127) | The base its children build on | #128 failed refreshes, #129 revocation records, #130 the account menu, #131 Google's consent screen |
 
 PR descriptions use "Part of" links and no closing keywords.
 
@@ -467,10 +495,11 @@ procedures then never pay for, or fail on, a bad token (AU-12 case 23).
      AU-10).
   2. Otherwise, run the bootstrap (SI-08) when AU-07's conditions hold.
   3. Otherwise return `noAccess`, without writing.
-- **`session.signOutEverywhere`**, a mutation on `userProcedure`, no input: sets
-  `sessions_valid_after = now()` and returns `null`. Every token with `auth_time ≤
-  ⌈sessions_valid_after⌉` is then refused (AU-05), so the caller's own session ends
-  even when it began in the same second.
+- **`session.signOutEverywhere`** moved to #130 with the account menu (owner,
+  2026-11-04). When it comes, it is a mutation on `userProcedure` with no input that
+  sets `sessions_valid_after = now()`. PR 3a ships the column, its check and the
+  operator SQL: every token with `auth_time ≤ ⌈sessions_valid_after⌉` is refused
+  (AU-05), so a session from the cutoff's own second never survives.
 
 **Why a query may write:** the bootstrap writes once per installation and the profile
 update only when Google's values changed. Both are idempotent, and failures roll
@@ -596,7 +625,7 @@ setup's fresh session, so an incompatible upgrade fails the suite at once. A
     `signedOut`, `noAccess` or `member`.
   - It remembers `auth_time` and listens to `onAuthStateChanged`: a sign-out in
     another tab clears the cache and goes to `/login`.
-  - `signOut(reason)` and `signOutEverywhere()`.
+  - `signOut(reason)`.
 - **`/app` guard** (`routes/app/route.tsx`, `beforeLoad`): `signedOut` redirects to
   `/login?redirect=<path>`; `noAccess` signs out and redirects to `/login` with state
   4; `member` provides the session to the router context. `/login` sends a member to
@@ -620,23 +649,28 @@ setup's fresh session, so an incompatible upgrade fails the suite at once. A
 - **Sign-out** cancels in-flight queries, clears the cache, calls Firebase's
   `signOut`, then navigates.
 
-### SI-13 Account menu and user badge (#1)
+### SI-13 Sign out button
 
-**Recommendation:**
+**Owner's decision (2026-11-04):** PR 3b adds only a Sign out button. The account
+menu, the user badge (#1) and "Sign out of all devices" move to
+[#130](https://github.com/WilliamPhilippe/storage-minis/issues/130), with the design
+documents' update.
 
-- The TopBar's right side, from its design: antd `Avatar` (32 px, initials on
-  `surface-sunken`), plus the name from `bp-md`.
-- A `Dropdown` button named "Account: {name}". The menu shows the name and email,
-  then **Sign out** and **Sign out of all devices**.
-- "Sign out of all devices" first asks in a `Modal.confirm`: "Sign out of all devices?
-  You'll need to sign in again everywhere, including here." It then calls
-  `session.signOutEverywhere` and signs this browser out.
-- The name and email come from `session.get`, not from Firebase. No Google profile
-  photo: it would add `googleusercontent.com` to the CSP, and the design uses
-  initials.
+- **Desktop** (from `bp-md`): a `Button` labelled "Sign out" with antd's
+  `LogoutOutlined` icon, at the right of the TopBar, where the account menu will go.
+- **Phones:** the same button at the bottom of the menu drawer, in its footer with the
+  language switch. The phone TopBar keeps only the logo.
+- **Behaviour:** SI-12's sign-out: cancel queries, clear the cache, Firebase's
+  `signOut`, then `/login`, state 1.
+- **Tests:** located by role and name ("Sign out") in `web-unit` and Playwright, on
+  both projects.
 
-**Design change:** the second item and its confirmation are new; the language switch
-stays in the SideNav (2026-11-01).
+**As approved before this change** (now #130's starting point):
+
+- an antd `Avatar` (initials on `surface-sunken`) with the name from `bp-md`;
+- a `Dropdown` named "Account: {name}" with the name and email, Sign out, and Sign
+  out of all devices behind a confirmation;
+- name and email from `session.get`, with no Google profile photo.
 
 ### SI-14 API key restrictions
 
@@ -748,10 +782,9 @@ keys.
   2. seeds, as the app role:
      - the Organization "E2E Garage" (`e2e-garage`, BRL);
      - User `e2e-owner` ("E2E Owner", `user`) with an owner Membership;
-     - Users `e2e-revoker-desktop-chrome` and `e2e-revoker-pixel-7` with owner
-       Memberships, one per project, for the all-devices test, so parallel tests and
-       the other project keep their sessions;
      - no row for `e2e-outsider`;
+     - (#130 later adds one revoker user per project for its all-devices test, so
+       parallel tests and the other project keep their sessions);
   3. mints a custom token per uid with `firebase-admin` (SI-15);
   4. opens `/login`, calls the development-only hook, waits for `/app`, and saves
      `playwright/.auth/owner.json` with `indexedDB: true`.
@@ -775,14 +808,14 @@ keys.
     - state 4 for `e2e-outsider`, signed in through the hook, with the saved session
       gone afterwards;
   - **signed in:**
-    - the badge;
+    - the Sign out button in the TopBar (`@desktop`) and in the drawer's footer
+      (`@phone`);
     - sign-out in one tab sends a second tab to `/login`, while a second context
-      stays signed in;
-    - "Sign out of all devices", as the current project's revoker, ends both its own
-      session and a second context's;
+      stays signed in (Firebase's `signOut` touches only this browser, so parallel
+      tests keep their session);
     - with `page.clock` set 8 days ahead, the saved session is discarded with no
       Google request and "Your session ended" shows;
-    - 61 minutes ahead, the SDK refreshes once and `/app` loads with the badge, so
+    - 61 minutes ahead, the SDK refreshes once and `/app` loads signed in, so
       `session.get` accepted the refreshed token (`diagnostics.echo` is public and
       would prove nothing);
     - an idle half hour makes no request.
@@ -796,7 +829,7 @@ keys.
   specs run signed in, unchanged.
 - **Turborepo:** `@storage-minis/web#test:e2e` adds `MIGRATION_DATABASE_URL`,
   `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_CONFIG` to `passThroughEnv`.
-- **Limits:** first runs create four Firebase users, well under 100 new accounts per
+- **Limits:** first runs create two Firebase users, well under 100 new accounts per
   hour per IP.
 
 ### SI-18 PR 4 dependency: redirect sign-in
@@ -854,13 +887,14 @@ practical.
    handling, the router context and guard, with `web-unit` tests (startup-check
    decoding, the age rule, method choice, in-app detection, link headers,
    `UNAUTHORIZED` and `FORBIDDEN` handling, cross-tab sign-out).
-3. **`feat(web): sign in on the Login page and add the account menu`:** states 2–4,
-   alerts, Google's mark, the account menu, strings in both languages, with tests.
+3. **`feat(web): sign in on the Login page and add the Sign out button`:** states
+   2–4, alerts, Google's mark, the Sign out button in the TopBar and the drawer, en-US
+   and pt-BR strings together, with tests.
 4. **`test(web): sign in Playwright through custom tokens`:** setup project, helpers,
    `support/app.ts`, new specs, the outside-origin guard.
 5. **`docs: record PR 3b`:** README (gcloud setup, `test:e2e` prerequisites),
    `local-development.md`, the technical direction, the key restrictions applied, and
-   #118 and #1.
+   #118.
 
 **Contracts consumed:** Step 5's envelope and builders rule; PW-13's plug-in points;
 the shell's TopBar; the design's Login states.
@@ -882,7 +916,7 @@ project and storage state for every signed-in spec; SI-18 for PR 4.
 | No Membership (#22) | Case 4 in `test:api`; state 4 in Playwright |
 | Popup sign-in and the redirect code (#118) | Manual popup sign-in on `http://localhost:5173` as the owner; `web-unit` tests of the redirect path; the redirect itself in PR 4 |
 | Session context with the active Organization (#118) | `web-unit` tests; signed-in Playwright specs |
-| User badge (#1) and sign-out (#118) | Playwright |
+| Sign-out (#118); the badge (#1) moved to #130 | Playwright, both projects |
 | Playwright test sign-in behind its opt-in (#118) | `test:e2e`; case 21; `dist` has no `__storageMinisTest` |
 | Key restrictions (SI-14) | The `curl` with a foreign referrer returns 403; sign-in still works |
 | Catalog never loads Firebase | `vite build` chunk list; the catalog's network list on `vite preview` |
@@ -897,7 +931,7 @@ project and storage state for every signed-in spec; SI-18 for PR 4.
 | `pnpm db:up`, then `pnpm test:db`, `pnpm test:api`, `pnpm test:e2e`, one at a time | 29+, 27 + the auth suite, 48 + the new specs |
 | `pnpm test:stack` | 5 pass on a rebuilt image with `jose` |
 | `grep -r __storageMinisTest apps/web/dist` | No match |
-| Manual: `pnpm dev`, a Google popup sign-in at `http://localhost:5173/login` | Bootstrap on an empty development database, `/app` with the badge; sign-out; a second account sees state 4 |
+| Manual: `pnpm dev`, a Google popup sign-in at `http://localhost:5173/login` | Bootstrap on an empty development database, `/app` with the Sign out button; sign-out; a second account sees state 4 |
 
 ### Guards, each broken on purpose
 
@@ -909,7 +943,7 @@ project and storage state for every signed-in spec; SI-18 for PR 4.
 | Type-only DB imports in tRPC modules | A runtime `@storage-minis/db` import in `routers/session.ts` | `app.test.ts` and `plugin.test.ts` fail on their mock |
 | Same-second revocation | Comparing with `<` instead of `≤ ⌈cutoff⌉` | A unit test with a sign-in in the cutoff's second |
 | Header check | Skipping the Membership lookup | Probe tests for another Organization |
-| Revocation | Ignoring `sessions_valid_after` | Cases 13–14 |
+| Revocation | Ignoring `sessions_valid_after` | Case 14 (the operator SQL) |
 | Log policy | Logging the header | The integration log assertion |
 | Startup check | Skipping it | The 8-day Playwright test sees a `securetoken` request |
 | Outside origins | A request to another origin | The fixture's failure |
@@ -935,7 +969,8 @@ waits for the business procedures that use it.
 - **Technical direction:** each PR's outcome and evidence.
 - **AGENTS.md:** the repository-state paragraph, the validation bullets, and the
   decisions table rows for T02.
-- **#22, #117, #26, #118, #1:** progress comments; boxes checked when merged.
+- **#22, #117, #26, #118:** progress comments; boxes checked when merged. #130
+  starts from SI-13's "As approved before this change".
 
 **For PR 4:** SI-18, plus the setup project's removal from a parity-stack config, as
 PW-13's handoff noted.
@@ -965,6 +1000,9 @@ PW-13's handoff noted.
   early with a clear message; CI needs Workload Identity Federation.
 - **Google's popup page** in the popup spec is outside our control. If it makes the
   spec flaky, the spec drops to checking the popup's URL without loading it.
+- **Google outages (accepted by the owner, 2026-11-04):** sign-in, refresh and the
+  API's key fetch depend on Google; a key-fetch failure answers 500 rather than signing
+  people out, and `/health/ready` stays database-only.
 - **Live Firebase in tests:** `test:e2e` now needs the network, Google's token
   service and the dev project. A Google outage fails the run; Vitest stays offline.
 - **Provisional nickname rule** may need a forward migration after D04.
