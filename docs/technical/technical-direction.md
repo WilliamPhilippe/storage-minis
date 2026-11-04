@@ -1402,7 +1402,8 @@ decided each on 2026-11-01:
 [web shell follow-up plan approval](#web-shell-follow-up-plan-approval-2026-11-02)
 reverses the first default that "Hard-to-override styles" kept: the MenuFab
 moves to `fab-offset` plus the safe-area inset, through FloatButton's
-`marginLG` and `marginXXL` tokens and one CSS Module class, once implemented.
+`marginLG` and `marginXXL` tokens and one CSS Module class, implemented in
+[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125).
 The drawer menu's 14 px text, the drawer's square top corners and the rest of
 this table are unchanged.
 
@@ -1745,6 +1746,79 @@ and three-button navigation; an SE-sized iPhone; and a phone in landscape below
 `bp-md`. Outside the plan, and left to T04: landscape side insets under
 `viewport-fit=cover`, and Chrome's bottom bar with content padded by the moving
 inset.
+
+**Owner change at implementation (2026-11-03):** instead of merging the
+docs-only PR ([#123](https://github.com/WilliamPhilippe/storage-minis/pull/123)),
+the owner had the plan implemented in one PR that carries the plan, this record
+and the code ([#125](https://github.com/WilliamPhilippe/storage-minis/pull/125)),
+and #123 was closed. PR 2 had merged as #124, so SF-05's Playwright checks are
+part of it.
+
+### Implemented outcome (2026-11-03)
+
+- **FAB (SF-02).** `theme.ts` sets `FloatButton.marginLG` and `marginXXL` to
+  16, `fab-offset`; `MenuFab.module.css`'s `fab` class adds
+  `env(safe-area-inset-bottom)` as `margin-block-end`.
+- **Drawer footer (SF-03).** The language switch sits in a `div` whose
+  `drawerFooter` class pads its bottom by the inset, inside antd's 8 px footer
+  padding.
+- **Drawer height (SF-04).** `classNames={{ section: styles.drawer }}`, whose
+  class caps the section at `calc(100dvh - var(--header-height-phone))`; antd's
+  body scrolls the menu.
+- **Tests (SF-05).** No new jsdom test. `e2e/app/navigation.spec.ts` adds three
+  `@phone` tests: the FAB 16 px from the right and bottom; a 34 px bottom inset
+  through `Emulation.setSafeAreaInsetsOverride`, with the FAB 50 px and the
+  language switch 42 px from the bottom; and the drawer at 412 × 500, with
+  Close and the switch in view, its top at 56 px and Settings reached by
+  scrolling. The collapsed-SideNav test's comment no longer points to this
+  follow-up.
+- **Design (SF-06).** Pending before merge: the owner updates the Claude
+  originals, and `docs/design/` is refreshed from them.
+
+**Evidence (2026-11-03, branch `fix/web-shell-follow-up`):**
+
+- `pnpm install --frozen-lockfile --offline` linked the worktree's packages and
+  downloaded nothing.
+- `pnpm check`: 9 tasks and 194 unit tests, unchanged. The four jsdom lines
+  "Not implemented: Window's getComputedStyle() method: with pseudo-elements" in
+  `AppShell.test.tsx` appear with and without this change: antd's scroll lock
+  measures the scrollbar when a drawer opens.
+- Browser pane, with Vite from this branch on port 5174 and no API (Chromium
+  reports no inset):
+
+  | Viewport | Drawer | Drawer top | Menu body |
+  | --- | --- | --- | --- |
+  | 375 × 812 | 554 px (title 57, body 436, footer 61), under its 756 px cap | 258 px | 436 of 436 px, no scroll |
+  | 375 × 548 | 492 px, capped | 56 px, Close at 72 px | 374 of 436 px, scrolls |
+  | 667 × 375 | 319 px, capped | 56 px, Close at 72 px | 201 of 436 px, scrolls |
+
+  At each size the FAB sat 16 px from the right and the bottom, where antd's
+  defaults had put it 24 and 48 px away, and the language switch ended 8 px
+  above the bottom.
+- A temporary CSS edit adding 34 px to the inset rules gave the FAB a computed
+  34 px margin, 50 px from the bottom, and put the switch 42 px up, so the
+  one-class rule wins over antd's `margin: 0`. With the cap removed at
+  667 × 375, the drawer's top sat at −213 px and Close at −197 px.
+- `pnpm test:e2e` after `pnpm db:up`: 48 passed in 21.4 s, 23 in
+  `desktop-chrome` and 25 in `pixel-7`. The override changes `env()` in Chrome
+  Headless Shell 156, so the safe-area test stays.
+- Each fix broken on purpose failed its test, and passed again when restored:
+
+  | Broken | Failed with |
+  | --- | --- |
+  | `marginLG`, `marginXXL` and the drawer cap removed | the offsets test, 24 for 16; the safe-area test, 82 for 50; the short-screen test, a drawer top of −54 for 56 |
+  | The FAB's inset margin removed | the safe-area test, 16 for 50 |
+  | The footer's inset padding removed | the safe-area test, 8 for 42 |
+
+- `pnpm lint`, the web `typecheck` (with `tsconfig.e2e.json`) and Prettier
+  pass. The change logged no console warning.
+
+Implementation notes, not decisions: because Compose names its project after
+the folder, the databases were started with `pnpm db:up` from the main
+checkout, as for PR 2, and stopped again afterwards; the browser pane's server
+came from a local, uncommitted `.claude/launch.json`.
+
+This is tooling evidence, not business acceptance.
 
 ## Next foundation steps — planning checklist (2026-10-24)
 

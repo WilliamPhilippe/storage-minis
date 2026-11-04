@@ -2,8 +2,10 @@
 
 **Status: approved by the owner on 2026-11-02, with the answers listed under
 [Approval](#approval-2026-11-02): issue 1 is not a defect, so SF-01 is
-withdrawn, and SF-02–SF-06 are approved as written. Not yet implemented; the
-implementation PR follows PR 2.** The approval record is in
+withdrawn, and SF-02–SF-06 are approved as written. Implemented in
+[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125), which also
+carries this plan; the docs-only PR #123 was closed (owner, 2026-11-03).** The
+approval record, the outcome and the evidence are in
 [technical direction](technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02).
 This plan fixes known issues in the web shell that
 [PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121) delivered

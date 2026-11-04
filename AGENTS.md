@@ -33,7 +33,8 @@ projects, `desktop-chrome` and `pixel-7`, before sign-in. The
 [web shell follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md)
 (approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
 inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
-footer inset and height; it is not yet implemented. The owner ruled the
+footer inset and height, as implemented in
+[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125). The owner ruled the
 collapsed SideNav's hover-only labels not a defect. Step 6 is TBD
 until the app is validated locally; business
 operations, authentication, business screens, signed-in browser tests, the web
