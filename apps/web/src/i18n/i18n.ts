@@ -6,21 +6,16 @@ import dayjs from "dayjs";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 
-export const languages = ["en-US", "pt-BR"] as const;
-export type Language = (typeof languages)[number];
+import { isLanguage, type Language, languages } from "./languages";
+
+export {
+  isLanguage,
+  type Language,
+  languageCodes,
+  languageNames,
+  languages,
+} from "./languages";
 export type Namespace = "common" | "app" | "login" | "catalog";
-
-// Each language's name in its own language, the same in every catalog.
-export const languageNames: Record<Language, string> = {
-  "en-US": "English",
-  "pt-BR": "Português",
-};
-
-// The short label the language switch shows.
-export const languageCodes: Record<Language, string> = {
-  "en-US": "EN",
-  "pt-BR": "PT",
-};
 
 // pt-BR catalogs are typed against en-US: every string widens to `string`, and
 // every en-US `_other` plural key needs a `_many` key, because pt-BR's plural
@@ -86,10 +81,6 @@ export function subscribeLocale(listener: () => void): () => void {
 
 export function getLocaleState(): LocaleState {
   return localeState;
-}
-
-export function isLanguage(value: unknown): value is Language {
-  return languages.some((language) => language === value);
 }
 
 // The saved choice, then the browser's languages, then en-US.

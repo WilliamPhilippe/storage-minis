@@ -32,6 +32,7 @@ docker/api.Dockerfile   API image (also runs the migrator)
 docker/postgres/init/   Role init script run on first volume initialization
 apps/api                @storage-minis/api: Fastify API
 apps/web                @storage-minis/web: React web app (Vite, antd, TanStack Router)
+apps/web/e2e            Playwright specs: signed-out/, app/ and support/
 packages/db             @storage-minis/db: schema, migrations, client, migrator
 tsconfig.browser.json   Browser TypeScript profile for apps/web (beside tsconfig.node.json)
 ```
@@ -199,7 +200,37 @@ database before starting any worker. The suite owns its children with
 `apps/api/tests/owned-process.ts`, retained because Vitest does not own
 processes that a test spawns.
 
-Run `test:db` and `test:api` one at a time; `test:db` drops the test schemas.
+Run `test:db`, `test:api` and `test:e2e` one at a time; `test:db` drops the
+test schemas.
+
+## End-to-end tests
+
+`pnpm test:e2e` runs `playwright test` in `apps/web` through the uncached
+Turborepo task, after `^build` (the [Playwright plan](playwright-plan-2026-11-02.md),
+approved 2026-11-02).
+
+| Area | Contract |
+| --- | --- |
+| Browser | Chrome Headless Shell 156 only, installed once with `playwright install --only-shell chromium` into Playwright's default cache, or into the folder `PLAYWRIGHT_BROWSERS_PATH` names (passed through by Turborepo). Headed runs, `--debug`, and `--ui` or `show-trace` without `--port 0` need the full Chrome for Testing, which is not installed. |
+| Projects | `desktop-chrome` and `pixel-7`, with Playwright's full device descriptors; `locale: "en-US"` and `timezoneId: "America/Sao_Paulo"` in the shared `use`. Tests tagged `@phone` or `@desktop` run in one project through each project's `grepInvert`. |
+| Servers | `apps/web/playwright.config.mts` starts the built API (`node --enable-source-maps dist/server.js` in `apps/api`) on `127.0.0.1:3000` with `NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn` and only the test database's `DATABASE_URL`, then the Vite dev server (`pnpm run dev`) on `http://localhost:5173`. `reuseExistingServer` is false for both. Playwright stops them in reverse order with `SIGTERM`, then `SIGKILL` after 15 s for the API (Compose's grace period) and 5 s for Vite. |
+| Database | `DATABASE_URL` from the real environment, else from `.env.test`, parsed with `util.parseEnv` rather than loaded, so the servers and workers never receive the owner role's URL or the PostgreSQL passwords. `requireTestDatabase` from `@storage-minis/db` refuses any database not named `*_test` before a server starts. The tests read no tables, so nothing migrates. |
+| Specs | `e2e/signed-out/` imports `test` from `support/test.ts`; `e2e/app/` imports it from `support/app.ts`, where PR 3 adds the saved session. `support/names.ts` builds every name from the en-US and pt-BR catalogs and `src/i18n/languages.ts`. |
+| Fixtures | `tapOrClick` taps where the project has touch and clicks elsewhere; a lint rule rejects direct `.click()` and `.tap()` in specs. The automatic console fixture fails a test on any `console.error`, `console.warn` or uncaught page error that it did not declare with `expectConsole(kind, pattern)`. `expectNoSidewaysScroll(page)` compares `documentElement.scrollWidth` with `clientWidth`. |
+| Run settings | `fullyParallel`, no retries, Playwright's default workers (half the logical cores), traces and screenshots kept on failure, the list reporter and the HTML report with `open: "never"`. |
+| Output | `apps/web/test-results/` (cleared at the start of every run) and `apps/web/playwright-report/`, both ignored by git, Prettier and ESLint; `**/playwright/.auth/` is ignored for PR 3's saved sessions. Git-ignored output stays out of Turborepo's hashes. |
+| Lint and types | `eslint-plugin-playwright`'s recommended rules for `apps/web/e2e/**`; `tsconfig.e2e.json` (Node types, the DOM library, bundler resolution) in the web `typecheck` script. |
+
+**Failure modes:**
+
+| Situation | Result |
+| --- | --- |
+| Databases stopped | About 1 s after the start, `[api] {"level":50,…,"msg":"database_readiness_failed",…}` with `ECONNREFUSED`, then `Process from config.webServer was not able to start. Exit code: 1` |
+| `pnpm dev` running, its API answering on port 3000 | Before any server starts: `http://127.0.0.1:3000/health/ready is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer.` |
+| A server on port 5173 only, such as a leftover Vite | `[api]` reports `listening`, then the same message for `http://localhost:5173`; the API stops |
+| `DATABASE_URL` naming `storage_minis_dev` | `Database integration tests require a database whose name ends in _test.` before any server starts |
+| The browser missing from the folder in use | `browserType.launch: Executable doesn't exist at …` for every test |
+| The runner killed hard | Both servers keep running in their own process groups, and the next run fails with "already used" until they are stopped (see the [README](../../README.md#end-to-end-tests)) |
 
 ## API runtime behavior
 
@@ -302,6 +333,7 @@ serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 | DB `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
 | DB `test:integration` (`pnpm test:db`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL` |
 | API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
+| Web `test:e2e` (`pnpm test:e2e`) | `^build` | No | `PLAYWRIGHT_BROWSERS_PATH`, `DATABASE_URL` |
 | API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | DB `dev` | `build` | No, persistent | Nothing |
 | Web `dev` | None | No, persistent | Nothing |

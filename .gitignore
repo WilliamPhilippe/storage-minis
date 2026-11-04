@@ -157,5 +157,10 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
+# Playwright output and saved sessions. `**/` matches the apps/web folder.
+test-results/
+playwright-report/
+**/playwright/.auth/
+
 # macOS Finder metadata
 .DS_Store

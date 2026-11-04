@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.node.json",
-  "include": ["vite.config.mts", "vitest.config.mts"]
+  "include": ["vite.config.mts", "vitest.config.mts", "playwright.config.mts"]
 }

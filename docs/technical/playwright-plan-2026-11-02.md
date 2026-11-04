@@ -1,7 +1,8 @@
 # Frontend PR 2 plan — Playwright (2026-11-02)
 
 **Status: approved by the owner on 2026-11-02 as recommended, PW-01–PW-14;
-not yet implemented.** The approval record is in
+implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124).**
+The approval record, with the implemented outcome and evidence, is in
 [technical direction](technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02).
 This is the plan for PR 2 of the
 [frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md)

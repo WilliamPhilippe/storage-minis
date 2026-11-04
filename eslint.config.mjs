@@ -3,6 +3,7 @@ import pluginQuery from "@tanstack/eslint-plugin-query";
 import pluginRouter from "@tanstack/eslint-plugin-router";
 import { defineConfig, globalIgnores } from "eslint/config";
 import prettier from "eslint-config-prettier";
+import playwright from "eslint-plugin-playwright";
 import reactHooks from "eslint-plugin-react-hooks";
 import { reactRefresh } from "eslint-plugin-react-refresh";
 import globals from "globals";
@@ -28,6 +29,9 @@ const nodeMessage = "Browser code runs without Node.js globals and modules.";
 export default defineConfig([
   globalIgnores([
     ".context/**",
+    // Claude Code session worktrees: full repository copies inside the
+    // checkout, often without their packages built.
+    ".claude/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/coverage/**",
@@ -36,6 +40,8 @@ export default defineConfig([
     "**/.vitest/**",
     "**/routeTree.gen.ts",
     "**/.tanstack/**",
+    "**/test-results/**",
+    "**/playwright-report/**",
   ]),
   {
     files: ["**/*.{js,mjs,cjs}"],
@@ -107,6 +113,23 @@ export default defineConfig([
               name: ["Redirect", "NotFoundError"],
             },
           ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["apps/web/e2e/**/*.ts"],
+    extends: [playwright.configs["flat/recommended"]],
+  },
+  {
+    files: ["apps/web/e2e/**/*.spec.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.property.name=/^(click|tap)$/]",
+          message:
+            "Use the tapOrClick fixture, so phones tap and desktops click.",
         },
       ],
     },
