@@ -1461,7 +1461,8 @@ MenuFab.md still place the language switch in the TopBar, the Login page's
 README still labels it "English", and `ant-design.md` still names `main.tsx` as the
 ConfigProvider's owner (the code puts it in `ui/AppProviders.tsx`, switching
 between `theme` and `phoneTheme`), so a later refresh of the originals should
-add them. The logo links and the not-found page's home link are current
+add them. The [web shell follow-up](#web-shell-follow-up-plan-approval-2026-11-02)
+did so on 2026-11-03, apart from the Login page's README. The logo links and the not-found page's home link are current
 (`aria-current`) only on `/app` itself.
 
 **Evidence (2026-11-01, branch `feat/web-shell`):**
@@ -1772,8 +1773,17 @@ part of it.
   Close and the switch in view, its top at 56 px and Settings reached by
   scrolling. The collapsed-SideNav test's comment no longer points to this
   follow-up.
-- **Design (SF-06).** Pending before merge: the owner updates the Claude
-  originals, and `docs/design/` is refreshed from them.
+- **Design (SF-06).** At the owner's request (2026-11-03), Claude updated the
+  design system's original in Claude (version 15), and `docs/design/` is
+  refreshed from it byte for byte: MenuFab.md (the position through the
+  FloatButton tokens, the footer's inset, the short-screen cap and the page
+  padding's inset), `ant-design.md` (the `fab-offset` mapping, the theme's
+  missing tokens and `ui/AppProviders.tsx` as the ConfigProvider's owner), and
+  SideNav.md and TopBar.md (the language switch's places). The same refresh
+  carries the items the 2026-11-01 record left for later, apart from the Login
+  page's README, whose own original still labels the switch "English".
+  MenuFab.md still asks for `radius-lg` drawer corners and 16 px menu text,
+  which the 2026-11-01 decision leaves at antd's defaults.
 
 **Evidence (2026-11-03, branch `fix/web-shell-follow-up`):**
 

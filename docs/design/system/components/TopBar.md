@@ -18,6 +18,7 @@ The header above every back-office page, built from antd `Layout.Header`, `Avata
 - **Phones:** 56px tall, the full logo at 20px tall on the left, and the avatar on the right.
 - **Desktop:** 64px tall, the page title in `title-lg` on the left (the logo lives in the `SideNav`), and the avatar plus name on the right.
 - **Height:** `header-height` (64px) on desktop and `header-height-phone` (56px) below `bp-md`, set through the `Layout` tokens `headerHeight` and `headerPadding`.
-- **Interim, until sign-in exists (frontend PR 3):** there is no account menu yet, so the TopBar shows a standalone language switch where the account menu will go. PR 3 moves the switch into the account menu.
-- **Look:** `Layout` token `headerBg` (`surface`), with a bottom `line` border. The avatar shows initials on `surface-sunken`. The account menu holds the language switch and Sign out.
+- **Until sign-in exists (frontend PR 3):** there is no account menu yet, so the TopBar holds only the logo on phones and the page title from `bp-md`.
+- **No language switch.** It sits at the bottom of the `SideNav` and in the footer of the `MenuFab`'s drawer, so the account menu doesn't take it.
+- **Look:** `Layout` token `headerBg` (`surface`), with a bottom `line` border. The avatar shows initials on `surface-sunken`. The account menu holds Sign out.
 - Red never appears here, apart from what's in the logo itself.

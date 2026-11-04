@@ -42,7 +42,7 @@ The editable originals are in Claude:
 - Design system: https://claude.ai/code/artifact/ab72a3de-2a48-4be8-b103-7009cae85ebd
 - Login prototype: https://claude.ai/artifact/EosKQeQE84uUT5enrc6pLV
 
-Both are private to the owner's account. This folder is a copy taken on 2026-11-01. When a design changes there, refresh its folder here in the same change.
+Both are private to the owner's account. This folder is a copy: `system/` was last refreshed on 2026-11-03 (design system version 15) and `pages/login/` on 2026-11-01. When a design changes there, refresh its folder here in the same change.
 
 ## Pages
 
