@@ -73,6 +73,11 @@ services:
       NODE_ENV: production
       TZ: UTC
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # The Firebase project whose ID tokens the API accepts (sign-in plan
+      # SI-03): storage-minis in production, storage-minis-dev in the committed
+      # local files. BOOTSTRAP_* stay unmapped until T04, because ${VAR:-}
+      # would pass empty strings, which the API rejects.
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:?Set FIREBASE_PROJECT_ID}
     depends_on:
       postgres:
         condition: service_healthy

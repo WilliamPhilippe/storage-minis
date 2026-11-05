@@ -12,6 +12,10 @@ const testValues = existsSync(testFile)
   ? parseEnv(readFileSync(testFile, "utf8"))
   : {};
 const databaseUrl = process.env.DATABASE_URL ?? testValues.DATABASE_URL ?? "";
+// The project whose ID tokens the API accepts (sign-in plan SI-03), read like
+// DATABASE_URL; only the API receives it.
+const firebaseProjectId =
+  process.env.FIREBASE_PROJECT_ID ?? testValues.FIREBASE_PROJECT_ID ?? "";
 
 // Refuse any database not named *_test before a server starts.
 requireTestDatabase(readDatabaseConfig({ DATABASE_URL: databaseUrl }));
@@ -50,6 +54,7 @@ export default defineConfig({
       url: "http://127.0.0.1:3000/health/ready",
       env: {
         DATABASE_URL: databaseUrl,
+        FIREBASE_PROJECT_ID: firebaseProjectId,
         HOST: "127.0.0.1",
         PORT: "3000",
         LOG_LEVEL: "warn",

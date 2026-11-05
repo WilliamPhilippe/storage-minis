@@ -22,6 +22,11 @@ const config: ApiConfig = {
     password: "SECRET_PASSWORD_SENTINEL",
     sslmode: "disable",
   },
+  auth: {
+    projectId: "storage-minis-dev",
+    acceptCustomTokens: false,
+    bootstrap: null,
+  },
 };
 const hostile = new Error("SECRET_PASSWORD_SENTINEL SQL STACK SENTINEL", {
   cause: new Error("SECRET_CAUSE_SENTINEL"),
