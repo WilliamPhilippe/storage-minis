@@ -4,12 +4,14 @@ StorageMinis manages inventory, purchases, sales, finances, collections, and a
 public stock catalog for 1/64 miniature sellers and collectors.
 
 The repository is a pnpm/Turborepo workspace: the Drizzle schema and migrations
-in `packages/db`; a Fastify API in `apps/api` that currently serves diagnostic
-health routes and one diagnostic tRPC procedure; and the React web app in
-`apps/web`, with the responsive shell, the en-US and pt-BR catalogs, placeholder
-pages, the Login page without sign-in, and a card that calls the diagnostic
-procedure. Node.js runs on the host; PostgreSQL runs in Docker.
-**Authentication, business endpoints and business screens are still pending.**
+in `packages/db`; a Fastify API in `apps/api` that serves health routes, one
+diagnostic tRPC procedure and `session.get`, verifies Firebase ID tokens and
+offers guarded procedure builders for Users, Organizations and roles; and the
+React web app in `apps/web`, with the responsive shell, the en-US and pt-BR
+catalogs, placeholder pages, the Login page without sign-in, and a card that
+calls the diagnostic procedure. Node.js runs on the host; PostgreSQL runs in
+Docker. **Sign-in in the web app (PR 3b), business endpoints and business
+screens are still pending.**
 
 Follow [local setup](#local-setup), then the [daily loop](#daily-development).
 For a feature, read [implementing a feature](#implementing-a-feature) and
@@ -50,6 +52,14 @@ They are local-only values, not secrets; both databases publish only on
 `127.0.0.1`. Production values exist only in Doppler. Installing tools or
 changing shell initialization follows the
 [owner approval rules](AGENTS.md#owner-approval-before-decisions).
+
+Both files also name the Firebase project whose ID tokens the API accepts,
+`FIREBASE_PROJECT_ID=storage-minis-dev`, and `.env.development` configures the
+development bootstrap: the owner's first verified Google sign-in on a database
+with no Organization creates the administrator and the `wipminis` Organization
+(the [T02 record](docs/technical/t02-authentication-record-2026-11-03.md), AU-07).
+After `pnpm db:reset` and `pnpm db:migrate`, the owner's next sign-in creates them
+again. The web app's sign-in arrives with PR 3b; until then nothing signs in.
 
 The end-to-end tests need Playwright's Chrome Headless Shell, installed once
 (owner-approved 2026-11-02, PW-02):
@@ -250,9 +260,11 @@ before retrying; see the
 ### Developing a tRPC endpoint
 
 The API serves tRPC at `/trpc` with plain JSON (no transformer), no batching,
-queries by GET and mutations by POST. The only procedure is the diagnostic
-`diagnostics.echo`; protected procedures and business authorization are T02
-work. With `pnpm dev` running:
+queries by GET and mutations by POST. Two procedures exist: the public
+diagnostic `diagnostics.echo`, and `session.get`, which needs a Firebase ID token
+and answers the caller's User and Memberships or `noAccess` (see
+[sign-in and authorization](docs/technical/local-development.md#sign-in-and-authorization)).
+With `pnpm dev` running:
 
 ```sh
 curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22ok%22%7D'
@@ -262,6 +274,8 @@ curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22%2
 curl -X POST -H 'content-type: application/json' -d '{"message":"ok"}' \
   http://127.0.0.1:3000/trpc/diagnostics.echo
 # 405 METHOD_NOT_SUPPORTED: a query is GET only
+curl 'http://127.0.0.1:3000/trpc/session.get'
+# 401 {"error":{"message":"Unauthorized","code":-32001,"data":{"code":"UNAUTHORIZED","httpStatus":401}}}
 ```
 
 Every failure under `/trpc` uses one envelope with a fixed message; the
@@ -273,12 +287,17 @@ Where things live, under `apps/api/src/trpc/`:
 
 | File | Holds |
 | --- | --- |
-| `init.ts` | `Context` (`{ db, requestId }`) and tRPC's root object `t` |
+| `init.ts` | `Context` (`{ db, requestId, auth }`, with the raw sign-in headers) and tRPC's root object `t` |
 | `context.ts` | `createContext` and the `recordProcedure` middleware |
+| `procedures.ts` | The guarded builders: `identityProcedure`, `userProcedure`, `organizationProcedure(minRole)`, `platformProcedure`, and `requireCanEditProducts` |
 | `errors.ts` | The error envelope |
 | `plugin.ts` | The Fastify route, body limit, JSON parser and failure handlers; `buildApp` registers it |
 | `router.ts` | `appRouter`, which attaches each router module |
-| `routers/` | One module per router, such as `diagnostics.ts` |
+| `routers/` | One module per router, such as `diagnostics.ts` and `session.ts` |
+
+Token verification and the identity queries live in `apps/api/src/auth/`. The
+lifecycle builds them and passes them through the context, so tRPC modules import
+only types from `@storage-minis/db`.
 
 A new procedure follows this sequence:
 
@@ -287,12 +306,17 @@ A new procedure follows this sequence:
    travels in the URL (16 KiB header limit). Use `z.strictObject` so unknown keys
    are rejected. Database row types do not validate HTTP input or define which
    fields a caller may see.
-2. Build from a module-private builder derived from `t.procedure` through
-   `recordProcedure`, as `routers/diagnostics.ts` does; that middleware supplies
-   the `procedure` log field. No public builder is exported. Business procedures
-   wait for T02's protected builder, which verifies identity and
-   Membership/Organization scope before private records are read. A submitted
-   Organization ID is not authorization.
+2. Build a business procedure from a guarded builder in `trpc/procedures.ts`:
+   `organizationProcedure(minRole)` for an Organization's records (`viewer`
+   reads; `editor` and `owner` write; `owner` manages settings),
+   `userProcedure` with `requireCanEditProducts(ctx.user)` for editing an
+   existing Product, and `platformProcedure` for `global_admin` actions. The
+   Organization comes only from the checked `x-organization-id` header: filter
+   every query by `ctx.organization.id` and record `ctx.user.id` as the actor.
+   Procedure input never carries an Organization ID. A public procedure derives a
+   module-private builder from `t.procedure` through `recordProcedure`, as
+   `routers/diagnostics.ts` does; every builder includes that middleware, which
+   supplies the `procedure` log field.
 3. Read through `ctx.db`, the lifecycle's owned Drizzle handle. A business write
    performs source, inventory, funding, financial and audit changes in one
    transaction, with the required locks, scope checks and invariant enforcement.
@@ -302,8 +326,9 @@ A new procedure follows this sequence:
    development.
 5. Test through `buildApp` and `app.inject()`, as `trpc/plugin.test.ts` does, not
    only by calling the router. Include invalid input and output and, for business
-   procedures, denied access, plus real PostgreSQL rollback, reconciliation and
-   concurrency tests for writes.
+   procedures, denied access (another Organization, a lower role, no token), as
+   `trpc/procedures.test.ts` and `tests/auth.integration.test.ts` do, plus real
+   PostgreSQL rollback, reconciliation and concurrency tests for writes.
 
 A client imports only the router type, and runtime imports of
 `@storage-minis/api/types` fail by design:
@@ -348,13 +373,13 @@ The live suites run uncached. Start the databases first with `pnpm db:up`:
 
 ```sh
 pnpm test:db     # schema, migration and connection tests on the test database
-pnpm test:api    # real built API processes against the test database
+pnpm test:api    # real built API processes, and the auth suite on the migrated test database
 pnpm test:e2e    # Playwright smoke tests in Chromium; see End-to-end tests
 pnpm test:stack  # parity stack smoke test; needs Docker
 ```
 
 `test:db`, `test:api` and `test:e2e` share the test database: run them **one at
-a time**. `test:db` drops and recreates the test schemas. All three refuse any
+a time**. `test:db` and `test:api` drop and recreate the test schemas. All three refuse any
 database whose name does not end in `_test` before connecting. Feature work
 must add its requirement acceptance tests; the current health, schema and smoke
 tests do not establish business acceptance.
