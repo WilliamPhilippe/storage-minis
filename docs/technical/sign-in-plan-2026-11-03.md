@@ -813,7 +813,9 @@ prototyped:
   through `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_CONFIG` for anyone who moves
   the file. `google-auth-library` 11.3.2 reads them in that order.
 - **`.env.test`** adds `E2E_SIGNER_SERVICE_ACCOUNT=e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com`,
-  an identifier, not a secret.
+  an identifier, not a secret. The owner confirmed on 2026-11-04 that it stays in
+  `.env.test` rather than Doppler: knowing the address grants nothing, and Doppler
+  enters local development only with its first real secret.
 - **Failure mode:** without the login, the setup project fails first with Google's
   message, and the README names the setup.
 
