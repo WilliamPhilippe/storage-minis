@@ -222,7 +222,102 @@ apps/web/
 - **Not planned:** Firebase Analytics, the Auth emulator, App Check, session cookies,
   server-side Firebase Admin credentials.
 
-## 3. Decisions
+## 3. Database structure
+
+Added on 2026-11-04 at the owner's request. It collects in one place what the database
+keeps for sign-in and sessions, what it does not keep, and why. It adds no decision:
+everything here follows from AU-01, AU-05, SI-04 and SI-06–SI-08. Sign-in adds one
+column, `users.sessions_valid_after`.
+
+### Where session state lives
+
+| Item | Built and signed by | Kept in | Reaches the API |
+| --- | --- | --- | --- |
+| **ID token:** a JWT, RS256, valid for one hour | Firebase Authentication, with Google's private keys | The browser's IndexedDB, through the Firebase SDK (AU-02) | On every guarded request, as `Authorization: Bearer`; verified, never stored or logged |
+| **Refresh token:** an opaque string | Firebase Authentication | The browser's IndexedDB | Never. The SDK exchanges it at `securetoken.googleapis.com` for a new ID token |
+| **Firebase user record:** uid, email, Google link, last sign-in, disabled flag | Firebase Authentication | The Firebase project (console: Authentication → Users) | Never read by the API |
+| **Test custom token:** a JWT, RS256, at most one hour | The Playwright setup, signed through IAM as `e2e-custom-tokens` (SI-15) | Nowhere; exchanged once for an ID token | Never. The ID token it yields does, with `sign_in_provider: "custom"` (AU-11) |
+| **User, Membership and Organization rows** | The API | PostgreSQL | Read on each guarded request (SI-06) |
+
+### Tokens: built by Google, not by us
+
+- **Nothing in production builds a token of ours.** Firebase fixes an ID token's
+  claims. The only way to add claims is Firebase's custom claims, set through the
+  Admin SDK, which this plan does not use (see below).
+- **The API holds no signing key.** It checks the signature with Google's public keys
+  (SI-05), so it trusts the claims without calling Firebase.
+- **Claims the API reads:**
+
+  | Claim | Content | Used for |
+  | --- | --- | --- |
+  | Header `alg`, `kid` | RS256; the Google key that signed it | The signature check (SI-05) |
+  | `iss`, `aud` | `https://securetoken.google.com/<projectId>`; `<projectId>` | Only the configured project (AU-01) |
+  | `sub` (equal to `user_id`) | The Firebase uid, 1–128 characters | The lookup key, `users.firebase_uid` |
+  | `iat`, `exp` | Issue time; expiry one hour later | Token expiry; no future `iat` |
+  | `auth_time` | The last Google sign-in; a refresh keeps it | The 7-day limit (AU-03) and the revocation cutoff (AU-05) |
+  | `firebase.sign_in_provider` | `google.com`, or `custom` for test sign-ins | The provider allowlist (AU-01, AU-11) |
+  | `email`, `email_verified` | The Google account's address | The bootstrap's one-time match (AU-07); copied to `users.email` |
+  | `name` | The Google profile name | Copied to `users.display_name` |
+
+  `picture` and `firebase.identities` arrive too and are unused. Custom-token sign-ins
+  carry no `email` or `name`.
+- **The test custom token** is the only token we build: `iss` and `sub` are the
+  service account's email, `aud` is Identity Toolkit's URL, `uid` starts with `e2e-`,
+  `exp` is at most an hour after `iat`, and it has no extra claims. It goes only to
+  Firebase, which returns a normal ID token.
+
+### What Firebase asks us to keep
+
+Nothing is required. Firebase keeps the user records and the refresh tokens.
+
+- **Revocation time.** Firebase's session guide suggests one optional item: a per-user
+  time before which sessions count as revoked, saved where your own checks can read it
+  without calling Firebase. Its example uses the Realtime Database; ours is
+  `users.sessions_valid_after` (AU-05).
+- **Profile and access data.** Firebase's custom-claims guide says custom claims are
+  for access control only, and that profile and other data belong in your own storage.
+  So email, name, role and Memberships live in PostgreSQL.
+
+### The `users` table after PR 3a
+
+| Column | Type | Written | Read |
+| --- | --- | --- | --- |
+| `id` | `integer` identity, positive | Bootstrap (later, invitations) | Actor, Membership key |
+| `firebase_uid` | `text NOT NULL`, unique (`users_key_1`) | Bootstrap; AU-06 rebind (operator SQL) | Every guarded request: the token's `sub` |
+| `email` | `text`, nullable | Bootstrap; `session.get` when a Google token's value differs; AU-06 rebind | `session.get`'s output; never an authorization key |
+| `display_name` | `text`, nullable | As `email`, from the token's `name` | `session.get`'s output |
+| `role` | `user_role`, default `user` | Bootstrap (`global_admin`) | `platformProcedure` (AU-08) |
+| `can_edit_products` | `boolean`, default false | Bootstrap (true) | `requireCanEditProducts` |
+| `created_at` | `timestamptz(3)`, default `now()` | Insert | — |
+| **`sessions_valid_after`** (new) | `timestamptz(3)`, nullable | Operator SQL (AU-05, AU-06); "Sign out of all devices" in #130 | Every guarded request, with the row: reject `auth_time ≤ ⌈value⌉` |
+
+- **`sessions_valid_after`:**
+  - Null means never revoked.
+  - Milliseconds, like every timestamp in the schema. The check rounds it up to the
+    second because `auth_time` has whole seconds.
+  - An operator revokes, for example, with
+    `UPDATE users SET sessions_valid_after = now() WHERE id = <user id>;`.
+    `local-development.md` documents the exact statement in PR 3a.
+- **Per request:** one indexed read of the User by `firebase_uid`, plus one of the
+  Membership for Organization procedures (SI-06). No write.
+- **Writes:** the bootstrap, once per installation; the profile copy, only when Google's
+  values change; the cutoff, only on revocation.
+- **Other tables:** `memberships` is unchanged; `organizations` gains `nickname` and
+  `currency` (SI-04); the bootstrap's audit goes to `business_events` and
+  `business_event_changes` (SI-08).
+
+### Columns not added
+
+| Candidate | Why not |
+| --- | --- |
+| `token_expires_at` | The token carries `exp`, and the API checks it on every request. A stored copy would describe only one of a User's devices and need a write every hour per device. The 7-day limit comes from the token's `auth_time`, so no `session_expires_at` either. |
+| `token_id` | Firebase ID tokens carry no token ID: `jti` is not among their claims, and Firebase reserves the name, so custom tokens cannot add it. Revocation works per User by time, not per token, so nothing needs one. A per-token deny list would need a write on every refresh. |
+| The refresh token | It never leaves the browser and Firebase. Storing it would make the database a credential store. |
+| `last_sign_in_at` | Firebase's console shows the last sign-in, and no approved requirement needs it in our database. Adding it would be a new decision. |
+| A `sessions` table, one row per device | AU-01 chose none. Such a table would allow listing devices and signing out one device, which nobody asked for. Firebase gives no device ID, so the app would register each sign-in and the API would write on each. |
+| Roles in Firebase custom claims | A custom claim reaches the token only when a new one is issued, up to an hour later. Claims are limited to 1,000 bytes and would copy the Memberships. A deleted Membership must apply at the next request (AU-05), so roles stay in PostgreSQL. |
+
+## 4. Decisions
 
 ### SI-01 Delivery split
 
@@ -855,10 +950,10 @@ stack:
 1. **This docs PR:** T02's record, this plan, and after approval the approval record
    in the technical direction and the AGENTS.md lines that change. #22 and #118 are
    updated; "Part of" links, no closing keywords.
-2. **PR 3a,** branch `feat/api-auth`, four commit groups (section 4).
+2. **PR 3a,** branch `feat/api-auth`, four commit groups (section 5).
 3. **PR 3b,** branch `feat/web-sign-in`, after 3a merges, five commit groups.
 
-## 4. Implementation order
+## 5. Implementation order
 
 Conventional Commits; each PR leaves a working state; commits pass `pnpm check` where
 practical.
@@ -902,7 +997,7 @@ the shell's TopBar; the design's Login states.
 procedure; `useSession()` and the active Organization for every screen; the setup
 project and storage state for every signed-in spec; SI-18 for PR 4.
 
-## 5. Verification
+## 6. Verification
 
 ### Completion criteria
 
@@ -951,7 +1046,7 @@ project and storage state for every signed-in spec; SI-18 for PR 4.
 This is tooling and integration evidence. Business acceptance of authorization
 waits for the business procedures that use it.
 
-## 6. Handoff
+## 7. Handoff
 
 **Documentation in the implementation PRs:**
 
@@ -990,7 +1085,7 @@ PW-13's handoff noted.
 - identity rebinds unaudited in the database;
 - Chromium only.
 
-## 7. Risks
+## 8. Risks
 
 - **Firebase internals in the startup check (SI-10).** It fails closed, and the
   signed-in suite catches a change.
@@ -1087,6 +1182,9 @@ Consulted 2026-11-03. Google Cloud pages now redirect from `cloud.google.com` to
 - Firebase: [verify ID tokens](https://firebase.google.com/docs/auth/admin/verify-id-tokens),
   [manage sessions](https://firebase.google.com/docs/auth/admin/manage-sessions),
   [create custom tokens](https://firebase.google.com/docs/auth/admin/create-custom-tokens),
+  [custom claims](https://firebase.google.com/docs/auth/admin/custom-claims) and
+  [rules and auth](https://firebase.google.com/docs/rules/rules-and-auth) (both
+  2026-11-04, for section 3),
   [Admin setup](https://firebase.google.com/docs/admin/setup),
   [API keys](https://firebase.google.com/docs/projects/api-keys),
   [auth state persistence](https://firebase.google.com/docs/auth/web/auth-state-persistence),
