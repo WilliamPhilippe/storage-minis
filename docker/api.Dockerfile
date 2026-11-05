@@ -22,6 +22,10 @@ COPY apps/api/tsconfig*.json ./apps/api/
 COPY packages/db/tsconfig*.json ./packages/db/
 COPY apps/api/src ./apps/api/src
 COPY packages/db/src ./packages/db/src
+# The shared test-database helper compiles here to dist-testing/, outside the
+# DB package's `files`, so `pnpm deploy` below leaves it out of the runtime
+# image (sign-in plan SI-16, owner-approved 2026-11-05).
+COPY packages/db/testing ./packages/db/testing
 RUN pnpm build
 
 FROM build AS package

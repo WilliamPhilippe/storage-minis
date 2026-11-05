@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit --project tsconfig.json",
-    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc --project tsconfig.build.json",
+    "build": "node -e \"for (const dir of ['dist', 'dist-testing']) require('node:fs').rmSync(dir, { recursive: true, force: true })\" && tsc --project tsconfig.build.json && tsc --project tsconfig.testing.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file-if-exists=../../.env.development dist/migrate.js",
     "test:integration": "vitest run --config vitest.integration.config.mts",
@@ -24,6 +24,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist-testing/index.d.ts",
+      "import": "./dist-testing/index.js"
     }
   }
 }

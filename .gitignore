@@ -84,6 +84,8 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+# The DB package's compiled test helper (@storage-minis/db/testing)
+dist-testing
 .output
 
 # Gatsby files

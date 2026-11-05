@@ -21,6 +21,7 @@ import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from "vitest";
 import {
   createDatabase,
+  organizationNicknameRule,
   readDatabaseConfig,
   requireTestDatabase,
   schema,
@@ -119,10 +120,14 @@ async function rejected(statement: string, values: unknown[], code: string) {
   }
 }
 
+// Nicknames are unique across the run, including committed race fixtures.
+let organizations = 0;
+
 async function fixture(connection = client) {
+  organizations += 1;
   const organizationId = await insert(
     "organizations",
-    { name: "Fixture" },
+    { name: "Fixture", nickname: `fixture-${organizations}` },
     connection,
   );
   const actorUserId = await insert(
@@ -245,7 +250,7 @@ async function fixture(connection = client) {
   };
 }
 
-it("replays all 33 tables/316 columns/11 enums with every declared constraint", async () => {
+it("replays all 33 tables/319 columns/12 enums with every declared constraint", async () => {
   const tables = Object.values(schema).filter((value) => is(value, PgTable));
   expect(tables).toHaveLength(33);
   const rows = await client.query<{
@@ -259,7 +264,7 @@ it("replays all 33 tables/316 columns/11 enums with every declared constraint", 
     datetime_precision: number | null;
     column_default: string | null;
   }>("SELECT * FROM information_schema.columns WHERE table_schema = 'public'");
-  expect(rows.rows).toHaveLength(316);
+  expect(rows.rows).toHaveLength(319);
   const constraints = await client.query<{ conname: string; contype: string }>(
     "SELECT conname, contype FROM pg_constraint WHERE connamespace = 'public'::regnamespace",
   );
@@ -303,7 +308,7 @@ it("replays all 33 tables/316 columns/11 enums with every declared constraint", 
   const enums = await client.query<{ typname: string; values: string[] }>(
     "SELECT typname, array_agg(enumlabel::text ORDER BY enumsortorder) AS values FROM pg_type JOIN pg_enum ON enumtypid = pg_type.oid WHERE typnamespace = 'public'::regnamespace GROUP BY typname",
   );
-  expect(enums.rows).toHaveLength(11);
+  expect(enums.rows).toHaveLength(12);
   for (const value of Object.values(schema)) {
     if (
       typeof value === "function" &&
@@ -324,7 +329,10 @@ it("lets the app role write rows but not change the schema or read history", asy
   expect(privileges.rows).toHaveLength(33);
   for (const row of privileges.rows)
     expect(row.granted).toEqual(["DELETE", "INSERT", "SELECT", "UPDATE"]);
-  const id = await insert("organizations", { name: "App role DML" });
+  const id = await insert("organizations", {
+    name: "App role DML",
+    nickname: "app-role-dml",
+  });
   await client.query(
     "UPDATE organizations SET name = 'Updated' WHERE id = $1",
     [id],
@@ -464,12 +472,14 @@ it("uses generated base36 identities and retains them through soft removal", asy
     "428C9",
   );
   await rejected(
-    "INSERT INTO organizations (id, name) VALUES (100, 'explicit identity')",
+    "INSERT INTO organizations (id, name, nickname) VALUES (100, 'explicit identity', 'explicit-identity')",
     [],
     "428C9",
   );
   await rejected(
-    "INSERT INTO organizations (id, name) OVERRIDING SYSTEM VALUE VALUES (0, 'invalid')",
+    // A valid nickname, so the positive-ID check is the one that fails:
+    // PostgreSQL checks NOT NULL before CHECK constraints.
+    "INSERT INTO organizations (id, name, nickname) OVERRIDING SYSTEM VALUE VALUES (0, 'invalid', 'invalid-identity')",
     [],
     "23514",
   );
@@ -511,6 +521,109 @@ it("enforces global identity, Membership uniqueness, defaults and nonblank Custo
     [f.organizationId, f.eventId],
     "23502",
   );
+});
+
+it("keeps Organization nicknames unique and in SI-04's provisional format", async () => {
+  const f = await fixture();
+  await rejected(
+    "INSERT INTO organizations (name, nickname) SELECT 'Copy', nickname FROM organizations WHERE id = $1",
+    [f.organizationId],
+    "23505",
+  );
+  const { minLength, maxLength, pattern } = organizationNicknameRule;
+  const valid = (nickname: string) =>
+    nickname.length >= minLength &&
+    nickname.length <= maxLength &&
+    pattern.test(nickname);
+  const samples = [
+    "abc",
+    "wipminis",
+    "e2e-garage",
+    "a-b-c",
+    "garage-2026",
+    "1st",
+    "a".repeat(30),
+    "",
+    "ab",
+    "a".repeat(31),
+    "Garage",
+    "GARAGE",
+    "garage_1",
+    "-garage",
+    "garage-",
+    "gar--age",
+    "gar age",
+    " garage",
+    "garage\n",
+    "garagé",
+    "ｇarage",
+  ];
+  // The constraint and the exported rule (which the API's bootstrap settings
+  // use) agree on every sample, in both directions.
+  expect(samples.filter(valid)).toHaveLength(7);
+  for (const nickname of samples) {
+    if (valid(nickname)) {
+      await client.query("SAVEPOINT nickname_sample");
+      await insert("organizations", { name: "Sample", nickname });
+      await client.query("ROLLBACK TO SAVEPOINT nickname_sample");
+      await client.query("RELEASE SAVEPOINT nickname_sample");
+    } else {
+      await rejected(
+        "INSERT INTO organizations (name, nickname) VALUES ('Sample', $1)",
+        [nickname],
+        "23514",
+      );
+    }
+  }
+  await rejected(
+    "INSERT INTO organizations (name) VALUES ('No nickname')",
+    [],
+    "23502",
+  );
+});
+
+it("defaults the Organization currency to BRL and starts every User's sessions unrevoked", async () => {
+  const brl = await insert("organizations", {
+    name: "Default currency",
+    nickname: "currency-default",
+  });
+  const usd = await insert("organizations", {
+    name: "Dollars",
+    nickname: "currency-usd",
+    currency: "USD",
+  });
+  expect(
+    (
+      await client.query(
+        "SELECT id, currency FROM organizations WHERE id = ANY($1) ORDER BY id",
+        [[brl, usd]],
+      )
+    ).rows,
+  ).toEqual([
+    { id: brl, currency: "BRL" },
+    { id: usd, currency: "USD" },
+  ]);
+  for (const currency of ["EUR", "brl", ""])
+    await rejected(
+      "INSERT INTO organizations (name, nickname, currency) VALUES ('Other', 'currency-other', $1)",
+      [currency],
+      "22P02",
+    );
+  // AU-05: null until an operator (or #130's action) revokes; milliseconds.
+  const user = await insert("users", { firebase_uid: "sessions-fixture" });
+  const read = async () =>
+    (
+      await client.query<{ sessions_valid_after: Date | null }>(
+        "SELECT sessions_valid_after FROM users WHERE id = $1",
+        [user],
+      )
+    ).rows[0]?.sessions_valid_after;
+  expect(await read()).toBeNull();
+  await client.query(
+    "UPDATE users SET sessions_valid_after = '2026-11-04T12:00:00.4567Z' WHERE id = $1",
+    [user],
+  );
+  expect((await read())?.toISOString()).toBe("2026-11-04T12:00:00.457Z");
 });
 
 it("allows global Product reuse but rejects cross-Organization acquisition and event paths", async () => {
@@ -1015,7 +1128,7 @@ it("round-trips the compiled typed schema through Drizzle", async () => {
   await database.db.transaction(async (transaction) => {
     const [organization] = await transaction
       .insert(schema.organizations)
-      .values({ name: "Typed fixture" })
+      .values({ name: "Typed fixture", nickname: "typed-fixture" })
       .returning();
     expect(organization?.createdAt).toBeInstanceOf(Date);
     if (!organization) throw new Error("Missing typed fixture.");

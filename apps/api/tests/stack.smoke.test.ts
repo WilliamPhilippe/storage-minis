@@ -101,6 +101,22 @@ it("migrates before the API starts and runs the image as nonroot without mounts"
   ]);
   // Only migrate and api reach the stack's database (R15).
   expect(postgres.NetworkSettings.Ports["5432/tcp"]).toBeNull();
+  // The DB package ships only its `files`: the shared test-database helper
+  // compiles in the build stage, but never reaches the image (SI-16).
+  const shipped = await docker([
+    ...compose,
+    "exec",
+    "-T",
+    "api",
+    "ls",
+    "-A",
+    "node_modules/@storage-minis/db/",
+  ]);
+  expect(shipped.split("\n").sort()).toEqual([
+    "dist",
+    "drizzle",
+    "package.json",
+  ]);
 });
 
 it("answers the exact health responses on 127.0.0.1:3100", async () => {

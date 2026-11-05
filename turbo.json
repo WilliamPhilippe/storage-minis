@@ -36,7 +36,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "dist-testing/**"]
     },
     "@storage-minis/api#start": {
       "dependsOn": ["build"],

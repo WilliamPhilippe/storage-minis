@@ -1,12 +1,12 @@
-import { readDatabaseConfig } from "@storage-minis/db";
+import {
+  organizationNicknameRule as nickname,
+  readDatabaseConfig,
+  schema,
+} from "@storage-minis/db";
 import type { DatabaseConfig } from "@storage-minis/db";
 import { z } from "zod";
 import type { BootstrapSettings } from "./auth/types.js";
 import { ConfigurationError } from "./error-log.js";
-
-// SI-04's provisional nickname rule (until D04/E10): 3–30 lowercase ASCII
-// letters and digits in groups joined by single hyphens.
-const nicknamePattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 const settingsSchema = z.object({
   HOST: z.enum(["127.0.0.1", "0.0.0.0"]).default("127.0.0.1"),
@@ -37,13 +37,16 @@ const settingsSchema = z.object({
     .pipe(z.email())
     .optional(),
   BOOTSTRAP_ORGANIZATION_NAME: z.string().trim().min(1).max(100).optional(),
+  // SI-04's provisional rule, shared with the database's check constraint.
   BOOTSTRAP_ORGANIZATION_NICKNAME: z
     .string()
-    .min(3)
-    .max(30)
-    .regex(nicknamePattern)
+    .min(nickname.minLength)
+    .max(nickname.maxLength)
+    .regex(nickname.pattern)
     .optional(),
-  BOOTSTRAP_ORGANIZATION_CURRENCY: z.enum(["BRL", "USD"]).optional(),
+  BOOTSTRAP_ORGANIZATION_CURRENCY: z
+    .enum(schema.organizationCurrency.enumValues)
+    .optional(),
 });
 
 type Settings = z.infer<typeof settingsSchema>;

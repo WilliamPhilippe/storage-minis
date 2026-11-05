@@ -59,3 +59,9 @@ export const membershipRole = pgEnum("membership_role", [
 ]);
 
 export const userRole = pgEnum("user_role", ["global_admin", "editor", "user"]);
+
+// ORG-010: chosen once at creation; nothing changes it (sign-in plan SI-04).
+export const organizationCurrency = pgEnum("organization_currency", [
+  "BRL",
+  "USD",
+]);

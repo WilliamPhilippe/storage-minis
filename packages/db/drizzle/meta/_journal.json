@@ -15,6 +15,13 @@
       "when": 1793501423921,
       "tag": "0001_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793895184966,
+      "tag": "0002_organization_nickname_currency_session_revocation",
+      "breakpoints": true
     }
   ]
 }

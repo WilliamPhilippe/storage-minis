@@ -5,7 +5,10 @@
  * browser's `@storage-minis/api/types` contract.
  */
 
-export type OrganizationCurrency = "BRL" | "USD";
+import type { schema } from "@storage-minis/db";
+
+export type OrganizationCurrency =
+  (typeof schema.organizationCurrency.enumValues)[number];
 
 /**
  * AU-07: the configured owner's first verified Google sign-in, while no

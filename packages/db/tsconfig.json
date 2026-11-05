@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.node.json",
   "include": [
     "src/**/*.ts",
+    "testing/**/*.ts",
     "tests/**/*.ts",
     "drizzle.config.ts",
     "vitest*.config.mts"
