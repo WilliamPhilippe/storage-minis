@@ -33,7 +33,11 @@ implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/1
 [approved on 2026-11-02](technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02),
 fixes the MenuFab's safe area and the drawer's footer and height, with three
 more phone tests, in [PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125).
-Sign-in (PR 3) and the web image (PR 4) remain.
+[T02's record](t02-authentication-record-2026-11-03.md) and the
+[sign-in plan](sign-in-plan-2026-11-03.md) were
+[approved on 2026-11-04](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04):
+sign-in arrives as PR 3a (API identity and authorization) and PR 3b (web sign-in
+and the Playwright session). Sign-in and the web image (PR 4) remain.
 
 Use [README setup and commands](../../README.md) and the
 [local development reference](local-development.md) for current operation.
@@ -584,8 +588,8 @@ These assignments are partial T06 bootstrap, with these existing gates intact:
 
 | Before proceeding to | Required decisions / existing owners |
 | --- | --- |
-| Business schema migrations | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21) executable keys, constraints, transitions and transaction design; applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24) numeric/overflow/time/input contracts; later approved schema logs. |
-| Protected procedures or administrator bootstrap | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22) verified identity, configured-owner bootstrap, Membership/Organization access and global Product-edit permission enforcement. |
+| Business schema migrations | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21) executable keys, constraints, transitions and transaction design; applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24) numeric/overflow/time/input contracts; later approved schema logs. Approved exception (2026-11-04): the [sign-in plan](sign-in-plan-2026-11-03.md)'s SI-04 adds `organizations.nickname`, `organizations.currency` and `users.sessions_valid_after`. |
+| Protected procedures or administrator bootstrap | [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22) verified identity, configured-owner bootstrap, Membership/Organization access and global Product-edit permission enforcement. Decided in [T02's record](t02-authentication-record-2026-11-03.md) (approved 2026-11-04); frontend PRs 3a and 3b implement it. |
 | Representative persistence operations | Applicable T01/T03 and business-policy decisions, followed by actual rollback, scope, reconciliation and concurrent-session evidence for the approved operation. |
 | Deployment and recovery acceptance | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23) Doppler production access/injection/rotation/fallback policy, releases/migrations, privileges, daily backups/restore and operational targets. |
 | Full T06 completion | The live issue's original dependencies and acceptance outputs, including real global Product reuse/private-data rejection, allocation/commitment integrity and deletion-versus-funding or settlement-source race evidence, plus remaining application/check delivery. |

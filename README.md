@@ -444,6 +444,7 @@ later approved decisions take precedence over conflicting baseline text.
 - [Local development reference](docs/technical/local-development.md)
 - [Foundation implementation guide and remaining steps](docs/technical/technical-foundation-implementation-guide.md)
 - [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md), the [PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) with its [follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md), and the [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
+- [T02 authentication record](docs/technical/t02-authentication-record-2026-11-03.md) and the [sign-in plan](docs/technical/sign-in-plan-2026-11-03.md) (frontend PRs 3a and 3b)
 - [Design system and page designs](docs/design/README.md)
 
 Keep links to the latest published document versions; preserve historical baselines.
