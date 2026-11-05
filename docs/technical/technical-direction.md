@@ -1874,6 +1874,23 @@ and deviations that implementation forces, still need approval.
 - **Personal data:** deletion on request is out of scope, because the system is for
   internal use.
 
+**Owner answers in the plan review (2026-11-04):**
+
+- **Access before invitations:** only the owner uses the app; no operator SQL grants
+  Memberships.
+- **Test-token signing:** the owner's main Google account, as SI-15 planned. The owner
+  accepts that its login file can do anything that account can, production included.
+  The file lives only in gcloud's default folder on this machine, never in the
+  repository; agents' test runs read it, and agents never open it themselves.
+- **Strangers in production:** their stray Firebase user records are accepted;
+  disabling account creation is reconsidered with invitations.
+- **Spreadsheet import (T05, #25):** an in-app feature in the active Organization that
+  never creates an Organization; T05 decides its minimum role.
+- **`E2E_SIGNER_SERVICE_ACCOUNT`** stays in `.env.test` rather than Doppler.
+- **Database structure:** the plan gained section 3, which records why sign-in stores
+  only `users.sessions_valid_after` (no token expiry, token ID, refresh token or
+  session table). No decision changed.
+
 **Rationale.** The record settles the session policies that the
 [frontend decisions](#frontend-foundation-decisions-2026-11-01) left to T02, around the
 approved Google-only Firebase sign-in, and the plan splits delivery so each PR works

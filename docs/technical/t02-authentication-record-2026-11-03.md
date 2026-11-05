@@ -433,7 +433,13 @@ Google account could add rows, and a row alone grants nothing.
 ## 4. Left to others
 
 - **Invitations, user management, a second administrator, nickname rename screens:**
-  TBD until the website is developed (owner, 2026-11-01).
+  TBD until the website is developed (owner, 2026-11-01). Until then only the owner
+  uses the app, and no operator SQL grants Memberships (owner, 2026-11-04).
+- **Strangers' Firebase user records:** a Google account that tries to sign in to
+  production gets a Firebase user record, although the API answers "No access".
+  Accepted, with stray records deleted by hand if they ever matter. Firebase's setting
+  that disables account creation is reconsidered when invitations are designed
+  (owner, 2026-11-04).
 - **Nickname rules:** D04/E10 replace the provisional rule (plan SI-04).
 - **Exceptional correction authority:** D06.
 - **Typed audit for identity changes:** T01.

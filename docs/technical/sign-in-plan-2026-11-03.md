@@ -75,6 +75,27 @@ The owner also accepted the assumptions the plan listed as unverified (the
 PR 3b's verification steps still exercise them. Deleting personal data on request is
 out of scope, because the system is for internal use.
 
+### Owner answers in the plan review (2026-11-04)
+
+The owner then stress-tested the plan, question by question, and decided:
+
+1. **Access before invitations:** only the owner uses the app until invitations
+   exist. No operator SQL grants Memberships.
+2. **Test-token signing:** the owner's main Google account, as SI-15 planned. The
+   owner accepts that its login file can do anything that account can, production
+   included; the file lives only on this machine (SI-15, section 8).
+3. **The login file's place:** gcloud's default `~/.config/gcloud/`, never in the
+   repository. Agents run `pnpm test:e2e`, which reads it, but never open, list or
+   copy the file themselves (SI-15).
+4. **Strangers in production:** a Google account that tries to sign in leaves a
+   Firebase user record in `storage-minis`. Accepted; stray records are deleted by
+   hand if they ever matter. Firebase's setting that disables account creation is
+   reconsidered when invitations are designed (section 8).
+5. **Spreadsheet import (T05):** an in-app feature, used signed in within the active
+   Organization. It loads into that Organization and never creates one; using the
+   app always means working within an Organization. T05 decides the minimum role
+   (section 7).
+
 ### What approval changes in approved documents
 
 - **W11:** PR 3 becomes PRs 3a and 3b (SI-01).
@@ -812,6 +833,13 @@ prototyped:
   keeps `HOME` and drops other variables, so `@storage-minis/web#test:e2e` passes
   through `GOOGLE_APPLICATION_CREDENTIALS` and `CLOUDSDK_CONFIG` for anyone who moves
   the file. `google-auth-library` 11.3.2 reads them in that order.
+- **Owner's answers (2026-11-04):**
+  - The login is the owner's main Google account; a separate signing account would
+    get in the way of the owner's occasional gcloud work. The owner accepts that the
+    file can do anything that account can, production included (section 8).
+  - The file lives only on this machine, in the default folder, never in the
+    repository. Agents run `pnpm test:e2e`, which reads it, but never open, list or
+    copy the file themselves.
 - **`.env.test`** adds `E2E_SIGNER_SERVICE_ACCOUNT=e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com`,
   an identifier, not a secret. The owner confirmed on 2026-11-04 that it stays in
   `.env.test` rather than Doppler: knowing the address grants nothing, and Doppler
@@ -1078,6 +1106,12 @@ PW-13's handoff noted.
 - `requireCanEditProducts` for Product edits;
 - `ctx.user.id` as the actor.
 
+**For T05 ([#25](https://github.com/WilliamPhilippe/storage-minis/issues/25)):** the
+spreadsheet import is an in-app feature on an Organization procedure. It loads into
+`ctx.organization.id`, the active Organization, and never creates an Organization, so
+production runs in this order: deploy, the owner's first sign-in (the bootstrap), then
+the import. T05 decides its minimum role (owner, 2026-11-04).
+
 **Remaining limitations:**
 
 - redirect untested until PR 4;
@@ -1095,6 +1129,15 @@ PW-13's handoff noted.
   `node_modules` (development only).
 - **gcloud per developer and later CI (SI-15).** A missing login fails `test:e2e`
   early with a clear message; CI needs Workload Identity Federation.
+- **A powerful login file on the development machine (accepted by the owner,
+  2026-11-04).** The owner's Application Default Credentials file carries the
+  `cloud-platform` scope, so any program running as the owner could use it to act on
+  both Firebase projects. It stays in gcloud's default folder on this machine only;
+  `gcloud auth application-default revoke` ends it.
+- **Stray Firebase users in production (accepted by the owner, 2026-11-04).** Any
+  Google account that tries to sign in gets a Firebase user record, although the API
+  answers "No access". Strays are deleted by hand if they ever matter; disabling
+  account creation is reconsidered with invitations.
 - **Google's popup page** in the popup spec is outside our control. If it makes the
   spec flaky, the spec drops to checking the popup's URL without loading it.
 - **Google outages (accepted by the owner, 2026-11-04):** sign-in, refresh and the
