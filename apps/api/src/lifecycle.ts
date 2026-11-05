@@ -2,6 +2,8 @@ import { createDatabase } from "@storage-minis/db";
 import type { Database, DatabaseConfig } from "@storage-minis/db";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "./app.js";
+import { createIdTokenVerifier } from "./auth/id-token.js";
+import { createIdentityStore } from "./auth/store.js";
 import type { AppDependencies } from "./app.js";
 import type { ApiConfig } from "./config.js";
 import { isDevelopment, lifecycleLine } from "./error-log.js";
@@ -162,6 +164,16 @@ export function startLifecycle(
       app = constructApp(config.http, {
         database,
         isClosing: () => closing,
+        // Sign-in services (SI-06): Google's key set loads on first use, so
+        // construction makes no request.
+        auth: {
+          verifier: createIdTokenVerifier({
+            projectId: config.auth.projectId,
+            acceptCustomTokens: config.auth.acceptCustomTokens,
+          }),
+          store: createIdentityStore(database.db),
+          bootstrap: config.auth.bootstrap,
+        },
       });
       if (closing) return false;
       // Fastify loads the app's plugins (routes, later tRPC) here.

@@ -146,6 +146,11 @@ describe("lifecycle ownership and extension", () => {
     expect(f.constructApp).toHaveBeenCalledTimes(1);
     expect(f.constructApp.mock.calls[0]?.[0]).toBe(config.http);
     expect(f.constructApp.mock.calls[0]?.[1].database).toBe(f.database);
+    // Sign-in services built from the configuration (SI-06), without a request.
+    const auth = f.constructApp.mock.calls[0]?.[1].auth;
+    expect(auth?.bootstrap).toBe(config.auth.bootstrap);
+    expect(auth?.verifier.verify).toBeTypeOf("function");
+    expect(auth?.store.findUser).toBeTypeOf("function");
     expect(f.app.listen).toHaveBeenCalledExactlyOnceWith({
       host: "127.0.0.1",
       port: 3000,

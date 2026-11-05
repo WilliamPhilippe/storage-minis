@@ -6,6 +6,7 @@ import type { TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { TRPC_ERROR_CODES_BY_KEY } from "@trpc/server/rpc";
 import type { FastifyInstance, LightMyRequestResponse } from "fastify";
 import { z } from "zod";
+import { unusedAuth } from "../../tests/auth-fakes.js";
 import { buildApp } from "../app.js";
 import type { ApiConfig } from "../config.js";
 import type { AppRouter } from "../types.js";
@@ -30,6 +31,8 @@ const httpConfig: ApiConfig["http"] = {
 };
 // Diagnostics never touch Drizzle; identity proves the context passes it on.
 const db = { marker: "injected" } as unknown as Database["db"];
+// Nothing here verifies a token; identity proves the services pass through.
+const auth = unusedAuth();
 const apps: FastifyInstance[] = [];
 let output: string[];
 
@@ -57,6 +60,15 @@ const testRouter = t.router({
     keys: Object.keys(ctx).sort(),
     injected: ctx.db === db,
     requestId: ctx.requestId,
+    auth: {
+      keys: Object.keys(ctx.auth).sort(),
+      injected:
+        ctx.auth.verifier === auth.verifier &&
+        ctx.auth.store === auth.store &&
+        ctx.auth.bootstrap === auth.bootstrap,
+      authorization: ctx.auth.authorization ?? null,
+      organizationHeader: ctx.auth.organizationHeader ?? null,
+    },
   })),
 });
 type TestRouter = typeof testRouter;
@@ -65,11 +77,13 @@ function createApp(http: ApiConfig["http"] = httpConfig) {
   const app = buildApp(http, {
     database: { db, check: vi.fn<() => Promise<void>>().mockResolvedValue() },
     isClosing: () => false,
+    auth,
   });
   void app.register(trpcRoutes, {
     prefix: "/trpc-test",
     router: testRouter,
     db,
+    auth,
   });
   apps.push(app);
   return app;
@@ -495,17 +509,39 @@ describe("tRPC adapter, test-only router (plan section 5, cases 15-22)", () => {
     });
   });
 
-  it("22: builds the context from the injected db and the request ID only", async () => {
+  it("22: builds the context from the injected services, the request ID and the raw sign-in headers", async () => {
     const app = createApp();
-    const response = await app.inject("/trpc-test/context");
+    const response = await app.inject({
+      url: "/trpc-test/context",
+      headers: { authorization: "Bearer raw", "x-organization-id": "12" },
+    });
     expect(response.statusCode).toBe(200);
     const { result } = response.json<{
       result: {
-        data: { keys: string[]; injected: boolean; requestId: string };
+        data: {
+          keys: string[];
+          injected: boolean;
+          requestId: string;
+          auth: Record<string, unknown>;
+        };
       };
     }>();
-    expect(result.data.keys).toEqual(["db", "requestId"]);
+    expect(result.data.keys).toEqual(["auth", "db", "requestId"]);
     expect(result.data.injected).toBe(true);
+    // Unverified input, read only by the guarded builders (SI-06).
+    expect(result.data.auth).toEqual({
+      keys: [
+        "authorization",
+        "bootstrap",
+        "organizationHeader",
+        "store",
+        "verifier",
+      ],
+      injected: true,
+      authorization: "Bearer raw",
+      organizationHeader: "12",
+    });
+    expect(auth.verifier.verify).not.toHaveBeenCalled();
     expect(records()[0]).toMatchObject({
       msg: "request_completed",
       procedure: "context",
