@@ -37,8 +37,8 @@ more phone tests, in [PR #125](https://github.com/WilliamPhilippe/storage-minis/
 [sign-in plan](sign-in-plan-2026-11-03.md) were
 [approved on 2026-11-04](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04):
 sign-in arrives as PR 3a (API identity and authorization) and PR 3b (web sign-in
-and the Playwright session). PR 3a delivered the API side on 2026-11-05
-([outcome](technical-direction.md#pr-3a-implemented-outcome-2026-11-05)). Web
+and the Playwright session). PR 3a delivered the API side on 2026-11-05 in
+[PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) ([outcome](technical-direction.md#pr-3a-implemented-outcome-2026-11-05)). Web
 sign-in (PR 3b) and the web image (PR 4) remain.
 
 Use [README setup and commands](../../README.md) and the

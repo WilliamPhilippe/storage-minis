@@ -1954,8 +1954,8 @@ before approval.
 
 ### PR 3a implemented outcome (2026-11-05)
 
-PR 3a, API identity and authorization (SI-01), on branch `feat/api-auth` in four
-commit groups. The web app is unchanged and still calls only the public
+PR 3a, API identity and authorization (SI-01), implemented in
+[PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) in four commit groups. The web app is unchanged and still calls only the public
 `diagnostics.echo`.
 
 **Implementation-time approvals (2026-11-05).** The plan did not settle two
