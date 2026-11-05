@@ -74,6 +74,7 @@
       "outputs": [],
       "passThroughEnv": [
         "DATABASE_URL",
+        "MIGRATION_DATABASE_URL",
         "FIREBASE_PROJECT_ID",
         "BOOTSTRAP_OWNER_EMAIL",
         "BOOTSTRAP_ORGANIZATION_NAME",
