@@ -2050,6 +2050,190 @@ points; the owner approved each recommendation:
 This is tooling and integration evidence; business acceptance of authorization
 waits for the business procedures that use it.
 
+### PR 3b implemented outcome (2026-11-06)
+
+PR 3b, web sign-in and the Playwright session (SI-01), implemented on branch
+`feat/web-sign-in` in the plan's five commit groups, plus one fix that
+verification found. The pins were re-checked on
+2026-11-06 and are unchanged: firebase 13.2.0, firebase-admin 14.5.0 and zod 4.6.7
+were still the newest releases at least 24 hours old.
+
+**Implementation-time approvals (2026-11-06).** The plan did not settle three
+points; the owner approved each recommendation:
+
+| Topic | Approved outcome | Why |
+| --- | --- | --- |
+| Google's "G" | Download Google's sign-in branding bundle (`signin-assets.zip`, 855,303 bytes, last modified 2026-06-29) into the session scratchpad and commit only its standard "G" as `apps/web/src/ui/assets/google-g.svg`: the web "Theme=Light, Show text=No, Shape=Square" button without its background and border, with the viewBox cropped to the G. The drawing is unchanged. | Google's rules require the standard-colour G and forbid an outdated one; the bundle carries the current gradient G only inside buttons, and Google says custom sizes start from the bundle. |
+| The Google button | Keep the approved design: antd's primary ink button and the system font, with the G on a white circle. Google's custom-button font (Google Sans Medium 14/20) and its dark fill (#131314 with #E3E3E3 text) are a recorded gap. | The G keeps its colours on white, as Google requires. Following Google's font and fills would need a font download and overrides beyond the light-override rule. |
+| Commits | Each group committed locally on `feat/web-sign-in` as finished; push and PR only on the owner's word. | Keeps section 5's groups separate. |
+
+**Owner change during review (2026-11-06):** Sign out moves to the language
+switch's places, right above it: the SideNav's footer from `bp-md` and the menu
+drawer's footer below it, replacing SI-13's top right of the TopBar. The TopBar
+keeps only the page title, or the logo on phones, until #130's account menu.
+Like its neighbours it is a text button. In the collapsed SideNav it shows its
+icon alone and keeps its name, as the language switch does, and at the owner's
+request it shows that name in a tooltip on the right, as antd does for the
+collapsed menu's items.
+
+**Outcome:**
+
+- **Configuration (SI-02, SI-03):** the pins and two `allowBuilds: false`
+  entries; Vite's mode files `apps/web/.env.development` (`storage-minis-dev`)
+  and `.env.production` (`storage-minis`), tracked through `.gitignore`;
+  `vite.config.mts` checks the four `VITE_FIREBASE_*` values with Zod, naming
+  variables, never values, and refusing unknown ones such as a
+  `measurementId`; `vite-env.d.ts` types them with `strictImportMetaEnv`.
+  `turbo.json` passes `MIGRATION_DATABASE_URL`, `GOOGLE_APPLICATION_CREDENTIALS`
+  and `CLOUDSDK_CONFIG` to `test:e2e`. `.env.test` gains `AUTH_TEST_SIGN_IN`,
+  which only Playwright's API receives, read from the file, and
+  `E2E_SIGNER_SERVICE_ACCOUNT`.
+- **Session layer (SI-09, SI-10, SI-12):** `apps/web/src/lib/session/`.
+  `firebase.ts`, the only Firebase import, sits behind a small `AuthPort`;
+  `savedSession.ts` is the startup check; `session.ts` loads Firebase when a
+  route asks for the session, remembers `auth_time` and the active
+  Organization, adds `Authorization` and `x-organization-id` through the tRPC
+  link, signs out instead of refreshing past 7 days, signs out on
+  `UNAUTHORIZED`, reloads the session on `FORBIDDEN`, never signs out on a 5xx,
+  and turns Firebase sign-ins and sign-outs in other tabs into guard runs. The
+  session reaches routes through the router context (TanStack's pattern for
+  authentication); `useSession()` reads the member session under `/app`.
+- **Login page and Sign out (SI-11, SI-13):** states 2–4, error alerts and an
+  info alert for "Your session ended"; Google's G; the Sign out button right
+  above the language switch, in the SideNav's footer from `bp-md` and in the
+  menu drawer's footer below it (the owner's change below). en-US and pt-BR
+  strings together.
+- **Playwright (SI-15, SI-17):** a `setup` project that resets, migrates and
+  seeds the test database, mints a custom token through IAM, signs in through
+  the development-only hook and saves the IndexedDB session; an outside-origin
+  fixture; new signed-out and signed-in specs (AU-12 cases 4, 7, 8, 10, 12 and
+  24).
+
+**Choices within the plan**, recorded for reviewers (no new decision):
+
+- `/login`'s `redirect` is validated by a plain function, since SI-02 keeps Zod
+  a web devDependency. The validator always returns the key, `undefined` when
+  refused, because TanStack Router merges the URL's raw search into each match:
+  a validator that omitted the key let `?redirect=https://example.com/app`
+  through to a full-page redirect off the site, which a component test caught
+  during implementation. The guard checks the target again before redirecting.
+- State 4's email and "Your session ended" travel in the session's memory, never
+  in the URL.
+- `/login`'s guard keeps the page reachable when the session can't load (a
+  server or network failure); signing in then reports it in an alert.
+- Copy written during implementation, in both languages: state 4's variant for
+  a user without an email, the Copy link failure, and "Sign out" ("Sair").
+- **A fix found during verification** (`fix(web): title a page only once its
+  strings have loaded`): the shell took the document title's key from a route
+  match that was still loading. Once the `/app` guard outlasts the router's
+  1 s pending delay, the root layout renders before `/app`'s loader adds the
+  "app" strings, and the title kept the raw key ("titles.inventory ·
+  StorageMinis"); `pnpm test:e2e` caught it once in the pt-BR shell test. A
+  match now names the page only when it and every match above it have
+  finished, or when it is the failed one. A `web-unit` test reproduces it with
+  a guard slower than the pending delay; the pt-BR test then passed ten times in
+  a row.
+
+**Gaps kept as antd defaults (light-override rule):**
+
+- State 2's button uses antd's loading style (ink at the `opacityLoading` 65%)
+  rather than the ink-hover fill.
+- The icon gap is antd's 8 px (`marginXS`) rather than the prototype's 12 px; a
+  global `Button.iconGap` would change every icon button.
+- The G is 18 px on a 24 px white circle; the prototype's 20 px circle held a
+  placeholder letter.
+- State 4's alert is antd's error alert: a filled icon and a red border.
+- Google's button font and fills, as approved above.
+
+**Evidence (2026-11-06, branch `feat/web-sign-in`):**
+
+- A fresh `pnpm install --frozen-lockfile` (workspace `node_modules` removed)
+  cloned 627 packages from the store and downloaded none. Only the two
+  `allowBuilds: false` entries are new; no other build script was blocked and no
+  `minimumReleaseAgeExclude` entry was written. Side effect: Vitest's optional
+  `@opentelemetry/api` peer now resolves, brought by `@firebase/crashlytics`
+  (inside firebase 13.2.0) and Firestore (inside firebase-admin); the app
+  imports neither.
+- `pnpm check`: 362 unit tests in 33 files (from 242 in 27); `web-unit` has 194
+  in 17 (from 74 in 11): the startup check's decoding against the 13.2.0 record
+  shape and the 7-day rule, popup or redirect, in-app detection, the redirect
+  parameter, the session service, the link's headers, `UNAUTHORIZED`,
+  `FORBIDDEN`, cross-tab sign-out, the guard, `useSession()`, the Login page's
+  states, the Sign out button and the page title after a slow guard.
+- `pnpm build` passes. The Firebase chunk is 95.22 kB (28.46 kB gzip); only the
+  main entry references it, through the session layer's dynamic `import()`;
+  `index.html` doesn't preload it and the catalog's route chunk doesn't import
+  it. `grep -r __storageMinisTest apps/web/dist` finds nothing.
+- On `vite preview`, `/catalog/demo` made 19 requests, all to
+  `localhost:4173`: no Firebase chunk and no Google request. The catalog's
+  Playwright test asserts the same in development.
+- `pnpm test:db`: 31. `pnpm test:api`: 50. `pnpm test:e2e`: 67 (from 48): the
+  setup, 32 in `desktop-chrome` and 34 in `pixel-7`; it passed again three
+  times after the key restrictions.
+- `pnpm test:stack`: 5 on rebuilt image
+  `sha256:e7cb3f84a111cf42f70e6c933872587a862ab7c3758f5b19a2d082a76af89f62`.
+- The popup spec's outside origins, observed in both projects:
+  `https://storage-minis-dev.firebaseapp.com` (Firebase's iframe and handler)
+  and `https://apis.google.com`. Closing the popup as its navigation commits
+  keeps Google's account pages out.
+- Guards broken on purpose, each caught:
+  - the startup check skipped: the 8-day test saw
+    `securetoken.googleapis.com/v1/token` and `accounts:lookup`;
+  - `apis.google.com` undeclared: the outside-origin fixture failed;
+  - Firebase loaded at startup: the catalog test listed `firebase.ts` and
+    Vite's `firebase_app` and `firebase_auth`;
+  - the hook's `import.meta.env.DEV` condition removed: the build emitted
+    `testSignIn-*.js` with the name;
+  - the link's 7-day check removed: the case 11 unit test failed;
+  - the redirect validator omitting the key: the redirect tests failed.
+- The owner's gcloud Application Default Credentials (SI-15) were set up on
+  2026-11-06; the setup project then minted through IAM.
+- **Key restrictions (SI-14), applied by the owner on 2026-11-06:** both
+  browser keys allow only their sites and the Identity Toolkit and Token
+  Service APIs. The console's page for these Firebase-created keys showed no
+  API restrictions section (Firebase restricts its keys to Firebase-related
+  APIs itself, since May 2024), so the owner set both with `gcloud services
+  api-keys update KEY_ID --allowed-referrers=<every site>
+  --api-target=service=identitytoolkit.googleapis.com
+  --api-target=service=securetoken.googleapis.com`; each flag restates its
+  whole list. For the dev key, Google first refused to drop the Firebase
+  Installations API, which the key had used within 7 days: that use was one
+  request an agent sent while checking the restrictions, which registered an
+  anonymous installation; the app never calls that API. The owner then added
+  `--no-check-existing-usage`. Results, by `curl` against
+  `GET identitytoolkit.googleapis.com/v1/projects` and a read-only Firebase
+  Management API call:
+
+  | Key | Referrer | Result |
+  | --- | --- | --- |
+  | Dev | `https://example.com/`, the prototype's `http://localhost:5180/`, none | 403 `API_KEY_HTTP_REFERRER_BLOCKED` |
+  | Dev | `http://localhost:5173/`, `https://storage-minis-dev.firebaseapp.com/` | 200 |
+  | Dev | `http://127.0.0.1:5173/` | 403 ("Requests from referer http://127.0.0.1:5173/ are blocked."); Firebase doesn't authorize that host either |
+  | Dev | Another Firebase API from an allowed site | 403 `API_KEY_SERVICE_BLOCKED` |
+  | Production | `https://example.com/`, none | 403 `API_KEY_HTTP_REFERRER_BLOCKED` |
+  | Production | `https://storage-minis.firebaseapp.com/` | 200 |
+  | Production | Another Firebase API from its site | 403 `API_KEY_SERVICE_BLOCKED` |
+
+  The `firebaseapp.com` entry stays as planned: popup sign-in works with it,
+  and whether it could go was not tested. PR 4 or T04 adds the app's domain
+  to the production key's referrers the same way.
+- **Manual check (owner, 2026-11-06):** with `pnpm dev`, a Google popup
+  sign-in at `http://localhost:5173/login` on the empty development database
+  ran the bootstrap and opened `/app` with Sign out; Sign out returned to
+  state 1; a second Google account saw "No access". The development database
+  then held one User (`global_admin`, `can_edit_products`), the Organization
+  `wipminis` (nickname `wipminis`, BRL), the owner Membership, one
+  `organization.bootstrap` event with its change row, and no row for the second
+  account. A first attempt from `http://127.0.0.1:5173`, the address Vite
+  prints, got the key's 403: sign in on `localhost`.
+
+**Not verified in PR 3b:** the redirect flow (PR 4's manual check through
+Caddy); real phones and Safari, including how Safari renders the G's
+`foreignObject` gradient (T04); Google's popup page beyond its URL.
+
+This is tooling and integration evidence; business acceptance of the session
+waits for the business screens that use it.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -2298,7 +2482,7 @@ Examples: while the administrator is using the system, token expiry triggers ref
 
 **Session decisions (2026-11-01):** the [frontend foundation decisions](#frontend-foundation-decisions-2026-11-01) settled token acquisition and return after inactivity. The client requests a token only when a request needs one, and requests follow user activity only, so tokens refresh only while the user is active. Returning after inactivity refreshes on the first action. A session ends 7 days after the last Google sign-in: the API rejects ID tokens whose `auth_time` is older, and the client does not refresh such a session. There is no idle timeout. Until then no absolute or idle session timeout had been chosen.
 
-**T02 record (2026-11-04):** the owner approved [T02's record](t02-authentication-record-2026-11-03.md), which settles the administrator bootstrap, browser persistence, logout scope and revocation, Google-account recovery, role capabilities, procedure classes and the expiry/recovery acceptance cases ([approval record](#t02-record-and-sign-in-plan-approval-2026-11-04)). Initial-admin selection uses the configured owner identity; an arbitrary first Google sign-in is not authorization.
+**T02 record (2026-11-04):** the owner approved [T02's record](t02-authentication-record-2026-11-03.md), which settles the administrator bootstrap, browser persistence, logout scope and revocation, Google-account recovery, role capabilities, procedure classes and the expiry/recovery acceptance cases ([approval record](#t02-record-and-sign-in-plan-approval-2026-11-04)). Initial-admin selection uses the configured owner identity; an arbitrary first Google sign-in is not authorization. Frontend PRs 3a (2026-11-05) and 3b (2026-11-06) implement it on the API and in the web app.
 
 ## Money and dates
 
@@ -2408,7 +2592,7 @@ artifacts and dependency versions are unchanged.
 | Work item | Still required |
 | --- | --- |
 | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
-| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PR 3a implemented the API side on 2026-11-05 ([outcome](#pr-3a-implemented-outcome-2026-11-05)), and PR 3b implements the web side. Invitations, role management, D06's exceptional privileges and typed identity audit remain. |
+| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PR 3a implemented the API side on 2026-11-05 ([outcome](#pr-3a-implemented-outcome-2026-11-05)), and PR 3b the web side on 2026-11-06 ([outcome](#pr-3b-implemented-outcome-2026-11-06)). Invitations, role management, D06's exceptional privileges and typed identity audit remain. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |

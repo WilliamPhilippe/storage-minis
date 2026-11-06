@@ -1,0 +1,15 @@
+/* A white circle (surface) holding the G, so it never sits on the ink fill. */
+.mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+}
+
+.mark img {
+  display: block;
+}

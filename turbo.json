@@ -124,7 +124,13 @@
       "dependsOn": ["^build"],
       "cache": false,
       "outputs": [],
-      "passThroughEnv": ["PLAYWRIGHT_BROWSERS_PATH", "DATABASE_URL"]
+      "passThroughEnv": [
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "DATABASE_URL",
+        "MIGRATION_DATABASE_URL",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "CLOUDSDK_CONFIG"
+      ]
     }
   }
 }

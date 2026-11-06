@@ -17,6 +17,11 @@ export default {
     catalog: "Catalog",
     settings: "Settings",
   },
+  // A Sign out button for now (SI-13): top right of the TopBar on desktop,
+  // in the menu drawer's footer on phones. The account menu follows (#130).
+  account: {
+    signOut: "Sign out",
+  },
   placeholder: "This section isn't built yet.",
   echo: {
     title: "API connection",

@@ -5,12 +5,14 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitch } from "../../ui/LanguageSwitch";
 import styles from "./MenuFab.module.css";
 import { NavMenu } from "./NavMenu";
+import { SignOutButton } from "./SignOutButton";
 
 // Below bp-md: an ink button at the bottom right opening the menu in a bottom
 // drawer. antd traps focus in the drawer and returns it to the button. The
 // button sits fab-offset plus the safe-area inset from the bottom edge; the
-// language switch sits in the drawer's footer, above the inset, and on short
-// screens the menu scrolls inside the drawer (SF-02 to SF-04).
+// language switch sits in the drawer's footer, with Sign out right above it
+// (owner, 2026-11-06), both above the inset, and on short screens the menu
+// scrolls inside the drawer (SF-02 to SF-04).
 export function MenuFab() {
   const { t } = useTranslation("app");
   const [open, setOpen] = useState(false);
@@ -33,6 +35,7 @@ export function MenuFab() {
         classNames={{ section: styles.drawer }}
         footer={
           <div className={styles.drawerFooter}>
+            <SignOutButton />
             <LanguageSwitch placement="topLeft" />
           </div>
         }

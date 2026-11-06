@@ -12,8 +12,13 @@
   max-height: calc(100dvh - var(--header-height-phone));
 }
 
-/* Inside antd's footer padding (space-2): the language switch stays above
-   the home indicator or the gesture bar. */
+/* Inside antd's footer padding (space-2): Sign out above the language
+   switch, as in the SideNav, both above the home indicator or the gesture
+   bar. */
 .drawerFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
   padding-block-end: env(safe-area-inset-bottom);
 }

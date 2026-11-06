@@ -1,31 +1,79 @@
 import type { AppRouter } from "@storage-minis/api/types";
-import { type DefaultOptions, QueryClient } from "@tanstack/react-query";
+import {
+  type DefaultOptions,
+  MutationCache,
+  QueryCache,
+  QueryClient,
+} from "@tanstack/react-query";
 import { createTRPCClient, httpLink, TRPCClientError } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 
+/** What the app's session adds to every request (sign-in plan SI-12). */
+export interface SessionConnection {
+  /** The ID token and the active Organization, once Firebase has loaded. */
+  requestHeaders(): Promise<Record<string, string>>;
+  /** Handles UNAUTHORIZED and FORBIDDEN from any query or mutation. */
+  handleRequestError(error: unknown): void;
+}
+
+// The page's one session, connected at startup (and by each component test).
+// Until then, and on the catalog, which never loads Firebase, requests carry
+// no headers.
+let connection: SessionConnection | undefined;
+
+export function connectSession(next: SessionConnection | undefined): void {
+  connection = next;
+}
+
 // Same-origin /trpc with plain JSON: no batching and no transformer (P5-02).
 export const trpcClient = createTRPCClient<AppRouter>({
-  links: [httpLink({ url: "/trpc" })],
+  links: [
+    httpLink({
+      url: "/trpc",
+      headers: () => connection?.requestHeaders() ?? {},
+    }),
+  ],
 });
 
-function httpStatusOf(error: unknown): number | undefined {
+function errorData(error: unknown): object | undefined {
   if (!(error instanceof TRPCClientError)) {
     return undefined;
   }
   const data: unknown = error.data;
-  if (typeof data !== "object" || data === null || !("httpStatus" in data)) {
-    return undefined;
-  }
-  return typeof data.httpStatus === "number" ? data.httpStatus : undefined;
+  return typeof data === "object" && data !== null ? data : undefined;
+}
+
+function httpStatusOf(error: unknown): number | undefined {
+  const data = errorData(error);
+  return data !== undefined &&
+    "httpStatus" in data &&
+    typeof data.httpStatus === "number"
+    ? data.httpStatus
+    : undefined;
+}
+
+/** The envelope's `error.data.code`, such as "UNAUTHORIZED". */
+export function errorCodeOf(error: unknown): string | undefined {
+  const data = errorData(error);
+  return data !== undefined && "code" in data && typeof data.code === "string"
+    ? data.code
+    : undefined;
 }
 
 // Requests follow user activity only (W6): no retry for 4xx, no refetch on
 // reconnect, and mutations never retried or queued offline. Other query
 // failures (no envelope, 5xx) keep TanStack's 3 retries at 1, 2 and 4 s.
+// Failures reach the connected session, which signs out on UNAUTHORIZED and
+// reloads the session on FORBIDDEN, never on a 5xx (SI-12).
 export function createQueryClient(
   overrides: DefaultOptions["queries"] = {},
 ): QueryClient {
+  const onError = (error: unknown) => {
+    connection?.handleRequestError(error);
+  };
   return new QueryClient({
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
         retry: (failureCount, error) => {

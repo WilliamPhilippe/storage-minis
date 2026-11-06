@@ -16,6 +16,12 @@ const databaseUrl = process.env.DATABASE_URL ?? testValues.DATABASE_URL ?? "";
 // DATABASE_URL; only the API receives it.
 const firebaseProjectId =
   process.env.FIREBASE_PROJECT_ID ?? testValues.FIREBASE_PROJECT_ID ?? "";
+// The test sign-in's opt-in (T02 AU-11): from .env.test only, never from the
+// environment, so only this API accepts Playwright's custom tokens.
+const testSignIn =
+  testValues.AUTH_TEST_SIGN_IN === undefined
+    ? {}
+    : { AUTH_TEST_SIGN_IN: testValues.AUTH_TEST_SIGN_IN };
 
 // Refuse any database not named *_test before a server starts.
 requireTestDatabase(readDatabaseConfig({ DATABASE_URL: databaseUrl }));
@@ -35,14 +41,28 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  // Tests tagged @phone or @desktop need that layout and run in one project.
   projects: [
+    // Migrates and seeds the test database, mints custom tokens and saves
+    // the signed-in session that /app specs reuse (SI-17, PW-13).
+    {
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+      use: devices["Desktop Chrome"],
+    },
+    // Tests tagged @phone or @desktop need that layout and run in one
+    // project.
     {
       name: "desktop-chrome",
       use: devices["Desktop Chrome"],
       grepInvert: /@phone/,
+      dependencies: ["setup"],
     },
-    { name: "pixel-7", use: devices["Pixel 7"], grepInvert: /@desktop/ },
+    {
+      name: "pixel-7",
+      use: devices["Pixel 7"],
+      grepInvert: /@desktop/,
+      dependencies: ["setup"],
+    },
   ],
   // Started in order and stopped in reverse; never reused, so a running
   // `pnpm dev` or a leftover server fails the run instead of being tested.
@@ -55,6 +75,7 @@ export default defineConfig({
       env: {
         DATABASE_URL: databaseUrl,
         FIREBASE_PROJECT_ID: firebaseProjectId,
+        ...testSignIn,
         HOST: "127.0.0.1",
         PORT: "3000",
         LOG_LEVEL: "warn",
