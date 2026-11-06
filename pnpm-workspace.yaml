@@ -6,8 +6,14 @@ engineStrict: true
 saveExact: true
 
 # Owner-approved on 2026-10-24 for the pinned Drizzle Kit/tsx dependency tree.
+# The two `false` entries (sign-in plan SI-02, owner-approved 2026-11-04) skip
+# install scripts the web app doesn't need: @firebase/util's postinstall reads
+# FIREBASE_WEBAPP_CONFIG for Firebase App Hosting, and protobufjs (from
+# firebase-admin's optional Firestore) only checks its version.
 allowBuilds:
   esbuild@0.18.20 || 0.25.12 || 0.28.2: true
+  "@firebase/util@1.15.3": false
+  "protobufjs@7.6.6": false
 
 # Owner-approved on 2026-11-01 (Step 5): tRPC needs TypeScript only for its
 # declarations, but declares it as a required peer, so `pnpm deploy --prod`
