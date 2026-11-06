@@ -503,7 +503,7 @@ decision takes precedence over conflicting baseline text.
 - [Requirements v0.8](docs/requirements/requirements-v0.8.md)
 - [Entity map v0.9](docs/entities/entity-map-v0.9.md)
 - [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
-- Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
+- Database schema: [DBML](docs/database/schema.dbml) and [design guide](docs/database/design.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)

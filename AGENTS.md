@@ -17,9 +17,9 @@ This repository contains the full application's TypeScript workspace, specificat
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
 before changing configuration, Compose files, database roles, migrations or test
-harnesses. The owner approved Step 3B on 2026-10-25; read its
-[implementation and deferred writers](docs/database/step-3b-implementation-2026-10-25.md)
-before changing schema or migrations. Migrations apply only on explicit request
+harnesses. The owner approved Step 3B on 2026-10-25; read the
+[database design guide](docs/database/design.md), including its business writer
+obligations, before changing schema or migrations. Migrations apply only on explicit request
 (`pnpm db:migrate`, or the parity stack's `migrate` service); test setup migrates only
 the disposable test database.
 
