@@ -157,6 +157,7 @@ async function startChild(
       cwd,
       env: {
         DATABASE_URL: databaseUrl(),
+        FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
         HOST: "127.0.0.1",
         PORT: String(reservation.port),
         LOG_LEVEL: "silent",
@@ -532,6 +533,12 @@ it.each([
     DATABASE_URL:
       "postgres://storage_minis_app:config-secret-sentinel@127.0.0.1:5434/storage_minis_test?sslmode=require",
   },
+  { FIREBASE_PROJECT_ID: undefined },
+  { FIREBASE_PROJECT_ID: "config-secret-sentinel_" },
+  // AU-11's second lock: the test opt-in with production or an unset NODE_ENV.
+  { AUTH_TEST_SIGN_IN: "enabled", NODE_ENV: "production" },
+  { AUTH_TEST_SIGN_IN: "enabled", NODE_ENV: undefined },
+  { BOOTSTRAP_OWNER_EMAIL: "config-secret-sentinel@example.com" },
 ])("rejects invalid configuration before listening %#", async (overrides) => {
   const { child, port } = await startChild(overrides);
   const start = performance.now();
@@ -545,7 +552,7 @@ it.each([
   assert.equal(error?.type, "ConfigurationError");
   assert.match(
     error.message ?? "",
-    /^(Invalid API configuration\. Check (HOST|PORT|LOG_LEVEL|NODE_ENV)\.|DATABASE_URL is required\.|Invalid DATABASE_URL\. Expected postgres:\/\/USER:PASSWORD@HOST:PORT\/DATABASE with optional \?sslmode=disable\|verify-full\.)$/,
+    /^(Invalid API configuration\. (Check (HOST|PORT|LOG_LEVEL|NODE_ENV|FIREBASE_PROJECT_ID)\.|AUTH_TEST_SIGN_IN requires NODE_ENV development or test\.|Set BOOTSTRAP_OWNER_EMAIL, BOOTSTRAP_ORGANIZATION_NAME and BOOTSTRAP_ORGANIZATION_NICKNAME together, or none of them\.)|DATABASE_URL is required\.|Invalid DATABASE_URL\. Expected postgres:\/\/USER:PASSWORD@HOST:PORT\/DATABASE with optional \?sslmode=disable\|verify-full\.)$/,
   );
   assert.deepEqual(causes, []);
   await releasedPort(port);

@@ -1,7 +1,7 @@
 # T02 record — authentication, sessions and authorization (2026-11-03)
 
-**Status: approved by the owner on 2026-11-04 as recommended; not yet
-implemented.** The approval record is in
+**Status: approved by the owner on 2026-11-04 as recommended. The API side is
+implemented in [PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) (PR 3a); the web side (PR 3b) is not yet implemented.** The approval record is in
 [technical direction](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04).
 This is the record that
 [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22) owes before

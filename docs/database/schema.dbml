@@ -1,7 +1,8 @@
 // storage-minis structural database schema — approved and implemented 2026-10-25.
 // Sources: entity-map-v0.8.md and dated schema-review logs. Review guide: design.md.
-// Diagram synchronized with Step 3B. Executable source/migrations: packages/db; see step-3b-implementation-2026-10-25.md.
-// Money uses integer BRL centavos; actual occurrence timestamps use timestamptz.
+// Diagram synchronized with Step 3B and sign-in PR 3a (2026-11-05: Organization nickname and
+// currency, users.sessions_valid_after). Executable source/migrations: packages/db; see step-3b-implementation-2026-10-25.md.
+// Money uses integer cents in each Organization's currency (BRL or USD); actual occurrence timestamps use timestamptz.
 // S01-S10 approve representation, keys, scope and bounded structural delivery.
 // All candidate table shapes were rejected and are absent; business writers remain deferred.
 
@@ -11,7 +12,8 @@ Project storage_minis {
     Approved structural schema, incorporating the 2026-10-25 S01-S10 review; see design.md.
     E-IDs in notes preserve traceability; see design.md for all 38 mapped entries.
     Product and User are global. Operational records belong to an Organization.
-    Monetary values are integer BRL centavos. Integer keys are separate from readable unit IDs.
+    Monetary values are integer cents in the owning Organization's currency, BRL or USD,
+    chosen once at creation. Integer keys are separate from readable unit IDs.
     Timestamp instants use timestamptz; reporting uses UTC and display is visitor-local.
     Missing permission, public unit fields, Customer name and deletion-safe audit are propagated.
     Remaining role/transition/enforcement and T01/T02/T03/T05 contracts are unresolved.
@@ -88,17 +90,29 @@ Enum user_role {
   user
 }
 
+Enum organization_currency {
+  BRL
+  USD
+}
+
 // Global User roles and Organization-scoped Membership roles are distinct.
 
 Table organizations [headercolor: #4B6B9E] {
   id integer [pk, not null, note: 'Positive integer GENERATED ALWAYS AS IDENTITY.']
   name text [not null, note: 'Proposed display field for the Organization.']
   created_at timestamptz [not null, default: `now()`]
+  nickname text [not null, note: 'ORG-011: unique public catalog address; renamed only by a global_admin (#117). Provisional format until D04/E10: 3-30 lowercase ASCII letters and digits in groups joined by single hyphens.']
+  currency organization_currency [not null, default: 'BRL', note: 'ORG-010: chosen once at creation and never converted. No procedure changes it; a database guard remains T01 (#117).']
 
-  Note: 'E01 | REQ-004; ORG-001-002, ORG-008-009. One implicit collection through InventoryItem membership. No Product ownership.'
+  Note: 'E01 | REQ-004; ORG-001-002, ORG-008-011. One implicit collection through InventoryItem membership. No Product ownership. Nickname and currency added by sign-in PR 3a (SI-04).'
+
+  indexes {
+    nickname [unique, name: 'organizations_key_1']
+  }
 
   checks {
     `"organizations"."id" > 0` [name: 'organizations_positive_id']
+    `char_length("organizations"."nickname") BETWEEN 3 AND 30 AND "organizations"."nickname" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'` [name: 'organizations_nickname_format']
   }
 }
 
@@ -110,8 +124,9 @@ Table users [headercolor: #4B6B9E] {
   role user_role [not null, default: 'user', note: 'Global role. Capability mapping and bootstrap remain T02; this role alone does not grant Organization access.']
   created_at timestamptz [not null, default: `now()`]
   can_edit_products boolean [not null, default: false, note: 'Global Product-edit permission; T02 bootstrap grants the initial administrator, without seeding here.']
+  sessions_valid_after timestamptz [note: 'T02 AU-05 revocation cutoff: sessions whose sign-in (auth_time) is not later than this time rounded up to the second are rejected. Null: never revoked. Set by operator SQL (AU-05, AU-06) and later by Sign out of all devices (#130).']
 
-  Note: 'E02 | ORG-003-005; TECH-001. Global application identity. Authentication tokens and session persistence are T02 implementation work.'
+  Note: 'E02 | ORG-003-005; TECH-001. Global application identity, keyed by the Firebase uid (T02 AU-01). Tokens stay in the browser and Firebase; the database keeps only this revocation cutoff (sign-in plan section 3).'
 
   indexes {
     (firebase_uid) [unique, name: 'users_key_1']

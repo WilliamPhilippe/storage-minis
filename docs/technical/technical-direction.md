@@ -1952,6 +1952,104 @@ before approval.
 - **Login design:** state 4 omits the email for a test user without one.
 - **TopBar design:** a Sign out button stands where the account menu will go (#130).
 
+### PR 3a implemented outcome (2026-11-05)
+
+PR 3a, API identity and authorization (SI-01), implemented in
+[PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) in four commit groups. The web app is unchanged and still calls only the public
+`diagnostics.echo`.
+
+**Implementation-time approvals (2026-11-05).** The plan did not settle two
+points; the owner approved each recommendation:
+
+| Topic | Approved outcome | Why |
+| --- | --- | --- |
+| Drizzle operators for the identity store | `@storage-minis/db` re-exports `and`, `asc`, `eq` and `sql` from `drizzle-orm`; `apps/api/src/auth/store.ts` imports them, with `schema`, from the package. | `apps/api` does not declare `drizzle-orm`. Declaring it without `pg` would make pnpm resolve a second peer variant of `drizzle-orm` (it has 29 optional peers), whose `SQL` types conflict with the DB package's. The re-export keeps one instance and adds no dependency. |
+| The test-database helper in the image build | `docker/api.Dockerfile` copies `packages/db/testing` into the build stage. The DB package's `build` compiles it to `dist-testing/`, outside `files`, so `pnpm deploy --prod` leaves it out of the runtime image, as SI-16 requires; `test:stack` lists the shipped package. | The image's `pnpm build` compiles the DB package, now including the helper. The alternative, the source under `src/testing/`, would put test-only code in `src`. |
+
+**Outcome:**
+
+- **Configuration (SI-03):** `readApiConfig` reads `FIREBASE_PROJECT_ID`
+  (required, Google Cloud's project ID format), `AUTH_TEST_SIGN_IN` (unset or
+  `enabled`; the API refuses to start with it when `NODE_ENV` is `production` or
+  unset) and `BOOTSTRAP_*` (all three or none; the email trimmed and lowercased,
+  the currency BRL by default). Both committed env files name
+  `storage-minis-dev`; `.env.development` carries the owner's `wipminis`
+  bootstrap. `compose.yaml` maps `FIREBASE_PROJECT_ID` only. Turborepo passes the
+  new names through the API's `dev`, `start` and `test:process` tasks, never
+  `AUTH_TEST_SIGN_IN`; `test:process` also passes `MIGRATION_DATABASE_URL` for its
+  new global setup.
+- **Schema (SI-04):** migration `0002_organization_nickname_currency_session_revocation`
+  adds the `organization_currency` enum, `organizations.currency` (default `BRL`),
+  `organizations.nickname` (unique `organizations_key_1`, check
+  `organizations_nickname_format`) and `users.sessions_valid_after`. The DB
+  package exports the provisional rule as `organizationNicknameRule`, which builds
+  the check constraint and validates the bootstrap nickname. The DBML matches.
+- **Verification (SI-05):** `apps/api/src/auth/id-token.ts`, jose against Google's
+  JWK set, with the plan's checks. One addition: `aud` must equal the project ID
+  as a string. jose alone accepts an array containing it, Firebase always sends
+  the string, and `firebase-admin` compares strings. A key-source failure is a
+  500, through an internal `KeySetUnavailable` error; jose's verdict on the token
+  is a 401 with an `IdentityRejected` cause.
+- **Context and builders (SI-06):** the context is `{ db, requestId, auth }`;
+  `auth` holds the raw `authorization` and `x-organization-id` headers, the
+  verifier, the identity store and the bootstrap settings. `trpc/procedures.ts`
+  exports `identityProcedure`, `userProcedure`, `organizationProcedure(minRole)`,
+  `platformProcedure` and `requireCanEditProducts`. The 403 and 400 causes are
+  `AccessDenied` with the reasons `user_missing`, `organization_header_invalid`,
+  `membership_missing`, `role_too_low`, `global_admin_required` and
+  `product_edit_required`. The lifecycle builds the verifier and the store
+  (`auth/store.ts`), so tRPC modules still import only types from
+  `@storage-minis/db`. The store has no `revokeSessions`: nothing calls it before
+  #130's `session.signOutEverywhere`.
+- **`session.get` and the bootstrap (SI-07, SI-08):** as planned. The bootstrap's
+  advisory lock key is `0x534D424F4F543031` (the ASCII bytes of `SMBOOT01`); its
+  change row uses `change_kind` `membership.grant`; `granted_at` and
+  `occurred_at` take the transaction's `now()`.
+- **Tests (SI-16):** `@storage-minis/db/testing` holds the former `test:db`
+  preparation, now shared with `test:api`'s new global setup. Verifier, policy,
+  builder, `session.get` and configuration unit tests run on fakes and a local key
+  set; `apps/api/tests/auth.integration.test.ts` runs the database-backed AU-12
+  cases on the real `buildApp`.
+- **Documentation:** the [local development reference](local-development.md#sign-in-and-authorization)
+  documents the contracts, the bootstrap and the AU-05 and AU-06 operator SQL;
+  the README covers the configuration and the guarded builders.
+
+**Evidence (2026-11-05, branch `feat/api-auth`):**
+
+- `pnpm install --frozen-lockfile` passes; `jose` 6.2.15 (published
+  2026-11-01 22:28 UTC, still the newest) is the only new package, and
+  `pnpm-workspace.yaml` is unchanged.
+- `pnpm check`: 242 unit tests in 27 files (from 194 in 23): 13 verifier, 5
+  policy, 12 builder, 8 `session.get` and 10 configuration tests.
+- `pnpm build` passes.
+- `pnpm test:db`: 31 (from 29), through the shared helper; two new tests cover
+  the nickname's uniqueness and format (against `organizationNicknameRule`), the
+  currency and the revocation column.
+- `pnpm test:api`: 50, from 27. The process suite has 32 (five configuration
+  refusals added, among them the test opt-in with `NODE_ENV` `production` and
+  unset); the auth suite has 18.
+- `pnpm test:e2e`: 48, unchanged.
+- `pnpm test:stack`: 5 on rebuilt image
+  `sha256:ee333bb76945d5f5a1f76d13cc2bdbb3984509967bcd93165225ef44b65ec8ab`; the
+  image's `node_modules/@storage-minis/db` holds only `dist`, `drizzle` and
+  `package.json`.
+- Google's live JWK set (two RS256 keys on 2026-11-05) loads through the built
+  verifier, and a token signed by another key is refused as `token_invalid`
+  (`JWKSNoMatchingKey`), not a 500.
+- Guards broken on purpose, each caught: the 7-day check removed (verifier unit
+  test), any provider accepted (two unit tests), the opt-in's `NODE_ENV` lock
+  removed (configuration test), a runtime `@storage-minis/db` import in
+  `routers/session.ts` (`app.test.ts` and `plugin.test.ts` fail on their mock),
+  revocation compared with `<` instead of `≤ ⌈cutoff⌉` (policy test), the
+  Membership lookup skipped (three integration tests), `sessions_valid_after`
+  ignored (case 14), the `authorization` header logged (every integration test's
+  log check), and the bootstrap's re-check under the lock removed (case 3).
+- Not exercised in PR 3a: a live Google ID token and the manual development
+  bootstrap, which need PR 3b's sign-in.
+
+This is tooling and integration evidence; business acceptance of authorization
+waits for the business procedures that use it.
+
 ## Next foundation steps — planning checklist (2026-10-24)
 
 **Status: proposed implementation checklist, not approved technical decisions or
@@ -2310,7 +2408,7 @@ artifacts and dependency versions are unchanged.
 | Work item | Still required |
 | --- | --- |
 | [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
-| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PRs 3a and 3b implement it. Invitations, role management, D06's exceptional privileges and typed identity audit remain. |
+| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PR 3a implemented the API side on 2026-11-05 ([outcome](#pr-3a-implemented-outcome-2026-11-05)), and PR 3b implements the web side. Invitations, role management, D06's exceptional privileges and typed identity audit remain. |
 | [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
 | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
 | [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |

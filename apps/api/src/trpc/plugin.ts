@@ -3,12 +3,14 @@ import { TRPCError } from "@trpc/server";
 import type { AnyTRPCRouter, TRPC_ERROR_CODE_KEY } from "@trpc/server";
 import { fastifyRequestHandler } from "@trpc/server/adapters/fastify";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { AuthDependencies } from "../auth/types.js";
 import { createContextFactory } from "./context.js";
 import { errorCategory, errorShape } from "./errors.js";
 
 export interface TrpcOptions {
   router: AnyTRPCRouter;
   db: Database["db"];
+  auth: AuthDependencies;
 }
 
 /** Production mount point; `buildApp` registers the plugin with this prefix. */
@@ -101,7 +103,7 @@ export function sendTrpcFailure(
  */
 export const trpcRoutes: FastifyPluginAsync<TrpcOptions> = (
   app,
-  { router, db },
+  { router, db, auth },
 ) => {
   // The tRPC client posts `content-type: application/json` with no body for a
   // mutation without input; Fastify's default parser rejects an empty body.
@@ -124,7 +126,7 @@ export const trpcRoutes: FastifyPluginAsync<TrpcOptions> = (
     sendTrpcFailure(new TRPCError({ code: "NOT_FOUND" }), request, reply);
   });
 
-  const createContext = createContextFactory(db);
+  const createContext = createContextFactory(db, auth);
   app.all<{ Params: { path: string } }>(
     "/:path",
     { bodyLimit: trpcLimits.bodyBytes },

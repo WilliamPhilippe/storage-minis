@@ -3,6 +3,7 @@ import type { Database } from "@storage-minis/db";
 import Fastify, { LogController } from "fastify";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { PinoLoggerOptions } from "fastify/types/logger.js";
+import type { AuthDependencies } from "./auth/types.js";
 import type { ApiConfig } from "./config.js";
 import { serializeError } from "./error-log.js";
 import { healthRoutes } from "./health.js";
@@ -17,11 +18,14 @@ import { appRouter } from "./trpc/router.js";
 
 /**
  * What the app may use from its owner. The lifecycle owns the pool; `close`
- * and `healthy` stay out of reach so no route or plugin can end it.
+ * and `healthy` stay out of reach so no route or plugin can end it. It also
+ * builds the sign-in services (sign-in plan SI-06), so this module imports
+ * neither jose nor the database at runtime.
  */
 export interface AppDependencies {
   database: Pick<Database, "db" | "check">;
   isClosing: () => boolean;
+  auth: AuthDependencies;
 }
 
 function safeFailure(error: unknown) {
@@ -142,6 +146,7 @@ export function buildApp(
     prefix: trpcPrefix,
     router: appRouter,
     db: dependencies.database.db,
+    auth: dependencies.auth,
   });
 
   return app;

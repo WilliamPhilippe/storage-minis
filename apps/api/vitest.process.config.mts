@@ -18,6 +18,9 @@ export default defineConfig({
     name: "api-process",
     environment: "node",
     include: ["tests/**/*.integration.test.ts"],
+    // Resets and migrates the test database once (SI-16), after the guard
+    // above; `test:db`, `test:api` and `test:e2e` therefore run one at a time.
+    globalSetup: ["tests/global-setup.ts"],
     testTimeout: 30_000,
     hookTimeout: 10_000,
     fileParallelism: false,

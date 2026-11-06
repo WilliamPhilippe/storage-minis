@@ -22,6 +22,11 @@ const config: ApiConfig = {
     password: "SECRET_PASSWORD_SENTINEL",
     sslmode: "disable",
   },
+  auth: {
+    projectId: "storage-minis-dev",
+    acceptCustomTokens: false,
+    bootstrap: null,
+  },
 };
 const hostile = new Error("SECRET_PASSWORD_SENTINEL SQL STACK SENTINEL", {
   cause: new Error("SECRET_CAUSE_SENTINEL"),
@@ -141,6 +146,11 @@ describe("lifecycle ownership and extension", () => {
     expect(f.constructApp).toHaveBeenCalledTimes(1);
     expect(f.constructApp.mock.calls[0]?.[0]).toBe(config.http);
     expect(f.constructApp.mock.calls[0]?.[1].database).toBe(f.database);
+    // Sign-in services built from the configuration (SI-06), without a request.
+    const auth = f.constructApp.mock.calls[0]?.[1].auth;
+    expect(auth?.bootstrap).toBe(config.auth.bootstrap);
+    expect(auth?.verifier.verify).toBeTypeOf("function");
+    expect(auth?.store.findUser).toBeTypeOf("function");
     expect(f.app.listen).toHaveBeenCalledExactlyOnceWith({
       host: "127.0.0.1",
       port: 3000,

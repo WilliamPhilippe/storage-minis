@@ -2,6 +2,7 @@ import { Server, Socket } from "node:net";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Database } from "@storage-minis/db";
 import type { FastifyInstance } from "fastify";
+import { unusedAuth } from "../tests/auth-fakes.js";
 import { buildApp } from "./app.js";
 import type { AppDependencies } from "./app.js";
 import type { ApiConfig } from "./config.js";
@@ -32,6 +33,7 @@ function createApp(
   const app = buildApp(http, {
     database: { db, check },
     isClosing: () => false,
+    auth: unusedAuth(),
     ...overrides,
   });
   apps.push(app);
@@ -100,6 +102,7 @@ describe("HTTP factory", () => {
       app = imported.buildApp(httpConfig, {
         database: { db, check: vi.fn() },
         isClosing: () => false,
+        auth: unusedAuth(),
       });
       apps.push(app);
     } finally {

@@ -34,6 +34,7 @@ export default defineConfig([
     ".claude/**",
     "**/node_modules/**",
     "**/dist/**",
+    "**/dist-testing/**",
     "**/coverage/**",
     "**/.turbo/**",
     "**/.vite/**",

@@ -33,7 +33,7 @@ docker/postgres/init/   Role init script run on first volume initialization
 apps/api                @storage-minis/api: Fastify API
 apps/web                @storage-minis/web: React web app (Vite, antd, TanStack Router)
 apps/web/e2e            Playwright specs: signed-out/, app/ and support/
-packages/db             @storage-minis/db: schema, migrations, client, migrator
+packages/db             @storage-minis/db: schema, migrations, client, migrator, test-database helper
 tsconfig.browser.json   Browser TypeScript profile for apps/web (beside tsconfig.node.json)
 ```
 
@@ -57,6 +57,9 @@ Node (owner-approved 2026-10-31, R8/R9). `.gitignore` tracks exactly these two
 | `LOG_LEVEL` | Default `info` | API: `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `NODE_ENV` | `development` in `.env.development`; default `production` when unset | API: `development`, `test` or `production`. Only exactly `development` adds error messages to logs (2026-11-01). |
 | `TZ` | Unset locally; `UTC` in containers | Node processes |
+| `FIREBASE_PROJECT_ID` | `storage-minis-dev` in both files; `storage-minis` in production (T04) | API, required: the Firebase project whose ID tokens it accepts, in Google Cloud's project ID format. `compose.yaml` maps it with `${FIREBASE_PROJECT_ID:?}`. |
+| `AUTH_TEST_SIGN_IN` | Unset; PR 3b sets `enabled` in `.env.test` only | API: `enabled` also accepts `custom` test sign-ins of `e2e-` uids (T02 AU-11). Any other value is invalid, and the API refuses to start with it when `NODE_ENV` is `production` or unset. `compose.yaml` never maps it and no Turborepo task passes it through. |
+| `BOOTSTRAP_OWNER_EMAIL`, `BOOTSTRAP_ORGANIZATION_NAME`, `BOOTSTRAP_ORGANIZATION_NICKNAME`, `BOOTSTRAP_ORGANIZATION_CURRENCY` | `.env.development`: the owner's email, `wipminis`, `wipminis` (currency unset, so BRL); none in `.env.test` | API: the [first-sign-in bootstrap](#bootstrap). The first three together or none; the email is trimmed and lowercased, the name 1–100 characters, the nickname under SI-04's provisional rule, the currency `BRL` (default) or `USD`. An empty value is invalid. `compose.yaml` maps none until T04. |
 
 **Loading and precedence.** Host Node processes load the files with Node's
 built-in loaders: `node --env-file-if-exists=../../.env.development` in the API
@@ -72,6 +75,8 @@ before it merges the override, for all services, including the stack-only
 therefore passes `--env-file .env.development`; `postgres_test` takes its own
 values from `.env.test` through `env_file:`. A missing value stops Compose with
 `required variable X is missing a value: Set X` before any container changes.
+This is why both files set `FIREBASE_PROJECT_ID`, which only the stack-only
+`api` uses.
 An optional gitignored `.env` may hold nonsecret Compose settings such as
 `COMPOSE_PROJECT_NAME`; secrets never go there.
 
@@ -180,28 +185,46 @@ never migrates, and readiness does not prove migrations are current.
 ## Integration tests
 
 `pnpm test:db` runs `vitest run --config vitest.integration.config.mts` in
-`packages/db`. Its global setup refuses, before any connection, unless
-`DATABASE_URL` and `MIGRATION_DATABASE_URL` name the same database ending in
-`_test`. As the owner it then drops the `drizzle` and `public` schemas,
-recreates `public`, restores the app role's schema usage, and applies the
-committed chain with the real `dist/migrate.js`. The tests connect as the app
-role, so constraint and fixture tests also exercise its grants;
+`packages/db`. Its global setup calls `prepareTestDatabase` from
+`@storage-minis/db/testing` (sign-in plan SI-16), which refuses, before any
+connection, unless `DATABASE_URL` and `MIGRATION_DATABASE_URL` name the same
+database ending in `_test`. As the owner it then drops the `drizzle` and
+`public` schemas, recreates `public`, restores the app role's schema usage, and
+applies the committed chain with the real `dist/migrate.js`. The tests connect
+as the app role, so constraint and fixture tests also exercise its grants;
 migration-behavior tests use the owner, which alone can read the history.
+
+The helper's source is `packages/db/testing/`. The DB package's `build`
+compiles it to `dist-testing/`, outside the package's `files`, so
+`pnpm deploy --prod` leaves this schema-dropping code out of the API image;
+`pnpm test:stack` lists the shipped package. It takes both URLs as arguments,
+so a caller that parses `.env.test` instead of loading it (PR 3b's Playwright
+setup) can pass them.
 
 Vitest 5.0.5 cannot print the stack frames of an error thrown by a global setup
 (`code.charCodeAt is not a function` inside Vite 8.3.5's module runner). The
 setup therefore rethrows its failures with the message and causes only.
 
-`pnpm test:api` runs the API process suite with plain Vitest: real built API
-processes against the test database, including startup failures, signals, the
-17 s startup and 10 s shutdown watchdogs, and database outage and recovery
-through owned loopback listeners. Its configuration refuses a non-`_test`
-database before starting any worker. The suite owns its children with
-`apps/api/tests/owned-process.ts`, retained because Vitest does not own
-processes that a test spawns.
+`pnpm test:api` runs the API's integration project with plain Vitest. Its
+configuration refuses a non-`_test` database before starting any worker; its
+global setup then prepares the test database with the same helper. Two files:
 
-Run `test:db`, `test:api` and `test:e2e` one at a time; `test:db` drops the
-test schemas.
+- `process.integration.test.ts`: real built API processes against the test
+  database, including startup failures (configuration refusals included),
+  signals, the 17 s startup and 10 s shutdown watchdogs, and database outage and
+  recovery through owned loopback listeners. The suite owns its children with
+  `apps/api/tests/owned-process.ts`, retained because Vitest does not own
+  processes that a test spawns.
+- `auth.integration.test.ts`: the real `buildApp`, jose verifier and identity
+  store on the migrated database, with tokens signed by a local key set
+  (`tests/tokens.ts`), so it never fetches Google's keys. It runs the T02
+  record's database-backed AU-12 cases through `session.get` and probe routers
+  that exist only in the test, runs the [operator SQL](#operator-sql) below,
+  and checks that no token, email or header value reaches a log line. Each
+  test empties the identity tables as the owner.
+
+Run `test:db`, `test:api` and `test:e2e` one at a time; `test:db` and
+`test:api` drop and recreate the test schemas.
 
 ## End-to-end tests
 
@@ -213,8 +236,8 @@ approved 2026-11-02).
 | --- | --- |
 | Browser | Chrome Headless Shell 156 only, installed once with `playwright install --only-shell chromium` into Playwright's default cache, or into the folder `PLAYWRIGHT_BROWSERS_PATH` names (passed through by Turborepo). Headed runs, `--debug`, and `--ui` or `show-trace` without `--port 0` need the full Chrome for Testing, which is not installed. |
 | Projects | `desktop-chrome` and `pixel-7`, with Playwright's full device descriptors; `locale: "en-US"` and `timezoneId: "America/Sao_Paulo"` in the shared `use`. Tests tagged `@phone` or `@desktop` run in one project through each project's `grepInvert`. |
-| Servers | `apps/web/playwright.config.mts` starts the built API (`node --enable-source-maps dist/server.js` in `apps/api`) on `127.0.0.1:3000` with `NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn` and only the test database's `DATABASE_URL`, then the Vite dev server (`pnpm run dev`) on `http://localhost:5173`. `reuseExistingServer` is false for both. Playwright stops them in reverse order with `SIGTERM`, then `SIGKILL` after 15 s for the API (Compose's grace period) and 5 s for Vite. |
-| Database | `DATABASE_URL` from the real environment, else from `.env.test`, parsed with `util.parseEnv` rather than loaded, so the servers and workers never receive the owner role's URL or the PostgreSQL passwords. `requireTestDatabase` from `@storage-minis/db` refuses any database not named `*_test` before a server starts. The tests read no tables, so nothing migrates. |
+| Servers | `apps/web/playwright.config.mts` starts the built API (`node --enable-source-maps dist/server.js` in `apps/api`) on `127.0.0.1:3000` with `NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn`, `FIREBASE_PROJECT_ID` and only the test database's `DATABASE_URL`, then the Vite dev server (`pnpm run dev`) on `http://localhost:5173`. `reuseExistingServer` is false for both. Playwright stops them in reverse order with `SIGTERM`, then `SIGKILL` after 15 s for the API (Compose's grace period) and 5 s for Vite. |
+| Database | `DATABASE_URL` (and the API's `FIREBASE_PROJECT_ID`) from the real environment, else from `.env.test`, parsed with `util.parseEnv` rather than loaded, so the servers and workers never receive the owner role's URL or the PostgreSQL passwords. `requireTestDatabase` from `@storage-minis/db` refuses any database not named `*_test` before a server starts. The tests read no tables, so nothing migrates. |
 | Specs | `e2e/signed-out/` imports `test` from `support/test.ts`; `e2e/app/` imports it from `support/app.ts`, where PR 3 adds the saved session. `support/names.ts` builds every name from the en-US and pt-BR catalogs and `src/i18n/languages.ts`. |
 | Fixtures | `tapOrClick` taps where the project has touch and clicks elsewhere; a lint rule rejects direct `.click()` and `.tap()` in specs. The automatic console fixture fails a test on any `console.error`, `console.warn` or uncaught page error that it did not declare with `expectConsole(kind, pattern)`. `expectNoSidewaysScroll(page)` compares `documentElement.scrollWidth` with `clientWidth`. |
 | Run settings | `fullyParallel`, no retries, Playwright's default workers (half the logical cores), traces and screenshots kept on failure, the list reporter and the HTML report with `open: "never"`. |
@@ -242,7 +265,8 @@ approved 2026-11-02).
 | Lifecycle lines | One JSON line per event on stdout, always written regardless of `LOG_LEVEL`: `{"level":30,"time":…,"msg":"listening"}`, or level 50 with a category such as `configuration_failed`, `database_readiness_failed`, `listen_failed`, `startup_timeout` and an `err` for failures. |
 | Shutdown | SIGINT/SIGTERM drain HTTP, then close the pool, within one 10 s bound. Success exits 130/143; a failed or timed-out cleanup exits 1. Compose gives the API 15 s. |
 | HTTP limits | 16 KiB bodies (1 MiB on the tRPC route), 10 s request receive time, no trusted proxy, generated request IDs. |
-| tRPC | `/trpc/<procedure>`: plain JSON, no transformer, no batching, queries by GET and mutations by POST. One diagnostic procedure, `diagnostics.echo`. See the [tRPC HTTP contract](#trpc-http-contract). |
+| tRPC | `/trpc/<procedure>`: plain JSON, no transformer, no batching, queries by GET and mutations by POST. The public `diagnostics.echo` and `session.get`. See the [tRPC HTTP contract](#trpc-http-contract) and [sign-in and authorization](#sign-in-and-authorization). |
+| Sign-in | `Authorization: Bearer <Firebase ID token>`, verified in the guarded builders against Google's keys, fetched on first use and cached (no request at startup). `/health/ready` stays database-only, by the owner's choice (2026-11-04). |
 | Logs | JSON lines on stdout. Request lines carry method, matched route template (`/trpc/:path` for tRPC), status, elapsed time, a generated request ID and, for a matched tRPC procedure only, `procedure`; never URLs, bodies, headers or other request inputs. Failures add an allowlisted `err`: constructor `type`, a string `code` (Node code or Postgres SQLSTATE such as `28P01`, `23505`), `stack` frames only (at most 20) and `cause` to depth 3. Messages appear only when `NODE_ENV=development`, except the API's own `ConfigurationError`, which names only variables. 4xx failures log at info, 5xx at error. Client responses stay fixed. |
 
 ### tRPC HTTP contract
@@ -289,6 +313,116 @@ Documented exceptions:
   the log policy; these can name unknown keys or a requested path. Other modes
   log no messages.
 
+### Sign-in and authorization
+
+The [T02 record](t02-authentication-record-2026-11-03.md) (AU-01–AU-12) and the
+[sign-in plan](sign-in-plan-2026-11-03.md) (SI-05–SI-08) set these contracts;
+PR 3a implemented them in `apps/api/src/auth/` and `trpc/procedures.ts`.
+
+**Token verification** (`auth/id-token.ts`, jose 6.2.15). The header must be
+`Bearer` and three base64url segments, at most 4096 characters. The token must be
+RS256, signed by a key in
+`https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com`
+(jose's 5 s timeout, 30 s cooldown and 10-minute cache), with issuer
+`https://securetoken.google.com/<FIREBASE_PROJECT_ID>`, audience exactly the
+project ID, `sub` of 1–128 characters, `exp` not past (5 s tolerance), `iat` and
+`auth_time` no later than now plus 5 s, `auth_time` at most 604,800 s ago, and
+`firebase.sign_in_provider` `google.com` (or `custom` for `e2e-` uids under
+`AUTH_TEST_SIGN_IN`). The token is never logged or stored.
+
+**Procedure classes.** Business procedures start from a guarded builder; a
+public router derives its own module-private builder, as `diagnostics` does.
+
+| Builder | Requires | Adds to `ctx` |
+| --- | --- | --- |
+| `identityProcedure` | A valid token | `identity` (uid, email, provider, `auth_time`) |
+| `userProcedure` | Plus a User row for the uid and a session that is not revoked | `user` (`id`, `role`, `canEditProducts`) |
+| `organizationProcedure(minRole)` | Plus `x-organization-id` (a positive int32 in decimal) and a Membership there with at least `viewer`, `editor` or `owner` | `organization` (`id`, `currency`), `membership` (`role`) |
+| `platformProcedure` | Plus `role = global_admin`; no Membership needed or implied | — |
+
+`requireCanEditProducts(ctx.user)` guards Product edits. Every query filters by
+`ctx.organization.id`, and `ctx.user.id` is the actor of every write.
+
+| Situation | Response | `err.cause.code` in `request_failed` |
+| --- | --- | --- |
+| No, malformed, wrong-project or expired token; past 7 days; another provider | 401 `UNAUTHORIZED` | `token_missing`, `token_invalid`, `token_expired`, `session_limit`, `provider_rejected` |
+| A session revoked by `sessions_valid_after` | 401 `UNAUTHORIZED` | `session_revoked` |
+| Google's keys cannot be read (timeout, failed fetch, invalid set) | 500 `INTERNAL_SERVER_ERROR`, so nobody is signed out | Cause type `KeySetUnavailable` |
+| A valid token without a User row (User and narrower classes) | 403 `FORBIDDEN` | `user_missing` |
+| `x-organization-id` missing or malformed | 400 `BAD_REQUEST` | `organization_header_invalid` |
+| No Membership in that Organization, whether it exists or not; a lower role | 403 `FORBIDDEN`, identical bodies | `membership_missing`, `role_too_low` |
+| Not `global_admin`; no `can_edit_products` | 403 `FORBIDDEN` | `global_admin_required`, `product_edit_required` |
+| Another Organization's record ID | 404 `NOT_FOUND`, as for a nonexistent ID | The procedure's own |
+
+Rejections log at info with the fixed category (`unauthorized`, `forbidden`,
+`bad_request`); the cause's type is `IdentityRejected` or `AccessDenied`. No
+user ID, email or header value is logged.
+
+**`session.get`** (an `identityProcedure` query, no input) answers
+`{ status: "member", user, memberships }` or `{ status: "noAccess" }`:
+
+1. A User row for the uid: refuse a revoked session (401); for a Google token,
+   copy a changed email (lowercased) or name into the row; answer its
+   Memberships, or `noAccess` when it has none, a `global_admin` included.
+2. Otherwise, run the [bootstrap](#bootstrap) when its trigger holds.
+3. Otherwise answer `noAccess` and write nothing.
+
+#### Bootstrap
+
+With `BOOTSTRAP_*` set, a `session.get` from a Google token whose verified email
+equals `BOOTSTRAP_OWNER_EMAIL` (ignoring case and surrounding spaces), for a uid
+without a User row, runs one transaction (T02 AU-07):
+
+1. `pg_advisory_xact_lock(6002526786755506225)`, the ASCII bytes of
+   `SMBOOT01`, so concurrent first requests serialize;
+2. answer the User that now has this uid, or `noAccess` if any Organization
+   exists;
+3. insert the User (`global_admin`, `can_edit_products`, the token's email and
+   name), the Organization (the configured name, nickname and currency) and the
+   owner Membership;
+4. insert the `organization.bootstrap` event and its `membership.grant` change
+   (`after_facts` `{"role":"owner"}`), with the new User as actor.
+
+It never runs again once an Organization exists. After `pnpm db:reset` and
+`pnpm db:migrate`, the owner's next Google sign-in (the Login page, PR 3b)
+bootstraps the development database again. A failure rolls everything back and
+answers 500 with the SQLSTATE in the log.
+
+#### Operator SQL
+
+Until a user-management screen or T04's operator workflow exists, operators run
+these as the owner role: `pnpm db:psql` locally (add `-c '<SQL>'`). Find a User
+with `SELECT id, firebase_uid, email, role FROM users;`. Neither statement is
+audited in the database yet ([#129](https://github.com/WilliamPhilippe/storage-minis/issues/129)):
+record it in the issue or PR that asked for it.
+
+**Revoke a User's sessions (AU-05):** for a lost device or a suspected
+compromise. Every session signed in at or before the cutoff's second gets 401 at
+its next request; a new sign-in after it works.
+
+```sql
+UPDATE users SET sessions_valid_after = now() WHERE id = <user id>;
+```
+
+**Rebind a lost Google account (AU-06):** the person signs in with the new
+account and sees "No access"; the operator finds the new uid in the Firebase
+console (Authentication → Users, by email, in `storage-minis-dev` locally), then
+moves the existing User to it and revokes the old account's sessions:
+
+```sql
+BEGIN;
+UPDATE users
+SET firebase_uid = '<new uid>',
+    email = '<new email>',
+    sessions_valid_after = now()
+WHERE id = <user id>;
+COMMIT;
+```
+
+The person signs in again and keeps their role and Memberships; the old uid has
+no User row, so `session.get` answers `noAccess` and guarded procedures 403.
+`apps/api/tests/auth.integration.test.ts` runs both statements.
+
 ## Web dev server
 
 | Area | Contract |
@@ -312,10 +446,13 @@ succeeds.
 
 To inspect a running stack, use the same project flags, for example
 `docker compose --project-name storage-minis-stack --file compose.yaml --file
-compose.stack.yaml --env-file .env.test logs api`. `pnpm stack:down` removes the
+compose.stack.yaml --env-file .env.test logs api`. Because the stack reads
+`.env.test`, its API verifies tokens of `storage-minis-dev`, accepts Google
+sign-ins only and never bootstraps. `pnpm stack:down` removes the
 stack's containers, network and database volume. `pnpm test:stack` runs
 `apps/api/tests/stack.smoke.test.ts`: a clean `stack:up`, exact health bodies on
-port 3100, a nonroot API without mounts, `migrate` finishing before `api` starts,
+port 3100, a nonroot API without mounts whose DB package holds only `dist`,
+`drizzle` and `package.json`, `migrate` finishing before `api` starts,
 an unpublished database, a redeploy that changes the API but whose `migrate`
 fails (a second session holds the history lock) leaving the same API container
 serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
@@ -325,16 +462,16 @@ serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 
 | Task | Depends on | Cache | Passes through |
 | --- | --- | --- | --- |
-| `build` | `^build` | `dist/**` | Nothing |
+| `build` | `^build` | `dist/**`, `dist-testing/**` | Nothing |
 | `typecheck` | `^build` (DB `typecheck` waits for its own `build`) | Yes | Nothing |
 | `//#lint`, `//#test` | DB and API `build` | Yes | `NODE_ENV`, `TZ` hashed for `//#test` |
 | `//#typecheck:root`, `//#format:check` | None | Yes | Nothing |
 | DB `db:generate` | None | No | Nothing |
 | DB `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
 | DB `test:integration` (`pnpm test:db`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL` |
-| API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
+| API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `FIREBASE_PROJECT_ID`, `BOOTSTRAP_*`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
 | Web `test:e2e` (`pnpm test:e2e`) | `^build` | No | `PLAYWRIGHT_BROWSERS_PATH`, `DATABASE_URL` |
-| API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
+| API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `FIREBASE_PROJECT_ID`, `BOOTSTRAP_*`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ`; never `AUTH_TEST_SIGN_IN` |
 | DB `dev` | `build` | No, persistent | Nothing |
 | Web `dev` | None | No, persistent | Nothing |
 
@@ -354,7 +491,9 @@ this project; the CLI authenticates there with `DOPPLER_TOKEN`, and no exact
 version check or dedicated login directory is required. Never write secrets to
 a `.env` file on the VPS. `compose.yaml` still sets no restart policy for
 PostgreSQL and `restart: "no"` for `migrate` and `api`; choosing production
-restart policies is part of T04. The `prd` keys, Caddy `web` image, image distribution,
+restart policies is part of T04. Production's `FIREBASE_PROJECT_ID` is
+`storage-minis`; T04 adds it and the `BOOTSTRAP_*` keys to `prd` and maps the
+bootstrap in `compose.yaml`. The `prd` keys, Caddy `web` image, image distribution,
 backups and the deploy procedure remain T04 work; see the
 [plan's T04 list](foundation-restructure-plan-2026-10-31.md#later-under-t04-not-part-of-this-restructure).
 

@@ -22,6 +22,13 @@ export async function echo(message: string): Promise<string> {
   return result.message;
 }
 
+// T02 record AU-10: a session or noAccess, as the web app will read it.
+export async function sessionNickname(): Promise<string | null> {
+  const session = await client.session.get.query();
+  if (session.status === "noAccess") return null;
+  return session.memberships[0]?.organization.nickname ?? null;
+}
+
 export function errorCode(error: unknown): string | undefined {
   if (!(error instanceof TRPCClientError)) return undefined;
   const typed = error as TRPCClientError<AppRouter>;
@@ -35,6 +42,8 @@ export function errorCode(error: unknown): string | undefined {
 void client.diagnostics.echo.query({ message: 1 });
 // @ts-expect-error echo is a query, not a mutation
 void client.diagnostics.echo.mutate({ message: "ok" });
+// @ts-expect-error session.get takes no input
+void client.session.get.query({ uid: "someone" });
 `;
 
 /** The repository's strict flags with a browser profile instead of Node. */
@@ -87,6 +96,8 @@ describe("browser consumer of @storage-minis/api/types", () => {
     // Routers import no Fastify or plugin types, so the client loads neither.
     expect(files.filter((file) => /\/fastify\//.test(file))).toEqual([]);
     expect(files.filter((file) => /dist\/trpc\/plugin/.test(file))).toEqual([]);
+    // Nor the verifier's library: sign-in types stay free of jose (SI-06).
+    expect(files.filter((file) => /\/jose\//.test(file))).toEqual([]);
 
     expect(program.emit().emitSkipped).toBe(false);
     const javascript = emitted.get(`${packageRoot}browser-consumer.js`);
