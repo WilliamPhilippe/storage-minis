@@ -178,12 +178,21 @@ loopback connections, which `pnpm db:psql` relies on; connections from the
 host arrive through the published port and require SCRAM passwords.
 
 Roles and passwords exist only from first initialization. To change a role
-password on an existing volume, run `ALTER ROLE` as `postgres` (see the
-README); the owner role cannot change another role's password. In the parity
-stack and on the VPS, change the password in the database **before** changing
-its secret: the password variables also feed the `postgres` service, so a
-changed value makes Compose recreate PostgreSQL and stop the API, and
-`migrate` then fails against the old password.
+password on an existing development volume, either run `pnpm db:reset` or run
+`ALTER ROLE` in place as `postgres`; the owner role cannot change another
+role's password:
+
+```sh
+docker compose --env-file .env.development exec postgres \
+  psql -U postgres -d storage_minis_dev \
+  -c "ALTER ROLE storage_minis_app PASSWORD 'new-value'"
+```
+
+The test database is recreated on every start, so it always uses the current
+`.env.test` values. In the parity stack and on the VPS, change the password in
+the database **before** changing its secret: the password variables also feed
+the `postgres` service, so a changed value makes Compose recreate PostgreSQL
+and stop the API, and `migrate` then fails against the old password.
 
 ## Database lifecycle
 
@@ -205,6 +214,10 @@ single `drizzle.config.ts`; keep its relative `./drizzle` output, because Kit
 0.31.11 prepends `./` when it reopens snapshots. The baseline is a custom
 migration for the `inventory_id_base36` function followed by one generated
 migration (D8). Kit can exit 0 after a generation error, so read its final line.
+For SQL that Kit does not manage, such as a function, create an empty custom
+migration with
+`pnpm --filter @storage-minis/db exec drizzle-kit generate --custom --name describe_change`
+and write the SQL into it.
 
 `pnpm db:migrate` builds the DB package and runs `node dist/migrate.js`, which
 calls Drizzle's native migrator as the owner role. Kit's own `migrate` command
@@ -300,7 +313,7 @@ Turborepo task, after `^build` (the Playwright plan,
 | A server on port 5173 only, such as a leftover Vite | `[api]` reports `listening`, then the same message for `http://localhost:5173`; the API stops |
 | `DATABASE_URL` naming `storage_minis_dev` | `Database integration tests require a database whose name ends in _test.` before any server starts |
 | The browser missing from the folder in use | `browserType.launch: Executable doesn't exist at …` for every test |
-| The runner killed hard | Both servers keep running in their own process groups, and the next run fails with "already used" until they are stopped (see the [README](../../README.md#end-to-end-tests)) |
+| The runner killed hard | Both servers keep running in their own process groups, and the next run fails with "already used" until they are stopped. `lsof -nP -iTCP:3000 -sTCP:LISTEN` (and `-iTCP:5173`) shows each listener's PID, `ps -o pid,command -p <PID>` shows whether it is the test API (`dist/server.js`) or Vite (`vite.js`), and `kill <PID>` stops it |
 | No gcloud login | The setup project fails first: `Credential implementation provided to initializeApp() via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error: "Could not load the default credentials. …"`, after a `MetadataLookupWarning`; every dependent test is skipped. Run `gcloud auth application-default login` (README) |
 | A quota or "API not enabled" error while minting | `gcloud auth application-default set-quota-project storage-minis-dev` |
 | A saved session that Firebase's internals no longer match | Every signed-in spec fails at once: the startup check discards the session (sign-in plan SI-10) |
@@ -518,7 +531,9 @@ To inspect a running stack, use the same project flags, for example
 compose.stack.yaml --env-file .env.test logs api`. Because the stack reads
 `.env.test`, its API verifies tokens of `storage-minis-dev`, accepts Google
 sign-ins only and never bootstraps. `pnpm stack:down` removes the
-stack's containers, network and database volume. `pnpm test:stack` runs
+stack's containers, network and database volume; it keeps the built
+`storage-minis-api:local` image for faster rebuilds, which
+`docker image rm storage-minis-api:local` removes. `pnpm test:stack` runs
 `apps/api/tests/stack.smoke.test.ts`: a clean `stack:up`, exact health bodies on
 port 3100, a nonroot API without mounts whose DB package holds only `dist`,
 `drizzle` and `package.json`, `migrate` finishing before `api` starts,
