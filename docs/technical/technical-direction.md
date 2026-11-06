@@ -1091,14 +1091,14 @@ with the real tRPC adapter/context and a type-only router export. *(Superseded o
 [API composition and error-log rework](#api-composition-and-error-log-rework-2026-11-01).)* It reuses the
 single owned DB and existing image. Step 6 extends the same image verifier with
 valid/invalid tRPC HTTP requests, reproduces clean setup and rechecks affected
-cache/integration proof. Read the [current guide](technical-foundation-implementation-guide.md#step-4--fastify-server-foundation)
+cache/integration proof. Read the [current guide](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/technical-foundation-implementation-guide.md#step-4--fastify-server-foundation)
 for these inherited contracts. Rerun affected proof after source/task/image changes;
 shared test consumers remain exclusive and sequential.
 
 ## Foundation restructure (2026-10-31)
 
 **Owner approval:** On 2026-10-31 the owner approved the
-[foundation restructure plan](foundation-restructure-plan-2026-10-31.md)
+[foundation restructure plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/foundation-restructure-plan-2026-10-31.md)
 (PR #109): core decisions A1–A5, detailed decisions D1–D10, plan-review
 amendments R1–R15 and the final verification V1–V7. During implementation the
 owner answered four further questions on 2026-10-31 and 2026-11-01
@@ -1199,7 +1199,7 @@ is tooling evidence, not business acceptance.
 ## Step 5 tRPC and Zod plan approval (2026-11-01)
 
 **Owner approval:** On 2026-11-01 the owner approved the
-[Step 5 plan](step-5-trpc-plan-2026-11-01.md) as recommended, P5-01–P5-10.
+[Step 5 plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/step-5-trpc-plan-2026-11-01.md) as recommended, P5-01–P5-10.
 Implemented in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114);
 the outcome, six implementation-time approvals and the evidence follow the table.
 Choices the plan does not settle, and deviations that implementation forces, still
@@ -1331,7 +1331,7 @@ re-verifies its pins.
 ## Frontend PR 1 web shell plan approval (2026-11-01)
 
 **Owner approval:** On 2026-11-01 the owner approved the
-[web shell plan](web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
+[web shell plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
 with the changes listed after the table. Implemented in
 [PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, five implementation-time decisions and the
@@ -1527,7 +1527,7 @@ This is tooling evidence, not business acceptance.
 ## Frontend PR 2 Playwright plan approval (2026-11-02)
 
 **Owner approval:** On 2026-11-02 the owner approved the
-[Playwright plan](playwright-plan-2026-11-02.md), PW-01–PW-14, as recommended,
+[Playwright plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/playwright-plan-2026-11-02.md), PW-01–PW-14, as recommended,
 for PR 2 of the frontend decisions (W11 item 2,
 [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is
 implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124);
@@ -1688,7 +1688,7 @@ This is tooling evidence, not business acceptance.
 ## Web shell follow-up plan approval (2026-11-02)
 
 **Owner approval:** On 2026-11-02 the owner approved the
-[web shell follow-up plan](web-shell-follow-up-plan-2026-11-02.md), SF-02–SF-06,
+[web shell follow-up plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-follow-up-plan-2026-11-02.md), SF-02–SF-06,
 as written, after ruling on the three shell issues that the
 [PR 2 approval](#frontend-pr-2-playwright-plan-approval-2026-11-02) left to
 this follow-up. It belongs to
@@ -1836,7 +1836,7 @@ This is tooling evidence, not business acceptance.
 
 - [T02's record](t02-authentication-record-2026-11-03.md), AU-01–AU-12, for
   [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22);
-- the [sign-in plan](sign-in-plan-2026-11-03.md), SI-01–SI-19, for frontend PR 3
+- the [sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md), SI-01–SI-19, for frontend PR 3
   ([#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)), planned at
   the owner's request of 2026-11-02 as one feature across the API and the web app.
 
@@ -2250,7 +2250,7 @@ they execute. A separate speculative Turbo expansion is not a prerequisite.
 Frontend scaffolding, remote caching, CI and production deployment remain later
 work; these five steps alone do not deliver the full frontend/backend foundation.
 
-For agent assignments, use the [technical foundation implementation guide](technical-foundation-implementation-guide.md).
+For agent assignments, use the [technical foundation implementation guide](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/technical-foundation-implementation-guide.md).
 It organizes this scope into six sequential agent steps by separating the Node
 tooling container from PostgreSQL setup, and defines the research, plan,
 completion and handoff expected of each agent. It preserves the approval and

@@ -21,23 +21,23 @@ the types-only `@storage-minis/api/types` export; read its record before changin
 [frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
 (2026-11-01) set the web app's architecture, design system, languages and four
 delivery steps; read them before frontend work. The
-[PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) (approved
+[PR 1 web shell plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-plan-2026-11-01.md) (approved
 2026-11-01) and its record's implementation-time decisions govern `apps/web`: the
 responsive shell, the en-US and pt-BR catalogs, placeholder pages, the Login page
 without sign-in and `diagnostics.echo` through the Vite proxy.
 [`docs/design/`](docs/design/README.md) holds the owner-approved design system and
-page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
+page designs. The [PR 2 Playwright plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/playwright-plan-2026-11-02.md)
 (approved 2026-11-02, with the owner's changes to W9 and W11) governs
 `pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
 projects, `desktop-chrome` and `pixel-7`, before sign-in. The
-[web shell follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md)
+[web shell follow-up plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-follow-up-plan-2026-11-02.md)
 (approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
 inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
 footer inset and height, as implemented in
 [PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125). The owner ruled the
 collapsed SideNav's hover-only labels not a defect.
 [T02's record](docs/technical/t02-authentication-record-2026-11-03.md) and the
-[sign-in plan](docs/technical/sign-in-plan-2026-11-03.md) (approved 2026-11-04) govern
+[sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md) (approved 2026-11-04) govern
 authentication, sessions, authorization and the administrator bootstrap, delivered as
 frontend PR 3a (API identity and authorization) and PR 3b (web sign-in and the
 Playwright session); read them before changing `apps/api/src/trpc`, identity
@@ -79,6 +79,19 @@ Prefer standard infrastructure tools and declarative configuration over custom i
 
 For Node.js version management, fnm and nvm are both compatible with the repository's `.nvmrc`; the repository requires the pinned Node.js/pnpm versions. fnm is the current local setup, not a mandatory project tool. Read [local setup](README.md#local-setup) before changing or troubleshooting the version manager, and obtain approval before replacing it or changing shell initialization.
 
+## Planning a change
+
+A change that needs new decisions starts with a plan the owner approves. Present one concrete plan with these parts; the [sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md), kept in git history, is a complete example.
+
+1. **Starting state:** what exists, which approvals already cover the work, and any real blocker.
+2. **Scope:** the result, the affected files and packages, and what stays out.
+3. **Decisions:** for each new or changed choice, a concrete recommendation with its rationale, alternatives, tradeoffs and primary sources, including exact versions, commands and configuration. Keep inherited approvals apart from pending choices.
+4. **Implementation order:** small, verifiable steps.
+5. **Verification:** each completion criterion mapped to a command or test and its expected result, including failure cases and cleanup.
+6. **Handoff:** the documentation and records to update, and the limitations that remain.
+
+Research against official documentation, published package metadata and upstream source, and don't install a tool only to research it. Record the approval, and later the delivered outcome, in [technical direction](docs/technical/technical-direction.md).
+
 ## Confirmed technical direction
 
 The owner confirmed the stack on 2026-10-21 and refined money, identity, and dates in the [2026-10-22 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-22-schema-review.md). Read [Technical direction](docs/technical/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling, applying the later log where wording conflicts.
@@ -109,7 +122,6 @@ Hosting, deployment, backups, and operational targets remain T04 work. The 2026-
 | Source | Purpose |
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
-| [Technical foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
 | [Design](docs/design/README.md) | For UI work, read the design system (`system/`) and the page's folder under `pages/` before building a page. Approved technical and requirements documents win where they disagree. |
 | [Requirements v0.8](docs/requirements/requirements-v0.8.md) | Published requirements and acceptance scenarios; consolidates every approved update log through 2026-11-01. Section 14 lists the decisions still open. |
 | [Entity map v0.9](docs/entities/entity-map-v0.9.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.8. Entities do not automatically imply SQL tables. |
@@ -222,7 +234,7 @@ Read the live issue together with requirements v0.8 and entity map v0.9 before d
 Technical choices also remain open; their issues define the required outputs:
 
 - [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan](docs/technical/sign-in-plan-2026-11-03.md)); PR 3a delivered the API side on 2026-11-05 and PR 3b the web side on 2026-11-06. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan approval](docs/technical/technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04)); PR 3a delivered the API side on 2026-11-05 and PR 3b the web side on 2026-11-06. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.

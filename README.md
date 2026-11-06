@@ -505,12 +505,10 @@ decision takes precedence over conflicting baseline text.
 - [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
 - Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
-- [Foundation restructure plan](docs/technical/foundation-restructure-plan-2026-10-31.md)
 - [Local development reference](docs/technical/local-development.md)
-- [Foundation implementation guide and remaining steps](docs/technical/technical-foundation-implementation-guide.md)
-- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md), the [PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) with its [follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md), and the [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
-- [T02 authentication record](docs/technical/t02-authentication-record-2026-11-03.md) and the [sign-in plan](docs/technical/sign-in-plan-2026-11-03.md) (frontend PRs 3a and 3b)
+- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
+- [T02 authentication record](docs/technical/t02-authentication-record-2026-11-03.md)
 - [Design system and page designs](docs/design/README.md)
 
-Keep links to the latest published document versions. Superseded versions stay in
-git history; cite them with commit-pinned links.
+Keep links to the latest published document versions. Superseded versions and
+finished plans stay in git history; cite them with commit-pinned links.

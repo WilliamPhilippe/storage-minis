@@ -1,6 +1,12 @@
 # Frontend foundation proposal (2026-11-01)
 
-**Status: decided by the owner on 2026-11-01; not yet implemented.** The owner
+**Status: decided by the owner on 2026-11-01. Implemented by frontend PRs 1–3
+([#121](https://github.com/WilliamPhilippe/storage-minis/pull/121),
+[#124](https://github.com/WilliamPhilippe/storage-minis/pull/124),
+[#125](https://github.com/WilliamPhilippe/storage-minis/pull/125),
+[#132](https://github.com/WilliamPhilippe/storage-minis/pull/132) and
+[#133](https://github.com/WilliamPhilippe/storage-minis/pull/133)); PR 4, the web
+image, waits for the first deployment.** The owner
 asked for a frontend architecture with options and decided every item, W1–W11,
 on 2026-11-01, then refined W4–W6 and W8–W11 in a
 [follow-up review](#follow-up-review-2026-11-01) the same day.
@@ -10,7 +16,7 @@ holds the approval record. W7 replaces the React Hook Form choice approved on
 2026-10-21 with TanStack Form. [Section 8](#8-deferred-decisions) lists what the
 owner left for later. This document authorizes no installation or
 implementation by itself: each delivery step in W11 gets its own plan for
-approval, as the [Step 5 plan](step-5-trpc-plan-2026-11-01.md) did for tRPC.
+approval, as the [Step 5 plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/step-5-trpc-plan-2026-11-01.md) did for tRPC.
 W1–W11 are references within this document, not requirement, issue or
 F-decision IDs.
 
