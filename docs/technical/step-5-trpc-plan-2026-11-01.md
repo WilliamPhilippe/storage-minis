@@ -89,7 +89,7 @@ and the documents in section 6.
 - Changes to the Dockerfile or Compose files.
 
 **Proposal subsets used:** from
-[the T06 proposal](t06-foundation-proposal-2026-10-24.md#7-step-4--trpc-with-zod),
+[the T06 proposal](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#7-step-4--trpc-with-zod),
 F10 (route, JSON transport, diagnostic procedure, context, safe errors), the
 type-only export from F07, the adapter tests from F11, and one task dependency
 under F12. The proposal recorded these as candidates; this plan asks for the

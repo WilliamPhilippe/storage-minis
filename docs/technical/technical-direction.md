@@ -2,7 +2,7 @@
 
 **Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: Steps 1–4 are complete (Step 4 with all eighteen criteria, evidence on PR #107), and the [foundation restructure](#foundation-restructure-2026-10-31) of 2026-10-31 (PR #110) replaced their tooling container and Doppler launchers with host Node, standard Compose, committed local values, owner/app database roles, a regenerated migration baseline and a parity stack. Steps 5/6 and full T06/business/production acceptance remain pending.
 
-This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.8 requirements](../requirements/requirements-v0.8.md), [entity map v0.9](../entities/entity-map-v0.9.md), and [ownership index](../requirements/requirements-coverage-v0.8.md). It does not replace the business baseline or close delivery issues. Those documents, the [approved updates](../requirement-updates/README.md) and the [PurchaseExpense impact](../requirements/purchase-expense-impact-v0.7.md) govern domain invariants.
+This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.8 requirements](../requirements/requirements-v0.8.md), [entity map v0.9](../entities/entity-map-v0.9.md), and [ownership index](../requirements/requirements-coverage-v0.8.md). It does not replace the business baseline or close delivery issues. Those documents govern domain invariants.
 
 ## Workspace bootstrap progress (2026-10-23)
 
@@ -2258,7 +2258,7 @@ prerequisite boundaries below.
 
 ### Before implementation: approve the foundation proposal
 
-The [2026-10-24 foundation proposal](t06-foundation-proposal-2026-10-24.md)
+The [2026-10-24 foundation proposal](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md)
 records inspected local prerequisites, exact candidate versions, F01–F14 approval
 items, the proposed commands/task graph, and deferred schema/security/acceptance
 gates. **Remaining implementation choices are pending approval. Doppler's provider
@@ -2279,7 +2279,7 @@ dependencies and delivery ownership remain in force:
 | Checkpoint | Required boundary |
 | --- | --- |
 | Before any new installation or configuration | Obtain approval for the concrete T06 proposal. Identify the explicitly approved partial-bootstrap scope and its deferred outputs; this checklist does not waive T06's T01/T02/T04 prerequisites or move/close issues. |
-| Before business schema migrations or representative persistence operations | Reconcile [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21), applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) contracts, the [database design guide](../database/design.md), and the [approved updates](../requirement-updates/README.md). The DBML still has deferred uniqueness/scope keys and conceptual composite references without executable FK targets. It cannot be translated mechanically into migrations. |
+| Before business schema migrations or representative persistence operations | Reconcile [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21), applicable [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) contracts, the [database design guide](../database/design.md), and the [approved updates](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/README.md). The DBML still has deferred uniqueness/scope keys and conceptual composite references without executable FK targets. It cannot be translated mechanically into migrations. |
 | Before protected business procedures or administrator bootstrap | Obtain the applicable [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) authorization/bootstrap decisions. Diagnostic scaffolding must not introduce business access through a temporary authentication bypass. |
 | Before operational/deployment acceptance | Resolve applicable [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) configuration, release/migration and recovery decisions. Local Compose does not select production hosting, backup retention or restore targets. |
 
@@ -2611,3 +2611,44 @@ contracts, summarized acceptance and pending Steps 5/6 remain in this repository
 Historical citations use immutable links to commit
 `8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8`; completed stage instructions do not
 apply to future assignments. This cleanup changes no technical or business policy.
+
+## Documentation cleanup (2026-11-06)
+
+**Owner approval:** On 2026-11-06, with the database, API, web shell and sign-in
+in place and business features next, the owner reviewed a map of `docs/` and
+approved removing two groups of files and trimming the documents that stay
+("Yes, both groups").
+
+- **Superseded or consolidated (18 files):** requirements v0.5–v0.7, ownership
+  indexes v0.6–v0.7, entity maps v0.5–v0.8, the shared PurchaseExpense impact
+  note v0.7, the `requirement-updates/` logs with their issue propagation
+  records, and the T06 foundation proposal. Requirements v0.8, ownership index
+  v0.8 and entity map v0.9 consolidate them.
+- **Finished plans (7 files):** the foundation implementation guide and the
+  foundation restructure, Step 5, web shell, web shell follow-up, Playwright and
+  sign-in plans. This document records their approvals and outcomes, including
+  every decision ID that code comments cite (P5, WS, SF, PW, SI); T02's record
+  keeps the AU IDs.
+- **Trims:** this document's records of the 2026-10-23 to 2026-10-29 foundation
+  work that the restructure superseded, and its 2026-10-24 planning checklist;
+  the local development reference's cleanup steps for checkouts made before
+  2026-10-31.
+
+This reverses the rule that preserved published historical baselines, which the
+2026-10-29 cleanup still applied. Only the current version of each baseline
+stays in the tree. Git history keeps the rest, and citations use links pinned to
+commit `55a61ab996b4151c5f2a5dfb6df35237287e3963`, the last commit that contains
+every removed file. The plans' template for a change plan moved into
+[AGENTS.md](../../AGENTS.md#planning-a-change), and the restructure plan's T04
+server checklist into the [local development reference](local-development.md#production-direction).
+What the plans left for PR 4 (SI-18 and the shell and Playwright handoffs)
+belongs to [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118),
+and the restructure plan's server-rendered catalog options to
+[D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18); the
+pinned plans hold their full text.
+
+**Rationale.** The older versions and finished plans repeated current rules in
+outdated words, so a search for a business term returned several near-copies.
+One of them, the v0.7 PurchaseExpense note, still allowed a table of
+expense-to-Purchase links that PUR-047 rules out. This cleanup changes no
+technical or business policy beyond that documentation rule.

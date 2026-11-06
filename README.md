@@ -186,7 +186,7 @@ the error and confirm a fresh readiness response.
 
 ## Implementing a feature
 
-Read the feature's live issue, requirements, and approved updates before coding.
+Read the feature's live issue and the current requirements before coding.
 Obtain approval for new technical choices and unresolved business rules under
 [AGENTS.md](AGENTS.md#owner-approval-before-decisions); the examples here introduce
 no new business contract.
@@ -497,14 +497,12 @@ Use the pinned pnpm versions/lockfile, Prettier, and Conventional Commits.
 
 ## Documentation
 
-Read [AGENTS.md](AGENTS.md) and approved updates with the published requirements;
-later approved decisions take precedence over conflicting baseline text.
+Read [AGENTS.md](AGENTS.md) with the published requirements; a later approved
+decision takes precedence over conflicting baseline text.
 
 - [Requirements v0.8](docs/requirements/requirements-v0.8.md)
 - [Entity map v0.9](docs/entities/entity-map-v0.9.md)
-- [Approved updates and propagation status](docs/requirement-updates/README.md)
 - [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
-- [Shared PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md)
 - Database schema: [DBML](docs/database/schema.dbml), [design guide](docs/database/design.md), and [implementation/evidence](docs/database/step-3b-implementation-2026-10-25.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Foundation restructure plan](docs/technical/foundation-restructure-plan-2026-10-31.md)
@@ -514,4 +512,5 @@ later approved decisions take precedence over conflicting baseline text.
 - [T02 authentication record](docs/technical/t02-authentication-record-2026-11-03.md) and the [sign-in plan](docs/technical/sign-in-plan-2026-11-03.md) (frontend PRs 3a and 3b)
 - [Design system and page designs](docs/design/README.md)
 
-Keep links to the latest published document versions; preserve historical baselines.
+Keep links to the latest published document versions. Superseded versions stay in
+git history; cite them with commit-pinned links.

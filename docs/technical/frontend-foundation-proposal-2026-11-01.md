@@ -14,7 +14,7 @@ approval, as the [Step 5 plan](step-5-trpc-plan-2026-11-01.md) did for tRPC.
 W1–W11 are references within this document, not requirement, issue or
 F-decision IDs.
 
-The proposal draws on [requirements v0.7](../requirements/requirements-v0.7.md),
+The proposal draws on [requirements v0.7](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirements/requirements-v0.7.md),
 the technical direction, the Step 5 plan and its implementation record, issues
 [#18](https://github.com/WilliamPhilippe/storage-minis/issues/18),
 [#22](https://github.com/WilliamPhilippe/storage-minis/issues/22),

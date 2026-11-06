@@ -51,7 +51,7 @@ only on explicit request; test setup replays them on the disposable test databas
 
 This guide owns the remaining step sequence, planning instructions and completion
 criteria. [Technical direction](technical-direction.md) owns approved outcomes;
-the [foundation proposal](t06-foundation-proposal-2026-10-24.md) supplies candidate
+the [foundation proposal](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md) supplies candidate
 versions, alternatives and detailed contracts. A recommendation in that proposal
 is not implementation approval. Reuse recorded approvals within their scope.
 
@@ -84,7 +84,7 @@ off; describe partial completion and deferrals explicitly.
 
 Read [AGENTS.md](../../AGENTS.md), this guide's assigned step, the applicable
 [technical decisions](technical-direction.md) and
-[proposal sections](t06-foundation-proposal-2026-10-24.md). Read
+[proposal sections](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md). Read
 [issue-tracker conventions](../agents/issue-tracker.md) before fetching the live
 #26 issue, comments and applicable prerequisites. Inspect the predecessor PR,
 current manifests, lockfile, scripts, environment examples and Turbo graph.
@@ -92,7 +92,7 @@ Use files and actual command results to establish implemented behavior; reconcil
 discrepancies with approved decisions rather than treating setup notes as evidence.
 
 For persistence planning, also read the [database design guide](../database/design.md)
-and [approved update logs](../requirement-updates/README.md), following their current
+and [approved update logs](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/README.md), following their current
 links to requirements and entity constraints. For protected access or operations,
 read the applicable T02/T04 issue before planning dependent behavior. Use the
 existing delivery owner rather than creating duplicate tickets.
@@ -196,7 +196,7 @@ of PostgreSQL or application source. Completion requires evidence that:
 
 ### Research and planning focus
 
-Read the proposal's [container execution recommendation](t06-foundation-proposal-2026-10-24.md#container-execution-recommendation-f13)
+Read the proposal's [container execution recommendation](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#container-execution-recommendation-f13)
 and the approved workspace/tooling decisions. Concentrate on:
 
 - Official image architecture support, exact pins and pnpm provisioning inside
@@ -264,7 +264,7 @@ Docker setup. Completion requires evidence that:
 
 ### Research and planning focus
 
-Read the proposal's [PostgreSQL step](t06-foundation-proposal-2026-10-24.md#3-step-1--local-postgresql-through-compose)
+Read the proposal's [PostgreSQL step](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#3-step-1--local-postgresql-through-compose)
 and inherit Step 1's service/volume conventions. Concentrate on:
 
 - Official PostgreSQL image pins, version-specific data directories, initialization
@@ -329,8 +329,8 @@ Completion requires evidence that:
 
 ### Research and planning focus
 
-Read the proposal's [DB/migration step](t06-foundation-proposal-2026-10-24.md#4-step-2--db-package-and-migration-workflow),
-[module choices](t06-foundation-proposal-2026-10-24.md#5-step-3--modules-development-and-fastify),
+Read the proposal's [DB/migration step](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#4-step-2--db-package-and-migration-workflow),
+[module choices](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#5-step-3--modules-development-and-fastify),
 the database design guide and later approved logs. Concentrate on:
 
 - Stable-version APIs and declaration compatibility for the selected PostgreSQL
@@ -464,7 +464,7 @@ TypeScript peer.
 
 ### Research and planning focus
 
-Read the proposal's [tRPC/Zod step](t06-foundation-proposal-2026-10-24.md#7-step-4--trpc-with-zod)
+Read the proposal's [tRPC/Zod step](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#7-step-4--trpc-with-zod)
 and inherit Step 4's lifecycle/error boundaries. Concentrate on:
 
 - Compatibility of the exact Fastify adapter, tRPC, Zod and TypeScript releases;
@@ -551,8 +551,8 @@ startup to a verified diagnostic API, both on the host and in the parity stack. 
 
 ### Research and planning focus
 
-Read the proposal's [verification step](t06-foundation-proposal-2026-10-24.md#8-step-5--verification-and-documentation),
-[Turbo contract](t06-foundation-proposal-2026-10-24.md#9-turbo-task-graph-and-cache-contract)
+Read the proposal's [verification step](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#8-step-5--verification-and-documentation),
+[Turbo contract](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#9-turbo-task-graph-and-cache-contract)
 and all five predecessor handoffs. Concentrate on:
 
 - Gaps between existing component tests and a real built process: readiness
@@ -598,7 +598,7 @@ These assignments are partial T06 bootstrap, with these existing gates intact:
 | Deployment and recovery acceptance | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23) Doppler production access/injection/rotation/fallback policy, releases/migrations, privileges, daily backups/restore and operational targets. |
 | Full T06 completion | The live issue's original dependencies and acceptance outputs, including real global Product reuse/private-data rejection, allocation/commitment integrity and deletion-versus-funding or settlement-source race evidence, plus remaining application/check delivery. |
 
-Read the [proposal's prerequisite analysis](t06-foundation-proposal-2026-10-24.md#10-prerequisite-gates-and-full-acceptance)
+Read the [proposal's prerequisite analysis](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/t06-foundation-proposal-2026-10-24.md#10-prerequisite-gates-and-full-acceptance)
 for the concrete DBML/enforcement gaps. Keep T06's #21/#22/#23 dependencies and
 T03's #21 dependency unchanged. Decision research can proceed under those owners
 while the local bootstrap is developed within explicitly approved partial scope.
