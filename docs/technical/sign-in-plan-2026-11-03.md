@@ -773,6 +773,11 @@ menu, the user badge (#1) and "Sign out of all devices" move to
 [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130), with the design
 documents' update.
 
+**Owner change (2026-11-06, during PR 3b's review):** the button sits right above
+the language switch instead, in the SideNav's footer from `bp-md` and in the menu
+drawer's footer below it ([record](technical-direction.md#pr-3b-implemented-outcome-2026-11-06)).
+The bullets below keep the placement approved on 2026-11-04.
+
 - **Desktop** (from `bp-md`): a `Button` labelled "Sign out" with antd's
   `LogoutOutlined` icon, at the right of the TopBar, where the account menu will go.
 - **Phones:** the same button at the bottom of the menu drawer, in its footer with the

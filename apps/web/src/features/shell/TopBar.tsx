@@ -2,13 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { Layout, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import logoUrl from "../../ui/assets/logo.png";
-import { SignOutButton } from "./SignOutButton";
 import styles from "./TopBar.module.css";
 
 // Phones: the logo, linking to /app. From bp-md: the page title (the logo
-// lives in the SideNav) and the Sign out button on the right, where the
-// account menu will go (#130). The language switch lives in the SideNav and
-// the MenuFab's drawer (owner, 2026-11-01), with Sign out on phones.
+// lives in the SideNav). The language switch lives in the SideNav and the
+// MenuFab's drawer (owner, 2026-11-01).
 export function TopBar({
   isPhone,
   title,
@@ -34,14 +32,9 @@ export function TopBar({
           />
         </Link>
       ) : (
-        <>
-          {title !== undefined && (
-            <Typography.Title level={1}>{title}</Typography.Title>
-          )}
-          <div className={styles.actions}>
-            <SignOutButton />
-          </div>
-        </>
+        title !== undefined && (
+          <Typography.Title level={1}>{title}</Typography.Title>
+        )
       )}
     </Layout.Header>
   );

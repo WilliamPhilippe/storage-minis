@@ -12,8 +12,3 @@
 .logo {
   display: block;
 }
-
-/* From bp-md: the right end of the bar. */
-.actions {
-  margin-inline-start: auto;
-}

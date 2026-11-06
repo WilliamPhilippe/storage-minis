@@ -240,7 +240,8 @@ describe("page titles", () => {
   });
 });
 
-// Sign out of this browser (AU-04, SI-13).
+// Sign out of this browser (AU-04): right above the language switch, in the
+// SideNav and in the menu drawer (owner, 2026-11-06).
 describe("the Sign out button", () => {
   async function expectStateOne(router: {
     state: { location: { href: string } };
@@ -253,39 +254,84 @@ describe("the Sign out button", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   }
 
-  it("sits at the right of the TopBar from bp-md and signs out", async () => {
+  function expectNotInTopBar() {
+    expect(
+      within(screen.getByRole("banner")).queryByRole("button", {
+        name: app.account.signOut,
+      }),
+    ).toBeNull();
+  }
+
+  it("sits in the SideNav from bp-md, right above the language switch, and signs out", async () => {
     const user = userEvent.setup();
     const { router, auth, queryClient } = await renderInventory(1280);
-    const topBar = screen.getByRole("banner");
-    const button = within(topBar).getByRole("button", {
+    expectNotInTopBar();
+    const sideNav = screen.getByRole("complementary");
+    const button = within(sideNav).getByRole("button", {
       name: app.account.signOut,
     });
+    expect(button.textContent).toBe(app.account.signOut);
     expect(button.querySelector(".anticon-logout")).toBeTruthy();
+    expect(button.classList.contains("ant-btn-text")).toBe(true);
+    expect(button.nextElementSibling).toBe(
+      within(sideNav).getByRole("button", { name: languageSwitchName() }),
+    );
     await user.click(button);
     await expectStateOne(router);
     expect(auth.port.signOut).toHaveBeenCalledTimes(1);
     expect(queryClient.getQueryCache().getAll()).toEqual([]);
   });
 
-  it("sits in the menu drawer's footer below bp-md, not in the TopBar", async () => {
+  it("shows only its icon in the collapsed SideNav, with its name in a tooltip", async () => {
     const user = userEvent.setup();
-    const { router, auth } = await renderInventory(375);
+    await renderInventory(900);
+    const sideNav = screen.getByRole("complementary");
+    const button = within(sideNav).getByRole("button", {
+      name: app.account.signOut,
+    });
+    expect(button.textContent).toBe("");
+    expect(button.nextElementSibling).toBe(
+      within(sideNav).getByRole("button", { name: languageSwitchName() }),
+    );
+    // On hover, as antd shows the collapsed menu's item names.
+    await user.hover(button);
+    const tooltip = await screen.findByRole("tooltip");
+    expect(tooltip.textContent).toBe(app.account.signOut);
     expect(
-      within(screen.getByRole("banner")).queryByRole("button", {
+      tooltip
+        .closest(".ant-tooltip")
+        ?.classList.contains("ant-tooltip-placement-right"),
+    ).toBe(true);
+  });
+
+  it("has no tooltip in the expanded SideNav, where its name shows", async () => {
+    const user = userEvent.setup();
+    await renderInventory(1280);
+    await user.hover(
+      within(screen.getByRole("complementary")).getByRole("button", {
         name: app.account.signOut,
       }),
-    ).toBeNull();
+    );
+    // Longer than antd's 0.1 s hover delay.
+    await new Promise((resolve) => {
+      setTimeout(resolve, 300);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("sits in the menu drawer's footer below bp-md, right above the language switch", async () => {
+    const user = userEvent.setup();
+    const { router, auth } = await renderInventory(375);
+    expectNotInTopBar();
 
     await user.click(screen.getByRole("button", { name: nav.open }));
     const drawer = screen.getByRole("dialog", { name: nav.menu });
-    const languageSwitch = within(drawer).getByRole("button", {
-      name: languageSwitchName(),
-    });
     const button = within(drawer).getByRole("button", {
       name: app.account.signOut,
     });
-    // The footer: the language switch, then Sign out.
-    expect(languageSwitch.nextElementSibling).toBe(button);
+    expect(button.nextElementSibling).toBe(
+      within(drawer).getByRole("button", { name: languageSwitchName() }),
+    );
     await user.click(button);
     await expectStateOne(router);
     expect(auth.port.signOut).toHaveBeenCalledTimes(1);

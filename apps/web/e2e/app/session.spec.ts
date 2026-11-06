@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "../support/app";
-import { en } from "../support/names";
+import { en, languageSwitchName } from "../support/names";
 import { hasSavedSession, ownerStatePath } from "../support/session";
 
 // The signed-in session (T02 AU-03, AU-04, AU-12 cases 7, 8, 10 and 12;
@@ -13,37 +13,60 @@ function heading(page: Page, name: string): Locator {
   return page.getByRole("heading", { level: 1, name });
 }
 
-// Top right of the TopBar from bp-md; in the menu drawer's footer below it.
+// Right above the language switch: in the SideNav from bp-md, in the menu
+// drawer's footer below it (owner, 2026-11-06).
+function signOutButton(page: Page): Locator {
+  const name = en.app.account.signOut;
+  return (page.viewportSize()?.width ?? 0) >= 768
+    ? page.getByRole("complementary").getByRole("button", { name })
+    : page
+        .getByRole("dialog", { name: en.app.nav.menu })
+        .getByRole("button", { name });
+}
+
 async function signOut(
   page: Page,
   tapOrClick: (target: Locator) => Promise<void>,
 ): Promise<void> {
-  const name = en.app.account.signOut;
-  const topBarButton = page.getByRole("banner").getByRole("button", { name });
-  if ((page.viewportSize()?.width ?? 0) >= 768) {
-    await tapOrClick(topBarButton);
-    return;
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await tapOrClick(page.getByRole("button", { name: en.app.nav.open }));
   }
-  await tapOrClick(page.getByRole("button", { name: en.app.nav.open }));
-  await tapOrClick(
-    page
-      .getByRole("dialog", { name: en.app.nav.menu })
-      .getByRole("button", { name }),
-  );
+  await tapOrClick(signOutButton(page));
+}
+
+// How far `upper` sits above `lower`, in CSS pixels; positive when above.
+async function gapAbove(upper: Locator, lower: Locator): Promise<number> {
+  const [upperBox, lowerBox] = await Promise.all([
+    upper.boundingBox(),
+    lower.boundingBox(),
+  ]);
+  if (upperBox === null || lowerBox === null) {
+    throw new Error("A button is not visible.");
+  }
+  return lowerBox.y - (upperBox.y + upperBox.height);
 }
 
 test.describe("the Sign out button", () => {
   test(
-    "sits at the right of the TopBar",
+    "sits in the SideNav, right above the language switch",
     { tag: "@desktop" },
     async ({ page, tapOrClick }) => {
       await page.goto("/app/inventory");
       await expect(heading(page, titles.inventory)).toBeVisible();
-      await tapOrClick(
+      await expect(
         page
           .getByRole("banner")
           .getByRole("button", { name: en.app.account.signOut }),
-      );
+      ).toHaveCount(0);
+      const sideNav = page.getByRole("complementary");
+      const button = signOutButton(page);
+      expect(
+        await gapAbove(
+          button,
+          sideNav.getByRole("button", { name: languageSwitchName("en-US") }),
+        ),
+      ).toBeGreaterThanOrEqual(0);
+      await tapOrClick(button);
       // State 1, and Firebase's saved session is gone.
       await expect(heading(page, en.login.title)).toBeVisible();
       await expect(page).toHaveURL("/login");
@@ -53,7 +76,7 @@ test.describe("the Sign out button", () => {
   );
 
   test(
-    "sits in the menu drawer's footer",
+    "sits in the menu drawer's footer, right above the language switch",
     { tag: "@phone" },
     async ({ page, tapOrClick }) => {
       await page.goto("/app/inventory");
@@ -64,11 +87,16 @@ test.describe("the Sign out button", () => {
           .getByRole("button", { name: en.app.account.signOut }),
       ).toHaveCount(0);
       await tapOrClick(page.getByRole("button", { name: en.app.nav.open }));
-      await tapOrClick(
-        page
-          .getByRole("dialog", { name: en.app.nav.menu })
-          .getByRole("button", { name: en.app.account.signOut }),
-      );
+      const drawer = page.getByRole("dialog", { name: en.app.nav.menu });
+      const button = signOutButton(page);
+      await expect(button).toBeVisible();
+      expect(
+        await gapAbove(
+          button,
+          drawer.getByRole("button", { name: languageSwitchName("en-US") }),
+        ),
+      ).toBeGreaterThanOrEqual(0);
+      await tapOrClick(button);
       await expect(heading(page, en.login.title)).toBeVisible();
       await expect(page).toHaveURL("/login");
       expect(await hasSavedSession(page)).toBe(false);

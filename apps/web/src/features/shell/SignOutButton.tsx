@@ -1,13 +1,17 @@
 import { LogoutOutlined } from "@ant-design/icons";
 import { useNavigate, useRouteContext } from "@tanstack/react-router";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-// Sign out of this browser (T02 AU-04, sign-in plan SI-13): top right of the
-// TopBar from bp-md, in the menu drawer's footer below it. The account menu
-// with "Sign out of all devices" replaces it in #130.
-export function SignOutButton() {
+// Sign out of this browser (T02 AU-04): right above the language switch, in
+// the SideNav's footer from bp-md and the menu drawer's footer below it
+// (owner, 2026-11-06; sign-in plan SI-13 had it at the right of the TopBar).
+// A text button like its neighbours; the collapsed SideNav shows the icon
+// alone, keeps the name, and shows it in a tooltip on the right, as antd does
+// for the menu's items (owner, 2026-11-06). The account menu with "Sign out of
+// all devices" follows in #130.
+export function SignOutButton({ iconOnly = false }: { iconOnly?: boolean }) {
   const { t } = useTranslation("app");
   const session = useRouteContext({
     from: "/app",
@@ -27,15 +31,24 @@ export function SignOutButton() {
     }
   }
 
-  return (
+  const button = (
     <Button
+      type="text"
       icon={<LogoutOutlined aria-hidden />}
+      aria-label={iconOnly ? t("account.signOut") : undefined}
       loading={busy}
       onClick={() => {
         void signOut();
       }}
     >
-      {t("account.signOut")}
+      {!iconOnly && t("account.signOut")}
     </Button>
+  );
+  return iconOnly ? (
+    <Tooltip title={t("account.signOut")} placement="right">
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }

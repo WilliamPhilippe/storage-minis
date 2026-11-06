@@ -158,8 +158,9 @@ It also runs the web app's Vite server on `http://localhost:5173` (bound to
 to the API. Open [`/app`](http://localhost:5173/app) and sign in with Google.
 Use `localhost`, not the `127.0.0.1` address Vite prints: the Firebase dev
 project and its browser key allow only `localhost`, and Google answers 403
-elsewhere. Signed in, the API connection card shows the echoed message, and the Sign out button sits
-at the top right, or in the menu drawer on a narrow window. With the API
+elsewhere. Signed in, the API connection card shows the echoed message, and
+Sign out sits right above the language switch, at the bottom of the side menu,
+or of the menu drawer on a narrow window. With the API
 stopped, the card's error appears after about 7 s of retries.
 Open [liveness](http://127.0.0.1:3000/health/live) and
 [readiness](http://127.0.0.1:3000/health/ready): expect HTTP 200 with

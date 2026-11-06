@@ -2067,6 +2067,15 @@ points; the owner approved each recommendation:
 | The Google button | Keep the approved design: antd's primary ink button and the system font, with the G on a white circle. Google's custom-button font (Google Sans Medium 14/20) and its dark fill (#131314 with #E3E3E3 text) are a recorded gap. | The G keeps its colours on white, as Google requires. Following Google's font and fills would need a font download and overrides beyond the light-override rule. |
 | Commits | Each group committed locally on `feat/web-sign-in` as finished; push and PR only on the owner's word. | Keeps section 5's groups separate. |
 
+**Owner change during review (2026-11-06):** Sign out moves to the language
+switch's places, right above it: the SideNav's footer from `bp-md` and the menu
+drawer's footer below it, replacing SI-13's top right of the TopBar. The TopBar
+keeps only the page title, or the logo on phones, until #130's account menu.
+Like its neighbours it is a text button. In the collapsed SideNav it shows its
+icon alone and keeps its name, as the language switch does, and at the owner's
+request it shows that name in a tooltip on the right, as antd does for the
+collapsed menu's items.
+
 **Outcome:**
 
 - **Configuration (SI-02, SI-03):** the pins and two `allowBuilds: false`
@@ -2090,9 +2099,10 @@ points; the owner approved each recommendation:
   session reaches routes through the router context (TanStack's pattern for
   authentication); `useSession()` reads the member session under `/app`.
 - **Login page and Sign out (SI-11, SI-13):** states 2–4, error alerts and an
-  info alert for "Your session ended"; Google's G; the Sign out button at the
-  right of the TopBar from `bp-md` and beside the language switch in the menu
-  drawer's footer below it. en-US and pt-BR strings together.
+  info alert for "Your session ended"; Google's G; the Sign out button right
+  above the language switch, in the SideNav's footer from `bp-md` and in the
+  menu drawer's footer below it (the owner's change below). en-US and pt-BR
+  strings together.
 - **Playwright (SI-15, SI-17):** a `setup` project that resets, migrates and
   seeds the test database, mints a custom token through IAM, signs in through
   the development-only hook and saves the IndexedDB session; an outside-origin
@@ -2144,7 +2154,7 @@ points; the owner approved each recommendation:
   `@opentelemetry/api` peer now resolves, brought by `@firebase/crashlytics`
   (inside firebase 13.2.0) and Firestore (inside firebase-admin); the app
   imports neither.
-- `pnpm check`: 360 unit tests in 33 files (from 242 in 27); `web-unit` has 192
+- `pnpm check`: 362 unit tests in 33 files (from 242 in 27); `web-unit` has 194
   in 17 (from 74 in 11): the startup check's decoding against the 13.2.0 record
   shape and the 7-day rule, popup or redirect, in-app detection, the redirect
   parameter, the session service, the link's headers, `UNAUTHORIZED`,
