@@ -15,7 +15,7 @@ describe("the Login page", () => {
     ["desktop", 1280, false],
   ])("shows state 1 on %s (%i px)", async (_layout, width, largeControls) => {
     setViewportWidth(width);
-    renderApp("/login");
+    renderApp("/login", { user: null });
 
     expect(
       await screen.findByRole("heading", { level: 1, name: login.title }),
@@ -38,7 +38,7 @@ describe("the Login page", () => {
 
   it("has no working feature yet: the button does nothing", async () => {
     const user = userEvent.setup();
-    const { router } = renderApp("/login");
+    const { router } = renderApp("/login", { user: null });
     await user.click(await screen.findByRole("button", { name: login.action }));
     // The fetch guard fails the test on any request.
     expect(router.state.location.pathname).toBe("/login");
@@ -46,7 +46,7 @@ describe("the Login page", () => {
 
   it("switches to pt-BR", async () => {
     const user = userEvent.setup();
-    renderApp("/login");
+    renderApp("/login", { user: null });
     await user.click(
       await screen.findByRole("button", { name: languageSwitchName() }),
     );

@@ -3,6 +3,7 @@ import { createRouter, type RouterHistory } from "@tanstack/react-router";
 import { ErrorPage } from "./features/errors/ErrorPage";
 import { PendingPage } from "./features/errors/PendingPage";
 import type app from "./i18n/en-US/app";
+import type { Session } from "./lib/session/session";
 import { trpc } from "./lib/trpc";
 import { routeTree } from "./routeTree.gen";
 
@@ -10,14 +11,16 @@ export type TitleKey = keyof typeof app.titles;
 
 export function createAppRouter({
   queryClient,
+  session,
   history,
 }: {
   queryClient: QueryClient;
+  session: Session;
   history?: RouterHistory;
 }) {
   return createRouter({
     routeTree,
-    context: { queryClient, trpc },
+    context: { queryClient, trpc, session },
     ...(history ? { history } : {}),
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
