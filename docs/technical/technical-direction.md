@@ -4,22 +4,19 @@
 
 This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.8 requirements](../requirements/requirements-v0.8.md), [entity map v0.9](../entities/entity-map-v0.9.md), and [ownership index](../requirements/requirements-coverage-v0.8.md). It does not replace the business baseline or close delivery issues. Those documents govern domain invariants.
 
+Each record keeps the owner's approval, the decisions and the delivered
+outcome. The delivering PR's description holds the commands and results that
+verified it; the evidence sections this document carried until the
+[2026-11-06 cleanup](#documentation-cleanup-2026-11-06) are at
+[commit 03b494c](https://github.com/WilliamPhilippe/storage-minis/blob/03b494cf212125040cb8943a06b2d8556dc01323/docs/technical/technical-direction.md).
+
 ## Workspace bootstrap progress (2026-10-23)
 
-The owner authorized the first setup step: a private pnpm workspace, lockfile,
-pinned Node.js/pnpm versions, and initial `apps/api` (Fastify/tRPC) and
-`packages/db` (Drizzle connection, schema, migrations) package directories. The
-toolchain pins are recorded in the root `package.json` and `.nvmrc`; verified
-installation commands and current scope are in [local setup](../../README.md#local-setup).
-Node.js 24 LTS is the selected runtime line, with an exact patch pinned for
-repeatable setup. The workspace uses one shared lockfile and exact versions for
-future dependency additions.
-
-Node.js version management is a local tooling choice. fnm was used for the
-initial setup because Homebrew was available; both fnm and nvm can read the
-repository's `.nvmrc`. The pinned Node.js/pnpm versions are required, while fnm
-is optional. See [local setup](../../README.md#local-setup) for both workflows and
-their validation status.
+On 2026-10-23 the owner authorized the first setup step: a private pnpm
+workspace with one shared lockfile and exact versions for every dependency, on
+the Node.js 24 LTS line. `.nvmrc` and `package.json` pin the exact Node.js and
+pnpm versions, which are required; fnm and nvm both read `.nvmrc`, and fnm, the
+current local setup, is optional. See [local setup](../../README.md#local-setup).
 
 ## Tooling setup decisions (2026-10-23)
 
@@ -71,27 +68,15 @@ their assertions explicitly, and `*.integration.test.ts` files await dedicated
 real-database projects rather than joining the unit run.
 
 These compile/lint rules do not enforce monetary limits, authorization, or
-transaction atomicity. T01/T02/T04 prerequisites and the rest of T06 remain open.
-
-**Implementation verification (2026-10-23):** On macOS arm64 with Node 24.22.1
-and pnpm 12.15.0, the exact dependencies installed successfully;
-`pnpm install --frozen-lockfile`, workspace package discovery, `pnpm typecheck`,
-`pnpm lint`, `pnpm lint:fix`, `pnpm format:check`, and `pnpm format` were verified.
-Typecheck currently checks configuration files. Temporary fixtures confirmed
-valid inputs pass, both packages reject unchecked lookups and invalid optional
-fields, typed linting rejects unhandled promises, and formatting detects/repairs
-style differences. Both Vitest projects discovered passing unit tests, excluded
-integration fixtures, supported focused selection, and propagated deliberate
-assertion failures. All temporary fixtures were removed afterward.
-
-The final empty repository suite makes `pnpm test` exit 1 as approved.
-`pnpm test --passWithNoTests` loads both project configurations and exits 0;
-`pnpm test:watch --passWithNoTests` enters watch mode and accepts the quit command.
-These are tooling checks, not application/persistence acceptance evidence.
-Changed documentation links, anchors, Markdown fences/tables, and
-`git diff --check` were also checked.
+transaction atomicity.
 
 ## Turborepo setup decisions (2026-10-23)
+
+**Partly superseded:** the Dependencies and Cache outputs rows describe the
+first setup. Later steps made tasks depend on the builds they consume and cache
+build outputs (`dist/**`, `dist-testing/**`). The
+[Turborepo reference](local-development.md#turborepo-tasks-and-cache) lists the
+current tasks, and [`turbo.json`](../../turbo.json) is authoritative.
 
 **Owner approval:** On 2026-10-23, the owner approved the Turborepo boilerplate
 proposal with "Implement it" and requested adherence to Turborepo documentation
@@ -126,47 +111,20 @@ was the verified stable version at approval; its
 [lockfile parser](https://github.com/vercel/turborepo/blob/v2.11.10/crates/turborepo-lockfiles/src/pnpm/data.rs)
 supports this repository's multi-document pnpm lockfile format.
 
-**Implementation verification (2026-10-23):** On macOS arm64 with Node.js
-24.22.1 and pnpm 12.15.0, the frozen install and workspace discovery passed;
-`pnpm exec turbo --version` reported 2.11.10. `pnpm check --dry=json` discovered
-exactly six executable tasks, no dependency edges or recursive commands, and
-strict environment handling. Turbo reported remote caching disabled and used
-this worktree's `.turbo/cache` and `.turbo/runs` directories.
-
-The documented forced run of typecheck, root typecheck, lint, and formatting
-check completed five successful tasks; the unchanged second run reused all five
-cache entries. `pnpm typecheck` also passed. Temporary shared-configuration edits
-changed all six task hashes; an API-configuration edit changed API/root hashes
-while preserving the DB typecheck hash. Changing `NODE_ENV` or `TZ` affected only
-the unit-test task hash; an unrelated environment variable affected none.
-
-A temporary TypeScript assignment error made `pnpm typecheck` fail with exit 2
-on consecutive runs, with the invalid API task executed again each time. All
-temporary configuration edits were restored byte for byte. Explicit
-`--passWithNoTests` runner checks passed for both projects individually and
-together. The Turbo bootstrap runner check passed and reused its own cache, but
-ordinary Turbo tests still executed and failed on repeated runs. Normal
-`pnpm test` and `pnpm check` exited 1 because tests remain absent. No permanent
-test fixtures were added.
-
-Documentation links, anchors, fences/tables, and `git diff --check` were checked.
-These results establish tooling behavior only. T06 and its T01/T02/T04
-prerequisites remain open; application, database, deployment, remote-cache, and CI
-implementation evidence remains pending.
-
 ## Step 3A Drizzle implementation (2026-10-25)
 
-**Partly superseded (2026-10-31):** The dependencies, factory, limits and
-compiled exports remain. The fixed dev/test tuple, Doppler injection, `db:check`
-and the command supervisors are replaced by `DATABASE_URL`, committed values,
-`drizzle-kit generate` and `src/migrate.ts` (A1). See [Foundation restructure](#foundation-restructure-2026-10-31).
+**Partly superseded (2026-10-31):** the dependencies, factory, limits and
+compiled exports below remain. The
+[foundation restructure](#foundation-restructure-2026-10-31) replaced the rest
+of this step (the fixed dev/test tuple, Doppler injection, `db:check`, the
+command supervisors and their tasks and tests) with `DATABASE_URL`, committed
+values, `drizzle-kit generate` and `src/migrate.ts` (A1). The replaced rows are
+at [commit 03b494c](https://github.com/WilliamPhilippe/storage-minis/blob/03b494cf212125040cb8943a06b2d8556dc01323/docs/technical/technical-direction.md#step-3a-drizzle-implementation-2026-10-25).
 
 **Owner approval:** On 2026-10-24 the owner approved the
-[two-part plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md),
-requested a new branch from `main`, and instructed implementation. Branch
-`chore/step-3-drizzle` starts at merged `origin/main` commit `acb9f05` and preserves
-the planning documents. This delivers 3A; the plan's physical-schema review and
-first-development-migration gates remain in force for 3B.
+[two-part plan](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/plans/step-3-drizzle-and-base-migration-plan-2026-10-24.md);
+this record is its first part, 3A, and
+[Step 3B](#step-3b-structural-schema-2026-10-25) its second.
 
 Two installation/compatibility findings required additional choices. The owner
 explicitly answered “Approve exact-version allowlist” for esbuild 0.18.20,
@@ -179,20 +137,13 @@ The esbuild allowlist is version-specific; future builds require review.
 
 | Area | Implemented contract and rationale |
 | --- | --- |
-| Dependencies | DB runtime: Drizzle ORM 0.45.4, pg 8.23.1, Zod 4.6.7. Root tools: Drizzle Kit 0.31.11, @types/pg 8.23.1, tsx 4.23.15. Installation is inside existing Docker volumes, with a shared exact lockfile. |
-| Environment | Verified project `storage-minis`, config/environment `test`, and key name `POSTGRES_TEST_PASSWORD`. Both PostgreSQL lifecycle and Node commands require `DOPPLER_CONFIG` equal to `dev` or `test` as selected. Dev keeps `POSTGRES_PASSWORD`; no test fallback to dev. Only the selected password is fetched. |
+| Dependencies | DB runtime: Drizzle ORM 0.45.4, pg 8.23.1, Zod 4.6.7. Root tools: Drizzle Kit 0.31.11, @types/pg 8.23.1, tsx 4.23.15, with a shared exact lockfile. |
 | Factory | Explicit validated configuration, lazy pg pool, typed Drizzle handle, bounded authenticated `check()`, idempotent `close()`, last-check readiness flag. Import has no environment/network side effect. Command process owns cleanup. |
-| Limits | Pool max 5; idle 10s; connection/acquisition 2s; statement 3s; query 4s; complete check 6s; graceful pool cleanup 10s. Command watchdog and signal handlers provide final process cleanup. These remain local defaults, not production targets. |
+| Limits | Pool max 5; idle 10s; connection/acquisition 2s; statement 3s; query 4s; complete check 6s; graceful pool cleanup 10s. These remain local defaults, not production targets. |
 | Exports | TypeScript emits ESM and declarations to `dist/`; normal Node and NodeNext consumers resolve compiled package exports. No source alias or API runtime was introduced. |
-| Tasks | DB build emits cached `dist/**`. DB typecheck and root typed lint build required exports first. `db:check`, `db:generate`, `db:migrate`, and `test:integration` are uncached; only named DB environment values pass to secret-bearing tasks. |
-| Migration state | Generation/application commands and direct CLI configs refuse before credentials or schema mutation. No placeholder schema, empty journal, dummy tables or migration exists. Config paths/history namespace are recorded; CLI execution and migration credentials will be completed with approved real artifacts in 3B. |
-| Tests | Colocated unit tests validate configuration, target isolation and migration refusal. Separate real-PostgreSQL tests validate connection/rollback/timeouts, idle errors, process exports and cleanup. Integration requires the exact test tuple, 30s per test and 120s suite bound. |
 
-No host tool was installed or upgraded. The setup documentation now explains the
-separate Doppler configs, internal port 5432 on distinct containers, and host
-ports 5433/5434. The final evidence and remaining schema work are recorded in the
-[Step 3A handoff](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-3a-verification-2026-10-25.md). These checks do not establish
-business atomicity, Organization authorization, schema constraints or T06 completion.
+The step's evidence is in the
+[Step 3A handoff](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/technical/step-3a-verification-2026-10-25.md).
 
 ## Foundation Steps 1–4 (2026-10-24 to 2026-10-29)
 
@@ -203,9 +154,10 @@ PostgreSQL (Step 2), Drizzle and the base migration (Step 3, with
 [Step 3B](#step-3b-structural-schema-2026-10-25) below), and the Fastify API
 with its image (Step 4, [PR #107](https://github.com/WilliamPhilippe/storage-minis/pull/107)).
 The [foundation restructure](#foundation-restructure-2026-10-31) replaced their
-container execution model, Doppler launch path and helpers, and its
-[evidence table](#step-14-evidence-after-the-restructure) lists what was
-re-proven. The API runtime contracts Step 4 approved (health, the database
+container execution model, Doppler launch path and helpers; the table of what
+it re-proved is at
+[commit 03b494c](https://github.com/WilliamPhilippe/storage-minis/blob/03b494cf212125040cb8943a06b2d8556dc01323/docs/technical/technical-direction.md#step-14-evidence-after-the-restructure).
+The API runtime contracts Step 4 approved (health, the database
 check, startup and shutdown bounds, exit codes and HTTP limits) are in the
 [local development reference](local-development.md#api-runtime-behavior); the
 [API rework](#api-composition-and-error-log-rework-2026-11-01) replaced its
@@ -254,25 +206,6 @@ that recorded Steps 1–4 were removed on 2026-11-06 (see
 [Foundation Steps 1–4](#foundation-steps-14-2026-10-24-to-2026-10-29)); this
 record owns the current local workflow.
 
-### Step 1–4 evidence after the restructure
-
-| Earlier evidence | Status |
-| --- | --- |
-| Step 1 tooling image, dependency volumes, launcher signal forwarding, checkout-scoped Doppler login and `verify-env` probe | Superseded; the mechanisms no longer exist. |
-| Step 2 services: health, persistent development data, discarded test data, loopback-only ports, separate credentials | Re-proven with the new roles: SCRAM from the host, wrong passwords and cross-server credentials rejected with `28P01`. |
-| Step 2 Doppler injection, SQL client container, launcher deadlines and confirmed per-target resets | Superseded by committed values, `pnpm db:psql` and `pnpm db:reset`. |
-| One-time setup and lifecycle helpers (`.env.compose`, volume-ownership checks) | Superseded by native Compose scripts; the ownership guard has nothing left to guard. |
-| Step 3A connection factory, limits, compiled exports, plain consumer | Re-proven in the connection suite, plus a new test that ambient `PG*` values cannot redirect the URL. |
-| Step 3A target tuple and `DATABASE_URL` rejection | Superseded by A1; URL validation has new unit tests. |
-| Step 3B constraints, scope/party rejection, races, replay, repeat application, chain rollback, lock timeout, interrupted migration | Re-proven on the regenerated chain, with fixtures running as the app role and a new app-role DML/DDL test. |
-| Step 3B supervisor bounds: 120 s process deadline, 130/143 signal exits, Kit zero-exit check | Superseded; the migrator relies on connection timeouts and Node's default signal handling, and the Kit behavior is documented. |
-| Step 4 factory, HTTP, logging and lifecycle unit tests | Re-proven unchanged, apart from the configuration shape. |
-| Step 4.4/4.9/4.10 real process tests: startup failures, signals, drain, 10 s/17 s watchdogs, socket outage and recovery | Re-proven: 26 process tests through `DATABASE_URL` and owned loopback listeners. |
-| Step 4.5 runtime image packaging | Re-proven: nonroot `node`, no mounts, compiled API/DB plus `dist/migrate.js` and the migrations. |
-| Step 4.6 Compose runtime with Doppler, 4.7 development image and reload, 4.8 image smoke | Superseded by the parity stack, `pnpm dev` on the host and `pnpm test:stack`. |
-| Step 4.9 native test-service outage and 4.10 container drain through stop/down and volume deletion | Not re-proven; they used removed helpers. `pnpm test:stack` proves the containerized SIGTERM exit 143, and the process suite proves draining. |
-| Step 4.11 task graph and cache reuse | Re-checked in V2 (dry runs and reuse). |
-
 ## API composition and error-log rework (2026-11-01)
 
 **Owner approval:** On 2026-11-01 the owner approved two API changes before
@@ -312,20 +245,12 @@ Tests still assert that responses carry no details, and now assert the log polic
 allowlisted fields only, SQLSTATE through the cause chain, messages only in
 development, and no database password or `DATABASE_URL` in any process output.
 
-**Evidence (2026-11-01, branch `refactor/api-composition-error-logs`):** `pnpm check`
-83 unit tests in 9 files; `pnpm build`; `pnpm test:api` 27 real-process tests
-(one new: wrong credentials in development mode); `pnpm test:db` 29 tests;
-`pnpm test:stack` 5 tests on rebuilt image
-`sha256:8176e03deff7f9a68cadc898aaf7ab971c6ed072b75ec81abe0f6047297bac36`. Sample lines
-for a 500, a 413 and a startup database failure in both modes are in the PR. This
-is tooling evidence, not business acceptance.
-
 ## Step 5 tRPC and Zod plan approval (2026-11-01)
 
 **Owner approval:** On 2026-11-01 the owner approved the
 [Step 5 plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/step-5-trpc-plan-2026-11-01.md) as recommended, P5-01–P5-10.
 Implemented in [PR #114](https://github.com/WilliamPhilippe/storage-minis/pull/114);
-the outcome, six implementation-time approvals and the evidence follow the table.
+the outcome and six implementation-time approvals follow the table.
 Choices the plan does not settle, and deviations that implementation forces, still
 need approval.
 
@@ -389,30 +314,13 @@ on 2026-11-01:
 - `@storage-minis/api/types` exports only the `AppRouter` type; the browser
   type-check loads no Fastify or plugin declarations.
 
-**Evidence (2026-11-01, branch `feat/step-5-trpc`):**
-- `pnpm install --frozen-lockfile` passes.
-- `pnpm check`: 8 tasks, 120 unit tests in 12 files (from 83 in 9): 5 envelope,
-  30 adapter (section 5 cases 1–22, HEAD and the loopback client) and 2 consumer
-  tests.
-- `pnpm build` emits `dist/types.d.ts` and `dist/trpc/`.
-- `pnpm turbo run test --dry=json` lists `@storage-minis/api#build` and
-  `@storage-minis/db#build` under `//#test`. An API source edit missed
-  `@storage-minis/api#build` and `//#test`; restoring it hit both again (root test
-  hash `058dc2bd2b5f997b`).
-- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged.
-- `pnpm test:stack` 5 on rebuilt image
-  `sha256:54798c608f2f722de2d9c904a3985dcaaaaedbe940c6cdf930f4a3bae6a03744`. A
-  `docker run` listing shows `node_modules/@trpc` holding only `server`, with no
-  `@trpc/client` or `typescript` package.
-
-This is tooling evidence, not business acceptance.
-
 ## Frontend foundation decisions (2026-11-01)
 
 **Owner approval:** On 2026-11-01 the owner decided every item, W1–W11, of the
 [frontend foundation proposal](frontend-foundation-proposal-2026-11-01.md) over
-two review rounds. Nothing is implemented yet; each W11 delivery step gets its
-own plan for approval. W7 replaces the React Hook Form choice in the
+two review rounds. Each W11 delivery step got its own plan for approval: PRs
+1–3 are implemented, as recorded below, and PR 4 waits for the first
+deployment. W7 replaces the React Hook Form choice in the
 [accepted application stack](#accepted-application-stack) (2026-10-21) with
 TanStack Form, and W2–W4 settle the design system, styling conventions,
 application language and UI locale that the stack record left open. A
@@ -449,8 +357,9 @@ Organization once users can belong to several, the nickname's remaining rules
 Foundation Step 6 (TBD until the app is validated locally). The session limit
 replaces the [authentication](#authentication-and-initial-administrator)
 record's "No absolute or idle session timeout has been chosen". The proposal
-holds the options considered, candidate versions and sources; each step's plan
-re-verifies its pins.
+holds the options considered and their sources, and its
+[later changes](frontend-foundation-proposal-2026-11-01.md#later-changes) list
+what later approvals changed in W3–W6 and W8–W11.
 
 ## Frontend PR 1 web shell plan approval (2026-11-01)
 
@@ -458,8 +367,8 @@ re-verifies its pins.
 [web shell plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-plan-2026-11-01.md), WS-01–WS-13, for PR 1 of the
 frontend decisions (W11 item 1, [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)),
 with the changes listed after the table. Implemented in
-[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome, five implementation-time decisions and the
-evidence follow the design reference. Choices the plan does not settle, and
+[PR #121](https://github.com/WilliamPhilippe/storage-minis/pull/121); the outcome and five implementation-time decisions
+follow the design reference. Choices the plan does not settle, and
 deviations that implementation forces, still need approval.
 
 **Rationale.** The plan keeps PR 1 to the shell that later PRs build on, using
@@ -589,65 +498,6 @@ add them. The [web shell follow-up](#web-shell-follow-up-plan-approval-2026-11-0
 did so on 2026-11-03, apart from the Login page's README. The logo links and the not-found page's home link are current
 (`aria-current`) only on `/app` itself.
 
-**Evidence (2026-11-01, branch `feat/web-shell`):**
-
-- `pnpm install --frozen-lockfile` passes. `pnpm-workspace.yaml` is unchanged:
-  no `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers
-  check` finds no issue. The TanStack and tRPC agent skills stay unapproved.
-- `pnpm check`: 9 tasks, 194 unit tests in 23 files (from 120 in 12). The
-  `web-unit` project adds 74 tests in 11 files: money, dates, languages, a
-  failed switch, the theme's selected backgrounds, the pending page, the
-  shell, the document title, routes, the Login page and the echo card.
-- `pnpm check --dry=json` lists `@storage-minis/web#typecheck`, and `//#lint`
-  depends on `@storage-minis/api#build` and `@storage-minis/db#build`.
-- Each guard was broken on purpose and failed: an undeclared console warning,
-  an unstubbed `fetch`, a removed `aria-hidden` on a menu icon, the
-  last-switch-wins check, the title fallback when the `app` strings fail, the
-  selected-background tokens (the old theme gave `#5b5f61`), and
-  in `tsc` a missing pt-BR key, an extra key, a missing `_many`, a wrong `t()`
-  key and a wrong title key.
-- `pnpm build` builds `apps/web/dist`. First catalog visit: about 282 KiB
-  (gzip −9) of JavaScript and CSS (252.6 initial JavaScript, 2.2 CSS, 27.2 for
-  the catalog page, plus the string chunks). The 22.5 KiB shell chunk loads
-  only on `/app`.
-- Without `routeTree.gen.ts`, `pnpm --filter @storage-minis/web build`
-  regenerates it byte-identically. `cmp` finds `apps/web/src/ui/tokens.css`
-  identical to `docs/design/system/tokens.css`.
-- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged. `pnpm test:stack` 5 on
-  an image rebuilt with the new lockfile.
-- Live echo: through `http://127.0.0.1:5173` and `http://localhost:5173`, the
-  proxy returned the API's exact 200 and 400 bodies, and `/trpcx` returned the
-  app's `index.html`. With the API stopped, the card showed "Can't reach the
-  server" 7.6 s after navigation, after four requests (the first and three
-  retries at about 1, 2 and 4 s). With the API restarted, "Try again" showed
-  the echoed message.
-- Browser pane at 375 × 812, 900 and 1280 wide: no sideways scroll; header 56
-  and 64 px; 44 and 40 px controls; ink primary buttons and solid ink text
-  (`rgb(22, 27, 33)`); the FAB's `shadow-fab`; the current item at weight 600;
-  SideNav collapsed at 900 and expanded at 1280; one h1 per page; no console
-  warning.
-- The Login page at 390 × 844 and 1280 × 800 matches `screens/1-sign-in.png`
-  and `screens/5-desktop.png`, apart from the "G" placeholder and the
-  switch's "EN" label: h1 22/30/600,
-  lead 16 px then 14 px, button 44 then 40 px, a 400 px card on desktop. At
-  390 px it has no sideways scroll (`scrollWidth` 390). Its button does
-  nothing, and the network list shows no external request.
-- The SideNav's menu has no right border of its own (`border-inline-end`
-  0px), leaving the SideNav's 1 px `line`; the drawer's menu has none either.
-- A collapsed SideNav item's tooltip is 34 px tall with 6 px above and below
-  its 22 px line (it was 40 px, with 12 px below).
-- The language switch sits above "Collapse" in the SideNav at 1280 ("EN"),
-  as a 40 px globe-only button above "Expand menu" at 900, and as a 44 px
-  "EN" button in the drawer's footer at 375; the TopBar has no button.
-- The language switch's selected item renders ink on `rgb(238, 240, 243)`,
-  and on `rgb(227, 230, 234)` when hovered (it was `rgb(91, 95, 97)`).
-- Under emulated dark mode, the page and the browser's controls stay light.
-- On `vite preview`, `/catalog/demo` and `/app` load only the en-US string
-  chunks. A switch to pt-BR adds only the pt-BR `common` and `app` strings and
-  the antd and dayjs locales.
-
-This is tooling evidence, not business acceptance.
-
 ## Frontend PR 2 Playwright plan approval (2026-11-02)
 
 **Owner approval:** On 2026-11-02 the owner approved the
@@ -655,9 +505,8 @@ This is tooling evidence, not business acceptance.
 for PR 2 of the frontend decisions (W11 item 2,
 [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118)). It is
 implemented in [PR #124](https://github.com/WilliamPhilippe/storage-minis/pull/124);
-the [implementation-time decisions](#implementation-time-decisions-2026-11-02),
-the [outcome and the evidence](#implemented-outcome-2026-11-02) follow this
-record.
+the [implementation-time decisions](#implementation-time-decisions-2026-11-02)
+and the [outcome](#implemented-outcome-2026-11-02) follow this record.
 
 **Owner changes to W9 and W11 (2026-11-02),** made before the plan:
 
@@ -767,48 +616,6 @@ each on 2026-11-02:
   `.gitignore`, `.prettierignore` and ESLint ignore entries of PW-08, and
   `.claude/**` in the ESLint global ignores.
 
-**Evidence (2026-11-02, branch `feat/playwright`):**
-
-- `pnpm install --frozen-lockfile` passes; `pnpm-workspace.yaml` has no
-  `minimumReleaseAgeExclude` entry and no new `allowBuilds`. `pnpm peers check`
-  finds no issue.
-- `pnpm check`: 9 tasks and 194 unit tests, unchanged, after each commit
-  group. Right after an end-to-end run, 9 of 9 cached.
-- `playwright test --list`: 45 tests in 5 files, 23 `desktop-chrome` and
-  22 `pixel-7`, no other project.
-- `pnpm db:up`, then `pnpm test:e2e` three times: 45 passed each time, in
-  20.4, 21.7 and 21.2 s with 5 workers. A fourth run on the finished branch,
-  with the host on `TZ=UTC`, passed 45 in 20.9 s.
-  `pnpm test:e2e -- --project=pixel-7` ran 22 tests, none in `desktop-chrome`.
-- With a failure's report (2.4 MB) and trace present, `pnpm lint` and
-  `pnpm format:check` pass.
-- `pnpm test:api` 27 and `pnpm test:db` 29, unchanged. `pnpm test:stack` 5 on
-  an image rebuilt with the new lockfile.
-- Each guard broken on purpose failed, and passed again when restored:
-
-  | Guard | Broken by | Failed with |
-  | --- | --- | --- |
-  | Console policy | The `The above error occurred in` declaration removed; the 502 declaration removed; `height="auto"` on the drawer; an error thrown from a timer | `console output the test did not declare`, with React's error-boundary message, four `status of 502 (Bad Gateway)` errors, `` [antd: Drawer] `height` is deprecated `` and `pageerror: Error: deliberate page error` |
-  | No sideways scroll | A 480 px minimum width on the Login logo | Pixel 7 only: `the page scrolls sideways`, 496 > 412 |
-  | Time zone pin | `timezoneId` removed, host `TZ=UTC` | Both projects: `"timeZone": "UTC"` and `"day": "Nov 1"` |
-  | Project tags | `grepInvert` removed from `desktop-chrome` | The `@phone` drawer test fails on desktop |
-  | No server reuse | A server on 5173; a server on 3000 answering 200 at `/health/ready`, as `pnpm dev`'s API does | `http://localhost:5173 is already used` after `[api]` reports `listening`; `http://127.0.0.1:3000/health/ready is already used` before any server starts |
-  | Test database only | `DATABASE_URL` naming `storage_minis_dev` | `Database integration tests require a database whose name ends in _test.`, no server started |
-  | Databases stopped | `pnpm db:down` | Within about 1 s, `database_readiness_failed` with `ECONNREFUSED`, then `Process from config.webServer was not able to start. Exit code: 1` |
-  | Browser path | `PLAYWRIGHT_BROWSERS_PATH` naming an empty folder | With the pass-through, `Executable doesn't exist at <folder>/chromium_headless_shell-1248/…`; with `PLAYWRIGHT_BROWSERS_PATH` removed from `passThroughEnv`, the variable is dropped and the run passes from the default cache |
-  | Lint | `test.only`, `expect(await …isVisible()).toBe(true)`, `waitForTimeout`, a raw `.click()`, an unawaited `toBeVisible()` | `Unexpected focused test`, `Replace isVisible() with toBeVisible()`, the `waitForTimeout` warning (blocking under `--max-warnings 0`), the `tapOrClick` message, and `no-floating-promises` with `'toBeVisible' must be awaited` |
-  | Ignores | The ESLint ignores removed while a report exists | 856 lint errors |
-  | Types | A wrong catalog key in a spec | `TS2339`; a near miss such as `unavailabel` gives `TS2551` ("Did you mean") |
-
-Implementation notes, not decisions: the browser-path guard was checked with an
-empty folder rather than the prototype's custom install, so no second 206 MiB
-download was needed; a server on port 3000 that answers 404 at
-`/health/ready` is not reused either, and the API then exits on `EADDRINUSE`.
-The verification ran in a separate git worktree; because Compose names its
-project after the folder, `pnpm db:up` ran from the main checkout.
-
-This is tooling evidence, not business acceptance.
-
 ## Web shell follow-up plan approval (2026-11-02)
 
 **Owner approval:** On 2026-11-02 the owner approved the
@@ -816,9 +623,9 @@ This is tooling evidence, not business acceptance.
 as written, after ruling on the three shell issues that the
 [PR 2 approval](#frontend-pr-2-playwright-plan-approval-2026-11-02) left to
 this follow-up. It belongs to
-[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) and is not
-yet implemented; one implementation PR follows PR 2 and adds the outcome and
-the evidence here. Choices the plan does not settle, and deviations that
+[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) and is
+implemented in [PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125),
+with the outcome below. Choices the plan does not settle, and deviations that
 implementation forces, still need approval.
 
 **The owner's answers (2026-11-02):**
@@ -909,51 +716,6 @@ part of it.
   MenuFab.md still asks for `radius-lg` drawer corners and 16 px menu text,
   which the 2026-11-01 decision leaves at antd's defaults.
 
-**Evidence (2026-11-03, branch `fix/web-shell-follow-up`):**
-
-- `pnpm install --frozen-lockfile --offline` linked the worktree's packages and
-  downloaded nothing.
-- `pnpm check`: 9 tasks and 194 unit tests, unchanged. The four jsdom lines
-  "Not implemented: Window's getComputedStyle() method: with pseudo-elements" in
-  `AppShell.test.tsx` appear with and without this change: antd's scroll lock
-  measures the scrollbar when a drawer opens.
-- Browser pane, with Vite from this branch on port 5174 and no API (Chromium
-  reports no inset):
-
-  | Viewport | Drawer | Drawer top | Menu body |
-  | --- | --- | --- | --- |
-  | 375 × 812 | 554 px (title 57, body 436, footer 61), under its 756 px cap | 258 px | 436 of 436 px, no scroll |
-  | 375 × 548 | 492 px, capped | 56 px, Close at 72 px | 374 of 436 px, scrolls |
-  | 667 × 375 | 319 px, capped | 56 px, Close at 72 px | 201 of 436 px, scrolls |
-
-  At each size the FAB sat 16 px from the right and the bottom, where antd's
-  defaults had put it 24 and 48 px away, and the language switch ended 8 px
-  above the bottom.
-- A temporary CSS edit adding 34 px to the inset rules gave the FAB a computed
-  34 px margin, 50 px from the bottom, and put the switch 42 px up, so the
-  one-class rule wins over antd's `margin: 0`. With the cap removed at
-  667 × 375, the drawer's top sat at −213 px and Close at −197 px.
-- `pnpm test:e2e` after `pnpm db:up`: 48 passed in 21.4 s, 23 in
-  `desktop-chrome` and 25 in `pixel-7`. The override changes `env()` in Chrome
-  Headless Shell 156, so the safe-area test stays.
-- Each fix broken on purpose failed its test, and passed again when restored:
-
-  | Broken | Failed with |
-  | --- | --- |
-  | `marginLG`, `marginXXL` and the drawer cap removed | the offsets test, 24 for 16; the safe-area test, 82 for 50; the short-screen test, a drawer top of −54 for 56 |
-  | The FAB's inset margin removed | the safe-area test, 16 for 50 |
-  | The footer's inset padding removed | the safe-area test, 8 for 42 |
-
-- `pnpm lint`, the web `typecheck` (with `tsconfig.e2e.json`) and Prettier
-  pass. The change logged no console warning.
-
-Implementation notes, not decisions: because Compose names its project after
-the folder, the databases were started with `pnpm db:up` from the main
-checkout, as for PR 2, and stopped again afterwards; the browser pane's server
-came from a local, uncommitted `.claude/launch.json`.
-
-This is tooling evidence, not business acceptance.
-
 ## T02 record and sign-in plan approval (2026-11-04)
 
 **Owner approval:** On 2026-11-04 the owner approved, as recommended:
@@ -967,8 +729,8 @@ This is tooling evidence, not business acceptance.
 Before approving, the owner asked why the API verifies tokens with `jose` rather
 than `firebase-admin`: it needs only verification. `firebase-admin` would add about
 67 MiB and 172 packages to the API image, and its revocation and admin features need
-a server credential this design avoids. Nothing is implemented yet: PRs 3a and 3b
-follow, each adding its outcome and evidence here. Choices the plan does not settle,
+a server credential this design avoids. PRs 3a and 3b implement it; their
+outcomes follow. Choices the plan does not settle,
 and deviations that implementation forces, still need approval.
 
 **Answered after approval (2026-11-04):**
@@ -1138,46 +900,13 @@ points; the owner approved each recommendation:
   documents the contracts, the bootstrap and the AU-05 and AU-06 operator SQL;
   the README covers the configuration and the guarded builders.
 
-**Evidence (2026-11-05, branch `feat/api-auth`):**
-
-- `pnpm install --frozen-lockfile` passes; `jose` 6.2.15 (published
-  2026-11-01 22:28 UTC, still the newest) is the only new package, and
-  `pnpm-workspace.yaml` is unchanged.
-- `pnpm check`: 242 unit tests in 27 files (from 194 in 23): 13 verifier, 5
-  policy, 12 builder, 8 `session.get` and 10 configuration tests.
-- `pnpm build` passes.
-- `pnpm test:db`: 31 (from 29), through the shared helper; two new tests cover
-  the nickname's uniqueness and format (against `organizationNicknameRule`), the
-  currency and the revocation column.
-- `pnpm test:api`: 50, from 27. The process suite has 32 (five configuration
-  refusals added, among them the test opt-in with `NODE_ENV` `production` and
-  unset); the auth suite has 18.
-- `pnpm test:e2e`: 48, unchanged.
-- `pnpm test:stack`: 5 on rebuilt image
-  `sha256:ee333bb76945d5f5a1f76d13cc2bdbb3984509967bcd93165225ef44b65ec8ab`; the
-  image's `node_modules/@storage-minis/db` holds only `dist`, `drizzle` and
-  `package.json`.
-- Google's live JWK set (two RS256 keys on 2026-11-05) loads through the built
-  verifier, and a token signed by another key is refused as `token_invalid`
-  (`JWKSNoMatchingKey`), not a 500.
-- Guards broken on purpose, each caught: the 7-day check removed (verifier unit
-  test), any provider accepted (two unit tests), the opt-in's `NODE_ENV` lock
-  removed (configuration test), a runtime `@storage-minis/db` import in
-  `routers/session.ts` (`app.test.ts` and `plugin.test.ts` fail on their mock),
-  revocation compared with `<` instead of `≤ ⌈cutoff⌉` (policy test), the
-  Membership lookup skipped (three integration tests), `sessions_valid_after`
-  ignored (case 14), the `authorization` header logged (every integration test's
-  log check), and the bootstrap's re-check under the lock removed (case 3).
-- Not exercised in PR 3a: a live Google ID token and the manual development
-  bootstrap, which need PR 3b's sign-in.
-
-This is tooling and integration evidence; business acceptance of authorization
-waits for the business procedures that use it.
+Business acceptance of authorization waits for the business procedures that use
+it.
 
 ### PR 3b implemented outcome (2026-11-06)
 
-PR 3b, web sign-in and the Playwright session (SI-01), implemented on branch
-`feat/web-sign-in` in the plan's five commit groups, plus one fix that
+PR 3b, web sign-in and the Playwright session (SI-01), implemented in
+[PR #133](https://github.com/WilliamPhilippe/storage-minis/pull/133) in the plan's five commit groups, plus one fix that
 verification found. The pins were re-checked on
 2026-11-06 and are unchanged: firebase 13.2.0, firebase-admin 14.5.0 and zod 4.6.7
 were still the newest releases at least 24 hours old.
@@ -1269,94 +998,22 @@ collapsed menu's items.
 - State 4's alert is antd's error alert: a filled icon and a red border.
 - Google's button font and fills, as approved above.
 
-**Evidence (2026-11-06, branch `feat/web-sign-in`):**
-
-- A fresh `pnpm install --frozen-lockfile` (workspace `node_modules` removed)
-  cloned 627 packages from the store and downloaded none. Only the two
-  `allowBuilds: false` entries are new; no other build script was blocked and no
-  `minimumReleaseAgeExclude` entry was written. Side effect: Vitest's optional
-  `@opentelemetry/api` peer now resolves, brought by `@firebase/crashlytics`
-  (inside firebase 13.2.0) and Firestore (inside firebase-admin); the app
-  imports neither.
-- `pnpm check`: 362 unit tests in 33 files (from 242 in 27); `web-unit` has 194
-  in 17 (from 74 in 11): the startup check's decoding against the 13.2.0 record
-  shape and the 7-day rule, popup or redirect, in-app detection, the redirect
-  parameter, the session service, the link's headers, `UNAUTHORIZED`,
-  `FORBIDDEN`, cross-tab sign-out, the guard, `useSession()`, the Login page's
-  states, the Sign out button and the page title after a slow guard.
-- `pnpm build` passes. The Firebase chunk is 95.22 kB (28.46 kB gzip); only the
-  main entry references it, through the session layer's dynamic `import()`;
-  `index.html` doesn't preload it and the catalog's route chunk doesn't import
-  it. `grep -r __storageMinisTest apps/web/dist` finds nothing.
-- On `vite preview`, `/catalog/demo` made 19 requests, all to
-  `localhost:4173`: no Firebase chunk and no Google request. The catalog's
-  Playwright test asserts the same in development.
-- `pnpm test:db`: 31. `pnpm test:api`: 50. `pnpm test:e2e`: 67 (from 48): the
-  setup, 32 in `desktop-chrome` and 34 in `pixel-7`; it passed again three
-  times after the key restrictions.
-- `pnpm test:stack`: 5 on rebuilt image
-  `sha256:e7cb3f84a111cf42f70e6c933872587a862ab7c3758f5b19a2d082a76af89f62`.
-- The popup spec's outside origins, observed in both projects:
-  `https://storage-minis-dev.firebaseapp.com` (Firebase's iframe and handler)
-  and `https://apis.google.com`. Closing the popup as its navigation commits
-  keeps Google's account pages out.
-- Guards broken on purpose, each caught:
-  - the startup check skipped: the 8-day test saw
-    `securetoken.googleapis.com/v1/token` and `accounts:lookup`;
-  - `apis.google.com` undeclared: the outside-origin fixture failed;
-  - Firebase loaded at startup: the catalog test listed `firebase.ts` and
-    Vite's `firebase_app` and `firebase_auth`;
-  - the hook's `import.meta.env.DEV` condition removed: the build emitted
-    `testSignIn-*.js` with the name;
-  - the link's 7-day check removed: the case 11 unit test failed;
-  - the redirect validator omitting the key: the redirect tests failed.
-- The owner's gcloud Application Default Credentials (SI-15) were set up on
-  2026-11-06; the setup project then minted through IAM.
-- **Key restrictions (SI-14), applied by the owner on 2026-11-06:** both
-  browser keys allow only their sites and the Identity Toolkit and Token
-  Service APIs. The console's page for these Firebase-created keys showed no
-  API restrictions section (Firebase restricts its keys to Firebase-related
-  APIs itself, since May 2024), so the owner set both with `gcloud services
-  api-keys update KEY_ID --allowed-referrers=<every site>
-  --api-target=service=identitytoolkit.googleapis.com
-  --api-target=service=securetoken.googleapis.com`; each flag restates its
-  whole list. For the dev key, Google first refused to drop the Firebase
-  Installations API, which the key had used within 7 days: that use was one
-  request an agent sent while checking the restrictions, which registered an
-  anonymous installation; the app never calls that API. The owner then added
-  `--no-check-existing-usage`. Results, by `curl` against
-  `GET identitytoolkit.googleapis.com/v1/projects` and a read-only Firebase
-  Management API call:
-
-  | Key | Referrer | Result |
-  | --- | --- | --- |
-  | Dev | `https://example.com/`, the prototype's `http://localhost:5180/`, none | 403 `API_KEY_HTTP_REFERRER_BLOCKED` |
-  | Dev | `http://localhost:5173/`, `https://storage-minis-dev.firebaseapp.com/` | 200 |
-  | Dev | `http://127.0.0.1:5173/` | 403 ("Requests from referer http://127.0.0.1:5173/ are blocked."); Firebase doesn't authorize that host either |
-  | Dev | Another Firebase API from an allowed site | 403 `API_KEY_SERVICE_BLOCKED` |
-  | Production | `https://example.com/`, none | 403 `API_KEY_HTTP_REFERRER_BLOCKED` |
-  | Production | `https://storage-minis.firebaseapp.com/` | 200 |
-  | Production | Another Firebase API from its site | 403 `API_KEY_SERVICE_BLOCKED` |
-
-  The `firebaseapp.com` entry stays as planned: popup sign-in works with it,
-  and whether it could go was not tested. PR 4 or T04 adds the app's domain
-  to the production key's referrers the same way.
-- **Manual check (owner, 2026-11-06):** with `pnpm dev`, a Google popup
-  sign-in at `http://localhost:5173/login` on the empty development database
-  ran the bootstrap and opened `/app` with Sign out; Sign out returned to
-  state 1; a second Google account saw "No access". The development database
-  then held one User (`global_admin`, `can_edit_products`), the Organization
-  `wipminis` (nickname `wipminis`, BRL), the owner Membership, one
-  `organization.bootstrap` event with its change row, and no row for the second
-  account. A first attempt from `http://127.0.0.1:5173`, the address Vite
-  prints, got the key's 403: sign in on `localhost`.
+**Key restrictions (SI-14), applied by the owner on 2026-11-06:** both browser
+keys allow only their sites and the Identity Toolkit and Token Service APIs.
+The console shows no API restrictions section for these Firebase-created keys,
+so the owner set them with `gcloud services api-keys update`. The dev key also
+needed `--no-check-existing-usage`, because an agent's check had sent it one
+Firebase Installations request; the app never calls that API. The
+`firebaseapp.com` referrers stay, since popup sign-in works with them, and PR 4
+or T04 adds the app's domain to the production key the same way. The
+[local development reference](local-development.md#web-configuration) lists the
+referrers and the command.
 
 **Not verified in PR 3b:** the redirect flow (PR 4's manual check through
 Caddy); real phones and Safari, including how Safari renders the G's
 `foreignObject` gradient (T04); Google's popup page beyond its URL.
 
-This is tooling and integration evidence; business acceptance of the session
-waits for the business screens that use it.
+Business acceptance of the session waits for the business screens that use it.
 
 ## Approval workflow (2026-10-23)
 
@@ -1421,7 +1078,7 @@ Accepted choices:
 
 Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor in UTC-03:00. A business event dated November 1 in UTC remains in November's report for every viewer. Report membership follows UTC and the applicable source business date rather than the viewer's display timezone.
 
-[T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) still needs exact integer-cent representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
+[T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24) still needs exact integer-cent representation, intermediate precision and rounding, deterministic cent remainders, date-only/business-date semantics, period-filter semantics, and dated-adjustment acceptance examples. The storage and reporting timezone is settled as UTC. PostgreSQL plus Drizzle does not choose the remaining policies automatically.
 
 ## Step 3B structural schema (2026-10-25)
 
@@ -1474,12 +1131,12 @@ container, is at [commit 55a61ab](https://github.com/WilliamPhilippe/storage-min
 
 | Work item | Still required |
 | --- | --- |
-| [T01 / #21](https://github.com/WilliamPhilippe/storage-minis-be/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
-| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis-be/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PR 3a implemented the API side on 2026-11-05 ([outcome](#pr-3a-implemented-outcome-2026-11-05)), and PR 3b the web side on 2026-11-06 ([outcome](#pr-3b-implemented-outcome-2026-11-06)). Nothing remains: the owner closed #22 on 2026-11-06 ([evidence](https://github.com/WilliamPhilippe/storage-minis/issues/22#issuecomment-6693933600)), and the record's [Left to others](t02-authentication-record-2026-11-03.md#4-left-to-others) keeps invitations and role management TBD until the website is developed and gives D06's exceptional privileges to [D06 / #20](https://github.com/WilliamPhilippe/storage-minis/issues/20) and typed identity audit to T01. |
-| [T03 / #24](https://github.com/WilliamPhilippe/storage-minis-be/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
-| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis-be/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
-| [T05 / #25](https://github.com/WilliamPhilippe/storage-minis-be/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
-| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis-be/issues/26) | Steps 1–3B provide the workspace, local databases, typed Drizzle schema and migration replay. Step 4 delivered the diagnostic API/image/cache/lifecycle, the 2026-10-31 restructure moved them onto host Node, standard Compose, database roles and a parity stack, and Step 5 added the tRPC transport (2026-11-01). Remaining: Step 6 consolidated setup/verification (TBD until the app is validated locally), application authorization/isolation, representative business transactions/races and CI. |
+| [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21) | Base structural keys/scope/commitment/collection uniqueness are implemented in Step 3B. Complete state-transition writers, permanent locks, aggregate/source reconciliation, typed history and actual business-operation races. |
+| [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22) | The record was approved on 2026-11-04 ([AU-01–AU-12](t02-authentication-record-2026-11-03.md)); frontend PR 3a implemented the API side on 2026-11-05 ([outcome](#pr-3a-implemented-outcome-2026-11-05)), and PR 3b the web side on 2026-11-06 ([outcome](#pr-3b-implemented-outcome-2026-11-06)). Nothing remains: the owner closed #22 on 2026-11-06 ([evidence](https://github.com/WilliamPhilippe/storage-minis/issues/22#issuecomment-6693933600)), and the record's [Left to others](t02-authentication-record-2026-11-03.md#4-left-to-others) keeps invitations and role management TBD until the website is developed and gives D06's exceptional privileges to [D06 / #20](https://github.com/WilliamPhilippe/storage-minis/issues/20) and typed identity audit to T01. |
+| [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24) | Complete exact monetary, business-date, and period-filter rules around BRL, UTC storage/reporting, and visitor-local timestamp display. |
+| [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23) | Hosting, deployment and release coordination, Doppler access/integration/rotation/fallback policy, storage, daily backup retention/restore verification, recovery targets, browser/device support, performance targets, and operational monitoring. The [foundation restructure](#foundation-restructure-2026-10-31) sets direction only: single Hostinger VPS, `prd` keys, Caddy `web` image (D5), GHCR images (D9), daily `pg_dump` with tested restore (D10), and a deploy that runs `migrate` as a one-off before `up` (R19). |
+| [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25) | Inspect the real spreadsheet and agree on legacy acquisition treatment; source data is not supplied. |
+| [T06 / #26](https://github.com/WilliamPhilippe/storage-minis/issues/26) | Steps 1–3B provide the workspace, local databases, typed Drizzle schema and migration replay. Step 4 delivered the diagnostic API/image/cache/lifecycle, the 2026-10-31 restructure moved them onto host Node, standard Compose, database roles and a parity stack, and Step 5 added the tRPC transport (2026-11-01). Remaining: Step 6 consolidated setup/verification (TBD until the app is validated locally), application authorization/isolation, representative business transactions/races and CI. |
 
 T06's existing T01/T04 prerequisites remain in force (T02 closed on 2026-11-06). The requirements continue to have their existing primary delivery owners; this record adds no duplicate delivery work. D01-D08 remain business-policy boundaries.
 
@@ -1567,4 +1224,32 @@ SaleItem deletion boundary and representation details moved into the
 now merges with those obligations, and the S01–S10 definitions moved into the
 Step 3B section. The removed record stays at
 [commit b403fa7](https://github.com/WilliamPhilippe/storage-minis/blob/b403fa7844626be13e1f8e8f58efec35bb7e2508/docs/database/step-3b-implementation-2026-10-25.md).
+This changes no technical or business policy.
+
+**Evidence sections and the frontend proposal (owner, 2026-11-06).** Asked which
+files in `docs/technical/` were still needed, the owner kept all four and
+approved trimming this document and correcting the frontend foundation proposal
+("Yes, do both").
+
+- This document drops each delivered step's evidence and verification sections
+  (test counts, image digests, measurements and the guards broken on purpose),
+  whose PRs' descriptions hold the commands and results, together with the
+  Step 1–4 evidence table, the workspace bootstrap narrative and the Step 3A
+  rows that the restructure replaced. Every decision table, owner answer,
+  implementation-time decision and handoff list stays, so each P5, WS, SF, PW,
+  SI and S ID that code comments cite is still defined here. Links that used
+  the repository's former name, `storage-minis-be`, now use `storage-minis`.
+- The [frontend foundation proposal](frontend-foundation-proposal-2026-11-01.md)
+  now includes what later approvals changed in W3–W6 and W8–W11, listed under
+  its [later changes](frontend-foundation-proposal-2026-11-01.md#later-changes),
+  and drops its candidate versions and its boundaries section; the boundaries'
+  open items join its deferred decisions.
+
+**Rationale.** The evidence repeated the PRs' descriptions and made up over a
+fifth of this document. The proposal, which agents read before frontend work,
+still described four Playwright projects with WebKit, a 30-second token refresh
+margin and a test sign-in opt-in in both env files, and listed as open several
+decisions that later approvals had settled. The removed text stays at commit
+03b494c: [this document](https://github.com/WilliamPhilippe/storage-minis/blob/03b494cf212125040cb8943a06b2d8556dc01323/docs/technical/technical-direction.md)
+and [the proposal](https://github.com/WilliamPhilippe/storage-minis/blob/03b494cf212125040cb8943a06b2d8556dc01323/docs/technical/frontend-foundation-proposal-2026-11-01.md).
 This changes no technical or business policy.
