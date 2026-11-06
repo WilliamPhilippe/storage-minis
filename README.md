@@ -1,514 +1,398 @@
 # StorageMinis
 
-StorageMinis manages inventory, purchases, sales, finances, collections, and a
+StorageMinis manages inventory, purchases, sales, finances, collections and a
 public stock catalog for 1/64 miniature sellers and collectors.
 
-The repository is a pnpm/Turborepo workspace: the Drizzle schema and migrations
-in `packages/db`; a Fastify API in `apps/api` that serves health routes, one
-diagnostic tRPC procedure and `session.get`, verifies Firebase ID tokens and
-offers guarded procedure builders for Users, Organizations and roles; and the
-React web app in `apps/web`, with the responsive shell, the en-US and pt-BR
-catalogs, Google sign-in on the Login page, the signed-in session with its
-active Organization, a Sign out button, placeholder pages, and a card that
-calls the diagnostic procedure. Node.js runs on the host; PostgreSQL runs in
-Docker. **Business endpoints and business screens are still pending.**
+**Status:** The application shell and Google sign-in are available. Business
+procedures, business screens, CI and production are not available yet.
 
-Follow [local setup](#local-setup), then the [daily loop](#daily-development).
-For a feature, read [implementing a feature](#implementing-a-feature) and
-[checks](#checks). The [local development reference](docs/technical/local-development.md)
-covers configuration, limits, failures and recovery;
-[technical direction](docs/technical/technical-direction.md) records the approved
-decisions.
+Do the [local setup](#local-setup) one time. Then use the
+[daily development](#daily-development) commands. Before you change code, read
+[feature work](#feature-work) and [checks](#checks).
+
+## Repository layout
+
+The repository is a pnpm workspace with Turborepo tasks. Node.js runs on the
+host, and PostgreSQL runs in Docker.
+
+| Path | Package | Contents |
+| --- | --- | --- |
+| `apps/api` | `@storage-minis/api` | Fastify API: health routes, tRPC at `/trpc` and Firebase sign-in |
+| `apps/web` | `@storage-minis/web` | React web app: Vite, Ant Design, TanStack Router, en-US and pt-BR |
+| `packages/db` | `@storage-minis/db` | Drizzle schema, migrations, database client and test-database helper |
+| `docker/` | — | API image and PostgreSQL role script |
+| `docs/` | — | Requirements, entity map, database design, technical records and page designs |
+
+The [toolchain reference](docs/technical/local-development.md#toolchain) lists
+the root files, for example `turbo.json` and the Compose files.
 
 ## Local setup
 
-Run all commands from the repository root. You need:
+Run all commands from the repository root. Install these tools first:
 
-- Git and a checkout of this repository.
-- Docker Desktop, or another Docker Engine with Compose v2 or later
-  (`docker compose version`), running. PostgreSQL runs in containers; no host
-  PostgreSQL installation is needed.
-- Node.js **24.22.1** and pnpm **12.15.0** on the host. The versions are pinned in
-  [`.nvmrc`](.nvmrc) and [`package.json`](package.json); installation refuses
+- Git.
+- Docker Desktop, or Docker Engine with Compose v2 or later.
+- Node.js **24.22.1** and pnpm **12.15.0**. [`.nvmrc`](.nvmrc) and
+  [`package.json`](package.json) pin these versions. Installation stops with
   other versions.
+- A Node.js version manager that reads `.nvmrc`: fnm (the current setup) or
+  nvm. The [toolchain reference](docs/technical/local-development.md#toolchain)
+  shows the shell setup.
 
-Use a Node.js version manager that reads `.nvmrc`. fnm and nvm both work; fnm is
-the current local setup. A shell that has not initialized the manager reports
-`node: command not found` even when Node.js is installed.
+Start Docker. Then run these commands:
 
 ```sh
 fnm install && fnm use        # or: nvm install && nvm use
 npm install --global pnpm@12.15.0
 pnpm install --frozen-lockfile
-pnpm db:up
-pnpm db:migrate
+pnpm db:up                    # start the development and test databases
+pnpm db:migrate               # apply the migrations to the development database
 ```
 
-`pnpm db:up` starts the development and test databases and waits until both
-are healthy. `pnpm db:migrate` applies the committed migrations to the
-development database. No Doppler login is needed: local database values are
-committed in [`.env.development`](.env.development) and [`.env.test`](.env.test).
-They are local-only values, not secrets; both databases publish only on
-`127.0.0.1`. Production values exist only in Doppler. Installing tools or
-changing shell initialization follows the
-[owner approval rules](AGENTS.md#owner-approval-before-decisions).
+The local values are in the committed files
+[`.env.development`](.env.development) and [`.env.test`](.env.test). They are
+not secrets, and a Doppler login is not necessary. Production values are only in
+Doppler. The [configuration reference](docs/technical/local-development.md#configuration)
+describes each variable.
 
-Both files also name the Firebase project whose ID tokens the API accepts,
-`FIREBASE_PROJECT_ID=storage-minis-dev`, and `.env.development` configures the
-development bootstrap: the owner's first verified Google sign-in on a database
-with no Organization creates the administrator and the `wipminis` Organization
-(the [T02 record](docs/technical/t02-authentication-record-2026-11-03.md), AU-07).
-**After `pnpm db:reset` and `pnpm db:migrate`, sign in once with Google** at
-`http://localhost:5173/login` to create them again. Other Google accounts see
-"No access" until invitations exist. The web app's Firebase config is
-committed in `apps/web/.env.development` and `.env.production`; don't create
-`apps/web/.env.local` or set `VITE_*` variables in the shell, which would
-override them unseen by Turborepo's cache.
+### End-to-end test setup
 
-The end-to-end tests need two things, set up once. First, Playwright's Chrome
-Headless Shell (owner-approved 2026-11-02, PW-02):
+`pnpm test:e2e` uses a headless browser and a Google login. Do these steps one
+time:
 
-```sh
-pnpm --filter @storage-minis/web exec playwright install --only-shell chromium
-```
+1. Install Playwright's Chrome Headless Shell. It writes about 206 MiB outside
+   the repository.
 
-It writes about 206 MiB (the shell and FFmpeg) to Playwright's default cache,
-`~/Library/Caches/ms-playwright` on macOS, outside the repository;
-`PLAYWRIGHT_BROWSERS_PATH` names another folder, and `pnpm test:e2e` passes it
-through. The browser is tied to the Playwright version: run the command again
-after a Playwright upgrade, which also removes browsers no installed Playwright
-uses.
+   ```sh
+   pnpm --filter @storage-minis/web exec playwright install --only-shell chromium
+   ```
 
-Second, a Google login that signs the tests' Firebase custom tokens (sign-in
-plan SI-15): Playwright's setup signs them through IAM as the no-role service
-account `e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com`, with
-your gcloud Application Default Credentials. No key file exists.
+   Run this command again after each Playwright upgrade.
 
-1. Install the [gcloud CLI](https://docs.cloud.google.com/sdk/docs/install)
-   (installing tools follows the owner approval rules).
-2. Run `gcloud auth application-default login` and sign in with your Google
-   account. It writes the login to gcloud's default folder,
-   `~/.config/gcloud/`; keep it there, never in the repository. Check it with
-   `gcloud auth application-default print-access-token >/dev/null && echo ok`.
-3. Ask the owner to grant that account **Service Account Token Creator** on
-   the service account above.
+2. Install the [gcloud CLI](https://docs.cloud.google.com/sdk/docs/install).
+3. Sign in with your Google account for Application Default Credentials. The
+   second command shows `ok` if the login is valid.
 
-If minting fails with a quota or "API not enabled" error, run
-`gcloud auth application-default set-quota-project storage-minis-dev`. The
-login can act as your Google account; `gcloud auth application-default revoke`
-ends it.
+   ```sh
+   gcloud auth application-default login
+   gcloud auth application-default print-access-token >/dev/null && echo ok
+   ```
+
+   gcloud keeps the login in `~/.config/gcloud/`. Do not copy it into the
+   repository.
+
+4. Ask the owner to give your account the **Service Account Token Creator** role
+   on `e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com`.
+
+The tests use this login to sign Firebase custom tokens through IAM. The login
+can act as your Google account. To end it, run
+`gcloud auth application-default revoke`.
 
 ## Local PostgreSQL
 
-| Database | Host address | Database name | Storage |
+| Database | Address | Name | Data |
 | --- | --- | --- | --- |
-| Development (`postgres`) | `127.0.0.1:5433` | `storage_minis_dev` | Named volume; survives `db:down`/`db:up` |
-| Test (`postgres_test`) | `127.0.0.1:5434` | `storage_minis_test` | Memory (tmpfs); discarded whenever it stops |
+| Development (`postgres`) | `127.0.0.1:5433` | `storage_minis_dev` | Named volume. The data stays after `pnpm db:down`. |
+| Test (`postgres_test`) | `127.0.0.1:5434` | `storage_minis_test` | Memory (tmpfs). The database loses its data when it stops. |
 
-Both run PostgreSQL **18.6** in UTC. On first initialization each creates two
-roles:
+Both databases run PostgreSQL 18.6 in UTC. The owner role,
+`storage_minis_owner`, applies migrations. The application role,
+`storage_minis_app`, can read and write rows but cannot change the schema.
 
-- `storage_minis_owner` owns the database and runs migrations
-  (`MIGRATION_DATABASE_URL`).
-- `storage_minis_app` is the application's least-privilege role
-  (`DATABASE_URL`). It can read and write table rows but cannot change the
-  schema.
-
-| Command | Effect |
+| Command | Result |
 | --- | --- |
-| `pnpm db:up` | Start both databases and wait for health (60 s limit). |
-| `pnpm db:down` | Stop both. Development data is kept; test data is discarded. |
-| `pnpm db:psql` | Open `psql` in the development container as the owner. Add `-c 'SQL'` for one statement. |
-| `pnpm db:reset` | **Destructive.** Remove the project's containers, network and development volume. Run `pnpm db:up` and `pnpm db:migrate` afterwards. |
+| `pnpm db:up` | Starts both databases and waits until they are healthy (60 s limit) |
+| `pnpm db:down` | Stops both databases |
+| `pnpm db:psql` | Opens `psql` on the development database as the owner role. Add `-c 'SQL'` for one statement. |
+| `pnpm db:reset` | Deletes the containers, the network and the development volume |
 
-Raw Compose commands need the same values file, for example
-`docker compose --env-file .env.development logs --follow postgres` or
-`docker compose --env-file .env.development ps`. Without it, Compose stops
-with a `required variable ... is missing a value` error and changes nothing.
+> [!CAUTION]
+> Do not run `pnpm db:reset` if you must keep the development data. The command
+> deletes the development volume.
 
-The project name is the checkout's directory name, so checkouts in
-directories with different names get separate volumes. The published ports
-are fixed: stop one checkout's databases (`pnpm db:down`) before starting
-another's.
-
-Roles are created only when a volume is first initialized. If you change a
-password in `.env.development` for an existing development volume, either run
-`pnpm db:reset` or change it in place as the `postgres` superuser:
+After a reset, run these commands:
 
 ```sh
-docker compose --env-file .env.development exec postgres \
-  psql -U postgres -d storage_minis_dev \
-  -c "ALTER ROLE storage_minis_app PASSWORD 'new-value'"
+pnpm db:up
+pnpm db:migrate
+pnpm dev      # then sign in with Google at http://localhost:5173/login
 ```
 
-The test database is recreated on every start, so it always uses the current
-`.env.test` values.
+The first sign-in of the owner's account creates the administrator and the
+`wipminis` Organization again. Other Google accounts get "No access".
+
+Add `--env-file .env.development` to each raw `docker compose` command, for
+example `docker compose --env-file .env.development logs postgres`.
+
+The ports are fixed. Before you start the databases of a different checkout, run
+`pnpm db:down` in the first checkout.
 
 ## Daily development
 
 ```sh
-pnpm db:up   # if the databases are not running
-pnpm dev     # API on http://127.0.0.1:3000, web on http://localhost:5173; Ctrl+C stops both
+pnpm db:up   # if the databases are stopped
+pnpm dev     # API on http://127.0.0.1:3000, web app on http://localhost:5173
 ```
 
-`pnpm dev` builds the DB package once, then watches both packages: API edits
-restart the server, and DB package edits recompile it and restart the server.
-It also runs the web app's Vite server on `http://localhost:5173` (bound to
-`127.0.0.1`; it fails rather than move to another port), which proxies `/trpc/`
-to the API. Open [`/app`](http://localhost:5173/app) and sign in with Google.
-Use `localhost`, not the `127.0.0.1` address Vite prints: the Firebase dev
-project and its browser key allow only `localhost`, and Google answers 403
-elsewhere. Signed in, the API connection card shows the echoed message, and
-Sign out sits right above the language switch, at the bottom of the side menu,
-or of the menu drawer on a narrow window. With the API
-stopped, the card's error appears after about 7 s of retries.
-Open [liveness](http://127.0.0.1:3000/health/live) and
-[readiness](http://127.0.0.1:3000/health/ready): expect HTTP 200 with
-`{"status":"ok"}` and `{"status":"ready"}`. Readiness checks the database
-connection and identity; **it does not prove migrations are current**, and the
-API never migrates.
+`pnpm dev` watches the DB package, the API and the web app. Press Ctrl+C to stop
+all of them.
 
-- **Schema change:** follow [database migrations](#database-migrations).
-  TypeScript edits alone do not change PostgreSQL.
-- **Route file added, renamed, or removed:** the router plugin regenerates
-  `apps/web/src/routeTree.gen.ts` while `pnpm dev` or `pnpm build` runs. Commit
-  the regenerated file with the route; typecheck, lint and tests read it.
-- **DB file added, renamed, or removed:** stop `pnpm dev` and run `pnpm build`
-  first; watch mode does not delete stale output.
-- **Dependency or lockfile change:** stop `pnpm dev`, run
-  `pnpm install --frozen-lockfile`, then restart. New dependencies or versions
-  need owner approval; use pnpm for changes.
-- **Before finite builds or checks:** stop `pnpm dev`; both write the DB
-  package's `dist`.
+Open `http://localhost:5173/app`. Sign in with Google. Use `localhost`, not the
+`127.0.0.1` address that Vite shows. The Firebase development project accepts
+sign-in only from `localhost`.
 
-A compiler error can leave the previous build serving. Read the terminal, fix
-the error and confirm a fresh readiness response.
+To examine the API, open `http://127.0.0.1:3000/health/ready`. A ready API
+answers HTTP 200 with `{"status":"ready"}`. The API never applies migrations, so
+readiness does not show that the migrations are current.
 
-## Implementing a feature
+Some changes have more steps:
 
-Read the feature's live issue and the current requirements before coding.
-Obtain approval for new technical choices and unresolved business rules under
-[AGENTS.md](AGENTS.md#owner-approval-before-decisions); the examples here introduce
-no new business contract.
-
-| Change | Where it belongs |
+| Change | Steps |
 | --- | --- |
-| Columns, enums, constraints, indexes | Existing domain file in `packages/db/src/schema/`; exports in `schema/index.ts` |
-| Reviewed database upgrade | Generated SQL and metadata in `packages/db/drizzle/` |
-| HTTP/lifecycle integration | `apps/api/src/`; add routes as plugins registered in `app.ts` (see `health.ts`); preserve `lifecycle.ts` and `server.ts` ownership |
-| New API procedure | Router module in `apps/api/src/trpc/routers/`, attached in `trpc/router.ts`; see [developing a tRPC endpoint](#developing-a-trpc-endpoint) |
-| Web page | Route definition only in `apps/web/src/routes/`; the page component, its CSS Module (with a `.module.d.css.ts` declaration) and its tests in `apps/web/src/features/<area>/`. Follow the page's design in [`docs/design/`](docs/design/README.md) |
-| Web strings | Both catalogs: `apps/web/src/i18n/en-US/<namespace>.ts` and the pt-BR file typed against it with `satisfies CatalogShape<typeof en>`. A route's loader calls `ensureNamespace` for its area |
+| You pull commits or change the branch | Stop `pnpm dev`. Run `pnpm install --frozen-lockfile`. Run `pnpm db:migrate`. Start `pnpm dev` again. |
+| You change the database schema | Follow [database migrations](#database-migrations). A TypeScript edit alone does not change PostgreSQL. |
+| You add, rename or remove a route file | Commit the regenerated `apps/web/src/routeTree.gen.ts` with the route. `pnpm dev` and `pnpm build` regenerate it. |
+| You add, rename or remove a DB package file | Stop `pnpm dev`. Run `pnpm build`. Watch mode does not delete old output. |
+| You build or run checks | Stop `pnpm dev` first. Both write `packages/db/dist`. |
+
+A compiler error can keep the previous build in service. Read the terminal
+output after each change.
+
+## Feature work
+
+Before you write code:
+
+1. Read the feature's live
+   [GitHub issue](https://github.com/WilliamPhilippe/storage-minis/issues) and
+   the current requirements.
+2. Get owner approval for each new technical choice and each unresolved
+   business rule. Technical choices include tools, dependencies, versions and
+   configuration. See [owner approval](AGENTS.md#owner-approval-before-decisions).
+
+A typical feature has these parts, in this order: approved contract → schema and
+migration, if necessary → typed database operation → validated and authorized
+API procedure → tests.
+
+Put each change in its location:
+
+| Change | Location |
+| --- | --- |
+| Tables, columns, enums, constraints, indexes | The domain file in `packages/db/src/schema/`. Export new items from `schema/index.ts`. |
+| Migration | Generated SQL and metadata in `packages/db/drizzle/` |
+| HTTP route or lifecycle code | `apps/api/src/`. Register a route as a plugin in `app.ts`, as `health.ts` does. Keep startup, shutdown and the database pool in `lifecycle.ts` and `server.ts`. |
+| API procedure | A router module in `apps/api/src/trpc/routers/`, attached in `trpc/router.ts`. See [tRPC procedures](#trpc-procedures). |
+| Web page | The route definition only in `apps/web/src/routes/`. The page component, its CSS Module and its tests in `apps/web/src/features/<area>/`. Follow the page design in [`docs/design/`](docs/design/README.md). |
+| Web strings | Both catalogs: `apps/web/src/i18n/en-US/<namespace>.ts` and the pt-BR file |
 | Money and dates in the web app | `formatMoney` and the date helpers in `apps/web/src/lib/format/` |
-| The signed-in session in the web app | `useSession()` from `apps/web/src/lib/session/useSession.ts` under `/app`: the User, the Memberships and the active Organization (W5). The tRPC link already sends the ID token and `x-organization-id`; see the [web session](docs/technical/local-development.md#web-session) |
-| Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior; web component tests by role and label |
-
-A typical feature goes through approved contract → schema/migration if needed →
-typed DB operation → validated/authorized API procedure → appropriate tests.
-A feature using existing columns needs no migration.
-
-For example, an approved Customer field change starts in
-[`sales-and-returns.ts`](packages/db/src/schema/sales-and-returns.ts), gets a named
-migration, and updates the inferred `schema.customers` types after a build. The
-future endpoint must expose that field explicitly in its Zod contract.
+| Signed-in User, Memberships and active Organization in the web app | `useSession()` from `apps/web/src/lib/session/`, under `/app`. The tRPC link sends the ID token and `x-organization-id`. |
+| Tests | Unit tests next to the source. Real PostgreSQL tests for persistence. Web component tests that find elements by role and label. |
 
 ### Database migrations
 
-A **migration** changes PostgreSQL's schema. A tRPC **mutation** handles an API
-write; adding one does not inherently require a migration.
+A **migration** changes the database schema. A tRPC **mutation** is an API
+write. A mutation alone does not change the schema.
 
-For an approved schema change, stop `pnpm dev` and:
+For an approved schema change, stop `pnpm dev`. Then do these steps:
 
-1. Edit the relevant TypeScript schema file. Export new schema definitions
-   through `packages/db/src/schema/index.ts`; keep the DBML/design docs
-   synchronized with approved model changes.
-2. Generate a named migration offline, without a database:
+1. Edit the schema file. Export new definitions from
+   `packages/db/src/schema/index.ts`. Update the
+   [DBML](docs/database/schema.dbml) and the
+   [design guide](docs/database/design.md) to agree with the change.
+2. Generate a named migration. This step does not use a database.
 
    ```sh
    pnpm db:generate -- --name describe_change
-   git diff -- packages/db/src/schema packages/db/drizzle
    ```
 
-   Drizzle Kit 0.31.11 can exit 0 after a generation error, so confirm that its
-   last line reads `Your SQL migration file ➜ …` or
-   `No schema changes, nothing to migrate`. For SQL that Kit does not manage,
-   such as a function, create an empty custom migration with
-   `pnpm --filter @storage-minis/db exec drizzle-kit generate --custom --name describe_change`
-   and write the SQL into it.
-3. Review the generated SQL, snapshot, and journal together. Check constraints,
-   existing-row compatibility, data preservation, and any required backfill.
-   Correct an applied migration with a new forward migration; the project has no
-   `drizzle-kit push` workflow.
-4. Prove replay and the affected persistence behavior on the test database:
+   Drizzle Kit can exit with code 0 after an error. Make sure that its last line
+   is `Your SQL migration file ➜ …` or `No schema changes, nothing to migrate`.
 
-   ```sh
-   pnpm test:db
-   ```
+3. Review the SQL file, the snapshot and the journal together. Examine the
+   constraints, the effect on current rows, data preservation and backfills.
+4. Run `pnpm test:db`. It resets the test database and applies all migrations
+   again. Add real PostgreSQL tests for the new behavior.
+5. Run `pnpm db:migrate` to apply the migration to the development database.
+   Then start `pnpm dev` again.
+6. Commit the schema change, the migration files and the tests together. The
+   migration files are `drizzle/NNNN_describe_change.sql`,
+   `drizzle/meta/NNNN_snapshot.json` and `drizzle/meta/_journal.json`.
 
-   Its setup resets the test database and replays the committed chain as the
-   owner role; the tests then run as the app role. Add feature-specific
-   real-PostgreSQL cases; the structural suite alone does not prove a new
-   business operation.
-5. Apply pending migrations to the development database, then restart
-   `pnpm dev`:
+Correct an applied migration only with a new forward migration. Do not use
+`drizzle-kit push`. For SQL that Drizzle Kit does not manage, for example a
+function, write a custom migration. The
+[migration reference](docs/technical/local-development.md#migrations) shows the
+command and the recovery after an interrupted run.
 
-   ```sh
-   pnpm db:migrate
-   ```
+### tRPC procedures
 
-6. Commit schema changes, all corresponding migration artifacts, and tests
-   together.
+The API serves tRPC at `/trpc` with plain JSON: no transformer and no batching.
+Queries use GET, and mutations use POST. Failures use one error envelope with a
+fixed message. The
+[tRPC HTTP contract](docs/technical/local-development.md#trpc-http-contract)
+lists each case and the exceptions.
 
-| Artifact | How to use it | Commit? |
-| --- | --- | --- |
-| `packages/db/drizzle/NNNN_describe_change.sql` | Reviewed upgrade applied by `db:migrate` and the `migrate` service | Yes |
-| `packages/db/drizzle/meta/NNNN_snapshot.json` | Schema state used by the next generation | Yes |
-| `packages/db/drizzle/meta/_journal.json` | Ordered migration chain used by Drizzle | Yes |
-| `packages/db/dist/` and `apps/api/dist/` | Compiled runtime JS and declarations emitted by `pnpm build` | No; ignored build output |
+To add a procedure, do these steps:
 
-`NNNN` is the next generated sequence, not a literal filename. Migration SQL is
-not imported into application code. Drizzle derives row/insert types from the
-TypeScript schema; consuming code imports the compiled package:
+1. Define the input and the safe output with Zod. Do not use database row types
+   as input or output contracts.
+   - Give each string and array a `.max()` limit. The 1 MiB body limit is only
+     an outer limit. Query input goes in the URL, which has a 16 KiB header
+     limit.
+   - Use `z.strictObject` to reject unknown keys.
+2. Start from a guarded builder in `apps/api/src/trpc/procedures.ts`:
+   - `organizationProcedure(minRole)` for the records of an Organization.
+     `viewer` can read. `editor` and `owner` can write. `owner` manages
+     settings.
+   - `userProcedure` with `requireCanEditProducts(ctx.user)` to edit a Product.
+   - `platformProcedure` for `global_admin` actions.
+3. Get the Organization only from `ctx.organization`. The API reads it from the
+   `x-organization-id` header. Filter each query by `ctx.organization.id`.
+   Record `ctx.user.id` as the actor. Do not put an Organization ID in the
+   input.
+4. Use `ctx.db` for queries. Do each business write in one transaction. The
+   transaction includes the source, inventory, funding, financial and audit
+   changes, with the necessary locks, scope checks and invariant checks.
+5. For an expected failure, throw a `TRPCError` with the applicable code. The
+   client gets only the code and its fixed message.
+6. Write the tests with `buildApp` and `app.inject()`, as `trpc/plugin.test.ts`
+   does. Include invalid input and output. For a business procedure, include
+   denied access: a different Organization, a lower role and no token. See
+   `trpc/procedures.test.ts` for examples. For a write, add real PostgreSQL
+   tests for rollback, reconciliation and concurrency.
 
-```ts
-import type { Database, schema } from "@storage-minis/db";
-
-type CustomerRow = typeof schema.customers.$inferSelect;
-type CustomerInsert = typeof schema.customers.$inferInsert;
-```
-
-Use the database the API lifecycle passes to `buildApp`: application code receives its
-`database.db` Drizzle handle for queries/transactions, never the pool's `close`. Do not import `packages/db/src` through source aliases,
-create another pool per request, or manually edit generated `dist` files.
-Builds refresh code/types; migrations update the database. Neither substitutes for
-the other. If a migration run is interrupted, inspect `drizzle.__drizzle_migrations`
-before retrying; see the
-[migration reference](docs/technical/local-development.md#migrations).
-
-### Developing a tRPC endpoint
-
-The API serves tRPC at `/trpc` with plain JSON (no transformer), no batching,
-queries by GET and mutations by POST. Two procedures exist: the public
-diagnostic `diagnostics.echo`, and `session.get`, which needs a Firebase ID token
-and answers the caller's User and Memberships or `noAccess` (see
-[sign-in and authorization](docs/technical/local-development.md#sign-in-and-authorization)).
-With `pnpm dev` running:
-
-```sh
-curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22ok%22%7D'
-# 200 {"result":{"data":{"message":"ok"}}}
-curl 'http://127.0.0.1:3000/trpc/diagnostics.echo?input=%7B%22message%22%3A%22%22%7D'
-# 400 {"error":{"message":"Invalid request","code":-32600,"data":{"code":"BAD_REQUEST","httpStatus":400,"issues":[{"path":["message"],"code":"too_small"}]}}}
-curl -X POST -H 'content-type: application/json' -d '{"message":"ok"}' \
-  http://127.0.0.1:3000/trpc/diagnostics.echo
-# 405 METHOD_NOT_SUPPORTED: a query is GET only
-curl 'http://127.0.0.1:3000/trpc/session.get'
-# 401 {"error":{"message":"Unauthorized","code":-32001,"data":{"code":"UNAUTHORIZED","httpStatus":401}}}
-```
-
-Every failure under `/trpc` uses one envelope with a fixed message; the
-[tRPC HTTP contract](docs/technical/local-development.md#trpc-http-contract) lists
-each case and the documented exceptions. Request logs add `procedure` for a
-matched procedure.
-
-Where things live, under `apps/api/src/trpc/`:
-
-| File | Holds |
-| --- | --- |
-| `init.ts` | `Context` (`{ db, requestId, auth }`, with the raw sign-in headers) and tRPC's root object `t` |
-| `context.ts` | `createContext` and the `recordProcedure` middleware |
-| `procedures.ts` | The guarded builders: `identityProcedure`, `userProcedure`, `organizationProcedure(minRole)`, `platformProcedure`, and `requireCanEditProducts` |
-| `errors.ts` | The error envelope |
-| `plugin.ts` | The Fastify route, body limit, JSON parser and failure handlers; `buildApp` registers it |
-| `router.ts` | `appRouter`, which attaches each router module |
-| `routers/` | One module per router, such as `diagnostics.ts` and `session.ts` |
-
-Token verification and the identity queries live in `apps/api/src/auth/`. The
-lifecycle builds them and passes them through the context, so tRPC modules import
-only types from `@storage-minis/db`.
-
-A new procedure follows this sequence:
-
-1. Define the input and safe output with Zod. Bound **every string and array with
-   `.max()`**: the 1 MiB body limit is only the outer bound, and query input
-   travels in the URL (16 KiB header limit). Use `z.strictObject` so unknown keys
-   are rejected. Database row types do not validate HTTP input or define which
-   fields a caller may see.
-2. Build a business procedure from a guarded builder in `trpc/procedures.ts`:
-   `organizationProcedure(minRole)` for an Organization's records (`viewer`
-   reads; `editor` and `owner` write; `owner` manages settings),
-   `userProcedure` with `requireCanEditProducts(ctx.user)` for editing an
-   existing Product, and `platformProcedure` for `global_admin` actions. The
-   Organization comes only from the checked `x-organization-id` header: filter
-   every query by `ctx.organization.id` and record `ctx.user.id` as the actor.
-   Procedure input never carries an Organization ID. A public procedure derives a
-   module-private builder from `t.procedure` through `recordProcedure`, as
-   `routers/diagnostics.ts` does; every builder includes that middleware, which
-   supplies the `procedure` log field.
-3. Read through `ctx.db`, the lifecycle's owned Drizzle handle. A business write
-   performs source, inventory, funding, financial and audit changes in one
-   transaction, with the required locks, scope checks and invariant enforcement.
-4. Throw `TRPCError` with a fitting code for expected failures; clients see only
-   the code and its fixed message. Unexpected errors become 500s whose log
-   records the error type, code and stack frames, with messages only in
-   development.
-5. Test through `buildApp` and `app.inject()`, as `trpc/plugin.test.ts` does, not
-   only by calling the router. Include invalid input and output and, for business
-   procedures, denied access (another Organization, a lower role, no token), as
-   `trpc/procedures.test.ts` and `tests/auth.integration.test.ts` do, plus real
-   PostgreSQL rollback, reconciliation and concurrency tests for writes.
-
-A client imports only the router type, and runtime imports of
-`@storage-minis/api/types` fail by design:
-
-```ts
-import { createTRPCClient, httpLink } from "@trpc/client";
-import type { AppRouter } from "@storage-minis/api/types";
-
-const client = createTRPCClient<AppRouter>({
-  links: [httpLink({ url: "/trpc" })],
-});
-const { message } = await client.diagnostics.echo.query({ message: "ok" });
-```
-
-Read errors through `error.data.code` (and `error.data.issues` for validation).
-The web app's client, QueryClient and options proxy live in
-`apps/web/src/lib/trpc.ts`; its connected session adds the
-`Authorization` and `x-organization-id` headers, signs out on `UNAUTHORIZED`
-and reloads the session on `FORBIDDEN`. Sharing runtime Zod schemas with the browser needs
-a separate package, because this export carries types only. See the official
-[procedures](https://trpc.io/docs/server/procedures) and
-[validation](https://trpc.io/docs/server/validators) documentation.
+The web app's tRPC client is in `apps/web/src/lib/trpc.ts`. Import only types
+from `@storage-minis/api/types`, because a runtime import from it fails. Read
+errors through `error.data.code` and `error.data.issues`. A separate package is
+necessary to share runtime Zod schemas with the browser.
 
 ## Checks
 
-Stop `pnpm dev` before these finite commands:
+Stop `pnpm dev` before you run these commands:
 
 ```sh
-pnpm check   # build DB and API exports; strict typechecks, lint, formatting, unit tests
+pnpm check   # typecheck, lint, format check, unit tests (no database)
 pnpm build   # compile the packages and build apps/web/dist
 ```
 
-`pnpm check` needs no database or Docker. Focused commands are `pnpm typecheck`,
-`pnpm lint`, `pnpm format`, `pnpm test`, `pnpm exec vitest run --project api-unit`,
-or `pnpm exec vitest run --project web-unit`. The `web-unit` project runs the web
-app's component tests in jsdom, in `America/Sao_Paulo`, with a fresh app per
-test. Its harness fails a test on any `fetch` the test did not stub and on any
-`console.error` or `console.warn` it did not declare with `expectConsole`.
-`pnpm --filter @storage-minis/web preview` serves `apps/web/dist` on
-`http://localhost:4173` with the same proxy.
-Prettier does not format Markdown; review changed links, fences and tables by hand.
+For one part only, run `pnpm typecheck`, `pnpm lint`, `pnpm format` or
+`pnpm test`. For one Vitest project, run
+`pnpm exec vitest run --project api-unit` (or `db-unit`, `web-unit`).
 
-The live suites run uncached. Start the databases first with `pnpm db:up`:
+`web-unit` runs in jsdom, in the `America/Sao_Paulo` time zone. A test fails on
+an unstubbed `fetch`, or on a `console.error` or `console.warn` that it does not
+declare with `expectConsole`.
+
+Prettier does not format Markdown. Examine changed links, code fences and tables
+manually.
+
+The live suites use real services and no cache. Start the databases first with
+`pnpm db:up`.
 
 ```sh
 pnpm test:db     # schema, migration and connection tests on the test database
-pnpm test:api    # real built API processes, and the auth suite on the migrated test database
-pnpm test:e2e    # Playwright tests in Chromium, signed out and signed in; see End-to-end tests
-pnpm test:stack  # parity stack smoke test; needs Docker
+pnpm test:api    # built API processes and the auth suite on the test database
+pnpm test:e2e    # Playwright tests (see End-to-end tests)
+pnpm test:stack  # parity stack smoke test with Docker
 ```
 
-`test:db`, `test:api` and `test:e2e` share the test database: run them **one at
-a time**. `test:db` and `test:api` drop and recreate the test schemas. All three refuse any
-database whose name does not end in `_test` before connecting. Feature work
-must add its requirement acceptance tests; the current health, schema and smoke
-tests do not establish business acceptance.
+- Run `test:db`, `test:api` and `test:e2e` one at a time. They share the test
+  database, and `test:db` and `test:api` drop and recreate its schemas.
+- All three refuse a database whose name does not end in `_test`.
+- Run `test:stack` after changes to the API image, the Compose files or the
+  migrations.
+- Add the requirement acceptance tests for each feature. The current health,
+  schema and smoke tests do not prove business acceptance.
 
 ### End-to-end tests
 
-`pnpm test:e2e` builds the API, then Playwright starts the built API on
-`127.0.0.1:3000` against the test database and the Vite dev server on
-`http://localhost:5173`, runs the specs in `apps/web/e2e` and stops both
-servers. It needs `pnpm db:up`, the headless shell and the gcloud login from
-[Local setup](#local-setup), the network (Google's token service and the
-Firebase dev project), and ports 3000 and 5173 free, so stop `pnpm dev` first:
-Playwright never reuses a running server and fails with "is already used"
-instead.
+`pnpm test:e2e` builds the API. Then Playwright starts the built API on
+`127.0.0.1:3000` with the test database, and the Vite dev server on
+`http://localhost:5173`. It runs the specs in `apps/web/e2e` and stops both
+servers.
 
-A `setup` project runs first: it resets, migrates and seeds the test
-database, mints a custom token for the test user `e2e-owner`, signs in
-through a development-only hook, and saves the session to
-`apps/web/playwright/.auth/owner.json` (ignored by git). The `/app` specs start
-with that session. Only the API Playwright starts accepts such tokens:
-`AUTH_TEST_SIGN_IN=enabled` is read from `.env.test`, never from the
-environment. Two Chromium projects then run every test, `desktop-chrome`
-(1280 × 720) and `pixel-7` (Playwright's Pixel 7 profile), both in en-US and
-`America/Sao_Paulo`; tests tagged `@phone` or `@desktop` run in one project
-only. Arguments after `--` reach `playwright test`; `--no-deps` skips the
-setup for signed-out specs:
+Before a run, make sure that:
+
+- The databases run (`pnpm db:up`).
+- The [end-to-end test setup](#end-to-end-test-setup) is complete.
+- The network is available. The tests use Google's token service and the
+  Firebase development project.
+- `pnpm dev` is stopped, and ports 3000 and 5173 are free. Playwright does not
+  reuse a server. It stops with "is already used".
+
+A `setup` project runs first. It seeds the test database and saves a signed-in
+session for the specs in `e2e/app/`.
+
+Each test runs in two projects: `desktop-chrome` (1280 × 720) and `pixel-7`. A
+test with the tag `@phone` or `@desktop` runs in one project only.
+
+Arguments after `--` go to `playwright test`. The `--no-deps` option does not
+run the setup project. Use it for signed-out specs.
 
 ```sh
 pnpm test:e2e -- --project=pixel-7 e2e/app/echo.spec.ts
 ```
 
-A failed run keeps its traces and screenshots in `apps/web/test-results/` and
-writes an HTML report to `apps/web/playwright-report/`, which never opens by
-itself. Serve it with
-`pnpm --filter @storage-minis/web exec playwright show-report`. Specs use
-the `tapOrClick` fixture instead of `click()` or `tap()`, and a console error
-or warning, or an uncaught page error, that a test did not declare with
-`expectConsole` fails it, as does a request to any origin other than the app
-and Firebase Authentication's two APIs that it did not declare with
-`allowOrigin`.
+A failed run keeps traces and screenshots in `apps/web/test-results/`. To open
+its HTML report, run
+`pnpm --filter @storage-minis/web exec playwright show-report`.
 
-After a run that was killed hard, its servers keep ports 3000 and 5173, and the
-next run fails with "is already used". `lsof -nP -iTCP:3000 -sTCP:LISTEN` (and
-`-iTCP:5173`) shows each listener's PID; `ps -o pid,command -p <PID>` shows
-whether it is the test API (`dist/server.js`) or Vite (`vite.js`); `kill <PID>`
-stops it. See the
+Declare expected console output with `expectConsole` and other origins with
+`allowOrigin`. Undeclared output, page errors and origins make the test fail.
+
+If a killed run leaves servers on ports 3000 or 5173, see the
 [end-to-end reference](docs/technical/local-development.md#end-to-end-tests).
 
 ### Parity stack
 
-The parity stack runs the production image and `compose.yaml` locally, as the
-separate Compose project `storage-minis-stack` with its own throwaway database:
+The parity stack runs the production API image and `compose.yaml` on your
+computer. It is a separate Compose project, `storage-minis-stack`, with its own
+temporary database.
 
 ```sh
-pnpm stack:up     # build the API image, run migrate, start the API
-curl http://127.0.0.1:3100/health/ready   # expect HTTP 200 {"status":"ready"}
-pnpm stack:down   # remove the stack, including its database volume
+pnpm stack:up                            # build the API image, run migrate, start the API
+curl http://127.0.0.1:3100/health/ready  # expect HTTP 200 {"status":"ready"}
+pnpm stack:down                          # remove the stack and its database volume
 ```
 
-`stack:up` runs `migrate` as a one-off container first and starts `api` only
-after it succeeds. The VPS deploy uses the same order, so a failed migration
-leaves a running API in place. The stack API listens on `127.0.0.1:3100` and
-its PostgreSQL is not published, so the stack can run alongside `pnpm dev`.
-`pnpm test:stack` starts a fresh stack, checks health, user, mounts, migration
-order, a failed redeploy and shutdown, and always removes the stack afterwards.
-`stack:down` keeps the built `storage-minis-api:local` image for faster
-rebuilds; remove it with `docker image rm storage-minis-api:local`.
+`stack:up` uses the order of the VPS deploy: `migrate` first, then the API. The
+stack API uses port 3100, and its database has no published port. You can run
+the stack and `pnpm dev` at the same time.
 
 ### Turborepo cache
 
-Finite tasks cache in `.turbo/cache`, with remote caching disabled. Database,
-migration, process-test and watch tasks never cache. Inspect the task graph with
-`pnpm check --dry=json`; see the
-[cache reference](docs/technical/local-development.md#turborepo-tasks-and-cache).
+Finite tasks keep a local cache in `.turbo/cache`. The remote cache is off.
+Database, migration, live-test and watch tasks do not use the cache. The
+[cache reference](docs/technical/local-development.md#turborepo-tasks-and-cache)
+lists each task.
 
 ## Code conventions
 
-Use English, strict TypeScript, ESM, `.js` extensions in relative TS imports in
-the Node packages, and `import type` for types. Web code in `apps/web` uses
-extensionless relative imports (`./lib/trpc`). Handle promises and missing
-indexed values. Unit tests live beside source as `src/**/*.test.ts`
-(`.test.tsx` in web code, never under `src/routes/`) and import Vitest APIs
-explicitly.
-Use the pinned pnpm versions/lockfile, Prettier, and Conventional Commits.
+TypeScript and ESLint enforce strict types, ESM, `import type`, `.js` extensions
+in Node package imports, handled promises and checked indexed values. Also obey
+these rules:
+
+- Write code, comments and documentation in English.
+- In `apps/web`, write relative imports without an extension (`./lib/trpc`).
+- Put unit tests next to the source as `*.test.ts` or `*.test.tsx`, never in
+  `apps/web/src/routes/`.
+- Import `@storage-minis/db`, never `packages/db/src`.
+- Use pnpm, Prettier and Conventional Commits.
 
 ## Documentation
 
-Read [AGENTS.md](AGENTS.md) with the published requirements; a later approved
-decision takes precedence over conflicting baseline text.
+Read [AGENTS.md](AGENTS.md) and the published requirements. A later approved
+decision wins over different text in a baseline.
 
 - [Requirements v0.8](docs/requirements/requirements-v0.8.md)
 - [Entity map v0.9](docs/entities/entity-map-v0.9.md)
 - [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
-- Database schema: [DBML](docs/database/schema.dbml) and [design guide](docs/database/design.md)
+- Database schema: [DBML](docs/database/schema.dbml) and
+  [design guide](docs/database/design.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)
 - [Local development reference](docs/technical/local-development.md)
 - [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
 - [T02 authentication record](docs/technical/t02-authentication-record-2026-11-03.md)
 - [Design system and page designs](docs/design/README.md)
 
-Keep links to the latest published document versions. Superseded versions and
-finished plans stay in git history; cite them with commit-pinned links.
+Link only to the latest published version of each document. Git history keeps
+the earlier versions and the finished plans. Cite them with commit-pinned links.
