@@ -252,7 +252,7 @@ their phone.
 
 **Needs:** `organizations.nickname` and `organizations.currency`, which #117 assigns to
 T01. The plan adds them now (SI-04), with a provisional nickname rule, as an exception
-to the implementation guide's T01 gate for business schema migrations.
+to the [T01 gate](technical-direction.md#gates-before-dependent-work) for business schema migrations.
 
 ### AU-08 Role capabilities
 

@@ -548,8 +548,8 @@ Every component is built for Playwright from the start:
 - Firebase's web configuration consists of public identifiers. They become
   `VITE_*` build-time values validated with Zod at startup. Both the dev-project
   and the production values are committed (follow-up review), as a recorded
-  exception to the implementation guide's rule against committing production
-  values: every visitor's browser receives them anyway. The web build never
+  exception to the rule that production values live only in Doppler
+  ([local setup](../../README.md#local-setup)): every visitor's browser receives them anyway. The web build never
   runs under Doppler, so no server secret reaches it, as D5 requires; the API
   keeps its own values, such as the project ID it checks tokens against, in
   Doppler on the VPS. Turborepo's strict environment mode must list them.

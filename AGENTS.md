@@ -4,56 +4,15 @@
 
 StorageMinis manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
-This repository contains the full application's TypeScript workspace, specifications,
-a synchronized DBML diagram, the Drizzle schema and migrations, the diagnostic
-Fastify API, and the React web shell in `apps/web`. Node.js and pnpm run on the host; PostgreSQL runs in Docker. The
-[foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31)
-(2026-10-31) replaced the earlier tooling container and Doppler launchers with
-standard Compose, committed local database values, owner/app database roles and a
-production-shaped parity stack. The
-[API composition and error-log rework](docs/technical/technical-direction.md#api-composition-and-error-log-rework-2026-11-01)
-(2026-11-01) made `buildApp` the single plugin composition root and set the
-allowlisted error-log policy; read it before changing API composition or logging.
-[Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)
-(2026-11-01) added the diagnostic tRPC transport at `/trpc`, its error envelope and
-the types-only `@storage-minis/api/types` export; read its record before changing
-`apps/api/src/trpc` or adding a procedure. The
-[frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
-(2026-11-01) set the web app's architecture, design system, languages and four
-delivery steps; read them before frontend work. The
-[PR 1 web shell plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-plan-2026-11-01.md) (approved
-2026-11-01) and its record's implementation-time decisions govern `apps/web`: the
-responsive shell, the en-US and pt-BR catalogs, placeholder pages, the Login page
-without sign-in and `diagnostics.echo` through the Vite proxy.
-[`docs/design/`](docs/design/README.md) holds the owner-approved design system and
-page designs. The [PR 2 Playwright plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/playwright-plan-2026-11-02.md)
-(approved 2026-11-02, with the owner's changes to W9 and W11) governs
-`pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
-projects, `desktop-chrome` and `pixel-7`, before sign-in. The
-[web shell follow-up plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/web-shell-follow-up-plan-2026-11-02.md)
-(approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
-inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
-footer inset and height, as implemented in
-[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125). The owner ruled the
-collapsed SideNav's hover-only labels not a defect.
-[T02's record](docs/technical/t02-authentication-record-2026-11-03.md) and the
-[sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md) (approved 2026-11-04) govern
-authentication, sessions, authorization and the administrator bootstrap, delivered as
-frontend PR 3a (API identity and authorization) and PR 3b (web sign-in and the
-Playwright session); read them before changing `apps/api/src/trpc`, identity
-tables or sign-in. PR 3a ([outcome](docs/technical/technical-direction.md#pr-3a-implemented-outcome-2026-11-05),
-2026-11-05) added Firebase ID token verification with `jose`, the guarded builders
-in `apps/api/src/trpc/procedures.ts`, `session.get` with the configured bootstrap,
-the Organization nickname and currency columns, `users.sessions_valid_after` and
-the shared `@storage-minis/db/testing` helper; business procedures start from
-those builders. PR 3b ([outcome](docs/technical/technical-direction.md#pr-3b-implemented-outcome-2026-11-06),
-2026-11-06) added Google popup sign-in with the redirect code, the startup check,
-the session layer in `apps/web/src/lib/session/` with `useSession()` and the active
-Organization, the `/app` guard and request headers, the Login page's states 2–4,
-a Sign out button, and Playwright's setup project, which signs in through keyless
-custom tokens; screens start from `useSession()`. Step 6 is TBD until the app is
-validated locally; business operations, business screens, the web image (PR 4),
-production and CI remain pending.
+This repository contains the full application's TypeScript workspace, specifications, a synchronized DBML diagram, the Drizzle schema and migrations, the Fastify API with tRPC and Firebase sign-in, and the React web app in `apps/web` with its responsive shell, en-US and pt-BR catalogs and the signed-in session. Node.js and pnpm run on the host; PostgreSQL runs in Docker. [Technical direction](docs/technical/technical-direction.md) records each approved decision and delivered outcome; read the record that covers what you change:
+
+- [Foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31) (2026-10-31): host Node, standard Compose, committed local database values, owner/app database roles and the parity stack.
+- [API composition and error-log rework](docs/technical/technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (2026-11-01): `buildApp` as the single plugin composition root and the allowlisted error-log policy; read it before changing API composition or logging.
+- [Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01) (2026-11-01): the tRPC transport at `/trpc`, its error envelope and the types-only `@storage-minis/api/types` export; read it before changing `apps/api/src/trpc` or adding a procedure.
+- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md) (2026-11-01): the web app's architecture, design system, languages, forms and lists; read them before frontend work. The [web shell](docs/technical/technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01), [Playwright](docs/technical/technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02) and [shell follow-up](docs/technical/technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02) records hold the decisions behind `apps/web` and `apps/web/e2e`.
+- [T02's record](docs/technical/t02-authentication-record-2026-11-03.md) and the [sign-in approval](docs/technical/technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04) (2026-11-04), delivered as frontend PRs 3a and 3b: authentication, sessions, authorization and the administrator bootstrap; read them before changing `apps/api/src/trpc`, identity tables or sign-in. Business procedures start from the guarded builders in `apps/api/src/trpc/procedures.ts`, and screens from `useSession()` in `apps/web/src/lib/session/`.
+
+[`docs/design/`](docs/design/README.md) holds the owner-approved design system and page designs. Foundation Step 6 is TBD until the app is validated locally; business operations, business screens, the web image (PR 4), production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)

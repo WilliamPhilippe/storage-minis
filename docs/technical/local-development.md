@@ -97,7 +97,7 @@ Percent-encode special characters in a hand-written URL.
 `openssl rand -hex 16`). `compose.yaml` embeds `DB_OWNER_PASSWORD` and
 `DB_APP_PASSWORD` in its in-network URLs without encoding, and the init script
 sets the same raw values, so a password containing `@`, `/`, `:` or `%` breaks
-the URL or the login. Generate production values the same way (plan Section 6). Other parameters are rejected, and so
+the URL or the login. Generate production values the same way (the restructure plan's [variable inventory](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/foundation-restructure-plan-2026-10-31.md#6-variable-inventory-d4)). Other parameters are rejected, and so
 are `sslmode=require` and `verify-ca`, which pg 8.23.1 silently treats as
 `verify-full`. Error messages name the variable and the expected shape, never
 its value.
@@ -572,25 +572,3 @@ restructure plan listed it:
   Registry (D9), and daily backups with a tested restore (D10);
 - the deploy procedure: `docker compose run --rm migrate`, then
   `up -d --wait`, both under `doppler run` (R19).
-
-## Removing the previous tooling setup
-
-Checkouts that used the container-only workflow have resources the new model
-never uses. `PROJECT` below is the old `COMPOSE_PROJECT_NAME` from that
-checkout's `.env.compose` (for example `storage-minis-beijing`). These commands
-delete only that old project's resources.
-
-```sh
-docker rm PROJECT-postgres-1 PROJECT-postgres_test-1
-docker volume rm PROJECT_dependencies PROJECT_api-dependencies \
-  PROJECT_db-dependencies PROJECT_pnpm-store PROJECT_turbo
-docker image rm PROJECT-tooling:step1 PROJECT-api:step4 PROJECT-api:step4-dev
-docker network rm PROJECT_default
-rm .env.compose
-```
-
-The old `PROJECT_pgdata` volume holds the old development database, which was
-initialized without the new roles. Remove it with
-`docker volume rm PROJECT_pgdata` once its data is no longer needed. The
-dedicated Doppler login directory `~/.config/storage-minis/doppler` is no longer
-read by any command; its owner may delete it.
