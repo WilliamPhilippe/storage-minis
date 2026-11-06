@@ -3,6 +3,7 @@ import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import app from "../../i18n/en-US/app";
 import common from "../../i18n/en-US/common";
+import login from "../../i18n/en-US/login";
 import { languageCodes, languageNames } from "../../i18n/i18n";
 import ptApp from "../../i18n/pt-BR/app";
 import { setViewportWidth } from "../../test/harness";
@@ -236,5 +237,57 @@ describe("page titles", () => {
       }),
     ).toBeTruthy();
     expect(document.title).toBe(documentTitle(ptApp.titles.reports));
+  });
+});
+
+// Sign out of this browser (AU-04, SI-13).
+describe("the Sign out button", () => {
+  async function expectStateOne(router: {
+    state: { location: { href: string } };
+  }) {
+    expect(
+      await screen.findByRole("heading", { level: 1, name: login.title }),
+    ).toBeTruthy();
+    // State 1: plain /login, no alert.
+    expect(router.state.location.href).toBe("/login");
+    expect(screen.queryByRole("alert")).toBeNull();
+  }
+
+  it("sits at the right of the TopBar from bp-md and signs out", async () => {
+    const user = userEvent.setup();
+    const { router, auth, queryClient } = await renderInventory(1280);
+    const topBar = screen.getByRole("banner");
+    const button = within(topBar).getByRole("button", {
+      name: app.account.signOut,
+    });
+    expect(button.querySelector(".anticon-logout")).toBeTruthy();
+    await user.click(button);
+    await expectStateOne(router);
+    expect(auth.port.signOut).toHaveBeenCalledTimes(1);
+    expect(queryClient.getQueryCache().getAll()).toEqual([]);
+  });
+
+  it("sits in the menu drawer's footer below bp-md, not in the TopBar", async () => {
+    const user = userEvent.setup();
+    const { router, auth } = await renderInventory(375);
+    expect(
+      within(screen.getByRole("banner")).queryByRole("button", {
+        name: app.account.signOut,
+      }),
+    ).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: nav.open }));
+    const drawer = screen.getByRole("dialog", { name: nav.menu });
+    const languageSwitch = within(drawer).getByRole("button", {
+      name: languageSwitchName(),
+    });
+    const button = within(drawer).getByRole("button", {
+      name: app.account.signOut,
+    });
+    // The footer: the language switch, then Sign out.
+    expect(languageSwitch.nextElementSibling).toBe(button);
+    await user.click(button);
+    await expectStateOne(router);
+    expect(auth.port.signOut).toHaveBeenCalledTimes(1);
   });
 });

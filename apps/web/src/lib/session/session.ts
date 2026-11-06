@@ -122,8 +122,9 @@ export interface Session {
   requestHeaders(): Promise<Record<string, string>>;
   /** The QueryCache's and MutationCache's error handler. */
   handleRequestError(error: unknown): void;
-  getNotice(): LoginNotice | null;
-  subscribeNotice(listener: () => void): () => void;
+  // Function properties: React's useSyncExternalStore receives them detached.
+  getNotice: () => LoginNotice | null;
+  subscribeNotice: (listener: () => void) => () => void;
   clearNotice(): void;
   connectRouter(router: GuardedRouter): void;
 }
@@ -146,6 +147,7 @@ export function createSession(dependencies: SessionDependencies): Session {
   let member: MemberSession | undefined;
   let resolving: Promise<SessionState> | undefined;
   let ending: Promise<void> | undefined;
+  let completing: Promise<SignInResult> | undefined;
   let notice: LoginNotice | null = null;
   const noticeListeners = new Set<() => void>();
 
@@ -338,19 +340,24 @@ export function createSession(dependencies: SessionDependencies): Session {
       return afterSignIn(auth);
     },
 
-    async completeRedirect() {
-      const auth = await load();
-      try {
-        await auth.completeRedirect();
-      } catch (error) {
-        return { status: "failed", failure: signInFailure(error) };
-      } finally {
-        clearRedirecting();
-      }
-      if (auth.currentUser() === null) {
-        return { status: "failed", failure: "cancelled" };
-      }
-      return afterSignIn(auth);
+    completeRedirect() {
+      // Once per page: React's StrictMode runs the Login page's effect twice
+      // in development.
+      completing ??= (async (): Promise<SignInResult> => {
+        const auth = await load();
+        try {
+          await auth.completeRedirect();
+        } catch (error) {
+          return { status: "failed", failure: signInFailure(error) };
+        } finally {
+          clearRedirecting();
+        }
+        if (auth.currentUser() === null) {
+          return { status: "failed", failure: "cancelled" };
+        }
+        return afterSignIn(auth);
+      })();
+      return completing;
     },
 
     async signInWithCustomToken(token) {

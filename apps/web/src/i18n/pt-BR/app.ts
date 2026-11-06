@@ -20,6 +20,9 @@ export default {
     catalog: "Catálogo",
     settings: "Configurações",
   },
+  account: {
+    signOut: "Sair",
+  },
   placeholder: "Esta seção ainda não foi construída.",
   echo: {
     title: "Conexão com a API",

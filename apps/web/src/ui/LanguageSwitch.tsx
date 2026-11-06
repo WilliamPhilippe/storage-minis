@@ -12,13 +12,15 @@ import { useLocale } from "../i18n/useLocale";
 // A text button with the globe and the current language's code ("EN"), or
 // the globe alone in the collapsed SideNav (owner, 2026-11-01). Its accessible
 // name is always "Language: English". Each option is written in its own
-// language.
+// language. The Login page disables it while signing in.
 export function LanguageSwitch({
   iconOnly = false,
   placement = "bottomLeft",
+  disabled = false,
 }: {
   iconOnly?: boolean;
   placement?: DropdownProps["placement"];
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const { language, switchLanguage } = useLocale();
@@ -28,6 +30,7 @@ export function LanguageSwitch({
     <Dropdown
       trigger={["click"]}
       placement={placement}
+      disabled={disabled}
       menu={{
         items: languages.map((option) => ({
           key: option,
@@ -47,6 +50,7 @@ export function LanguageSwitch({
     >
       <Button
         type="text"
+        disabled={disabled}
         icon={<GlobalOutlined aria-hidden />}
         aria-label={t("language.switch", { name: languageNames[language] })}
       >
