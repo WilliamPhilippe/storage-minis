@@ -1,7 +1,8 @@
 # Sign-in plan — Google sign-in across the API and the web app (2026-11-03)
 
 **Status: approved by the owner on 2026-11-04 as recommended. PR 3a (API identity
-and authorization) is implemented in [PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132); PR 3b is not yet implemented.** The approval record is in
+and authorization) is implemented in [PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132); PR 3b (web sign-in and the Playwright session) is implemented on branch `feat/web-sign-in`
+([outcome](technical-direction.md#pr-3b-implemented-outcome-2026-11-06)).** The approval record is in
 [technical direction](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04),
 and [Approval](#approval-2026-11-04) records the owner's answers given after it. This plan delivers [T02's record](t02-authentication-record-2026-11-03.md)
 (AU-01–AU-12) as one feature across the API, the database and the web app: frontend

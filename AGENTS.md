@@ -46,10 +46,14 @@ tables or sign-in. PR 3a ([outcome](docs/technical/technical-direction.md#pr-3a-
 in `apps/api/src/trpc/procedures.ts`, `session.get` with the configured bootstrap,
 the Organization nickname and currency columns, `users.sessions_valid_after` and
 the shared `@storage-minis/db/testing` helper; business procedures start from
-those builders. Step 6 is TBD
-until the app is validated locally; business
-operations, web sign-in (PR 3b), business screens, signed-in browser tests, the
-web image, production and CI remain pending.
+those builders. PR 3b ([outcome](docs/technical/technical-direction.md#pr-3b-implemented-outcome-2026-11-06),
+2026-11-06) added Google popup sign-in with the redirect code, the startup check,
+the session layer in `apps/web/src/lib/session/` with `useSession()` and the active
+Organization, the `/app` guard and request headers, the Login page's states 2–4,
+a Sign out button, and Playwright's setup project, which signs in through keyless
+custom tokens; screens start from `useSession()`. Step 6 is TBD until the app is
+validated locally; business operations, business screens, the web image (PR 4),
+production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -191,7 +195,8 @@ Use the [README](README.md) for local setup, the daily loop, migrations and chec
 
 - `pnpm check` needs no database. `pnpm test:db`, `pnpm test:api` and `pnpm test:e2e` need `pnpm db:up` and share the test database, so run them one at a time; all three refuse any database not named `*_test`, and `test:db` and `test:api` reset and migrate it through `@storage-minis/db/testing`. Run `pnpm test:stack` (Docker) after changes to the image, Compose files or migrations.
 - The API requires `FIREBASE_PROJECT_ID` (both committed env files name `storage-minis-dev`). Test tokens come from the local key set in `apps/api/tests/tokens.ts`; Vitest never fetches Google's keys. The operator SQL for revocation and account rebinding is in the [local development reference](docs/technical/local-development.md#operator-sql).
-- `pnpm test:e2e` (outside `pnpm check`) needs the one-time headless shell install in the [README](README.md#local-setup) and ports 3000 and 5173 free, so stop `pnpm dev`; Playwright starts and stops its own servers and never reuses one. Specs take `test` from `e2e/support/test.ts` (signed-out) or `e2e/support/app.ts` (`/app`), read names from the catalogs through `support/names.ts`, call `tapOrClick` instead of `click()`/`tap()`, and declare expected console output with `expectConsole`. Tag layout-specific tests `@phone` or `@desktop`.
+- `pnpm test:e2e` (outside `pnpm check`) needs the one-time headless shell install and the gcloud Application Default Credentials login in the [README](README.md#local-setup), the network, and ports 3000 and 5173 free, so stop `pnpm dev`; Playwright starts and stops its own servers and never reuses one. Its `setup` project resets, migrates and seeds the test database, mints a custom token through IAM and saves the signed-in session. The suite may read the owner's login in `~/.config/gcloud/`; never open, list, copy or move that file or folder. Specs take `test` from `e2e/support/test.ts` (signed-out) or `e2e/support/app.ts` (`/app`, signed in), read names from the catalogs through `support/names.ts`, call `tapOrClick` instead of `click()`/`tap()`, declare expected console output with `expectConsole` and any origin beyond the app and Firebase Authentication's APIs with `allowOrigin`. Tag layout-specific tests `@phone` or `@desktop`.
+- The web app's Firebase config lives in `apps/web/.env.development` and `.env.production` (public identifiers), checked by `vite.config.mts`; never add `apps/web/.env.local` or shell `VITE_*` values. Only `src/lib/session/firebase.ts` imports Firebase; the catalog must never load it.
 - Raw `docker compose` commands need `--env-file .env.development`. The parity stack uses its own project and file flags; see the [parity stack reference](docs/technical/local-development.md#parity-stack).
 - Generate migrations offline with `pnpm db:generate` and confirm Drizzle Kit's final line; it can exit 0 after an error. Review and commit SQL, snapshots and journal together. Preserve applied history and correct it with forward migrations.
 - Stop `pnpm dev` before finite builds or checks; both write the DB package's `dist`.
@@ -220,7 +225,7 @@ Read the live issue together with the approved log before dependent work. The re
 Technical choices also remain open; their issues define the required outputs:
 
 - [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan](docs/technical/sign-in-plan-2026-11-03.md)); PR 3a delivered the API side on 2026-11-05. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan](docs/technical/sign-in-plan-2026-11-03.md)); PR 3a delivered the API side on 2026-11-05 and PR 3b the web side on 2026-11-06. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.

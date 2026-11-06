@@ -8,10 +8,10 @@ in `packages/db`; a Fastify API in `apps/api` that serves health routes, one
 diagnostic tRPC procedure and `session.get`, verifies Firebase ID tokens and
 offers guarded procedure builders for Users, Organizations and roles; and the
 React web app in `apps/web`, with the responsive shell, the en-US and pt-BR
-catalogs, placeholder pages, the Login page without sign-in, and a card that
+catalogs, Google sign-in on the Login page, the signed-in session with its
+active Organization, a Sign out button, placeholder pages, and a card that
 calls the diagnostic procedure. Node.js runs on the host; PostgreSQL runs in
-Docker. **Sign-in in the web app (PR 3b), business endpoints and business
-screens are still pending.**
+Docker. **Business endpoints and business screens are still pending.**
 
 Follow [local setup](#local-setup), then the [daily loop](#daily-development).
 For a feature, read [implementing a feature](#implementing-a-feature) and
@@ -58,11 +58,15 @@ Both files also name the Firebase project whose ID tokens the API accepts,
 development bootstrap: the owner's first verified Google sign-in on a database
 with no Organization creates the administrator and the `wipminis` Organization
 (the [T02 record](docs/technical/t02-authentication-record-2026-11-03.md), AU-07).
-After `pnpm db:reset` and `pnpm db:migrate`, the owner's next sign-in creates them
-again. The web app's sign-in arrives with PR 3b; until then nothing signs in.
+**After `pnpm db:reset` and `pnpm db:migrate`, sign in once with Google** at
+`http://localhost:5173/login` to create them again. Other Google accounts see
+"No access" until invitations exist. The web app's Firebase config is
+committed in `apps/web/.env.development` and `.env.production`; don't create
+`apps/web/.env.local` or set `VITE_*` variables in the shell, which would
+override them unseen by Turborepo's cache.
 
-The end-to-end tests need Playwright's Chrome Headless Shell, installed once
-(owner-approved 2026-11-02, PW-02):
+The end-to-end tests need two things, set up once. First, Playwright's Chrome
+Headless Shell (owner-approved 2026-11-02, PW-02):
 
 ```sh
 pnpm --filter @storage-minis/web exec playwright install --only-shell chromium
@@ -74,6 +78,25 @@ It writes about 206 MiB (the shell and FFmpeg) to Playwright's default cache,
 through. The browser is tied to the Playwright version: run the command again
 after a Playwright upgrade, which also removes browsers no installed Playwright
 uses.
+
+Second, a Google login that signs the tests' Firebase custom tokens (sign-in
+plan SI-15): Playwright's setup signs them through IAM as the no-role service
+account `e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com`, with
+your gcloud Application Default Credentials. No key file exists.
+
+1. Install the [gcloud CLI](https://docs.cloud.google.com/sdk/docs/install)
+   (installing tools follows the owner approval rules).
+2. Run `gcloud auth application-default login` and sign in with your Google
+   account. It writes the login to gcloud's default folder,
+   `~/.config/gcloud/`; keep it there, never in the repository. Check it with
+   `gcloud auth application-default print-access-token >/dev/null && echo ok`.
+3. Ask the owner to grant that account **Service Account Token Creator** on
+   the service account above.
+
+If minting fails with a quota or "API not enabled" error, run
+`gcloud auth application-default set-quota-project storage-minis-dev`. The
+login can act as your Google account; `gcloud auth application-default revoke`
+ends it.
 
 ## Local PostgreSQL
 
@@ -132,9 +155,12 @@ pnpm dev     # API on http://127.0.0.1:3000, web on http://localhost:5173; Ctrl+
 restart the server, and DB package edits recompile it and restart the server.
 It also runs the web app's Vite server on `http://localhost:5173` (bound to
 `127.0.0.1`; it fails rather than move to another port), which proxies `/trpc/`
-to the API. Open [`/app`](http://localhost:5173/app): the API connection card
-shows the echoed message. With the API stopped, the card's error appears after
-about 7 s of retries.
+to the API. Open [`/app`](http://localhost:5173/app) and sign in with Google.
+Use `localhost`, not the `127.0.0.1` address Vite prints: the Firebase dev
+project and its browser key allow only `localhost`, and Google answers 403
+elsewhere. Signed in, the API connection card shows the echoed message, and the Sign out button sits
+at the top right, or in the menu drawer on a narrow window. With the API
+stopped, the card's error appears after about 7 s of retries.
 Open [liveness](http://127.0.0.1:3000/health/live) and
 [readiness](http://127.0.0.1:3000/health/ready): expect HTTP 200 with
 `{"status":"ok"}` and `{"status":"ready"}`. Readiness checks the database
@@ -173,6 +199,7 @@ no new business contract.
 | Web page | Route definition only in `apps/web/src/routes/`; the page component, its CSS Module (with a `.module.d.css.ts` declaration) and its tests in `apps/web/src/features/<area>/`. Follow the page's design in [`docs/design/`](docs/design/README.md) |
 | Web strings | Both catalogs: `apps/web/src/i18n/en-US/<namespace>.ts` and the pt-BR file typed against it with `satisfies CatalogShape<typeof en>`. A route's loader calls `ensureNamespace` for its area |
 | Money and dates in the web app | `formatMoney` and the date helpers in `apps/web/src/lib/format/` |
+| The signed-in session in the web app | `useSession()` from `apps/web/src/lib/session/useSession.ts` under `/app`: the User, the Memberships and the active Organization (W5). The tRPC link already sends the ID token and `x-organization-id`; see the [web session](docs/technical/local-development.md#web-session) |
 | Tests | Unit tests beside source; real PostgreSQL tests for persistence behavior; web component tests by role and label |
 
 A typical feature goes through approved contract → schema/migration if needed →
@@ -345,7 +372,9 @@ const { message } = await client.diagnostics.echo.query({ message: "ok" });
 
 Read errors through `error.data.code` (and `error.data.issues` for validation).
 The web app's client, QueryClient and options proxy live in
-`apps/web/src/lib/trpc.ts`. Sharing runtime Zod schemas with the browser needs
+`apps/web/src/lib/trpc.ts`; its connected session adds the
+`Authorization` and `x-organization-id` headers, signs out on `UNAUTHORIZED`
+and reloads the session on `FORBIDDEN`. Sharing runtime Zod schemas with the browser needs
 a separate package, because this export carries types only. See the official
 [procedures](https://trpc.io/docs/server/procedures) and
 [validation](https://trpc.io/docs/server/validators) documentation.
@@ -374,7 +403,7 @@ The live suites run uncached. Start the databases first with `pnpm db:up`:
 ```sh
 pnpm test:db     # schema, migration and connection tests on the test database
 pnpm test:api    # real built API processes, and the auth suite on the migrated test database
-pnpm test:e2e    # Playwright smoke tests in Chromium; see End-to-end tests
+pnpm test:e2e    # Playwright tests in Chromium, signed out and signed in; see End-to-end tests
 pnpm test:stack  # parity stack smoke test; needs Docker
 ```
 
@@ -389,13 +418,23 @@ tests do not establish business acceptance.
 `pnpm test:e2e` builds the API, then Playwright starts the built API on
 `127.0.0.1:3000` against the test database and the Vite dev server on
 `http://localhost:5173`, runs the specs in `apps/web/e2e` and stops both
-servers. It needs `pnpm db:up`, the headless shell from
-[Local setup](#local-setup), and ports 3000 and 5173 free, so stop `pnpm dev`
-first: Playwright never reuses a running server and fails with "is already
-used" instead. Two Chromium projects run every test, `desktop-chrome`
+servers. It needs `pnpm db:up`, the headless shell and the gcloud login from
+[Local setup](#local-setup), the network (Google's token service and the
+Firebase dev project), and ports 3000 and 5173 free, so stop `pnpm dev` first:
+Playwright never reuses a running server and fails with "is already used"
+instead.
+
+A `setup` project runs first: it resets, migrates and seeds the test
+database, mints a custom token for the test user `e2e-owner`, signs in
+through a development-only hook, and saves the session to
+`apps/web/playwright/.auth/owner.json` (ignored by git). The `/app` specs start
+with that session. Only the API Playwright starts accepts such tokens:
+`AUTH_TEST_SIGN_IN=enabled` is read from `.env.test`, never from the
+environment. Two Chromium projects then run every test, `desktop-chrome`
 (1280 × 720) and `pixel-7` (Playwright's Pixel 7 profile), both in en-US and
 `America/Sao_Paulo`; tests tagged `@phone` or `@desktop` run in one project
-only. Arguments after `--` reach `playwright test`:
+only. Arguments after `--` reach `playwright test`; `--no-deps` skips the
+setup for signed-out specs:
 
 ```sh
 pnpm test:e2e -- --project=pixel-7 e2e/app/echo.spec.ts
@@ -407,7 +446,9 @@ itself. Serve it with
 `pnpm --filter @storage-minis/web exec playwright show-report`. Specs use
 the `tapOrClick` fixture instead of `click()` or `tap()`, and a console error
 or warning, or an uncaught page error, that a test did not declare with
-`expectConsole` fails it.
+`expectConsole` fails it, as does a request to any origin other than the app
+and Firebase Authentication's two APIs that it did not declare with
+`allowOrigin`.
 
 After a run that was killed hard, its servers keep ports 3000 and 5173, and the
 next run fails with "is already used". `lsof -nP -iTCP:3000 -sTCP:LISTEN` (and

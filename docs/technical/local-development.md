@@ -28,11 +28,12 @@ compose.override.yaml   Development: loopback ports, postgres_test, stack profil
 compose.stack.yaml      Parity stack: API on 127.0.0.1:3100
 .env.development        Committed local development values
 .env.test               Committed local test values
+apps/web/.env.development, .env.production   Committed Firebase web configs (Vite mode files)
 docker/api.Dockerfile   API image (also runs the migrator)
 docker/postgres/init/   Role init script run on first volume initialization
 apps/api                @storage-minis/api: Fastify API
 apps/web                @storage-minis/web: React web app (Vite, antd, TanStack Router)
-apps/web/e2e            Playwright specs: signed-out/, app/ and support/
+apps/web/e2e            Playwright: the auth.setup.ts setup project, signed-out/, app/ and support/
 packages/db             @storage-minis/db: schema, migrations, client, migrator, test-database helper
 tsconfig.browser.json   Browser TypeScript profile for apps/web (beside tsconfig.node.json)
 ```
@@ -45,7 +46,8 @@ new build script rather than bypassing the check.
 
 Local values live in two committed files, the single source for Compose and
 Node (owner-approved 2026-10-31, R8/R9). `.gitignore` tracks exactly these two
-`.env*` names, and `.dockerignore` keeps every `.env*` file out of images.
+`.env*` names plus the web app's [mode files](#web-configuration), and
+`.dockerignore` keeps every `.env*` file out of images.
 
 | Variable | Local source | Consumer |
 | --- | --- | --- |
@@ -58,7 +60,8 @@ Node (owner-approved 2026-10-31, R8/R9). `.gitignore` tracks exactly these two
 | `NODE_ENV` | `development` in `.env.development`; default `production` when unset | API: `development`, `test` or `production`. Only exactly `development` adds error messages to logs (2026-11-01). |
 | `TZ` | Unset locally; `UTC` in containers | Node processes |
 | `FIREBASE_PROJECT_ID` | `storage-minis-dev` in both files; `storage-minis` in production (T04) | API, required: the Firebase project whose ID tokens it accepts, in Google Cloud's project ID format. `compose.yaml` maps it with `${FIREBASE_PROJECT_ID:?}`. |
-| `AUTH_TEST_SIGN_IN` | Unset; PR 3b sets `enabled` in `.env.test` only | API: `enabled` also accepts `custom` test sign-ins of `e2e-` uids (T02 AU-11). Any other value is invalid, and the API refuses to start with it when `NODE_ENV` is `production` or unset. `compose.yaml` never maps it and no Turborepo task passes it through. |
+| `AUTH_TEST_SIGN_IN` | `enabled` in `.env.test` only | API: `enabled` also accepts `custom` test sign-ins of `e2e-` uids (T02 AU-11). Any other value is invalid, and the API refuses to start with it when `NODE_ENV` is `production` or unset. Only the API that Playwright starts receives it, read from `.env.test` and never from the environment; `compose.yaml` never maps it and no Turborepo task passes it through. |
+| `E2E_SIGNER_SERVICE_ACCOUNT` | `.env.test`: `e2e-custom-tokens@storage-minis-dev.iam.gserviceaccount.com` | Playwright's setup: the no-role service account that signs test custom tokens through IAM ([end-to-end tests](#end-to-end-tests)). An identifier, not a secret (owner, 2026-11-04). |
 | `BOOTSTRAP_OWNER_EMAIL`, `BOOTSTRAP_ORGANIZATION_NAME`, `BOOTSTRAP_ORGANIZATION_NICKNAME`, `BOOTSTRAP_ORGANIZATION_CURRENCY` | `.env.development`: the owner's email, `wipminis`, `wipminis` (currency unset, so BRL); none in `.env.test` | API: the [first-sign-in bootstrap](#bootstrap). The first three together or none; the email is trimmed and lowercased, the name 1–100 characters, the nickname under SI-04's provisional rule, the currency `BRL` (default) or `USD`. An empty value is invalid. `compose.yaml` maps none until T04. |
 
 **Loading and precedence.** Host Node processes load the files with Node's
@@ -76,7 +79,8 @@ therefore passes `--env-file .env.development`; `postgres_test` takes its own
 values from `.env.test` through `env_file:`. A missing value stops Compose with
 `required variable X is missing a value: Set X` before any container changes.
 This is why both files set `FIREBASE_PROJECT_ID`, which only the stack-only
-`api` uses.
+`api` uses. `postgres_test` receives every `.env.test` value through
+`env_file:`, including the test sign-in's, and ignores them.
 An optional gitignored `.env` may hold nonsecret Compose settings such as
 `COMPOSE_PROJECT_NAME`; secrets never go there.
 
@@ -98,6 +102,47 @@ the URL or the login. Generate production values the same way (plan Section 6). 
 are `sslmode=require` and `verify-ca`, which pg 8.23.1 silently treats as
 `verify-full`. Error messages name the variable and the expected shape, never
 its value.
+
+### Web configuration
+
+The web app's values are the Firebase web configs (sign-in plan SI-03,
+W10): public identifiers that every visitor's browser receives, committed in
+Vite's mode files and never in Doppler.
+
+| File | Mode | Project |
+| --- | --- | --- |
+| `apps/web/.env.development` | `vite` (`pnpm dev`, and the server `pnpm test:e2e` starts) | `storage-minis-dev` |
+| `apps/web/.env.production` | `vite build`, `vite preview` | `storage-minis`; PR 4 sets its `VITE_FIREBASE_AUTH_DOMAIN` to the app's domain (SI-18) |
+
+Each holds `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`,
+`VITE_FIREBASE_PROJECT_ID` and `VITE_FIREBASE_APP_ID`, and no `measurementId`:
+the app never loads Analytics. `vite.config.mts` checks them with Zod whenever
+Vite serves, builds or previews, and stops with `Invalid web configuration.
+Check <names> in apps/web/.env.<mode>.`, naming variables, never values; an
+unknown `VITE_FIREBASE_*` name is refused too. `src/vite-env.d.ts` types them
+with `strictImportMetaEnv`. The `web-unit` Vitest project doesn't read them:
+component tests run the session layer over a fake Firebase.
+
+Vite would let a shell `VITE_*` variable or a gitignored
+`apps/web/.env.local` override a file value, and Turborepo would hash neither,
+so don't use them. Both files are committed, so the web tasks' default inputs
+hash them; `turbo.json` lists nothing for them. `.dockerignore` keeps them out
+of the API image; PR 4's web image must let `.env.production` in.
+
+The browser API keys are restricted to their sites and to the Identity
+Toolkit and Token Service APIs (SI-14, applied 2026-11-06; see the
+[technical direction](technical-direction.md#pr-3b-implemented-outcome-2026-11-06)).
+The dev key accepts `http://localhost:5173/*` and
+`https://storage-minis-dev.firebaseapp.com/*`, the production key
+`https://storage-minis.firebaseapp.com/*`. Google refuses any other site with
+403 `API_KEY_HTTP_REFERRER_BLOCKED`, including `http://127.0.0.1:5173`, the
+address Vite prints. The Cloud console shows no API restrictions section for
+these Firebase-created keys; change them with `gcloud services api-keys update
+KEY_ID --project=<project> --allowed-referrers=<every site>
+--api-target=service=identitytoolkit.googleapis.com
+--api-target=service=securetoken.googleapis.com`, where each flag restates its
+whole list, and check with `gcloud services api-keys describe KEY_ID`. PR 4 or
+T04 adds the app's domain to the production key this way.
 
 ## Compose model
 
@@ -235,13 +280,16 @@ approved 2026-11-02).
 | Area | Contract |
 | --- | --- |
 | Browser | Chrome Headless Shell 156 only, installed once with `playwright install --only-shell chromium` into Playwright's default cache, or into the folder `PLAYWRIGHT_BROWSERS_PATH` names (passed through by Turborepo). Headed runs, `--debug`, and `--ui` or `show-trace` without `--port 0` need the full Chrome for Testing, which is not installed. |
-| Projects | `desktop-chrome` and `pixel-7`, with Playwright's full device descriptors; `locale: "en-US"` and `timezoneId: "America/Sao_Paulo"` in the shared `use`. Tests tagged `@phone` or `@desktop` run in one project through each project's `grepInvert`. |
-| Servers | `apps/web/playwright.config.mts` starts the built API (`node --enable-source-maps dist/server.js` in `apps/api`) on `127.0.0.1:3000` with `NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn`, `FIREBASE_PROJECT_ID` and only the test database's `DATABASE_URL`, then the Vite dev server (`pnpm run dev`) on `http://localhost:5173`. `reuseExistingServer` is false for both. Playwright stops them in reverse order with `SIGTERM`, then `SIGKILL` after 15 s for the API (Compose's grace period) and 5 s for Vite. |
-| Database | `DATABASE_URL` (and the API's `FIREBASE_PROJECT_ID`) from the real environment, else from `.env.test`, parsed with `util.parseEnv` rather than loaded, so the servers and workers never receive the owner role's URL or the PostgreSQL passwords. `requireTestDatabase` from `@storage-minis/db` refuses any database not named `*_test` before a server starts. The tests read no tables, so nothing migrates. |
-| Specs | `e2e/signed-out/` imports `test` from `support/test.ts`; `e2e/app/` imports it from `support/app.ts`, where PR 3 adds the saved session. `support/names.ts` builds every name from the en-US and pt-BR catalogs and `src/i18n/languages.ts`. |
-| Fixtures | `tapOrClick` taps where the project has touch and clicks elsewhere; a lint rule rejects direct `.click()` and `.tap()` in specs. The automatic console fixture fails a test on any `console.error`, `console.warn` or uncaught page error that it did not declare with `expectConsole(kind, pattern)`. `expectNoSidewaysScroll(page)` compares `documentElement.scrollWidth` with `clientWidth`. |
+| Projects | `setup` (`e2e/auth.setup.ts`), then `desktop-chrome` and `pixel-7`, which depend on it, with Playwright's full device descriptors; `locale: "en-US"` and `timezoneId: "America/Sao_Paulo"` in the shared `use`. Tests tagged `@phone` or `@desktop` run in one project through each project's `grepInvert`. `--no-deps` skips the setup, for signed-out specs that need no session. |
+| Servers | `apps/web/playwright.config.mts` starts the built API (`node --enable-source-maps dist/server.js` in `apps/api`) on `127.0.0.1:3000` with `NODE_ENV=test`, `TZ=UTC`, `LOG_LEVEL=warn`, `FIREBASE_PROJECT_ID`, `AUTH_TEST_SIGN_IN` (from `.env.test` only) and only the test database's `DATABASE_URL`, then the Vite dev server (`pnpm run dev`, the development mode file) on `http://localhost:5173`. `reuseExistingServer` is false for both. Playwright stops them in reverse order with `SIGTERM`, then `SIGKILL` after 15 s for the API (Compose's grace period) and 5 s for Vite. |
+| Database | `DATABASE_URL` (and the API's `FIREBASE_PROJECT_ID`) from the real environment, else from `.env.test`, parsed with `util.parseEnv` rather than loaded, so the servers never receive the owner role's URL or the PostgreSQL passwords. `requireTestDatabase` from `@storage-minis/db` refuses any database not named `*_test` before a server starts. The setup project resets and migrates the test database with `prepareTestDatabase` from `@storage-minis/db/testing`, reading `MIGRATION_DATABASE_URL` itself, then seeds it as the app role: the Organization "E2E Garage" (`e2e-garage`, BRL), the User `e2e-owner` ("E2E Owner", role `user`) and its owner Membership. `e2e-outsider` has no row. |
+| Test sign-in | The setup mints a Firebase custom token for `e2e-owner` with `firebase-admin`'s `createCustomToken`, signed through IAM as `E2E_SIGNER_SERVICE_ACCOUNT` with the developer's gcloud Application Default Credentials (sign-in plan SI-15; no key file). It opens `/login`, calls the development-only hook `window.__storageMinisTest.signIn(token)` (`src/lib/session/testSignIn.ts`, imported only inside `if (import.meta.env.DEV)`), waits for `/app` and saves `playwright/.auth/owner.json` with `indexedDB: true`. Firebase keeps its session in IndexedDB. The API accepts the resulting ID token only under `AUTH_TEST_SIGN_IN`, so `pnpm dev`'s API refuses it. Specs mint their own tokens through `support/session.ts`, such as `e2e-outsider`'s for state 4. |
+| Credential | Google's lookup order: `GOOGLE_APPLICATION_CREDENTIALS`, then `$CLOUDSDK_CONFIG/application_default_credentials.json`, then gcloud's default `~/.config/gcloud/`. Turborepo's strict mode passes `HOME`, and `test:e2e` lists the other two. The login can act as the developer's Google account, production included (accepted by the owner, 2026-11-04); `gcloud auth application-default revoke` ends it. Agents run the suite, which reads it, but never open, list or copy it. |
+| Specs | `e2e/signed-out/` imports `test` from `support/test.ts` and starts with empty storage; `e2e/app/` imports it from `support/app.ts`, which starts every test with the saved session. `support/names.ts` builds every name from the en-US and pt-BR catalogs and `src/i18n/languages.ts`. |
+| Fixtures | `tapOrClick` taps where the project has touch and clicks elsewhere; a lint rule rejects direct `.click()` and `.tap()` in specs. The automatic console fixture fails a test on any `console.error`, `console.warn` or uncaught page error that it did not declare with `expectConsole(kind, pattern)`. The automatic outside-origin fixture fails a test whose pages, popups included, request any origin other than `http://localhost:5173`, `https://identitytoolkit.googleapis.com` and `https://securetoken.googleapis.com`, unless it declared it with `allowOrigin(origin)`: Firebase Analytics or Installations traffic would fail the run. The popup spec declares `https://storage-minis-dev.firebaseapp.com` and `https://apis.google.com`. `expectNoSidewaysScroll(page)` compares `documentElement.scrollWidth` with `clientWidth`. |
 | Run settings | `fullyParallel`, no retries, Playwright's default workers (half the logical cores), traces and screenshots kept on failure, the list reporter and the HTML report with `open: "never"`. |
-| Output | `apps/web/test-results/` (cleared at the start of every run) and `apps/web/playwright-report/`, both ignored by git, Prettier and ESLint; `**/playwright/.auth/` is ignored for PR 3's saved sessions. Git-ignored output stays out of Turborepo's hashes. |
+| Output | `apps/web/test-results/` (cleared at the start of every run) and `apps/web/playwright-report/`, both ignored by git, Prettier and ESLint; `apps/web/playwright/.auth/owner.json`, the saved session, is ignored through `**/playwright/.auth/`. Git-ignored output stays out of Turborepo's hashes. |
+| Network and Firebase | The suite needs the network, Google's token service and the dev project: a Google outage fails the run, while Vitest stays offline. The first run in a dev project creates the Firebase users `e2e-owner` and `e2e-outsider`, well under Firebase's limit of 100 new accounts per hour per IP. |
 | Lint and types | `eslint-plugin-playwright`'s recommended rules for `apps/web/e2e/**`; `tsconfig.e2e.json` (Node types, the DOM library, bundler resolution) in the web `typecheck` script. |
 
 **Failure modes:**
@@ -254,6 +302,9 @@ approved 2026-11-02).
 | `DATABASE_URL` naming `storage_minis_dev` | `Database integration tests require a database whose name ends in _test.` before any server starts |
 | The browser missing from the folder in use | `browserType.launch: Executable doesn't exist at …` for every test |
 | The runner killed hard | Both servers keep running in their own process groups, and the next run fails with "already used" until they are stopped (see the [README](../../README.md#end-to-end-tests)) |
+| No gcloud login | The setup project fails first: `Credential implementation provided to initializeApp() via the "credential" property failed to fetch a valid Google OAuth2 access token with the following error: "Could not load the default credentials. …"`, after a `MetadataLookupWarning`; every dependent test is skipped. Run `gcloud auth application-default login` (README) |
+| A quota or "API not enabled" error while minting | `gcloud auth application-default set-quota-project storage-minis-dev` |
+| A saved session that Firebase's internals no longer match | Every signed-in spec fails at once: the startup check discards the session (sign-in plan SI-10) |
 
 ## API runtime behavior
 
@@ -423,15 +474,34 @@ The person signs in again and keeps their role and Memberships; the old uid has
 no User row, so `session.get` answers `noAccess` and guarded procedures 403.
 `apps/api/tests/auth.integration.test.ts` runs both statements.
 
+#### Web session
+
+PR 3b implemented the web side (sign-in plan SI-09 to SI-13) in
+`apps/web/src/lib/session/`:
+
+| Area | Contract |
+| --- | --- |
+| Firebase | `firebase.ts` is the only module that imports `firebase/app` and `firebase/auth`. The session layer loads it with `import()` when `/login` or `/app` asks for the session, so the catalog never downloads it (a lazy chunk of about 28 KiB gzip). `initializeAuth` uses local persistence (IndexedDB, then localStorage) and no `popupRedirectResolver`; each sign-in call passes `browserPopupRedirectResolver`. `auth.languageCode` follows the active language. |
+| Startup check | `savedSession.ts`, once per page load before Firebase initializes: it opens IndexedDB `firebaseLocalStorageDb` only if it exists, reads `firebase:authUser:<apiKey>:[DEFAULT]` from store `firebaseLocalStorage` and the same key in localStorage, decodes `stsTokenManager.accessToken`'s `auth_time`, and deletes a record past 604,800 s or unreadable; the Login page then says "Your session ended. Sign in again." These names are Firebase internals of `@firebase/auth` 1.13.9; the check fails closed. |
+| Guard | `/app`'s `beforeLoad` sends a signed-out visitor to `/login?redirect=<path>`, and an account without access (already signed out of Firebase) to `/login`, state 4; a member's session joins the router context, read with `useSession()` (the User, the Memberships, and the active Organization: the lowest Organization ID). `/login` sends a member on to `redirect`, an `/app` path only, checked again before use because TanStack Router merges the URL's raw search into each match. The guard is not an authorization boundary; the API is. |
+| Requests | The tRPC link adds `Authorization: Bearer <getIdToken()>` once Firebase is loaded and someone is signed in, and `x-organization-id` once the session is loaded. Past 7 days by the remembered `auth_time`, it signs out instead of asking Firebase for a token (AU-03 check 2). |
+| Errors | The QueryCache's and MutationCache's `onError`: `UNAUTHORIZED` signs out with "Your session ended"; `FORBIDDEN` reloads the session and lets the guard decide between the page and state 4; a 5xx or a network failure never signs anyone out. |
+| Sign-out | The Sign out button (top right of the TopBar from `bp-md`, the menu drawer's footer below it) cancels queries, clears the cache, signs out of Firebase and opens `/login`. Firebase tells this browser's other tabs, which clear their cache and go to `/login`; other browsers stay signed in (AU-04). |
+| Development hook | `testSignIn.ts`, imported only inside `if (import.meta.env.DEV)`, sets `window.__storageMinisTest.signIn(token)` for Playwright's setup. Production builds contain neither the module nor the name. |
+
+After `pnpm db:reset` and `pnpm db:migrate`, sign in once with Google at
+`http://localhost:5173/login`: the owner's first sign-in runs the
+[bootstrap](#bootstrap) again.
+
 ## Web dev server
 
 | Area | Contract |
 | --- | --- |
-| Address | `vite` (in `pnpm dev`) binds `127.0.0.1:5173`; `vite preview` binds `127.0.0.1:4173`. Both use `strictPort`, so an occupied port fails instead of moving. The documented URL is `http://localhost:5173`, the origin PR 3 authorizes in the Firebase dev project. |
+| Address | `vite` (in `pnpm dev`) binds `127.0.0.1:5173`; `vite preview` binds `127.0.0.1:4173`. Both use `strictPort`, so an occupied port fails instead of moving. The documented URL is `http://localhost:5173`, which the Firebase dev project authorizes and the dev browser key accepts as a referrer: Google sign-in works there, not on `127.0.0.1` or another port. |
 | Proxy | `/trpc/` (with the trailing slash, so `/trpcx` is not matched) goes to `http://127.0.0.1:3000`; `vite preview` reuses it. With the API down, Vite logs `http proxy error` and the browser gets 502 with no tRPC envelope, which the app reports as "Can't reach the server" after three retries. |
 | Deep links | `appType` stays `spa`: any other path returns `index.html` in dev and preview. |
 | Generated files | The router plugin writes `apps/web/src/routeTree.gen.ts` (committed) and uses `.tanstack/` (ignored) while it runs. |
-| Environment | The web build reads no `VITE_*` variables yet. |
+| Environment | The Firebase web config from `apps/web/.env.development` (`vite`) or `.env.production` (`vite build`, `vite preview`), checked when Vite starts; see [web configuration](#web-configuration). |
 
 ## Parity stack
 
@@ -470,7 +540,7 @@ serving, SIGTERM exit 143 within 10 s, and no start of a stopped API when
 | DB `db:migrate` | `build` | No | `MIGRATION_DATABASE_URL`, `TZ` |
 | DB `test:integration` (`pnpm test:db`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL` |
 | API `test:process` (`pnpm test:api`) | `build` | No | `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `FIREBASE_PROJECT_ID`, `BOOTSTRAP_*`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ` |
-| Web `test:e2e` (`pnpm test:e2e`) | `^build` | No | `PLAYWRIGHT_BROWSERS_PATH`, `DATABASE_URL` |
+| Web `test:e2e` (`pnpm test:e2e`) | `^build` | No | `PLAYWRIGHT_BROWSERS_PATH`, `DATABASE_URL`, `MIGRATION_DATABASE_URL`, `GOOGLE_APPLICATION_CREDENTIALS`, `CLOUDSDK_CONFIG`; never `AUTH_TEST_SIGN_IN` |
 | API `start`, API `dev` | `build` / `^build` | No, persistent | `DATABASE_URL`, `FIREBASE_PROJECT_ID`, `BOOTSTRAP_*`, `HOST`, `PORT`, `LOG_LEVEL`, `NODE_ENV`, `TZ`; never `AUTH_TEST_SIGN_IN` |
 | DB `dev` | `build` | No, persistent | Nothing |
 | Web `dev` | None | No, persistent | Nothing |
