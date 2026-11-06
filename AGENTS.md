@@ -4,56 +4,15 @@
 
 StorageMinis manages inventory, purchases, sales, customer/supplier accounts, finances, a personal collection, and a public available-stock catalog for 1/64 miniature sellers and collectors. The model supports multiple Organizations, with one initial administrator.
 
-This repository contains the full application's TypeScript workspace, specifications,
-a synchronized DBML diagram, the Drizzle schema and migrations, the diagnostic
-Fastify API, and the React web shell in `apps/web`. Node.js and pnpm run on the host; PostgreSQL runs in Docker. The
-[foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31)
-(2026-10-31) replaced the earlier tooling container and Doppler launchers with
-standard Compose, committed local database values, owner/app database roles and a
-production-shaped parity stack. The
-[API composition and error-log rework](docs/technical/technical-direction.md#api-composition-and-error-log-rework-2026-11-01)
-(2026-11-01) made `buildApp` the single plugin composition root and set the
-allowlisted error-log policy; read it before changing API composition or logging.
-[Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01)
-(2026-11-01) added the diagnostic tRPC transport at `/trpc`, its error envelope and
-the types-only `@storage-minis/api/types` export; read its record before changing
-`apps/api/src/trpc` or adding a procedure. The
-[frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md)
-(2026-11-01) set the web app's architecture, design system, languages and four
-delivery steps; read them before frontend work. The
-[PR 1 web shell plan](docs/technical/web-shell-plan-2026-11-01.md) (approved
-2026-11-01) and its record's implementation-time decisions govern `apps/web`: the
-responsive shell, the en-US and pt-BR catalogs, placeholder pages, the Login page
-without sign-in and `diagnostics.echo` through the Vite proxy.
-[`docs/design/`](docs/design/README.md) holds the owner-approved design system and
-page designs. The [PR 2 Playwright plan](docs/technical/playwright-plan-2026-11-02.md)
-(approved 2026-11-02, with the owner's changes to W9 and W11) governs
-`pnpm test:e2e` and `apps/web/e2e`: Playwright smoke tests in two Chromium
-projects, `desktop-chrome` and `pixel-7`, before sign-in. The
-[web shell follow-up plan](docs/technical/web-shell-follow-up-plan-2026-11-02.md)
-(approved 2026-11-02) moves the MenuFab to `fab-offset` plus the safe-area
-inset, reversing the FAB position kept on 2026-11-01, and fixes the drawer's
-footer inset and height, as implemented in
-[PR #125](https://github.com/WilliamPhilippe/storage-minis/pull/125). The owner ruled the
-collapsed SideNav's hover-only labels not a defect.
-[T02's record](docs/technical/t02-authentication-record-2026-11-03.md) and the
-[sign-in plan](docs/technical/sign-in-plan-2026-11-03.md) (approved 2026-11-04) govern
-authentication, sessions, authorization and the administrator bootstrap, delivered as
-frontend PR 3a (API identity and authorization) and PR 3b (web sign-in and the
-Playwright session); read them before changing `apps/api/src/trpc`, identity
-tables or sign-in. PR 3a ([outcome](docs/technical/technical-direction.md#pr-3a-implemented-outcome-2026-11-05),
-2026-11-05) added Firebase ID token verification with `jose`, the guarded builders
-in `apps/api/src/trpc/procedures.ts`, `session.get` with the configured bootstrap,
-the Organization nickname and currency columns, `users.sessions_valid_after` and
-the shared `@storage-minis/db/testing` helper; business procedures start from
-those builders. PR 3b ([outcome](docs/technical/technical-direction.md#pr-3b-implemented-outcome-2026-11-06),
-2026-11-06) added Google popup sign-in with the redirect code, the startup check,
-the session layer in `apps/web/src/lib/session/` with `useSession()` and the active
-Organization, the `/app` guard and request headers, the Login page's states 2–4,
-a Sign out button, and Playwright's setup project, which signs in through keyless
-custom tokens; screens start from `useSession()`. Step 6 is TBD until the app is
-validated locally; business operations, business screens, the web image (PR 4),
-production and CI remain pending.
+This repository contains the full application's TypeScript workspace, specifications, a synchronized DBML diagram, the Drizzle schema and migrations, the Fastify API with tRPC and Firebase sign-in, and the React web app in `apps/web` with its responsive shell, en-US and pt-BR catalogs and the signed-in session. Node.js and pnpm run on the host; PostgreSQL runs in Docker. [Technical direction](docs/technical/technical-direction.md) records each approved decision and delivered outcome; read the record that covers what you change:
+
+- [Foundation restructure](docs/technical/technical-direction.md#foundation-restructure-2026-10-31) (2026-10-31): host Node, standard Compose, committed local database values, owner/app database roles and the parity stack.
+- [API composition and error-log rework](docs/technical/technical-direction.md#api-composition-and-error-log-rework-2026-11-01) (2026-11-01): `buildApp` as the single plugin composition root and the allowlisted error-log policy; read it before changing API composition or logging.
+- [Step 5](docs/technical/technical-direction.md#step-5-trpc-and-zod-plan-approval-2026-11-01) (2026-11-01): the tRPC transport at `/trpc`, its error envelope and the types-only `@storage-minis/api/types` export; read it before changing `apps/api/src/trpc` or adding a procedure.
+- [Frontend foundation decisions](docs/technical/frontend-foundation-proposal-2026-11-01.md) (2026-11-01): the web app's architecture, design system, languages, forms and lists; read them before frontend work. The [web shell](docs/technical/technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01), [Playwright](docs/technical/technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02) and [shell follow-up](docs/technical/technical-direction.md#web-shell-follow-up-plan-approval-2026-11-02) records hold the decisions behind `apps/web` and `apps/web/e2e`.
+- [T02's record](docs/technical/t02-authentication-record-2026-11-03.md) and the [sign-in approval](docs/technical/technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04) (2026-11-04), delivered as frontend PRs 3a and 3b: authentication, sessions, authorization and the administrator bootstrap; read them before changing `apps/api/src/trpc`, identity tables or sign-in. Business procedures start from the guarded builders in `apps/api/src/trpc/procedures.ts`, and screens from `useSession()` in `apps/web/src/lib/session/`.
+
+[`docs/design/`](docs/design/README.md) holds the owner-approved design system and page designs. Foundation Step 6 is TBD until the app is validated locally; business operations, business screens, the web image (PR 4), production and CI remain pending.
 
 Read the [README](README.md) before running, testing or changing the local
 workflow, and the [local development reference](docs/technical/local-development.md)
@@ -79,9 +38,22 @@ Prefer standard infrastructure tools and declarative configuration over custom i
 
 For Node.js version management, fnm and nvm are both compatible with the repository's `.nvmrc`; the repository requires the pinned Node.js/pnpm versions. fnm is the current local setup, not a mandatory project tool. Read [local setup](README.md#local-setup) before changing or troubleshooting the version manager, and obtain approval before replacing it or changing shell initialization.
 
+## Planning a change
+
+A change that needs new decisions starts with a plan the owner approves. Present one concrete plan with these parts; the [sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md), kept in git history, is a complete example.
+
+1. **Starting state:** what exists, which approvals already cover the work, and any real blocker.
+2. **Scope:** the result, the affected files and packages, and what stays out.
+3. **Decisions:** for each new or changed choice, a concrete recommendation with its rationale, alternatives, tradeoffs and primary sources, including exact versions, commands and configuration. Keep inherited approvals apart from pending choices.
+4. **Implementation order:** small, verifiable steps.
+5. **Verification:** each completion criterion mapped to a command or test and its expected result, including failure cases and cleanup.
+6. **Handoff:** the documentation and records to update, and the limitations that remain.
+
+Research against official documentation, published package metadata and upstream source, and don't install a tool only to research it. Record the approval, and later the delivered outcome, in [technical direction](docs/technical/technical-direction.md).
+
 ## Confirmed technical direction
 
-The owner confirmed the stack on 2026-10-21 and refined money, identity, and dates in the [2026-10-22 schema review](docs/requirement-updates/2026-10-22-schema-review.md). Read [Technical direction](docs/technical/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling, applying the later log where wording conflicts.
+The owner confirmed the stack on 2026-10-21 and refined money, identity, and dates in the [2026-10-22 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-22-schema-review.md). Read [Technical direction](docs/technical/technical-direction.md) when scaffolding or changing API, frontend, authentication, persistence, or date handling, applying the later log where wording conflicts.
 
 | Area | Agreed choice |
 | --- | --- |
@@ -109,26 +81,22 @@ Hosting, deployment, backups, and operational targets remain T04 work. The 2026-
 | Source | Purpose |
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
-| [Technical foundation implementation guide](docs/technical/technical-foundation-implementation-guide.md) | For T06 planning or implementation, read the assigned agent step, research/plan instructions, completion criteria and handoff boundaries before proposing changes. |
 | [Design](docs/design/README.md) | For UI work, read the design system (`system/`) and the page's folder under `pages/` before building a page. Approved technical and requirements documents win where they disagree. |
 | [Requirements v0.8](docs/requirements/requirements-v0.8.md) | Published requirements and acceptance scenarios; consolidates every approved update log through 2026-11-01. Section 14 lists the decisions still open. |
 | [Entity map v0.9](docs/entities/entity-map-v0.9.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.8. Entities do not automatically imply SQL tables. |
-| [Approved update logs](docs/requirement-updates/README.md) | Read for schema/model or business-rule work. Apply dated decisions in order, including the 2026-10-23 DBML review; the index tracks propagation. |
-| [Issue propagation record](docs/requirement-updates/2026-10-22-issue-propagation.md) | Read for backlog/acceptance work. Maps all 82 project issues, completed live updates, preserved ownership/dependencies, and remaining consolidation. |
 | [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
-| [PurchaseExpense impact v0.7](docs/requirements/purchase-expense-impact-v0.7.md) | Shared expenses across Purchases, selected-unit allocation, affected workflows, and verification scope. |
 
-Requirements v0.8, entity map v0.9 and ownership index v0.8 (2026-11-01) consolidate the 2026-10-22 schema review, the three 2026-10-23 logs and the owner's 2026-11-01 Organization currency and nickname decisions; [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119) tracks v0.8 and [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7. Live project issues carry the 2026-10-22 review and, since the [v0.8 propagation](docs/requirement-updates/2026-11-01-v08-issue-propagation.md), a dated v0.8 inputs section. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. The issue propagation record reports current status; older versioned publication records retain their original pending-state notes. Entity maps v0.5–v0.7 and baseline issues #2/#78 remain historical; use current requirements with the later approved log rather than superseded wording.
+Requirements v0.8, entity map v0.9 and ownership index v0.8 (2026-11-01) consolidate the 2026-10-22 schema review, the three 2026-10-23 logs and the owner's 2026-11-01 Organization currency and nickname decisions. The logs, their issue propagation records and the earlier baselines were removed from the tree on 2026-11-06; git history keeps them ([cleanup record](docs/technical/technical-direction.md#documentation-cleanup-2026-11-06)). [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119) tracks v0.8 and [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7. Live project issues carry the 2026-10-22 review and a dated v0.8 inputs section. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. Baseline issues #2/#78 remain historical; where an issue's older dated section quotes superseded wording, the current requirements win.
 
 For a task, read its live issue, relevant requirement IDs, acceptance criteria, and dependencies. If the approved sources conflict or a needed business rule is unresolved, identify the exact conflict and ask the owner; do not silently pick a policy. Continue independent work that does not depend on that answer.
 
 ## Documentation and backlog workflow
 
-- Preserve published historical baselines. When adopting a new baseline, publish new versioned files, state what they supersede, record changes, and update the current README/guide links.
+- Keep only the current version of each published baseline in the tree (owner, 2026-11-06). When adopting a new baseline, publish new versioned files, state what they supersede with a commit-pinned link, record the changes, delete the superseded files, and update the README and AGENTS.md links. Git history keeps every earlier version.
 - Preserve requirement and entity discussion IDs. Retire withdrawn IDs explicitly; never reuse them. The v0.8 baseline has 309 active requirements and nine retired requirements: SAL-029–035, PAY-031, and CUS-016.
 - Keep requirement wording, accepted decisions, entity relationships, ownership mapping, and affected issue acceptance criteria consistent when changing agreed behavior. Every active requirement has one primary delivery owner.
 - Follow the existing hierarchy: Epic → business workflow issue → optional implementation sub-issue. Extend the existing owner for changed requirements instead of creating duplicate delivery work.
-- Respect prerequisites and the [remaining boundaries in entity map v0.9](docs/entities/entity-map-v0.9.md#15-approved-policies-and-remaining-design-boundaries). Distinguish decisions now approved by the log from remaining design work; preserve existing delivery ownership during propagation.
+- Respect prerequisites and the [remaining boundaries in entity map v0.9](docs/entities/entity-map-v0.9.md#15-approved-policies-and-remaining-design-boundaries). Distinguish approved decisions from remaining design work; preserve existing delivery ownership during propagation.
 - Distinguish proposals, approved decisions, and implemented behavior. Decision outcomes need recorded owner approval, date, and examples. Delivery completion needs applicable acceptance evidence or an explicitly approved deferral; documentation alone is not implementation evidence.
 
 ## Business invariants to preserve
@@ -174,7 +142,7 @@ These are reminders of the current requirements, not a replacement for reading t
 
 Do not add customer preorder sales, public reservations, automatic reservation expiry, a separate readiness-confirmation stage, FX conversion, insurance workflows, external sales-platform integrations, multiple stock locations, or package/carrier/partial-shipment management to the v1 baseline. “In Garage” is a status, not a location feature. General expense management, expense-payment batching, Product merge/archive/moderation, and conditional schema candidates are not approved features merely because they are discussed in the docs.
 
-Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Apply the approved Supplier/year-month grouped opening Purchases and second-day date convention from the 2026-10-23 review, retaining source precision/provenance. Do not fabricate historical payments or receipt facts; finish actual source mapping under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
+Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Apply the approved Supplier/year-month grouped opening Purchases and second-day date convention from the 2026-10-23 review (DATA-007), retaining source precision/provenance. Do not fabricate historical payments or receipt facts; finish actual source mapping under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
 
 ## Validation and commands
 
@@ -209,7 +177,7 @@ For future implementation, use the affected issue's acceptance criteria and requ
 
 ## Decisions still needed
 
-Read the live issue together with the approved log before dependent work. The review resolved or narrowed these topics; the current entity map records details and remaining boundaries. Issue closure and specification/backlog propagation remain separate work.
+Read the live issue together with requirements v0.8 and entity map v0.9 before dependent work. The approved reviews resolved or narrowed these topics; the current entity map records details and remaining boundaries. Issue closure and specification/backlog propagation remain separate work.
 
 | Decision | Approved scope and remaining work |
 | --- | --- |
@@ -225,7 +193,7 @@ Read the live issue together with the approved log before dependent work. The re
 Technical choices also remain open; their issues define the required outputs:
 
 - [T01 / #21](https://github.com/WilliamPhilippe/storage-minis/issues/21): logical schema, state dimensions, and enforcement of the accepted conceptual invariants.
-- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan](docs/technical/sign-in-plan-2026-11-03.md)); PR 3a delivered the API side on 2026-11-05 and PR 3b the web side on 2026-11-06. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
+- [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22): the record was approved on 2026-11-04 ([AU-01–AU-12](docs/technical/t02-authentication-record-2026-11-03.md)), and frontend PRs 3a and 3b implement it ([sign-in plan approval](docs/technical/technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04)); PR 3a delivered the API side on 2026-11-05 and PR 3b the web side on 2026-11-06. The development Organization is `wipminis` (name and nickname, BRL), and the role capabilities stay in the record rather than requirements v0.9 for now (owner, 2026-11-04). Follow-ups live in [Epic E14 / #127](https://github.com/WilliamPhilippe/storage-minis/issues/127): failed token refreshes in the browser, revocation records, the TopBar account menu with "Sign out of all devices", and Google's consent screen. Open: invitations, role management, D06's exceptional privileges and typed identity audit.
 - [T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24): finalize numeric widths, intermediate precision/overflow, and input/period-filter contracts around agreed integer centavos, exact largest-remainder cost allocation, UTC occurrence timestamps/reporting, visitor-local display, and original-period recalculation.
 - [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): hosting, deployment, secrets/configuration, backup retention/restoration, supported devices, and performance/recovery targets.
 - [T05 / #25](https://github.com/WilliamPhilippe/storage-minis/issues/25): actual spreadsheet mapping and reviewed legacy acquisition treatment; no source spreadsheet is committed here.

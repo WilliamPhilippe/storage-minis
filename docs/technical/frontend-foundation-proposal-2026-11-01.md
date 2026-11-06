@@ -1,6 +1,12 @@
 # Frontend foundation proposal (2026-11-01)
 
-**Status: decided by the owner on 2026-11-01; not yet implemented.** The owner
+**Status: decided by the owner on 2026-11-01. Implemented by frontend PRs 1–3
+([#121](https://github.com/WilliamPhilippe/storage-minis/pull/121),
+[#124](https://github.com/WilliamPhilippe/storage-minis/pull/124),
+[#125](https://github.com/WilliamPhilippe/storage-minis/pull/125),
+[#132](https://github.com/WilliamPhilippe/storage-minis/pull/132) and
+[#133](https://github.com/WilliamPhilippe/storage-minis/pull/133)); PR 4, the web
+image, waits for the first deployment.** The owner
 asked for a frontend architecture with options and decided every item, W1–W11,
 on 2026-11-01, then refined W4–W6 and W8–W11 in a
 [follow-up review](#follow-up-review-2026-11-01) the same day.
@@ -10,11 +16,11 @@ holds the approval record. W7 replaces the React Hook Form choice approved on
 2026-10-21 with TanStack Form. [Section 8](#8-deferred-decisions) lists what the
 owner left for later. This document authorizes no installation or
 implementation by itself: each delivery step in W11 gets its own plan for
-approval, as the [Step 5 plan](step-5-trpc-plan-2026-11-01.md) did for tRPC.
+approval, as the [Step 5 plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/step-5-trpc-plan-2026-11-01.md) did for tRPC.
 W1–W11 are references within this document, not requirement, issue or
 F-decision IDs.
 
-The proposal draws on [requirements v0.7](../requirements/requirements-v0.7.md),
+The proposal draws on [requirements v0.7](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirements/requirements-v0.7.md),
 the technical direction, the Step 5 plan and its implementation record, issues
 [#18](https://github.com/WilliamPhilippe/storage-minis/issues/18),
 [#22](https://github.com/WilliamPhilippe/storage-minis/issues/22),
@@ -542,8 +548,8 @@ Every component is built for Playwright from the start:
 - Firebase's web configuration consists of public identifiers. They become
   `VITE_*` build-time values validated with Zod at startup. Both the dev-project
   and the production values are committed (follow-up review), as a recorded
-  exception to the implementation guide's rule against committing production
-  values: every visitor's browser receives them anyway. The web build never
+  exception to the rule that production values live only in Doppler
+  ([local setup](../../README.md#local-setup)): every visitor's browser receives them anyway. The web build never
   runs under Doppler, so no server secret reaches it, as D5 requires; the API
   keeps its own values, such as the project ID it checks tokens against, in
   Doppler on the VPS. Turborepo's strict environment mode must list them.

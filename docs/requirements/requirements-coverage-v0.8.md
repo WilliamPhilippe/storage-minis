@@ -2,9 +2,9 @@
 
 **Version:** 0.8. **Published:** 2026-11-01.
 
-**Current baseline:** [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119). [Specification](requirements-v0.8.md) · [Entity map](../entities/entity-map-v0.9.md) · [PurchaseExpense impact](purchase-expense-impact-v0.7.md).
+**Current baseline:** [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119). [Specification](requirements-v0.8.md) · [Entity map](../entities/entity-map-v0.9.md).
 
-**Supersedes:** [v0.7 ownership index](requirements-coverage-v0.7.md). Historical documents and baseline issues are preserved.
+**Supersedes:** [v0.7 ownership index](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirements/requirements-coverage-v0.7.md). Superseded documents were removed from the tree on 2026-11-06; git history keeps them, and baseline issues are preserved.
 
 Every active requirement has one primary delivery owner. Other tickets may share requirements as integration constraints. Ownership is planning traceability; application acceptance evidence remains pending.
 

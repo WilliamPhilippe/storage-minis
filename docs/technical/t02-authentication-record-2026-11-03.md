@@ -1,7 +1,7 @@
 # T02 record — authentication, sessions and authorization (2026-11-03)
 
 **Status: approved by the owner on 2026-11-04 as recommended. The API side is
-implemented in [PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) (PR 3a); the web side (PR 3b) is implemented on branch `feat/web-sign-in`
+implemented in [PR #132](https://github.com/WilliamPhilippe/storage-minis/pull/132) (PR 3a) and the web side in [PR #133](https://github.com/WilliamPhilippe/storage-minis/pull/133) (PR 3b)
 ([outcome](technical-direction.md#pr-3b-implemented-outcome-2026-11-06)).** The approval record is in
 [technical direction](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04).
 This is the record that
@@ -9,7 +9,7 @@ This is the record that
 the frontend's sign-in step
 ([frontend foundation decisions](frontend-foundation-proposal-2026-11-01.md), W8).
 It settles the session, recovery, bootstrap and authorization policies around the
-approved Google-only Firebase sign-in. The [sign-in plan](sign-in-plan-2026-11-03.md)
+approved Google-only Firebase sign-in. The [sign-in plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md)
 delivers it across the API and the web app. AU-01–AU-12 are references within this
 record, not requirement, issue or F-decision IDs.
 
@@ -18,7 +18,7 @@ the 2026-10-23 DBML review, the
 [technical direction](technical-direction.md#authentication-and-initial-administrator),
 the frontend foundation decisions W5, W6 and W8, issues #22, #117, #26 and #118, the
 `identity-and-access` schema, and a scratch prototype against the `storage-minis-dev`
-project. The plan's [research and evidence](sign-in-plan-2026-11-03.md#research-and-evidence-2026-11-03)
+project. The plan's [research and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md#research-and-evidence-2026-11-03)
 lists the prototype's commands and results.
 
 ## Recommended decisions
@@ -252,7 +252,7 @@ their phone.
 
 **Needs:** `organizations.nickname` and `organizations.currency`, which #117 assigns to
 T01. The plan adds them now (SI-04), with a provisional nickname rule, as an exception
-to the implementation guide's T01 gate for business schema migrations.
+to the [T01 gate](technical-direction.md#gates-before-dependent-work) for business schema migrations.
 
 ### AU-08 Role capabilities
 
@@ -483,4 +483,4 @@ Consulted 2026-11-03.
 - Package source: `@firebase/auth` 1.13.9 (`initializeCurrentUser`,
   `reloadAndSetCurrentUserOrClear`, `_reloadWithoutSaving`, `_shouldInitProactively`,
   `PersistenceUserManager`), `firebase-admin` 14.5.0 (`token-verifier.js`).
-- Prototype: the plan's [research and evidence](sign-in-plan-2026-11-03.md#research-and-evidence-2026-11-03).
+- Prototype: the plan's [research and evidence](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/sign-in-plan-2026-11-03.md#research-and-evidence-2026-11-03).

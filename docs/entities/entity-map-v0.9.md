@@ -2,21 +2,21 @@
 
 **Version:** 0.9. **Reviewed:** 2026-11-01.
 
-**Supersedes:** [Entity and relationship map v0.8](entity-map-v0.8.md). Historical maps remain unchanged.
+**Supersedes:** [Entity and relationship map v0.8](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/entities/entity-map-v0.8.md). Earlier maps were removed from the tree on 2026-11-06; git history keeps them.
 
 **Status:** Conceptual consolidation of the existing model and the owner-approved decisions through 2026-11-01. Physical schema design and implementation remain pending.
 
-**Approval sources:** the [2026-10-22 schema review](../requirement-updates/2026-10-22-schema-review.md) (Q1–Q61); the [2026-10-23 DBML review](../requirement-updates/2026-10-23-dbml-review.md), its [index and candidate follow-up](../requirement-updates/2026-10-23-dbml-indexes-and-candidates.md) and the [partial expense payment clarification](../requirement-updates/2026-10-23-partial-expense-payments.md); and the owner's 2026-11-01 decisions on each Organization's currency and nickname, recorded in the [requirements v0.8 change record](../requirements/requirements-v0.8.md#16-change-record-and-requirement-continuity).
+**Approval sources:** the [2026-10-22 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-22-schema-review.md) (Q1–Q61); the [2026-10-23 DBML review](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-23-dbml-review.md), its [index and candidate follow-up](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-23-dbml-indexes-and-candidates.md) and the [partial expense payment clarification](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-10-23-partial-expense-payments.md); and the owner's 2026-11-01 decisions on each Organization's currency and nickname, recorded in the [requirements v0.8 change record](../requirements/requirements-v0.8.md#16-change-record-and-requirement-continuity).
 
 **Revision scope:** v0.8 consolidated the 2026-10-22 review. v0.9 adds the 2026-10-23 field decisions — a short `inventoryId`, nullable condition booleans with a damage description, `sale_status` and incoming `status`, Product images, `is_chase` and the removal of scale and codes, global and Membership roles, partial expense payments, month/Supplier-grouped opening Purchases and no persistent import tables — and the 2026-11-01 Organization currency and nickname. Section 16 compares v0.8 with v0.9.
 
 **Source precedence:** Read [requirements v0.8](../requirements/requirements-v0.8.md), which consolidates the approved logs. Requirement IDs below follow v0.8, including the new ORG-010–011.
 
-**Publication scope:** Published together with requirements v0.8 and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md). The [DBML draft](../database/schema.dbml) and [database design guide](../database/design.md) reflect the 2026-10-23 decisions but not yet the Organization nickname and currency. Live issues carry a dated v0.8 inputs section for the 2026-10-23 and 2026-11-01 changes ([propagation record](../requirement-updates/2026-11-01-v08-issue-propagation.md)). No delivery or decision issue is closed by this document.
+**Publication scope:** Published together with requirements v0.8 and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md). The [DBML draft](../database/schema.dbml) and [database design guide](../database/design.md) reflect the 2026-10-23 decisions but not yet the Organization nickname and currency. Live issues carry a dated v0.8 inputs section for the 2026-10-23 and 2026-11-01 changes ([propagation record](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirement-updates/2026-11-01-v08-issue-propagation.md)). No delivery or decision issue is closed by this document.
 
 **Related task:** [T01 — core entities, state dimensions, and invariants](https://github.com/WilliamPhilippe/storage-minis/issues/21).
 
-**Prior traceability:** [Shared PurchaseExpense impact v0.7](../requirements/purchase-expense-impact-v0.7.md) and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md), with 309 active requirement IDs and nine retired IDs. ORG-010–011 are new; no other requirement ID or primary delivery owner changes.
+**Prior traceability:** [Shared PurchaseExpense impact v0.7](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirements/purchase-expense-impact-v0.7.md) and the [ownership index v0.8](../requirements/requirements-coverage-v0.8.md), with 309 active requirement IDs and nine retired IDs. ORG-010–011 are new; no other requirement ID or primary delivery owner changes.
 
 **Carried-forward decisions:** Product is global and available to every Organization; Membership authorizes operational access; Customer embeds its address; supplier/customer credit balances and LossRecovery are excluded; PurchaseExpense is Organization-owned and SaleExpense is Sale-owned; collection membership belongs to InventoryItem, with at most one current unit per Organization/Product. One shared BusinessEvent/action/audit history supports derived item timelines and financial views. The [earlier entity-model review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/entities/model-review.md) supplies rationale where not superseded by the approved logs.
 
@@ -452,7 +452,7 @@ The next logical/physical-schema pass must apply approved choices while preservi
 
 ## 16. v0.8 → v0.9 comparison and publication record
 
-The [v0.8 record](entity-map-v0.8.md#16-v07--v08-comparison-and-publication-record) keeps the v0.7 → v0.8 comparison of the 2026-10-22 decisions, which v0.9 carries forward unchanged.
+The [v0.8 record](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/entities/entity-map-v0.8.md#16-v07--v08-comparison-and-publication-record) keeps the v0.7 → v0.8 comparison of the 2026-10-22 decisions, which v0.9 carries forward unchanged.
 
 | Area / affected IDs | v0.8 position | v0.9 replacement | Source / map section |
 | --- | --- | --- | --- |

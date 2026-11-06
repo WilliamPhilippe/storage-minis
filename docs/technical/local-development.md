@@ -3,8 +3,7 @@
 Use the [README](../../README.md) for setup and everyday commands. This
 reference explains configuration, limits, failure behavior and recovery for
 the foundation restructured on 2026-10-31; the approved decisions are in
-[technical direction](technical-direction.md#foundation-restructure-2026-10-31)
-and the [restructure plan](foundation-restructure-plan-2026-10-31.md).
+[technical direction](technical-direction.md#foundation-restructure-2026-10-31).
 The previous container-only workflow is preserved in the
 [historical reference](https://github.com/WilliamPhilippe/storage-minis/blob/3f1ae6c8c105a56663d002e06f97f7843c57880c/docs/technical/local-development.md).
 
@@ -98,7 +97,7 @@ Percent-encode special characters in a hand-written URL.
 `openssl rand -hex 16`). `compose.yaml` embeds `DB_OWNER_PASSWORD` and
 `DB_APP_PASSWORD` in its in-network URLs without encoding, and the init script
 sets the same raw values, so a password containing `@`, `/`, `:` or `%` breaks
-the URL or the login. Generate production values the same way (plan Section 6). Other parameters are rejected, and so
+the URL or the login. Generate production values the same way (the restructure plan's [variable inventory](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/foundation-restructure-plan-2026-10-31.md#6-variable-inventory-d4)). Other parameters are rejected, and so
 are `sslmode=require` and `verify-ca`, which pg 8.23.1 silently treats as
 `verify-full`. Error messages name the variable and the expected shape, never
 its value.
@@ -274,8 +273,8 @@ Run `test:db`, `test:api` and `test:e2e` one at a time; `test:db` and
 ## End-to-end tests
 
 `pnpm test:e2e` runs `playwright test` in `apps/web` through the uncached
-Turborepo task, after `^build` (the [Playwright plan](playwright-plan-2026-11-02.md),
-approved 2026-11-02).
+Turborepo task, after `^build` (the Playwright plan,
+[approved 2026-11-02](technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02)).
 
 | Area | Contract |
 | --- | --- |
@@ -367,7 +366,7 @@ Documented exceptions:
 ### Sign-in and authorization
 
 The [T02 record](t02-authentication-record-2026-11-03.md) (AU-01–AU-12) and the
-[sign-in plan](sign-in-plan-2026-11-03.md) (SI-05–SI-08) set these contracts;
+[sign-in plan](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04) (SI-05–SI-08) set these contracts;
 PR 3a implemented them in `apps/api/src/auth/` and `trpc/procedures.ts`.
 
 **Token verification** (`auth/id-token.ts`, jose 6.2.15). The header must be
@@ -563,28 +562,13 @@ a `.env` file on the VPS. `compose.yaml` still sets no restart policy for
 PostgreSQL and `restart: "no"` for `migrate` and `api`; choosing production
 restart policies is part of T04. Production's `FIREBASE_PROJECT_ID` is
 `storage-minis`; T04 adds it and the `BOOTSTRAP_*` keys to `prd` and maps the
-bootstrap in `compose.yaml`. The `prd` keys, Caddy `web` image, image distribution,
-backups and the deploy procedure remain T04 work; see the
-[plan's T04 list](foundation-restructure-plan-2026-10-31.md#later-under-t04-not-part-of-this-restructure).
+bootstrap in `compose.yaml`. The rest of the VPS remains T04 work, as the
+restructure plan listed it:
 
-## Removing the previous tooling setup
-
-Checkouts that used the container-only workflow have resources the new model
-never uses. `PROJECT` below is the old `COMPOSE_PROJECT_NAME` from that
-checkout's `.env.compose` (for example `storage-minis-beijing`). These commands
-delete only that old project's resources.
-
-```sh
-docker rm PROJECT-postgres-1 PROJECT-postgres_test-1
-docker volume rm PROJECT_dependencies PROJECT_api-dependencies \
-  PROJECT_db-dependencies PROJECT_pnpm-store PROJECT_turbo
-docker image rm PROJECT-tooling:step1 PROJECT-api:step4 PROJECT-api:step4-dev
-docker network rm PROJECT_default
-rm .env.compose
-```
-
-The old `PROJECT_pgdata` volume holds the old development database, which was
-initialized without the new roles. Remove it with
-`docker volume rm PROJECT_pgdata` once its data is no longer needed. The
-dedicated Doppler login directory `~/.config/storage-minis/doppler` is no longer
-read by any command; its owner may delete it.
+- installing Docker, and a firewall that allows only ports 22, 80 and 443, with
+  PostgreSQL never published;
+- placing the service token and creating the `prd` keys;
+- the Caddy `web` image (D5), image distribution through GitHub Container
+  Registry (D9), and daily backups with a tested restore (D10);
+- the deploy procedure: `docker compose run --rm migrate`, then
+  `up -d --wait`, both under `doppler run` (R19).
