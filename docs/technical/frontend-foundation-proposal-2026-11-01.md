@@ -12,9 +12,11 @@ on 2026-11-01, then refined W4–W6 and W8–W11 in a
 [follow-up review](#follow-up-review-2026-11-01) the same day.
 [Section 1](#1-owner-decisions-2026-11-01) records the decisions, and the
 [technical direction](technical-direction.md#frontend-foundation-decisions-2026-11-01)
-holds the approval record. W7 replaces the React Hook Form choice approved on
-2026-10-21 with TanStack Form. [Section 8](#8-deferred-decisions) lists what the
-owner left for later. This document authorizes no installation or
+holds the approval record. Later approvals changed parts of W3–W6 and W8–W11:
+[Later changes](#later-changes) lists them, and sections 3–6 include them. W7
+replaces the React Hook Form choice approved on 2026-10-21 with TanStack Form.
+[Section 6](#6-deferred-decisions) lists what is still open. This document
+authorizes no installation or
 implementation by itself: each delivery step in W11 gets its own plan for
 approval, as the [Step 5 plan](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/technical/step-5-trpc-plan-2026-11-01.md) did for tRPC.
 W1–W11 are references within this document, not requirement, issue or
@@ -75,7 +77,8 @@ token verification.
 ### Follow-up review (2026-11-01)
 
 The same day the owner reviewed these decisions question by question and
-refined them. Sections 3–8 describe the result.
+refined them. Sections 3–6 describe the result, with the
+[later changes](#later-changes).
 
 | Item | Refinement |
 | --- | --- |
@@ -88,8 +91,24 @@ refined them. Sections 3–8 describe the result.
 | W11 | PR 3 delivers popup sign-in and the redirect code, PR 4 checks redirect by hand through Caddy over HTTPS, and real phones first sign in on a deployed HTTPS environment. Foundation Step 6 stays TBD until the app is validated locally. |
 
 W1–W3 and W7 are unchanged. Section 4 adds the owner's catalog-loading
-direction, and section 8 lists Organization invitations, TBD until the website
-is developed, and the items left to the step plans.
+direction, and section 6 lists Organization invitations, TBD until the website
+is developed.
+
+### Later changes
+
+Later approvals changed these decisions. Sections 3–6 include the changes, and
+the [technical direction](technical-direction.md) keeps each approval record.
+
+| Item | Change | Source |
+| --- | --- | --- |
+| W3 | Under `style-src 'self'` both antd modes rendered unstyled, so antd's runtime styles stay and PR 4's Content-Security-Policy allows inline styles. Light mode only. Where a design detail needs more than a theme token or one CSS Module class, antd's default stays. | [Web shell](technical-direction.md#frontend-pr-1-web-shell-plan-approval-2026-11-01) WS-06 and its implementation-time decisions (2026-11-01) |
+| W4 | Namespaces `common`, `app`, `login` and `catalog`. In the back office the language switch sits at the bottom of the side menu and in the menu drawer's footer; the Login and catalog pages keep it in their header. | WS-09 and the web shell's implementation-time decisions (2026-11-01) |
+| W5 | `organizations.nickname`, unique with a provisional rule until D04/E10, and `organizations.currency` exist. The header is `x-organization-id`, checked against the Membership by `organizationProcedure(minRole)`. The active Organization is the only Membership's, or the lowest Organization ID while a User has several. | [Sign-in](technical-direction.md#t02-record-and-sign-in-plan-approval-2026-11-04) SI-04 and its web session (SI-09–SI-13); AU-09 (2026-11-04) |
+| W6 | firebase 13.2.0 raised the SDK's refresh margin from 30 seconds to 5 minutes. Past the 7-day limit the link signs out instead of asking for a token. Loaders call `queryClient.query({ …, staleTime: "static" })`. | The sign-in approval and AU-03 (2026-11-04); WS-05 (2026-11-01) |
+| W8 | T02's record settles the session policies, and the API verifies tokens with `jose`. Redirect needs a coarse primary pointer and `authDomain` on the page's own host. The test opt-in is set in `.env.test` only, refused when `NODE_ENV` is `production` or unset, and limited to `e2e-` uids. Playwright's setup mints custom tokens through IAM with the developer's gcloud login and signs in through a development-only hook. One phone project, Pixel 7. | [T02's record](t02-authentication-record-2026-11-03.md) AU-02–AU-11; SI-02, SI-11, SI-15 and SI-17 (2026-11-04); [Playwright](technical-direction.md#frontend-pr-2-playwright-plan-approval-2026-11-02) (2026-11-02) |
+| W9 | Two Chromium projects, Desktop Chrome and Pixel 7, portrait only. Tests tagged `@phone` or `@desktop` run in one of them. The saved session's ignore entry is `**/playwright/.auth/`. WebKit, iPhone and Safari checks wait for T04's real devices. | The owner's changes, PW-03 and PW-08 (2026-11-02) |
+| W10 | The Firebase web values live in Vite's committed mode files, checked by `vite.config.mts`, rather than in Turborepo's `env` list. | The sign-in approval, SI-03 (2026-11-04) |
+| W11 | PR 3 became PRs 3a ([#132](https://github.com/WilliamPhilippe/storage-minis/pull/132), API) and 3b ([#133](https://github.com/WilliamPhilippe/storage-minis/pull/133), web). PR 3b's sign-out is a Sign out button; the user badge ([#1](https://github.com/WilliamPhilippe/storage-minis/issues/1)) and "Sign out of all devices" go to the account menu in [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130). | SI-01 and the owner's changes after the gap review (2026-11-04) |
 
 ## 2. Context
 
@@ -150,46 +169,50 @@ Browser: apps/web, one React SPA, mobile-first
 
 ```text
 apps/web/src/
-├── main.tsx          ConfigProvider (theme, antd locale) → QueryClientProvider → RouterProvider
+├── main.tsx          i18n, then QueryClientProvider → AppProviders (ConfigProvider) → RouterProvider
 ├── router.tsx        createRouter({ routeTree, context: { queryClient, trpc, session } })
-├── routes/           file-based; the plugin generates routeTree.gen.ts
+├── routes/           file-based route definitions only; the plugin generates routeTree.gen.ts
 │   ├── __root.tsx         error and not-found pages
 │   ├── catalog/…          public at /catalog/<nickname>; content waits for D04/E10
 │   ├── login.tsx
-│   └── app/route.tsx      guard + responsive layout (menu, user badge from #1)
+│   └── app/route.tsx      the /app guard and the shell's layout route
 ├── i18n/
 │   ├── en-US/        source catalogs, one namespace per area (main language)
 │   └── pt-BR/        typed against en-US, so a missing key fails type checking
 ├── lib/
 │   ├── trpc.ts       tRPC client + options proxy; adds the token and Organization
-│   ├── session/      Firebase (imported lazily), user, Memberships, active Organization
+│   ├── session/      Firebase (imported lazily), the startup check, user, Memberships, active Organization
 │   └── format/       amounts from integer cents ($, or the catalog's symbol); UTC → local time
-├── ui/               theme tokens, form fields, filterable list, shared components
-└── features/<area>/  inventory, purchasing, sales… (business screens later)
+├── ui/               AppProviders, theme and tokens, shared components; form fields and lists later
+└── features/<area>/  pages: login, shell, home, sections, catalog, errors; business screens later
 ```
 
-- **Reads:** a route loader prefetches `trpc.<procedure>.queryOptions(input)`
-  into the QueryClient, and the page reads the same cache entry. Links preload
-  on hover or touch (`defaultPreload: 'intent'`).
+- **Reads:** a route loader runs
+  `queryClient.query({ ...trpc.<procedure>.queryOptions(input), staleTime: "static" })`
+  (WS-05), and the page reads the same cache entry. Links preload on hover or
+  touch (`defaultPreload: 'intent'`).
 - **Writes:** `useMutation(trpc.<procedure>.mutationOptions())`, then
   invalidation by `trpc.<router>.pathKey()`.
-- **Session:** after sign-in, one session query loads the user, their
-  Memberships and the active Organization. Components read the active
-  Organization through a session hook, and route loaders through the router
-  context. The tRPC link calls `getIdToken()` before each request (W6), which
-  returns the cached token or refreshes one that expires within 30 seconds, and
-  attaches it with the active Organization. Requests follow user activity only,
-  so a token is refreshed only while the user is active, and a session ends 7
-  days after the last Google sign-in (W8). Switching Organization or signing out
-  cancels in-flight queries and clears the cache. TanStack's documentation is
-  explicit that "A route guard is not a data authorization boundary": the API
-  enforces Membership.
+- **Session:** after sign-in, `session.get` loads the user and their
+  Memberships, and the app picks the active Organization (W5). Components read
+  them with `useSession()`, and route loaders through the router context. The
+  tRPC link calls `getIdToken()` before each request (W6), which returns the
+  cached token or refreshes one that expires within 5 minutes, and attaches it
+  with the active Organization's `x-organization-id`. Requests follow user
+  activity only, so a token is refreshed only while the user is active, and a
+  session ends 7 days after the last Google sign-in; past that, the link signs
+  out instead of refreshing (W8). Switching Organization or signing out cancels
+  in-flight queries and clears the cache. TanStack's documentation is explicit
+  that "A route guard is not a data authorization boundary": the API enforces
+  Membership.
 - **Language:** one setting drives the app strings, antd's component texts,
   dayjs, validation messages, number and date formats, and `<html lang>`. Only
   the active language's strings and locales load (W4).
-- **Errors:** read `error.data.code` from the Step 5 envelope, map
-  `BAD_REQUEST` issues (`path`, `code`) onto form fields, and send
-  `UNAUTHORIZED` to `/login`.
+- **Errors:** read `error.data.code` from the Step 5 envelope and map
+  `BAD_REQUEST` issues (`path`, `code`) onto form fields. `UNAUTHORIZED` signs
+  out with "Your session ended"; `FORBIDDEN` reloads the session, and the guard
+  shows the page or the "No access" state; a 5xx or a network failure never
+  signs anyone out ([web session](local-development.md#web-session)).
 - **Types:** `import type { AppRouter } from "@storage-minis/api/types"`, so no
   server code reaches the browser bundle.
 
@@ -200,14 +223,15 @@ apps/web/src/
   only the catalog's strings in the visitor's language (W4). It is rendered in
   the browser, link previews stay generic (W1), and a 1–2 second load on a
   phone is acceptable until T04 sets targets (owner, 2026-11-01).
-- **Back office shell:** a top bar with a drawer menu on phones and a
-  collapsible side menu from tablet widths up.
+- **Back office shell:** a top bar; on phones, a floating menu button that
+  opens the menu in a bottom drawer; from `bp-md`, a collapsible side menu,
+  collapsed by default up to `bp-lg` (WS-08).
 - **Lists:** filterable lists are the default on phones and desktops: rows or
   cards with search and filters, with the filters in a bottom drawer on phones.
   A big table is decided for the screen that needs it, including how it behaves
   on phones.
 - **Forms:** stacked fields at full width, a sticky action bar on phones, and
-  touch-sized controls (antd's large size or a taller control-height token).
+  touch-sized controls: antd's large size on phones, 44 px high.
 - **antd caveat:** antd is desktop-oriented in places (wide tables, range
   pickers, hover tooltips), so each screen designs its phone variant, and
   nothing depends on hover.
@@ -215,9 +239,10 @@ apps/web/src/
   (`disallowed_useragent`), and messaging apps often open links in one. The
   catalog needs no sign-in; the login page detects an in-app browser and asks
   the user to open the page in their regular browser.
-- **Verification:** Playwright runs every end-to-end test on phone and desktop
-  projects (W9). Real phones first sign in on a deployed HTTPS environment
-  (W8). Real-device checks and the supported browser and device list remain
+- **Verification:** Playwright runs each end-to-end test in a phone and a
+  desktop project, apart from tests tagged for one layout (W9). Real phones
+  first sign in on a deployed HTTPS environment (W8). Real-device checks,
+  including iPhone and Safari, and the supported browser and device list remain
   T04 ([#23](https://github.com/WilliamPhilippe/storage-minis/issues/23)) and
   E12.03 ([#73](https://github.com/WilliamPhilippe/storage-minis/issues/73)).
 
@@ -263,17 +288,19 @@ tiers).
 **Decided: antd theme tokens through `ConfigProvider`, plus CSS Modules (built
 into Vite) for page layout; no other styling library.**
 
-Prototype zero-runtime mode in the first step. The antd documentation says it
-"will not generate style at runtime" but does not say whether custom theme
-tokens still inject styles. If the prototype shows no runtime `<style>`
-injection with our theme, Caddy's Content-Security-Policy can stay strict for
-styles, and phones run less JavaScript. Otherwise keep runtime styles and allow
-them in the policy; antd's `ConfigProvider` accepts a `csp` nonce, which a
-static SPA cannot vary per request. Zero-runtime mode loads antd's whole
-`dist/antd.css`, about 1 MB or 109 KB gzipped at 6.6.8, before a first visit
-renders; the owner accepts a 1–2 second catalog load on a phone, so the
-Content-Security-Policy result decides (follow-up review). Dark mode is not
-proposed.
+The first step prototyped antd's zero-runtime mode, which could have let
+Caddy's Content-Security-Policy stay strict for styles; antd's `ConfigProvider`
+accepts a `csp` nonce, which a static SPA cannot vary per request. In a real
+browser under `style-src 'self'`, both modes rendered unstyled, so antd's
+runtime styles stay and PR 4's policy allows inline styles (WS-06). Light mode
+only.
+
+Where a design detail needs more than a theme token or one CSS Module class,
+antd's default stays (owner, 2026-11-01). The look comes mostly from colors
+that follow the logo's racing red, with antd's own design and small tweaks for
+everything else: ink is the primary color, and racing red is kept for
+attention. [`docs/design/`](../design/README.md) holds the approved design
+system.
 
 ### W4. Languages and money display
 
@@ -286,7 +313,7 @@ second; strings live in the frontend.**
   for the app's own strings, hence the library.
 - **Catalogs:** plain TypeScript objects, with no extraction or compile step;
   plurals and interpolation are built in. They are split into namespaces by
-  area (`common`, `catalog`, `app`, later one per feature). Keys are
+  area (`common`, `app`, `login` and `catalog`, later one per feature). Keys are
   type-checked by declaring the en-US catalogs as the resource types. Both
   packages' peer ranges include TypeScript 6, although the i18next TypeScript
   page still says v5.
@@ -296,8 +323,9 @@ second; strings live in the frontend.**
   catalog's strings in their language (follow-up review).
 - **Language choice:** detection stays in our code (the saved choice, then the
   browser's language, then en-US), so no detector plugin. The choice is saved
-  per browser in localStorage, with a switcher in the app header and on the
-  catalog.
+  per browser in localStorage. The switch sits in the Login and catalog pages'
+  headers and, in the back office, at the bottom of the side menu and in the
+  menu drawer's footer.
 - **What switches:** the app strings, antd's `locale`, the dayjs locale,
   validation messages, `Intl` number and date formats and `<html lang>`.
 - **Tests** use the en-US catalog (W9).
@@ -329,12 +357,13 @@ rule.
   and route loaders read it through the router context. No extra state library
   is needed.
 - **Persistence.** Nothing is stored while each user has one Membership: the
-  server returns it and the app selects it.
-- **Transport.** A request header (for example `x-organization-id`) is added by
-  the tRPC link from the session context. T02's authorization middleware checks
-  Membership and puts the Organization in the procedure context. Switching
-  Organization cancels in-flight queries and clears the cache, which keeps
-  private caches scoped by Organization as the technical direction requires.
+  server returns it and the app selects it. While a user has several, the app
+  takes the lowest Organization ID (sign-in plan).
+- **Transport.** The tRPC link adds `x-organization-id` from the session
+  context, and `organizationProcedure(minRole)` checks the Membership and puts
+  the Organization in the procedure context (AU-09). Switching Organization
+  cancels in-flight queries and clears the cache, which keeps private caches
+  scoped by Organization as the technical direction requires.
 
 Routing: file-based routes through `@tanstack/router-plugin` with
 `autoCodeSplitting` (TanStack says v2 will default it to true). TanStack advises
@@ -344,8 +373,8 @@ Organization has a unique nickname, set once when the Organization is created
 and renamed only by a `global_admin` (follow-up review). The `/catalog/` prefix
 keeps nicknames from colliding with `/app` or `/login`. D04/E10 specify the
 nickname's other rules: characters, length, letter case, and whether old links
-redirect after a rename. T01 adds the column, since `organizations` has no
-nickname today. Filters and pagination live in URL search params, validated by
+redirect after a rename. Sign-in PR 3a added the column, with a provisional
+rule until then (SI-04). Filters and pagination live in URL search params, validated by
 Zod 4 schemas passed directly to `validateSearch`.
 
 Considered and not chosen: an `organizationId` field in every procedure input,
@@ -367,8 +396,10 @@ React context as singletons."
   defaultPreloadStaleTime option on the router to 0".
 - Tokens (follow-up review): the tRPC link calls `getIdToken()` before each
   request, so a token is refreshed only when a request needs it and the cached
-  one expires within 30 seconds, the SDK's own margin. Requests follow user
-  activity only: navigation, user actions and the tab returning to view
+  one expires within 5 minutes, the SDK's own margin since firebase 13.2.0 (it
+  was 30 seconds). Past the 7-day limit the link signs out instead (AU-03).
+  Requests follow user activity only: navigation, user actions and the tab
+  returning to view
   (`refetchOnWindowFocus`). `refetchOnReconnect` is off and nothing polls, so an
   idle tab never refreshes. The SDK refreshes in the background only when
   another Firebase product, such as Firestore, registers a token listener, so
@@ -408,13 +439,19 @@ major versions in two weeks (6.0.0 on 2026-10-19, 7.0.0 on 2026-10-31).
 
 **Decided: both flows, a Firebase dev project for local development, and a
 test-only custom-token sign-in for Playwright.**
+[T02's record](t02-authentication-record-2026-11-03.md) (AU-01–AU-12) settles
+the session policies, and sign-in PRs 3a and 3b implement them; the
+[local development reference](local-development.md#sign-in-and-authorization)
+describes the contracts.
 
 **Flows:**
 
-- Phones use `signInWithRedirect`, which Google calls "preferred on mobile
-  devices". Desktops use `signInWithPopup`, and a blocked popup
-  (`auth/popup-blocked`) falls back to redirect. Redirect is used only where
-  `authDomain` is the page's own origin, so development always uses popup.
+- Redirect (`signInWithRedirect`, which Google calls "preferred on mobile
+  devices") is used only where the primary pointer is coarse (phones and
+  tablets) and `authDomain` is the page's own host; everything else uses
+  `signInWithPopup` (SI-11). A blocked popup (`auth/popup-blocked`) falls back
+  to redirect where it is allowed, and otherwise an alert asks the user to allow
+  pop-ups. Development always uses popup.
 - Both flows open `https://<authDomain>/__/auth/handler` and a hidden
   `https://<authDomain>/__/auth/iframe`, always over `https` unless the emulator
   is configured (`@firebase/auth` 1.13.8, shipped in firebase 13.1.0). Redirect
@@ -423,7 +460,8 @@ test-only custom-token sign-in for Playwright.**
   `https://<app domain>/__/auth/` transparently to
   `https://<project>.firebaseapp.com/__/auth/`, `authDomain` is the app's own
   domain, and `https://<app domain>/__/auth/handler` is authorized as a redirect
-  URI. The popup flow works with the same setup.
+  URI. The popup flow works with the same setup. PR 4 adds the proxy and the
+  `authDomain` switch (SI-18).
 - Development keeps `authDomain` at `<dev-project>.firebaseapp.com` and signs
   in by popup, which Firebase's redirect guide lists as a fix when third-party
   storage is blocked. The Vite dev server has no `/__/auth/` proxy and needs no
@@ -438,59 +476,53 @@ test-only custom-token sign-in for Playwright.**
 - Projects created after April 28, 2025 no longer authorize `localhost` by
   default, and Google "strongly discourages" it in production projects. So
   `localhost` is authorized only in the dev project, where developers sign in
-  with their real Google account in a desktop browser. No emulator runs.
+  with their real Google account in a desktop browser at
+  `http://localhost:5173`. No emulator runs.
 - Phones cannot sign in during development, because they cannot reach the
   developer's `localhost`. Real phones first sign in on the first deployed HTTPS
   environment: staging if T04 adds one, otherwise production. Playwright's
-  phone projects still cover signed-in screens through the test sign-in.
+  phone project still covers signed-in screens through the test sign-in.
 
 **Session limit (follow-up review):** a session ends 7 days after the last
 Google sign-in. The API rejects ID tokens whose `auth_time` is older than that,
 whatever their refresh history, because a refresh keeps the original
 `auth_time`. The app does not refresh such a session and sends the user to
 `/login`. On startup the SDK calls `getIdToken()` on a saved session, so the
-app checks the sign-in time before Firebase loads that session; PR 3's plan
-confirms the mechanism. Within the 7 days there is no idle timeout: returning
-after inactivity refreshes the token on the first action. This replaces the
-technical direction's "No absolute or idle session timeout has been chosen".
+app checks the sign-in time before Firebase loads that session (AU-03). Within
+the 7 days there is no idle timeout: returning after inactivity refreshes the
+token on the first action. This replaces the technical direction's "No absolute
+or idle session timeout has been chosen".
 
 **Tests:** Playwright cannot sign in through Google's real page reliably. Google
 says it "might stop sign-ins from browsers that … Are being controlled through
 software automation rather than a human", and Playwright's advice is to "Only
 test what you control."
 
-- **Approved approach:** a test-only sign-in mints a Firebase custom token for a
-  test user (Admin SDK `createCustomToken(uid)`) and signs in with
-  `signInWithCustomToken`, through an entry point compiled only into development
-  and end-to-end builds.
-- **Saved session:** Playwright can save Firebase's IndexedDB session
-  (`indexedDB: true`, since 1.51) and reuse it, so the browser holds a real
+- **Test sign-in (SI-15, SI-17):** Playwright's setup project mints a Firebase
+  custom token for a test user with an `e2e-` uid (`firebase-admin`'s
+  `createCustomToken`), signed through IAM as a no-role service account with the
+  developer's gcloud Application Default Credentials, so no key file exists. It
+  signs in through a hook that only development builds contain.
+- **Saved session:** Playwright saves Firebase's IndexedDB session
+  (`indexedDB: true`, since 1.51) and reuses it, so the browser holds a real
   Firebase session and the API verifies a real ID token.
-- **Production stays Google-only:** the API accepts custom-token sign-ins only
-  when an explicit opt-in setting is present. Only the committed development
-  and test env files set it, never `compose.yaml`, so production and the parity
-  stack accept Google sign-ins only, whatever `NODE_ENV` says; `.env.test`
-  leaves `NODE_ENV` unset, which the API treats as production. T02 confirms the
-  provider claim by decoding a test token.
+- **Production stays Google-only (AU-11):** the API accepts `custom` tokens
+  only with `AUTH_TEST_SIGN_IN=enabled`, which only `.env.test` sets and
+  `compose.yaml` never maps. It refuses to start with that setting when
+  `NODE_ENV` is `production` or unset, and accepts only `e2e-` uids. Production
+  and the parity stack accept Google sign-ins only.
 - **Parity stack:** Playwright against the parity stack runs signed-out checks
   only, because its API runs as production and its web image has no test entry
-  point. Signed-in tests run against the local development or end-to-end build
-  (follow-up review).
-- **Deferred (owner, 2026-11-01):** the structure of this sign-in, meaning its
-  setup project, entry point and credential. The credential is either IAM
-  signing with a developer's Google login through the gcloud CLI, which Firebase
-  recommends because it avoids key files, or a service-account key kept in
-  Doppler. Such a key would be the first real local secret, which the 2026-10-31
-  restructure said would bring Doppler into local development.
+  point. Signed-in tests run against the Vite dev server (PW-06).
 
-**T02 first:** [T02 / #22](https://github.com/WilliamPhilippe/storage-minis/issues/22)
-settles the remaining session policies in its own approved record, merged before
-PR 3's plan: browser session persistence, logout scope and revocation, account
-recovery, administrator bootstrap (the owner's Organization, in BRL, with the
-nickname the owner chooses), the API's token verification and the Organization
-header check (W5). The record carries forward this document's token rule (W6)
-and session limit. The Admin SDK route "must have a service account"; a
-standard JWT library needs only the project ID and Google's public keys.
+**T02:** [T02's record](t02-authentication-record-2026-11-03.md) settles local
+browser persistence (AU-02), the three checks of the 7-day limit (AU-03),
+sign-out of this browser only (AU-04), revocation through
+`users.sessions_valid_after` (AU-05), Google-only recovery (AU-06), the
+configured administrator bootstrap (AU-07), role capabilities and procedure
+classes (AU-08, AU-09), the "No access" state (AU-10) and the test sign-in
+policy (AU-11). The API verifies tokens with `jose` against Google's public
+keys, which needs no service account (SI-02, SI-05).
 
 Considered and not chosen: the Firebase Auth emulator (the `firebase-tools` CLI,
 its configuration and a long-running process: the boilerplate the owner wants
@@ -520,11 +552,14 @@ Every component is built for Playwright from the start:
   `timezoneId: 'America/Sao_Paulo'` (UTC−03:00, no daylight saving since 2019),
   and the web Vitest configuration sets the same `TZ`, so a UTC instant late in
   the evening shows on the previous local day in every run (follow-up review).
-- Projects: `devices['iPhone 15']` (WebKit), `devices['Pixel 7']` (Chromium),
-  Desktop Chrome and Desktop Safari. Every end-to-end test runs on phones and
-  desktops, and a shared check asserts that phone-width pages do not scroll
-  sideways.
-- Sign-in follows W8; `playwright/.auth` is ignored by git.
+- Projects: Desktop Chrome (1280 × 720) and Playwright's full
+  `devices['Pixel 7']` profile, both in Chromium and portrait only (owner,
+  2026-11-02). Tests that depend on one layout are tagged `@phone` or
+  `@desktop` and run in that project only; every other test runs in both, and a
+  shared check asserts that pages do not scroll sideways. WebKit, iPhone and
+  Safari checks wait for T04's real devices.
+- Sign-in follows W8; the `**/playwright/.auth/` entry keeps the saved session
+  out of git.
 - Component tests use the same role and label queries through Testing Library.
 
 ### W10. Build, serving and tooling
@@ -541,18 +576,23 @@ Every component is built for Playwright from the start:
   declarations into scope (P5-08 note), so lint flags Node globals in web code.
 - `docker/web.Dockerfile` builds with pnpm and serves `dist/` with Caddy: SPA
   fallback, long-lived caching for hashed assets, a revalidated `index.html`,
-  security headers including a Content-Security-Policy that allows Firebase's
-  `https://apis.google.com` script, `/trpc` proxied to `api` and `/__/auth/` to
-  Firebase (W8). A `web` service joins Compose and the parity stack; production
-  deployment stays T04.
-- Firebase's web configuration consists of public identifiers. They become
-  `VITE_*` build-time values validated with Zod at startup. Both the dev-project
-  and the production values are committed (follow-up review), as a recorded
-  exception to the rule that production values live only in Doppler
-  ([local setup](../../README.md#local-setup)): every visitor's browser receives them anyway. The web build never
-  runs under Doppler, so no server secret reaches it, as D5 requires; the API
-  keeps its own values, such as the project ID it checks tokens against, in
-  Doppler on the VPS. Turborepo's strict environment mode must list them.
+  security headers including a Content-Security-Policy that allows inline
+  styles (W3) and Firebase's `https://apis.google.com` script, `/trpc` proxied
+  to `api` and `/__/auth/` to Firebase (W8). Its build must let
+  `apps/web/.env.production` in, although `.dockerignore` keeps every `.env*`
+  file out of images today. A `web` service joins Compose and the parity stack;
+  production deployment stays T04.
+- Firebase's web configuration consists of public identifiers: four
+  `VITE_FIREBASE_*` values in Vite's committed mode files,
+  `apps/web/.env.development` (the dev project) and `.env.production`
+  (production), which `vite.config.mts` checks with Zod whenever Vite serves,
+  builds or previews (SI-03). Committing both is a recorded exception to the
+  rule that production values live only in Doppler
+  ([local setup](../../README.md#local-setup)): every visitor's browser receives
+  them anyway. The web build never runs under Doppler, so no server secret
+  reaches it, as D5 requires; the API keeps its own values, such as the project
+  ID it checks tokens against, in Doppler on the VPS. Turborepo hashes the
+  committed files as inputs, so `turbo.json` lists nothing for them.
 - ESLint: `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`,
   `@tanstack/eslint-plugin-query` and `@tanstack/eslint-plugin-router`, all
   declaring ESLint 10 support, with browser globals for web files.
@@ -566,9 +606,14 @@ Every component is built for Playwright from the start:
 
 ### W11. Delivery sequence
 
-**Decided: four PRs, each leaving the repository working.**
+**Decided: four PRs, each leaving the repository working.** PR 3 became two,
+3a and 3b (SI-01), and
+[#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) tracks them
+all.
 
-1. **Web shell:**
+1. **Web shell**, delivered in
+   [#121](https://github.com/WilliamPhilippe/storage-minis/pull/121) and its
+   follow-up [#125](https://github.com/WilliamPhilippe/storage-minis/pull/125):
    - `apps/web`, antd, the theme and the responsive shell.
    - Both language catalogs, split by area and loaded per language, with the
      language switch, plus money and date formatting.
@@ -576,117 +621,63 @@ Every component is built for Playwright from the start:
      calling `diagnostics.echo` through the Vite proxy.
    - Component tests, the testability rules from W9, and web checks inside
      `pnpm check`.
-2. **Playwright:** phone and desktop projects in `America/Sao_Paulo` and
-   `pnpm test:e2e`, which needs `pnpm db:up` like `test:api`. Smoke tests cover
-   the language switch, responsive navigation, the public catalog placeholder,
-   the echo round-trip and the no-sideways-scroll check.
-3. **Sign-in end to end:** T02's approved record, the Firebase dev project,
-   popup sign-in and the redirect code, API token verification with the 7-day
-   session limit, the session context with the active Organization (W5), the
-   user badge (#1), sign-out and the Playwright test sign-in behind its opt-in
-   setting.
-4. **Web image:** Caddy (the SPA, the `/trpc` and `/__/auth/` proxies and
-   headers), `web` in Compose and the parity stack, Playwright's signed-out
-   checks against the parity stack, and a manual redirect sign-in through Caddy
-   over HTTPS.
+2. **Playwright**, delivered in
+   [#124](https://github.com/WilliamPhilippe/storage-minis/pull/124): phone and
+   desktop projects in `America/Sao_Paulo` and `pnpm test:e2e`, which needs
+   `pnpm db:up` like `test:api`. Smoke tests cover the language switch,
+   responsive navigation, the public catalog placeholder, the echo round-trip
+   and the no-sideways-scroll check.
+3. **Sign-in end to end**, delivered as PR 3a, API identity and authorization
+   ([#132](https://github.com/WilliamPhilippe/storage-minis/pull/132)), and
+   PR 3b, web sign-in and the Playwright session
+   ([#133](https://github.com/WilliamPhilippe/storage-minis/pull/133)): T02's
+   approved record, the Firebase dev project, popup sign-in and the redirect
+   code, API token verification with the 7-day session limit, the session
+   context with the active Organization (W5), a Sign out button and the
+   Playwright test sign-in behind its opt-in setting. The user badge
+   ([#1](https://github.com/WilliamPhilippe/storage-minis/issues/1)) moved to the
+   account menu in [#130](https://github.com/WilliamPhilippe/storage-minis/issues/130).
+4. **Web image**, waiting for the first deployment: Caddy (the SPA, the `/trpc`
+   and `/__/auth/` proxies and headers), `web` in Compose and the parity stack,
+   Playwright's signed-out checks against the parity stack, and a manual
+   redirect sign-in through Caddy over HTTPS (SI-18).
 
 Business screens and catalog content follow through their own issues.
 Foundation Step 6 (repeatable verification and handoff) stays TBD and is
 re-planned once the app is validated locally (owner, 2026-11-01).
-[Epic E13 / #89](https://github.com/WilliamPhilippe/storage-minis/issues/89)
-asks for a focused child issue for scaffolding work like this; one is drafted
-for the owner's review after this document merges.
 
-## 6. Candidate versions
+## 6. Deferred decisions
 
-All are npm `latest` tags on 2026-11-01. Peer and engine ranges were checked
-against TypeScript 6.0.3, ESLint 10.13.0, Vite 8.3.5 and Node 24.22.1 where the
-packages declare them. Each step's plan re-verifies its pins.
+Still open:
 
-| Package | Version | Notes |
-| --- | --- | --- |
-| `react`, `react-dom` | 19.3.1 | Published 2026-10-14. |
-| `vite` | 8.3.5 | Already pinned at the repository root. |
-| `@vitejs/plugin-react` | 6.1.2 | Peer `vite ^8.0.0`. |
-| `@tanstack/react-router` | 1.170.46 | Peer React 18 or later; Node 20.19 or later. |
-| `@tanstack/router-plugin` | 1.168.48 | Peer range includes Vite 8. |
-| `@tanstack/react-query` | 5.105.0 | |
-| `@trpc/client`, `@trpc/tanstack-react-query` | 11.22.1 | Match the Step 5 pins; peers TypeScript 5.7.2 or later and Query `^5.80.3`. |
-| `@tanstack/react-form` | 1.33.5 | Peer React 17, 18 or 19. |
-| `antd` | 6.6.8 | Peer React 18 or later. |
-| `@ant-design/icons` | 6.3.4 | antd 6 requires icons 6. |
-| `dayjs` | 1.11.23 | antd's date library. |
-| `i18next` | 26.6.0 | Peer TypeScript `^5 \|\| ^6 \|\| ^7`. |
-| `react-i18next` | 17.1.9 | Peers i18next 26.2.0 or later and TypeScript `^5 \|\| ^6 \|\| ^7`. |
-| `zod` | 4.6.7 | Already pinned in the API. |
-| `firebase` | 13.1.0 | 13.0.0's breaking changes are all in AI Logic; 13.1.0 stops Auth clearing the persisted session on transient 5xx errors. |
-| `firebase-admin` or `jose` | 14.5.0 or 6.2.14 | Test token minting and API verification; T02 chooses. |
-| `@playwright/test` | 1.64.1 | Storage state with IndexedDB since 1.51. |
-| `jsdom` | 30.1.3 | Requires Node `^24.15.0` on the 24 line. |
-| `@testing-library/react` | 16.3.3 | Peer `@testing-library/dom` 10. |
-| `eslint-plugin-react-hooks` | 7.1.1 | Peer range includes ESLint 10. |
-| `eslint-plugin-react-refresh` | 0.5.7 | Peer ESLint 9 or 10. |
-| `@tanstack/eslint-plugin-query` | 5.105.0 | Peer ranges include ESLint 10 and TypeScript 6. |
-| `@tanstack/eslint-plugin-router` | 1.162.0 | Peer range includes ESLint 10. |
-| Caddy image | 2.11.7 | Released 2026-10-03. |
-
-## 7. Boundaries and dependencies
-
-- **Step 5:** merged in PR #114, so the web shell can consume
-  `@storage-minis/api/types` and `diagnostics.echo` from `main`.
-- **T02 ([#22](https://github.com/WilliamPhilippe/storage-minis/issues/22)):**
-  its own approved record before PR 3, covering the remaining session policies,
-  administrator bootstrap, API token verification with the 7-day session limit,
-  the Organization header check (W5) and the opt-in rule for test sign-ins (W8).
-- **T03 ([#24](https://github.com/WilliamPhilippe/storage-minis/issues/24)):**
-  money input and date-only semantics, for integer cents in the Organization's
-  currency.
-- **T04 ([#23](https://github.com/WilliamPhilippe/storage-minis/issues/23)):**
-  hosting and deployment, Doppler keys, supported browsers and devices,
-  performance targets, real-device checks and the production
-  Content-Security-Policy.
-- **D04 ([#18](https://github.com/WilliamPhilippe/storage-minis/issues/18)) and
-  E10:** the nickname's rules, catalog fields, search, filters and images.
-- **D05 ([#19](https://github.com/WilliamPhilippe/storage-minis/issues/19)):**
-  report screens and charts. No chart library is proposed yet.
-- **Firebase projects:** the owner creates the dev project (W8) and, later, the
-  production project.
-- **Records:** this document's PR adds the approval record to the technical
-  direction, replaces React Hook Form with TanStack Form in its accepted stack
-  and in AGENTS.md, records the design system, styling conventions, language,
-  locale and session limit as decided, marks Step 6 TBD and points the
-  implementation guide here. Requirements v0.8 and entity map v0.9 publish the
-  Organization currency and nickname rules in their own PR. Each delivery
-  step's plan adds its own progress entry, and the README changes with the web
-  shell.
-
-## 8. Deferred decisions
-
-- **Playwright sign-in structure (W8):** setup project, test-only entry point
-  and credential.
 - **Big tables (section 4):** behavior on phones and desktops, decided for each
   screen that needs one.
 - **Active Organization persistence (W5):** once users can belong to several
   Organizations (ORG-003). localStorage, validated against the Memberships on
   load, is the current recommendation.
-- **Catalog (D04/E10):** the nickname's rules, fields, search, filters and
-  images.
+- **Catalog ([D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) and E10):**
+  the nickname's rules, which replace the provisional one, and the catalog's
+  fields, search, filters and images.
 - **Organization invitations:** how Organizations beyond the bootstrap one are
   created. The owner's first outline, not decided: a `global_admin` invites a
   person to a new Organization, and that person, on signing in without one,
   creates it and sets its name, nickname and currency once. TBD until the
   website is developed (owner, 2026-11-01).
-- **Remaining session policies and token verification (T02).**
-- **Money input contract (T03).**
+- **Money input ([T03 / #24](https://github.com/WilliamPhilippe/storage-minis/issues/24)):**
+  money input and date-only semantics, for integer cents in the Organization's
+  currency.
+- **Reports ([D05 / #19](https://github.com/WilliamPhilippe/storage-minis/issues/19)):**
+  report screens and charts; no chart library is proposed yet.
+- **Production ([T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23)):**
+  hosting and deployment, supported browsers and devices, performance targets,
+  real-device checks and the production Content-Security-Policy.
 - **Foundation Step 6:** TBD until the app is validated locally.
 
-Left to the delivery step plans (follow-up review):
-
-- How the login page chooses popup or redirect (PR 3).
-- Which database and env file `pnpm test:e2e` uses (PR 2).
-- What a signed-in user with no Membership sees (PR 3 and T02).
-- HTTP-referrer restrictions on the dev project's API key, since the
-  repository is public and its Firebase config is committed (PR 3).
+Decided since 2026-11-01: the Playwright sign-in structure (SI-15, SI-17), the
+remaining session policies and token verification (T02's record), how the Login
+page chooses popup or redirect (SI-11), the database and env file of
+`pnpm test:e2e` (PW-06), what a signed-in user with no Membership sees (AU-10)
+and the browser API keys' restrictions (SI-14).
 
 ## Sources
 
