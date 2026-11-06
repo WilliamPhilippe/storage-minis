@@ -1,7 +1,7 @@
 // storage-minis structural database schema — approved and implemented 2026-10-25.
 // Sources: requirements v0.8 and entity map v0.9, which consolidate the dated schema reviews. Review guide: design.md.
 // Diagram synchronized with Step 3B and sign-in PR 3a (2026-11-05: Organization nickname and
-// currency, users.sessions_valid_after). Executable source/migrations: packages/db; see step-3b-implementation-2026-10-25.md.
+// currency, users.sessions_valid_after). Executable source/migrations: packages/db; writer obligations: design.md.
 // Money uses integer cents in each Organization's currency (BRL or USD); actual occurrence timestamps use timestamptz.
 // S01-S10 approve representation, keys, scope and bounded structural delivery.
 // All candidate table shapes were rejected and are absent; business writers remain deferred.

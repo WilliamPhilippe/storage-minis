@@ -1427,14 +1427,30 @@ Example: `2026-11-01T01:00:00Z` may display as October 31 at 22:00 for a visitor
 
 The owner approved the [S01–S10 schema review](https://github.com/WilliamPhilippe/storage-minis/blob/8629f22ef9a9ca8ad694b98eaf8f976cbfd467f8/docs/database/step-3b-schema-review-2026-10-25.md)
 on 2026-10-25: “Schema is approved. Implement it.” The
-[implementation/reconciliation record](../database/step-3b-implementation-2026-10-25.md)
-is authoritative for the structural delivery and its named writer deferrals. At
-approval the schema had 33 tables, 316 columns, 11 enums, 157 FKs, 76 row
-checks, 48 unique constraints and 32 explicit indexes. The
+[database design guide](../database/design.md) describes the delivered schema,
+and its [business writer obligations](../database/design.md#business-writer-obligations)
+list the enforcement each deferred writer still needs. At approval the schema had
+33 tables, 316 columns, 11 enums, 157 FKs, 76 row checks, 48 unique constraints
+and 32 explicit indexes. The
 [foundation restructure](#foundation-restructure-2026-10-31) regenerated the
 migration chain as `0000_inventory_id_base36`, a custom migration, followed by
 `0001_baseline`, which matches the reviewed chain except that it folds in the
 customer name check (D8).
+
+Code comments and the design guide cite these approved decisions:
+
+| ID | Approved choice |
+| --- | --- |
+| S01 | Keep the 33 draft table and 11 enum names and values as drawn, including `inventoryId`, with explicit TypeScript mappings and schema modules grouped by the diagram's domain families. |
+| S02 | Positive int32 identity keys; integer-cent amounts with nonnegative merchandise, agreed-price and cost checks and positive cash, refund and expense checks; exact bigint intermediates in later allocation code. |
+| S03 | `timestamptz(3)` in Drizzle Date mode; only recording timestamps have defaults. |
+| S04 | The readable `inventoryId` is a stored generated column from the immutable SQL function `public.inventory_id_base36(integer)`. |
+| S05 | Only the scoped unique target keys and invariant indexes that composite references and invariants need, plus generated nonnullable scope for global and Organization-owned event references. |
+| S06 | `users.can_edit_products` (default false), a nonblank Customer name and optional unit `public_description` / `public_images`; no seed. |
+| S07 | Typed Sale/SaleItem audit subjects without live-subject FKs, so audit survives a permitted SaleItem deletion; every other subject FK stays restrictive. |
+| S08 | Expense installment rows with a reconciled `settled_amount` cache, the four dedicated settlement tables and allocation-derived PurchaseExpense links. |
+| S09 | Declarative row, scope and uniqueness enforcement only; locks and business writers are specified separately. |
+| S10 | A structural delivery with no business write API, seed or import; workflow acceptance waits for each real writer. |
 
 **Migration runner (owner approval, 2026-10-25):** migrations run through the
 installed native `drizzle-orm/node-postgres/migrator`
@@ -1482,8 +1498,8 @@ foundation implementation guide on 2026-11-06.
 | Deployment and recovery acceptance | [T04 / #23](https://github.com/WilliamPhilippe/storage-minis/issues/23): Doppler production access, injection, rotation and fallback policy; releases and migrations; privileges; daily backups with a tested restore; operational targets. |
 | Full T06 completion | The live issue's original dependencies and acceptance outputs, including real global Product reuse with private-data rejection, allocation and commitment integrity, and deletion-versus-funding or settlement-source race evidence, plus the remaining application and check delivery. |
 
-The [Step 3B record](../database/step-3b-implementation-2026-10-25.md#deferred-writers-and-acceptance)
-lists the enforcement each business writer still needs. Successful health
+The design guide's [business writer obligations](../database/design.md#business-writer-obligations)
+list the enforcement each business writer still needs. Successful health
 queries and HTTP validation do not establish business atomicity, Organization
 isolation, authorization or concurrency correctness.
 
@@ -1539,3 +1555,16 @@ outdated words, so a search for a business term returned several near-copies.
 One of them, the v0.7 PurchaseExpense note, still allowed a table of
 expense-to-Purchase links that PUR-047 rules out. This cleanup changes no
 technical or business policy beyond that documentation rule.
+
+**Step 3B record (owner, 2026-11-06).** Asked whether
+`docs/database/step-3b-implementation-2026-10-25.md` was still needed, the owner
+approved removing it ("Yes, remove it"). Its command contract and validation
+repeated the [local development reference](local-development.md), the README and
+the [Step 3B section](#step-3b-structural-schema-2026-10-25), and its schema
+counts predated sign-in PR 3a. Its business writer obligations, insertion order,
+SaleItem deletion boundary and representation details moved into the
+[database design guide](../database/design.md), whose former remaining-work table
+now merges with those obligations, and the S01–S10 definitions moved into the
+Step 3B section. The removed record stays at
+[commit b403fa7](https://github.com/WilliamPhilippe/storage-minis/blob/b403fa7844626be13e1f8e8f58efec35bb7e2508/docs/database/step-3b-implementation-2026-10-25.md).
+This changes no technical or business policy.
