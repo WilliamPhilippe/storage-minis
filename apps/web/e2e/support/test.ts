@@ -5,14 +5,24 @@ import {
   type Page,
 } from "@playwright/test";
 
-// The specs' test and expect, with the tapOrClick and console fixtures
-// (PW-09, PW-10).
+// The specs' test and expect, with the tapOrClick, console and outside-origin
+// fixtures (PW-09, PW-10, sign-in plan SI-17).
 
 type ConsoleKind = "error" | "warn" | "pageerror";
+
+// The app, and Firebase Authentication's two APIs: signing in and token
+// refreshes. Anything else, such as Firebase Analytics or Installations,
+// fails the test unless it declares the origin.
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://identitytoolkit.googleapis.com",
+  "https://securetoken.googleapis.com",
+];
 
 interface Fixtures {
   tapOrClick: (target: Locator) => Promise<void>;
   expectConsole: (kind: ConsoleKind, pattern: RegExp) => void;
+  allowOrigin: (origin: string) => void;
 }
 
 export const test = base.extend<Fixtures>({
@@ -53,6 +63,28 @@ export const test = base.extend<Fixtures>({
         )
         .map(({ kind, text }) => `${kind}: ${text}`);
       expect(unexpected, "console output the test did not declare").toEqual([]);
+    },
+    { auto: true },
+  ],
+  // Declares another origin the test's pages may request, such as Google's
+  // sign-in pages in the popup. Checked when the test ends, over every page
+  // of its browser context, popups included.
+  allowOrigin: [
+    async ({ context }, use) => {
+      const allowed = new Set(allowedOrigins);
+      const requested = new Set<string>();
+      context.on("request", (request) => {
+        const url = new URL(request.url());
+        // data:, blob: and the like never leave the browser.
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          requested.add(url.origin);
+        }
+      });
+      await use((origin) => {
+        allowed.add(origin);
+      });
+      const outside = [...requested].filter((origin) => !allowed.has(origin));
+      expect(outside, "requests outside the allowed origins").toEqual([]);
     },
     { auto: true },
   ],

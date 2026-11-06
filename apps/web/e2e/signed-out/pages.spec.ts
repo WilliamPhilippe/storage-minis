@@ -1,7 +1,8 @@
 import { en, languageSwitchName } from "../support/names";
 import { expect, expectNoSidewaysScroll, test } from "../support/test";
 
-test("the Login page", async ({ page, tapOrClick }) => {
+// Signing in: signed-out/sign-in.spec.ts.
+test("the Login page", async ({ page }) => {
   await page.goto("/login");
   await expect(
     page.getByRole("heading", { level: 1, name: en.login.title }),
@@ -9,13 +10,21 @@ test("the Login page", async ({ page, tapOrClick }) => {
   await expect(
     page.getByRole("button", { name: languageSwitchName("en-US") }),
   ).toBeVisible();
-  // The button has no action until PR 3. A navigation that came later would
-  // pass unseen; PR 3 replaces this check.
-  await tapOrClick(page.getByRole("button", { name: en.login.action }));
-  await expect(page).toHaveURL("/login");
+  await expect(
+    page.getByRole("button", { name: en.login.action }),
+  ).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText(en.login.helper);
 });
 
 test("the catalog placeholder", async ({ page }) => {
+  // The catalog never loads Firebase (sign-in plan SI-09): no Firebase
+  // module, from Vite's dependencies or ours, and no request to Google.
+  const firebaseRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/firebase|googleapis\.com/.test(request.url())) {
+      firebaseRequests.push(request.url());
+    }
+  });
   await page.goto("/catalog/demo");
   await expect(
     page.getByRole("heading", { level: 1, name: en.catalog.unavailable }),
@@ -26,6 +35,7 @@ test("the catalog placeholder", async ({ page }) => {
   await expect(
     page.getByRole("navigation", { name: en.app.nav.label }),
   ).toHaveCount(0);
+  expect(firebaseRequests).toEqual([]);
 });
 
 test.describe("signed-out pages fit the viewport", () => {
