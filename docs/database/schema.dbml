@@ -247,7 +247,7 @@ Table suppliers [headercolor: #97703C] {
   is_unknown boolean [not null, default: false, note: 'Organization-owned placeholder used only when an imported unit has no known Supplier. A partial unique index enforces one placeholder per Organization; do not invent contact/type facts.']
   created_event_id integer [not null]
 
-  Note: 'E06 | SUP-001-012. Known Suppliers require name/phone/type; the import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
+  Note: 'E06 | SUP-001-012. Suppliers require a name; phone and type are optional (owner, 2026-11-06). The import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
 
   indexes {
     organization_id [name: 'suppliers_organization_idx']
@@ -257,7 +257,6 @@ Table suppliers [headercolor: #97703C] {
 
   checks {
     `"suppliers"."id" > 0` [name: 'suppliers_positive_id']
-    `(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))` [name: 'known_supplier_has_contact_and_type']
     `(NOT is_unknown OR (phone IS NULL AND type IS NULL))` [name: 'unknown_supplier_has_no_fabricated_details']
   }
 }

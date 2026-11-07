@@ -847,6 +847,27 @@ it("retains separate expense installments, completion checks and unique unit all
   );
 });
 
+it("accepts known Suppliers without phone or type", async () => {
+  const f = await fixture();
+  const nameOnly = await insert("suppliers", {
+    organization_id: f.organizationId,
+    name: "Name only",
+    created_event_id: f.eventId,
+  });
+  await client.query(
+    "UPDATE suppliers SET phone = NULL, type = NULL WHERE id = $1",
+    [f.supplierId],
+  );
+  const suppliers = await client.query(
+    "SELECT id, phone, type FROM suppliers WHERE id = ANY($1) AND NOT is_unknown ORDER BY id",
+    [[f.supplierId, nameOnly]],
+  );
+  expect(suppliers.rows).toEqual([
+    { id: f.supplierId, phone: null, type: null },
+    { id: nameOnly, phone: null, type: null },
+  ]);
+});
+
 it("enforces unknown-Supplier and opening-Purchase identity with second-day UTC provenance", async () => {
   const f = await fixture();
   await insert("suppliers", {
@@ -862,6 +883,11 @@ it("enforces unknown-Supplier and opening-Purchase identity with second-day UTC 
   );
   await rejected(
     "UPDATE suppliers SET phone = 'invented' WHERE organization_id = $1 AND is_unknown",
+    [f.organizationId],
+    "23514",
+  );
+  await rejected(
+    "UPDATE suppliers SET type = 'person' WHERE organization_id = $1 AND is_unknown",
     [f.organizationId],
     "23514",
   );

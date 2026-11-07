@@ -38,10 +38,6 @@ export const suppliers = pgTable(
   (t): PgTableExtraConfigValue[] => [
     check("suppliers_positive_id", sql`${t.id} > 0`),
     check(
-      "known_supplier_has_contact_and_type",
-      sql`(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))`,
-    ),
-    check(
       "unknown_supplier_has_no_fabricated_details",
       sql`(NOT is_unknown OR (phone IS NULL AND type IS NULL))`,
     ),

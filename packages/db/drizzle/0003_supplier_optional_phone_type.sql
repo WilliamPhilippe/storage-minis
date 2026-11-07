@@ -1,0 +1,1 @@
+ALTER TABLE "suppliers" DROP CONSTRAINT "known_supplier_has_contact_and_type";
