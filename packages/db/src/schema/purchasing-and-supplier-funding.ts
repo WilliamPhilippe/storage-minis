@@ -105,9 +105,6 @@ export const purchases = pgTable(
     index("purchases_organization_idx").on(t.organizationId),
     unique("purchases_key_1").on(t.organizationId, t.id),
     unique("purchases_key_2").on(t.organizationId, t.supplierId, t.id),
-    uniqueIndex("one_opening_purchase")
-      .on(...[t.organizationId, t.supplierId, t.openingMonth])
-      .where(sql`is_opening`),
     foreignKey({
       name: "owner_purchases",
       columns: [t.organizationId],
