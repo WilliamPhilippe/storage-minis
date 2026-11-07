@@ -1,5 +1,5 @@
 // storage-minis structural database schema — approved and implemented 2026-10-25.
-// Sources: requirements v0.8 and entity map v0.9, which consolidate the dated schema reviews. Review guide: design.md.
+// Sources: requirements v0.9 and entity map v0.10, which consolidate the dated schema reviews and later owner decisions. Review guide: design.md.
 // Diagram synchronized with Step 3B, sign-in PR 3a (2026-11-05: Organization nickname and
 // currency, users.sessions_valid_after) and migrations 0003-0004 (2026-11-06: optional Supplier phone/type,
 // mexico status, several opening Purchases per Supplier/month). Executable source/migrations: packages/db;
@@ -1230,7 +1230,7 @@ TableGroup losses_and_shared_history [color: #96616D] {
 Note review_status {
   '''
     APPROVED STRUCTURAL SCHEMA — Step 3B, 2026-10-25.
-    Apply requirements v0.8 and entity map v0.9, which consolidate the October 22/23 review decisions.
+    Apply requirements v0.9 and entity map v0.10, which consolidate the October 22/23 review decisions and later owner decisions.
     Sale status is mutually exclusive; opening Purchase dates use the approved second-day convention.
     Money is integer centavos; occurrence timestamps are timestamptz.
     This review is not executable migration evidence.

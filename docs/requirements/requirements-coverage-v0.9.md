@@ -1,16 +1,18 @@
-# storage-minis v0.8 — requirement ownership and backlog
+# storage-minis v0.9 — requirement ownership and backlog
 
-**Version:** 0.8. **Published:** 2026-11-01.
+**Version:** 0.9. **Published:** 2026-11-07.
 
-**Current baseline:** [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119). [Specification](requirements-v0.8.md) · [Entity map](../entities/entity-map-v0.9.md).
+**Current baseline:** [#143](https://github.com/WilliamPhilippe/storage-minis/issues/143). [Specification](requirements-v0.9.md) · [Entity map](../entities/entity-map-v0.10.md).
 
-**Supersedes:** [v0.7 ownership index](https://github.com/WilliamPhilippe/storage-minis/blob/55a61ab996b4151c5f2a5dfb6df35237287e3963/docs/requirements/requirements-coverage-v0.7.md). Superseded documents were removed from the tree on 2026-11-06; git history keeps them, and baseline issues are preserved.
+**Supersedes:** [v0.8 ownership index](https://github.com/WilliamPhilippe/storage-minis/blob/539e90f6ceeb54f9a6b967a29af43451114fdfe1/docs/requirements/requirements-coverage-v0.8.md). Superseded documents are not kept in the tree; git history keeps them, and baseline issues are preserved.
 
 Every active requirement has one primary delivery owner. Other tickets may share requirements as integration constraints. Ownership is planning traceability; application acceptance evidence remains pending.
 
-**Inventory:** 309 active IDs; 13 epics; 51 delivery issues, including the new #117 and the frontend foundation #118; eight design issues, five of them open; eight open business decisions. Existing work identities, statuses, milestones and dependencies are preserved in [Project 2](https://github.com/users/WilliamPhilippe/projects/2).
+**Inventory:** 323 active IDs; 14 epics; 57 delivery issues, including the new #141 and #142, the frontend foundation #118 and the E14 sign-in follow-ups #128–#131; eight design issues, four of them open; eight open business decisions. Existing work identities, statuses, milestones and dependencies are preserved in [Project 2](https://github.com/users/WilliamPhilippe/projects/2).
 
-ORG-010–011 are new in v0.8. Their primary owner is [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117), under [Epic E01 / #3](https://github.com/WilliamPhilippe/storage-minis/issues/3): each Organization's nickname and currency, both set when the Organization is created. It links to [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) and [Epic E10 / #12](https://github.com/WilliamPhilippe/storage-minis/issues/12) for the catalog URL and price symbol. No other primary owner changes. The baseline is a reference item, not completed implementation.
+v0.9 adds PUR-050–059 and DATA-008–011 and changes PUR-004, SUP-002–003 and DATA-007 (owner, 2026-11-06). PUR-050–059 belong to the new [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) under [Epic E03 / #5](https://github.com/WilliamPhilippe/storage-minis/issues/5): one Purchase form with per-unit details, payment and receipt. DATA-008–010 belong to the new [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) under [Epic E11 / #13](https://github.com/WilliamPhilippe/storage-minis/issues/13): the sales-history import and its estimated dates. DATA-011 joins DATA-007 under [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53). The changed IDs keep their owners: PUR-004 with [#34](https://github.com/WilliamPhilippe/storage-minis/issues/34), SUP-002–003 with [#31](https://github.com/WilliamPhilippe/storage-minis/issues/31) and DATA-007 with [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53).
+
+ORG-010–011 joined in v0.8. Their primary owner is [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117), under [Epic E01 / #3](https://github.com/WilliamPhilippe/storage-minis/issues/3): each Organization's nickname and currency, both set when the Organization is created. It links to [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) and [Epic E10 / #12](https://github.com/WilliamPhilippe/storage-minis/issues/12) for the catalog URL and price symbol. No other primary owner has changed since v0.8. The baseline is a reference item, not completed implementation.
 
 ## Active requirement ownership
 
@@ -325,6 +327,20 @@ ORG-010–011 are new in v0.8. Their primary owner is [#117](https://github.com/
 | `PUR-047` | [#37](https://github.com/WilliamPhilippe/storage-minis/issues/37) — Record shared PurchaseExpenses and allocate exact costs to selected units |
 | `PUR-048` | [#37](https://github.com/WilliamPhilippe/storage-minis/issues/37) — Record shared PurchaseExpenses and allocate exact costs to selected units |
 | `PUR-049` | [#37](https://github.com/WilliamPhilippe/storage-minis/issues/37) — Record shared PurchaseExpenses and allocate exact costs to selected units |
+| `PUR-050` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-051` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-052` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-053` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-054` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-055` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-056` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-057` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-058` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `PUR-059` | [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) — Enter and edit Purchases in one form with per-unit details, an initial payment and receipt |
+| `DATA-008` | [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) — Import sales history and estimated past dates |
+| `DATA-009` | [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) — Import sales history and estimated past dates |
+| `DATA-010` | [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) — Import sales history and estimated past dates |
+| `DATA-011` | [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53) — Build a validated Excel import preview using approved field and acquisition mapping |
 
 ## Retired IDs
 
@@ -334,18 +350,18 @@ ORG-010–011 are new in v0.8. Their primary owner is [#117](https://github.com/
 | PAY-031 | v0.6 | Future-Sale credit application withdrawn; PAY-037 covers reassignment to eligible existing Sales/SaleItems. |
 | CUS-016 | v0.6 | Future-Sale customer wallet withdrawn; refund/reassign, with PAY-038 for pending refund obligations. |
 
-No IDs newly retired in v0.8. IDs are never reused.
+No IDs newly retired in v0.9. IDs are never reused.
 
 ## Open decisions
 
-| Decision | Issue | Status in v0.8 |
+| Decision | Issue | Status in v0.9 |
 | --- | --- | --- |
 | D01 | [#15](https://github.com/WilliamPhilippe/storage-minis/issues/15) — Specify FIFO refund provenance and remaining funding-attribution details | Refunds consume original Payments oldest first. Equal-time tie-breaking and non-refund source order remain. |
 | D02 | [#16](https://github.com/WilliamPhilippe/storage-minis/issues/16) — Record current-membership collection reporting and retained audit scope | Decided: current membership; no past-date designation report. Propagation remains. |
 | D03 | [#17](https://github.com/WilliamPhilippe/storage-minis/issues/17) — Record signed-profit treatment in model and pooled collection recovery | Decided: signed negative profit in both formulas. Verification remains. |
 | D04 | [#18](https://github.com/WilliamPhilippe/storage-minis/issues/18) — Define launch public catalog fields, images, search, and filters | One Organization per URL by nickname, allowlist, grouping, prices with the currency symbol, photos and hidden quantities decided. Search, filters, unknown-condition presentation, `is_chase` and damage-description visibility, and nickname rules remain. |
 | D05 | [#19](https://github.com/WilliamPhilippe/storage-minis/issues/19) — Define launch reports and the average acquisition-price aggregation basis | Original-period reporting and the on-hand average basis decided. Launch report set and filter contracts remain. |
-| D06 | [#20](https://github.com/WilliamPhilippe/storage-minis/issues/20) — Define exceptional correction authority and financial treatment | Firm locks and SaleItem deletion rules decided. Exceptional authority and shared-expense disposition remain. |
+| D06 | [#20](https://github.com/WilliamPhilippe/storage-minis/issues/20) — Define exceptional correction authority and financial treatment | Firm locks and SaleItem deletion rules decided; import-estimated dates may be corrected once (DATA-010, 2026-11-06). Exceptional authority and shared-expense disposition remain. |
 | D07 | [#79](https://github.com/WilliamPhilippe/storage-minis/issues/79) — Record shared Product-edit authority, audit, and current metadata presentation | Decided. Typed audit, enforcement and bootstrap details remain. |
 | D08 | [#80](https://github.com/WilliamPhilippe/storage-minis/issues/80) — Specify independent collection cost finalization and provisional metrics | Decided. Workflow and enforcement remain. |
 | Organization creation | None yet | Invitations and creating Organizations beyond the bootstrap are TBD until the website is developed (owner, 2026-11-01). |
@@ -354,7 +370,7 @@ The approved logs resolved or narrowed D01–D08; each issue stays open until it
 
 ## Dependency and implementation boundaries
 
-Existing native parent and prerequisite links are unchanged; [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117) adds one parent link to E01 and is blocked by #21 and #22, and [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) adds one to E13. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. The owner selected PostgreSQL with Drizzle and the application stack in [Technical direction](../technical/technical-direction.md); physical schema design remains open. Payment batching, a Shipment entity, and event sourcing are not prescribed.
+Existing native parent and prerequisite links are unchanged; [#117](https://github.com/WilliamPhilippe/storage-minis/issues/117) adds one parent link to E01 and is blocked by #21 and #22, and [#118](https://github.com/WilliamPhilippe/storage-minis/issues/118) adds one to E13. The new [#141](https://github.com/WilliamPhilippe/storage-minis/issues/141) adds one parent link to E03 (#5) and is blocked by #34, #36, #38 and #39; the new [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) adds one to E11 (#13) and is blocked by #32, #47, #51, #53, #57 and #74. The working hierarchy remains Epic → business workflow issue → optional implementation sub-issue. Shared PurchaseExpense support extends existing #37 and dependent receipt/cost/completion/reporting work. The owner selected PostgreSQL with Drizzle and the application stack in [Technical direction](../technical/technical-direction.md); physical schema design remains open. Payment batching, a Shipment entity, and event sourcing are not prescribed.
 
 ## Technical decision follow-up
 
@@ -366,5 +382,5 @@ The technical choices supplement the business baseline without changing its requ
 | T02 / #22 | Google-only Firebase, ID tokens, configured owner administrator, active-use refresh, no inactive refresh, logout; User and Membership roles (2026-10-23); on-demand token refresh from user activity and a 7-day session limit from the last Google sign-in (2026-11-01) | Bootstrap, persistence, logout scope/revocation, recovery, and role capabilities, in its own record before the frontend sign-in step. |
 | T03 / #24 | Integer cents of each Organization's currency; exact largest-remainder allocation; UTC occurrence timestamps and financial reporting; visitor-local timestamp display | Numeric widths, overflow handling, input contracts, and period-filter contracts. |
 | T04 / #23 | One monorepo, independent application deployments, local PostgreSQL via Compose, selected test tools | Production hosting, release/configuration process, backups/restore, and measurable support/performance/recovery targets. |
-| T05 / #25 | UTC target timestamps/reporting | Inspect the actual source, preview ambiguous dates/timezones, and approve legacy acquisition mapping. |
+| T05 / #25 | UTC target timestamps/reporting; the DATA-007–011 import rules (2026-11-06) | Approve the import plan's mapping, preview and rerun safety, and design the estimated-date mark and the placeholder Customer. |
 | T06 / #26 | Node/Fastify/tRPC/Zod; React/Vite/TanStack Router/Query/TanStack Form (replacing React Hook Form on 2026-11-01) with Ant Design 6; pnpm/Turborepo; Drizzle/PostgreSQL; Vitest/Playwright | Versions, layout, migrations, CI/setup commands, and persistence acceptance evidence after existing prerequisites. |

@@ -383,9 +383,9 @@ these rules:
 Read [AGENTS.md](AGENTS.md) and the published requirements. A later approved
 decision wins over different text in a baseline.
 
-- [Requirements v0.8](docs/requirements/requirements-v0.8.md)
-- [Entity map v0.9](docs/entities/entity-map-v0.9.md)
-- [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md)
+- [Requirements v0.9](docs/requirements/requirements-v0.9.md)
+- [Entity map v0.10](docs/entities/entity-map-v0.10.md)
+- [Requirement ownership v0.9](docs/requirements/requirements-coverage-v0.9.md)
 - Database schema: [DBML](docs/database/schema.dbml) and
   [design guide](docs/database/design.md)
 - [Technical direction and approval records](docs/technical/technical-direction.md)

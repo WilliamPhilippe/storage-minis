@@ -2,7 +2,7 @@
 
 **Owner approval date:** 2026-10-21. **Status:** accepted choices with remaining design work explicitly listed below. Current implementation: Foundation Steps 1–5, the 2026-10-31 restructure, the 2026-11-01 API rework and frontend PRs 1–3 (web shell, Playwright and sign-in) are delivered, as recorded below. Foundation Step 6 (TBD), the web image (PR 4), business operations, production and CI remain pending.
 
-This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.8 requirements](../requirements/requirements-v0.8.md), [entity map v0.9](../entities/entity-map-v0.9.md), and [ownership index](../requirements/requirements-coverage-v0.8.md). It does not replace the business baseline or close delivery issues. Those documents govern domain invariants.
+This records the owner's stack and technical-policy decisions from the development-stack discussion, including the follow-up confirmation of active-use token refresh, explicit logout, the administrator email, and UTC reporting. It supplements the current [v0.9 requirements](../requirements/requirements-v0.9.md), [entity map v0.10](../entities/entity-map-v0.10.md), and [ownership index](../requirements/requirements-coverage-v0.9.md). It does not replace the business baseline or close delivery issues. Those documents govern domain invariants.
 
 ## Workspace bootstrap progress (2026-10-23)
 
