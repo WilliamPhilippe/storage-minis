@@ -38,10 +38,6 @@ export const suppliers = pgTable(
   (t): PgTableExtraConfigValue[] => [
     check("suppliers_positive_id", sql`${t.id} > 0`),
     check(
-      "known_supplier_has_contact_and_type",
-      sql`(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))`,
-    ),
-    check(
       "unknown_supplier_has_no_fabricated_details",
       sql`(NOT is_unknown OR (phone IS NULL AND type IS NULL))`,
     ),
@@ -109,9 +105,6 @@ export const purchases = pgTable(
     index("purchases_organization_idx").on(t.organizationId),
     unique("purchases_key_1").on(t.organizationId, t.id),
     unique("purchases_key_2").on(t.organizationId, t.supplierId, t.id),
-    uniqueIndex("one_opening_purchase")
-      .on(...[t.organizationId, t.supplierId, t.openingMonth])
-      .where(sql`is_opening`),
     foreignKey({
       name: "owner_purchases",
       columns: [t.organizationId],

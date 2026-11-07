@@ -847,7 +847,41 @@ it("retains separate expense installments, completion checks and unique unit all
   );
 });
 
-it("enforces unknown-Supplier and opening-Purchase identity with second-day UTC provenance", async () => {
+it("accepts known Suppliers without phone or type", async () => {
+  const f = await fixture();
+  const nameOnly = await insert("suppliers", {
+    organization_id: f.organizationId,
+    name: "Name only",
+    created_event_id: f.eventId,
+  });
+  await client.query(
+    "UPDATE suppliers SET phone = NULL, type = NULL WHERE id = $1",
+    [f.supplierId],
+  );
+  const suppliers = await client.query(
+    "SELECT id, phone, type FROM suppliers WHERE id = ANY($1) AND NOT is_unknown ORDER BY id",
+    [[f.supplierId, nameOnly]],
+  );
+  expect(suppliers.rows).toEqual([
+    { id: f.supplierId, phone: null, type: null },
+    { id: nameOnly, phone: null, type: null },
+  ]);
+});
+
+it("accepts the mexico unit status", async () => {
+  const f = await fixture();
+  await client.query(
+    "UPDATE inventory_items SET status = 'mexico' WHERE id = $1",
+    [f.inventoryItemId],
+  );
+  const units = await client.query(
+    "SELECT status FROM inventory_items WHERE id = $1",
+    [f.inventoryItemId],
+  );
+  expect(units.rows).toEqual([{ status: "mexico" }]);
+});
+
+it("enforces unknown-Supplier identity and second-day UTC openings, allowing several opening Purchases per Supplier and month", async () => {
   const f = await fixture();
   await insert("suppliers", {
     organization_id: f.organizationId,
@@ -862,6 +896,11 @@ it("enforces unknown-Supplier and opening-Purchase identity with second-day UTC 
   );
   await rejected(
     "UPDATE suppliers SET phone = 'invented' WHERE organization_id = $1 AND is_unknown",
+    [f.organizationId],
+    "23514",
+  );
+  await rejected(
+    "UPDATE suppliers SET type = 'person' WHERE organization_id = $1 AND is_unknown",
     [f.organizationId],
     "23514",
   );
@@ -883,11 +922,15 @@ it("enforces unknown-Supplier and opening-Purchase identity with second-day UTC 
     [opening],
     "22008",
   );
-  await rejected(
+  await client.query(
     "INSERT INTO purchases (organization_id,supplier_id,is_opening,opening_month,ordered_on,created_event_id) SELECT organization_id,supplier_id,is_opening,opening_month,ordered_on,created_event_id FROM purchases WHERE id = $1",
     [opening],
-    "23505",
   );
+  const openings = await client.query(
+    "SELECT count(*)::int AS count FROM purchases WHERE organization_id = $1 AND supplier_id = $2 AND is_opening AND opening_month = '2026-10'",
+    [f.organizationId, f.supplierId],
+  );
+  expect(openings.rows).toEqual([{ count: 2 }]);
 });
 
 it("checks global/owned audit scope and reversals despite nullable Organization columns", async () => {

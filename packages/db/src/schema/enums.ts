@@ -7,6 +7,7 @@ export const inventoryStatus = pgEnum("inventory_status", [
   "brasil",
   "eua",
   "bolivia",
+  "mexico",
   "shipped",
   "received",
 ]);

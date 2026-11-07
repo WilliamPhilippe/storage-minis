@@ -22,6 +22,20 @@
       "when": 1793895184966,
       "tag": "0002_organization_nickname_currency_session_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794009887647,
+      "tag": "0003_supplier_optional_phone_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794016512119,
+      "tag": "0004_mexico_status_repeatable_opening_purchases",
+      "breakpoints": true
     }
   ]
 }

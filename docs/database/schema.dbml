@@ -1,7 +1,9 @@
 // storage-minis structural database schema — approved and implemented 2026-10-25.
 // Sources: requirements v0.8 and entity map v0.9, which consolidate the dated schema reviews. Review guide: design.md.
-// Diagram synchronized with Step 3B and sign-in PR 3a (2026-11-05: Organization nickname and
-// currency, users.sessions_valid_after). Executable source/migrations: packages/db; writer obligations: design.md.
+// Diagram synchronized with Step 3B, sign-in PR 3a (2026-11-05: Organization nickname and
+// currency, users.sessions_valid_after) and migrations 0003-0004 (2026-11-06: optional Supplier phone/type,
+// mexico status, several opening Purchases per Supplier/month). Executable source/migrations: packages/db;
+// writer obligations: design.md.
 // Money uses integer cents in each Organization's currency (BRL or USD); actual occurrence timestamps use timestamptz.
 // S01-S10 approve representation, keys, scope and bounded structural delivery.
 // All candidate table shapes were rejected and are absent; business writers remain deferred.
@@ -32,6 +34,7 @@ Enum inventory_status {
   brasil
   eua
   bolivia
+  mexico
   shipped
   received
 }
@@ -194,7 +197,7 @@ Table inventory_items [headercolor: #387D70] {
   damage_description text
   private_notes text
   asking_price integer [note: 'Current asking price; never changes historical agreed SaleItem prices.']
-  status inventory_status [not null, note: 'Physical progress: china, brasil, eua, bolivia, shipped, received. No country default; required at registration. Outgoing Sale dispatch, removal and Loss remain distinct source facts.']
+  status inventory_status [not null, note: 'Physical progress: china, brasil, eua, bolivia, mexico, shipped, received. No country default; required at registration. Outgoing Sale dispatch, removal and Loss remain distinct source facts.']
   sale_status sale_status [not null, default: 'unapproved', note: 'Mutually exclusive: unapproved, available, held, collection. Only available can be eligible for sale, subject to physical/funding/cost/commitment rules. Collection membership is sale_status = collection; at most one per Organization/Product. Leaving available/collection never unlocks finalized costs.']
   first_received_event_id integer [note: 'Preserved forever. Purchase cancellation checks ever-received history, not current possession.']
   first_sale_approval_event_id integer
@@ -247,7 +250,7 @@ Table suppliers [headercolor: #97703C] {
   is_unknown boolean [not null, default: false, note: 'Organization-owned placeholder used only when an imported unit has no known Supplier. A partial unique index enforces one placeholder per Organization; do not invent contact/type facts.']
   created_event_id integer [not null]
 
-  Note: 'E06 | SUP-001-012. Known Suppliers require name/phone/type; the import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
+  Note: 'E06 | SUP-001-012. Suppliers require a name; phone and type are optional (owner, 2026-11-06). The import placeholder has only its identifying name. Supplier balances and refund obligations are derived; no supplier-credit field or entity.'
 
   indexes {
     organization_id [name: 'suppliers_organization_idx']
@@ -257,7 +260,6 @@ Table suppliers [headercolor: #97703C] {
 
   checks {
     `"suppliers"."id" > 0` [name: 'suppliers_positive_id']
-    `(is_unknown OR (phone IS NOT NULL AND type IS NOT NULL))` [name: 'known_supplier_has_contact_and_type']
     `(NOT is_unknown OR (phone IS NULL AND type IS NULL))` [name: 'unknown_supplier_has_no_fabricated_details']
   }
 }
@@ -267,7 +269,7 @@ Table purchases [headercolor: #97703C] {
   organization_id integer [not null]
   supplier_id integer [not null]
   ordered_on timestamptz [not null, note: 'Actual occurrence for ordinary Purchases. For month-grouped openings, use the owner-approved convention: second day of opening_month, normalized to 00:00 UTC. This is a conventional import timestamp, not evidence of an actual historical day/time.']
-  is_opening boolean [not null, default: false, note: 'E39: marked legacy acquisition, grouped once per Organization, Supplier and purchase year/month. Not a new historical cash transaction.']
+  is_opening boolean [not null, default: false, note: 'E39: marked legacy acquisition. Several may share an Organization, Supplier and purchase year/month (owner, 2026-11-06). Not a new historical cash transaction.']
   opening_month varchar(7) [note: 'Known source purchase month in YYYY-MM form, required only for opening Purchases. Preserve month precision alongside the conventional second-day timestamp.']
   opening_source_description text
   opening_evidence jsonb [note: 'Reviewed source provenance and assumptions; missing costs/payments remain unknown; the second-day timestamp is an explicitly approved convention.']
@@ -281,8 +283,8 @@ Table purchases [headercolor: #97703C] {
 
   Note: '''
     E07; E39 opening treatment | PUR-001-015, PUR-028-041, PUR-045-049.
-    Opening groups use one known Supplier or the Organization's unknown Supplier.
-    A partial unique index enforces one opening group per Organization/Supplier/year-month under concurrency.
+    Opening Purchases use one known Supplier or the Organization's unknown Supplier.
+    Several may share an Organization/Supplier/year-month; no index limits them, so import rerun safety cannot rely on one.
     Second-day midnight-UTC occurrence is an approved import convention, not an actual-time claim.
     Historical funding/receipt evidence is reviewed under T05, never manufactured.
     Ordinary payment and receipt progress are derived per active unit, separately from lifecycle. Completion requires all
@@ -293,7 +295,6 @@ Table purchases [headercolor: #97703C] {
 
   indexes {
     organization_id [name: 'purchases_organization_idx']
-    // Native partial UNIQUE one_opening_purchase: (organization_id, supplier_id, opening_month) WHERE is_opening
     (organization_id, id) [unique, name: 'purchases_key_1']
     (organization_id, supplier_id, id) [unique, name: 'purchases_key_2']
   }
