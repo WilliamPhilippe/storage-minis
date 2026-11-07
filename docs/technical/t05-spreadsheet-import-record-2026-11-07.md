@@ -13,7 +13,8 @@ The import is delivered under
 [Epic E11 / #13](https://github.com/WilliamPhilippe/storage-minis/issues/13), by
 [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53) (preview) and
 [#74](https://github.com/WilliamPhilippe/storage-minis/issues/74) (controlled import),
-plus the sales-history issue proposed with requirements v0.9. It can only be built
+plus [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) (sales
+history and estimated past dates), which requirements v0.9 adds. It can only be built
 once the business procedures it calls exist ([section 7](#7-what-the-import-needs-from-the-api)).
 
 **Privacy.** The spreadsheet holds customer names and phones, supplier names and
@@ -343,11 +344,15 @@ Synthetic workbooks, built once the import's Excel reader is chosen, cover:
   Organization" becomes "a script that calls the API's Organization procedures"
   (IM-01). Its approval entry is added to technical direction once the owner
   approves this record.
-- **Requirements v0.9** (proposed, not yet published): DATA-007 changes, and
-  DATA-008 (sales history), DATA-009 (estimated sale dates), DATA-010 (correcting
-  estimated dates) and DATA-011 (unknown past acquisition expenses) are new. The
-  proposed owners are a new E11 issue for DATA-008 to DATA-010, and #53 for
-  DATA-011.
+- **Requirements v0.9**
+  ([PR #144](https://github.com/WilliamPhilippe/storage-minis/pull/144), not yet
+  merged; tracker [#143](https://github.com/WilliamPhilippe/storage-minis/issues/143)):
+  - DATA-007 changes and DATA-011 (unknown past acquisition expenses) is new; both
+    are owned by #53.
+  - DATA-008 (sales history), DATA-009 (estimated sale dates) and DATA-010
+    (correcting estimated dates) are new and owned by
+    [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142) [E11.03]
+    under #13. #142 is blocked by #32, #47, #51, #53, #57 and #74.
 - **[PR #139](https://github.com/WilliamPhilippe/storage-minis/pull/139)** (merged):
   the `mexico` location, optional Supplier phone and type, and no index limiting
   opening Purchases per supplier and month.
@@ -355,8 +360,8 @@ Synthetic workbooks, built once the import's Excel reader is chosen, cover:
   record covers the inspection of the real spreadsheet, the opening records, the
   reviewed assumptions, the field map, product matching, the preview and exception
   handling, and the reconciliation. The test workbooks wait for the importer.
-- **#53 and #74.** Their acceptance criteria take these rules when v0.9 is
-  propagated to the issues.
+- **Issues.** #53, #25, #13 and D06 / #20 carry dated "Requirements v0.9 inputs
+  (2026-11-07)" sections. #74's controlled import follows #53's mapping.
 - **The design guide's Import row** stays as PR #139 left it.
 
 ## Sources
@@ -372,7 +377,9 @@ Synthetic workbooks, built once the import's Excel reader is chosen, cover:
 - [PR #139](https://github.com/WilliamPhilippe/storage-minis/pull/139) and issues
   [#13](https://github.com/WilliamPhilippe/storage-minis/issues/13),
   [#25](https://github.com/WilliamPhilippe/storage-minis/issues/25),
-  [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53) and
-  [#74](https://github.com/WilliamPhilippe/storage-minis/issues/74).
+  [#53](https://github.com/WilliamPhilippe/storage-minis/issues/53),
+  [#74](https://github.com/WilliamPhilippe/storage-minis/issues/74) and
+  [#142](https://github.com/WilliamPhilippe/storage-minis/issues/142), and the
+  requirements v0.9 [PR #144](https://github.com/WilliamPhilippe/storage-minis/pull/144).
 - The owner's spreadsheet, inspected in two copies on 2026-11-06, and the owner's
   answers in that review. Both stay private.
