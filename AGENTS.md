@@ -82,21 +82,21 @@ Hosting, deployment, backups, and operational targets remain T04 work. The 2026-
 | --- | --- |
 | [README.md](README.md) | Entry point listing only the latest published version of each document. |
 | [Design](docs/design/README.md) | For UI work, read the design system (`system/`) and the page's folder under `pages/` before building a page. Approved technical and requirements documents win where they disagree. |
-| [Requirements v0.8](docs/requirements/requirements-v0.8.md) | Published requirements and acceptance scenarios; consolidates every approved update log through 2026-11-01. Section 14 lists the decisions still open. |
-| [Entity map v0.9](docs/entities/entity-map-v0.9.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.8. Entities do not automatically imply SQL tables. |
-| [Requirement ownership v0.8](docs/requirements/requirements-coverage-v0.8.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
+| [Requirements v0.9](docs/requirements/requirements-v0.9.md) | Published requirements and acceptance scenarios; consolidates every approved update log through 2026-11-01 and the owner's 2026-11-06 decisions. Section 14 lists the decisions still open. |
+| [Entity map v0.10](docs/entities/entity-map-v0.10.md) | Current relationships, approved storage choices, invariants, and remaining boundaries; Section 16 compares v0.9. Entities do not automatically imply SQL tables. |
+| [Requirement ownership v0.9](docs/requirements/requirements-coverage-v0.9.md) | Maps every active requirement to its primary delivery issue and identifies decision/dependency boundaries. |
 
-Requirements v0.8, entity map v0.9 and ownership index v0.8 (2026-11-01) consolidate the 2026-10-22 schema review, the three 2026-10-23 logs and the owner's 2026-11-01 Organization currency and nickname decisions. The logs, their issue propagation records and the earlier baselines were removed from the tree on 2026-11-06; git history keeps them ([cleanup record](docs/technical/technical-direction.md#documentation-cleanup-2026-11-06)). [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119) tracks v0.8 and [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7. Live project issues carry the 2026-10-22 review and a dated v0.8 inputs section. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. Baseline issues #2/#78 remain historical; where an issue's older dated section quotes superseded wording, the current requirements win.
+Requirements v0.9, entity map v0.10 and ownership index v0.9 (2026-11-07) consolidate the 2026-10-22 schema review, the three 2026-10-23 logs, the owner's 2026-11-01 Organization currency and nickname decisions and the owner's 2026-11-06 decisions on Purchase entry, Supplier contact fields and the spreadsheet import. The logs, their issue propagation records and the earlier baselines are not kept in the tree; git history keeps them ([cleanup record](docs/technical/technical-direction.md#documentation-cleanup-2026-11-06)). [#143](https://github.com/WilliamPhilippe/storage-minis/issues/143) tracks v0.9, [#119](https://github.com/WilliamPhilippe/storage-minis/issues/119) tracks v0.8 and [#82](https://github.com/WilliamPhilippe/storage-minis/issues/82) tracks v0.7. Live project issues carry the 2026-10-22 review, a dated v0.8 inputs section and, where the 2026-11-06 decisions apply, a dated v0.9 inputs section. Step 3B propagates the approved structural fields, keys and audit shape into DBML/design; business writers remain deferred. Baseline issues #2/#78 remain historical; where an issue's older dated section quotes superseded wording, the current requirements win.
 
 For a task, read its live issue, relevant requirement IDs, acceptance criteria, and dependencies. If the approved sources conflict or a needed business rule is unresolved, identify the exact conflict and ask the owner; do not silently pick a policy. Continue independent work that does not depend on that answer.
 
 ## Documentation and backlog workflow
 
 - Keep only the current version of each published baseline in the tree (owner, 2026-11-06). When adopting a new baseline, publish new versioned files, state what they supersede with a commit-pinned link, record the changes, delete the superseded files, and update the README and AGENTS.md links. Git history keeps every earlier version.
-- Preserve requirement and entity discussion IDs. Retire withdrawn IDs explicitly; never reuse them. The v0.8 baseline has 309 active requirements and nine retired requirements: SAL-029–035, PAY-031, and CUS-016.
+- Preserve requirement and entity discussion IDs. Retire withdrawn IDs explicitly; never reuse them. The v0.9 baseline has 323 active requirements and nine retired requirements: SAL-029–035, PAY-031, and CUS-016.
 - Keep requirement wording, accepted decisions, entity relationships, ownership mapping, and affected issue acceptance criteria consistent when changing agreed behavior. Every active requirement has one primary delivery owner.
 - Follow the existing hierarchy: Epic → business workflow issue → optional implementation sub-issue. Extend the existing owner for changed requirements instead of creating duplicate delivery work.
-- Respect prerequisites and the [remaining boundaries in entity map v0.9](docs/entities/entity-map-v0.9.md#15-approved-policies-and-remaining-design-boundaries). Distinguish approved decisions from remaining design work; preserve existing delivery ownership during propagation.
+- Respect prerequisites and the [remaining boundaries in entity map v0.10](docs/entities/entity-map-v0.10.md#15-approved-policies-and-remaining-design-boundaries). Distinguish approved decisions from remaining design work; preserve existing delivery ownership during propagation.
 - Distinguish proposals, approved decisions, and implemented behavior. Decision outcomes need recorded owner approval, date, and examples. Delivery completion needs applicable acceptance evidence or an explicitly approved deferral; documentation alone is not implementation evidence.
 
 ## Business invariants to preserve
@@ -125,6 +125,7 @@ These are reminders of the current requirements, not a replacement for reading t
 - Preserve shared expense sources, settlement, history, unaffected allocations, completed-Purchase locks, and approved/sold unit costs. Removing a linked unit/Purchase must not delete a shared expense or silently move its cost to other units. Exceptional disposition remains D06.
 - Distinguish unknown expenses from confirmed zero. Complete only after all remaining active units are received and applicable expenses, including shared sources, are accounted for. Completed Purchases are firmly locked against corrections.
 - Ordinary Open Purchase removal applies only to unreceived, wholly unpaid units; resolve both payment and acquisition-expense allocations first. Expense allocation blocks removal even without merchandise funding. Preserve removed IDs and create a new ID for a replacement. A Purchase cannot be canceled if any unit was ever received.
+- A Purchase has at least one unit and at most one line per Product, with up to 100 units; each unit has its own price, and the line total is their sum. Saving a Purchase may also record a supplier Payment and the receipt of fully paid units in the same action (PUR-004, PUR-050–059, 2026-11-06).
 
 ### Sales, funding, and reporting
 
@@ -142,7 +143,7 @@ These are reminders of the current requirements, not a replacement for reading t
 
 Do not add customer preorder sales, public reservations, automatic reservation expiry, a separate readiness-confirmation stage, FX conversion, insurance workflows, external sales-platform integrations, multiple stock locations, or package/carrier/partial-shipment management to the v1 baseline. “In Garage” is a status, not a location feature. General expense management, expense-payment batching, Product merge/archive/moderation, and conditional schema candidates are not approved features merely because they are discussed in the docs.
 
-Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Apply the approved Supplier/year-month grouped opening Purchases and second-day date convention from the 2026-10-23 review (DATA-007), retaining source precision/provenance. Do not fabricate historical payments or receipt facts; finish actual source mapping under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
+Excel migration must inspect the real source and preview invalid/ambiguous mappings before import. Apply the approved opening Purchases grouped by Supplier and year-month, where several may share a Supplier and month, with the second-day date convention (DATA-007), retaining source precision/provenance. Create payments and arrivals only where the source records them, as estimated PIX supplier Payments and receipts; import sales history with estimated dates and a placeholder Customer (DATA-008–010), and give arrived units confirmed-zero expenses (DATA-011). Finish actual source mapping under T05. Reconcile target-Organization units independently from global Product growth. Daily backups are required; retention and restore targets remain technical design work.
 
 ## Validation and commands
 
@@ -177,7 +178,7 @@ For future implementation, use the affected issue's acceptance criteria and requ
 
 ## Decisions still needed
 
-Read the live issue together with requirements v0.8 and entity map v0.9 before dependent work. The approved reviews resolved or narrowed these topics; the current entity map records details and remaining boundaries. Issue closure and specification/backlog propagation remain separate work.
+Read the live issue together with requirements v0.9 and entity map v0.10 before dependent work. The approved reviews resolved or narrowed these topics; the current entity map records details and remaining boundaries. Issue closure and specification/backlog propagation remain separate work.
 
 | Decision | Approved scope and remaining work |
 | --- | --- |
@@ -186,7 +187,7 @@ Read the live issue together with requirements v0.8 and entity map v0.9 before d
 | [D03 / #17](https://github.com/WilliamPhilippe/storage-minis/issues/17) | Signed negative profit selected for model/pool recovery. Propagate and verify formulas. |
 | [D04 / #18](https://github.com/WilliamPhilippe/storage-minis/issues/18) | Context/allowlist/grouping/prices/photos/privacy selected; detailed filters and unknown-condition presentation remain. |
 | [D05 / #19](https://github.com/WilliamPhilippe/storage-minis/issues/19) | Original-period reporting and on-hand average-cost basis selected; full launch report/widget set and filter contracts remain. |
-| [D06 / #20](https://github.com/WilliamPhilippe/storage-minis/issues/20) | Sale deletion/dispatch and permanent cost/Purchase locks selected; exceptional correction authority/shared-expense disposition remain. |
+| [D06 / #20](https://github.com/WilliamPhilippe/storage-minis/issues/20) | Sale deletion/dispatch and permanent cost/Purchase locks selected; import-estimated dates correctable once (DATA-010, 2026-11-06); exceptional correction authority/shared-expense disposition remain. |
 | [D07 / #79](https://github.com/WilliamPhilippe/storage-minis/issues/79) | Global edit permission, current metadata, unit-only private notes, and global audit selected; typed audit/enforcement/bootstrap remain. |
 | [D08 / #80](https://github.com/WilliamPhilippe/storage-minis/issues/80) | Explicit complete/settled collection finalization and provisional metrics selected; concrete workflow/enforcement remain. |
 
